@@ -423,91 +423,175 @@ const ReportIssuePage = () => {
           </div>
         </div>
 
-        {/* Quick Resolution Section */}
-        <div className="container mx-auto px-6 pb-12">
-          <div className="max-w-5xl mx-auto">
-            <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl p-6 md:p-8 border border-gray-200 shadow-lg">
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg mb-4">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-                  Lightning-Fast Issue Resolution
-                </h2>
-                <p className="text-gray-600 max-w-2xl mx-auto">
-                  We understand that every minute counts. Our dedicated support team works around the clock 
-                  to resolve your issues quickly and efficiently, ensuring minimal disruption to your workflow.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                {/* Quick Response */}
-                <div className="text-center group">
-                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg shadow-lg mb-3 group-hover:scale-110 transition-transform duration-200">
-                    <Clock className="w-6 h-6 text-white" />
+        {/* Lightning-Fast Issue Resolution Section */}
+        <div className="container mx-auto px-6 pb-16">
+          <div className="max-w-7xl mx-auto">
+            {/* Hero Section */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 rounded-3xl shadow-2xl">
+              {/* Background Pattern */}
+              <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.05"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+              
+              {/* Content */}
+              <div className="relative px-8 py-16 md:px-12 md:py-20">
+                <div className="max-w-4xl mx-auto text-center">
+                  {/* Icon with animated background */}
+                  <div className="relative inline-block mb-8">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full blur-xl opacity-75 animate-pulse"></div>
+                    <div className="relative bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-4 shadow-2xl">
+                      <Zap className="w-8 h-8 text-white" />
+                    </div>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Quick Response</h3>
-                  <p className="text-sm text-gray-600">
-                    Average response time of <span className="font-semibold text-green-600">under 2 hours</span> 
+                  
+                  <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
+                    Lightning-Fast Issue Resolution
+                  </h2>
+                  <p className="text-xl text-blue-100 mb-12 max-w-3xl mx-auto leading-relaxed">
+                    We understand that every minute counts. Our dedicated support team works around the clock 
+                    to resolve your issues quickly and efficiently, ensuring minimal disruption to your workflow.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Features Grid */}
+            <div className="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Quick Response */}
+              <div className="group relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                <div className="relative bg-white rounded-2xl p-8 shadow-xl border border-gray-100 group-hover:shadow-2xl transition-all duration-300 group-hover:-translate-y-2">
+                  <div className="flex items-center mb-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <Clock className="w-8 h-8 text-white" />
+                    </div>
+                    <div className="ml-4">
+                      <h3 className="text-2xl font-bold text-gray-900">Quick Response</h3>
+                      <div className="w-12 h-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full mt-2"></div>
+                    </div>
+                  </div>
+                  <p className="text-gray-600 leading-relaxed">
+                    Average response time of <span className="font-bold text-green-600 text-lg">under 2 hours</span> 
                     for urgent issues, with most resolved within 24 hours.
                   </p>
                 </div>
+              </div>
 
-                {/* Expert Team */}
-                <div className="text-center group">
-                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg shadow-lg mb-3 group-hover:scale-110 transition-transform duration-200">
-                    <Users className="w-6 h-6 text-white" />
+              {/* Expert Team */}
+              <div className="group relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                <div className="relative bg-white rounded-2xl p-8 shadow-xl border border-gray-100 group-hover:shadow-2xl transition-all duration-300 group-hover:-translate-y-2">
+                  <div className="flex items-center mb-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <Users className="w-8 h-8 text-white" />
+                    </div>
+                    <div className="ml-4">
+                      <h3 className="text-2xl font-bold text-gray-900">Expert Team</h3>
+                      <div className="w-12 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mt-2"></div>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Expert Team</h3>
-                  <p className="text-sm text-gray-600">
-                    Our <span className="font-semibold text-purple-600">certified specialists</span> 
+                  <p className="text-gray-600 leading-relaxed">
+                    Our <span className="font-bold text-purple-600 text-lg">certified specialists</span> 
                     have deep expertise in chatbot technologies and AI systems.
                   </p>
                 </div>
+              </div>
 
-                {/* 24/7 Support */}
-                <div className="text-center group">
-                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg shadow-lg mb-3 group-hover:scale-110 transition-transform duration-200">
-                    <Shield className="w-6 h-6 text-white" />
+              {/* 24/7 Support */}
+              <div className="group relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                <div className="relative bg-white rounded-2xl p-8 shadow-xl border border-gray-100 group-hover:shadow-2xl transition-all duration-300 group-hover:-translate-y-2">
+                  <div className="flex items-center mb-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <Shield className="w-8 h-8 text-white" />
+                    </div>
+                    <div className="ml-4">
+                      <h3 className="text-2xl font-bold text-gray-900">24/7 Support</h3>
+                      <div className="w-12 h-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-full mt-2"></div>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">24/7 Support</h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-gray-600 leading-relaxed">
                     Round-the-clock monitoring and support to ensure your chatbots 
-                    are <span className="font-semibold text-orange-600">always running smoothly</span>.
+                    are <span className="font-bold text-orange-600 text-lg">always running smoothly</span>.
                   </p>
                 </div>
               </div>
+            </div>
 
-              {/* Stats Row */}
-              <div className="pt-6 border-t border-gray-200">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600 mb-1">98%</div>
-                    <div className="text-xs text-gray-600">Resolution Rate</div>
+            {/* Stats Section */}
+            <div className="mt-16 bg-gradient-to-r from-gray-50 to-blue-50 rounded-3xl p-8 md:p-12 border border-gray-200">
+              <div className="text-center mb-12">
+                <h3 className="text-3xl font-bold text-gray-900 mb-4">Proven Results</h3>
+                <p className="text-gray-600 text-lg">Numbers that speak for themselves</p>
+              </div>
+              
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="text-center group">
+                  <div className="relative inline-block">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                    <div className="relative bg-gradient-to-r from-blue-500 to-blue-600 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
+                      <span className="text-2xl font-bold text-white">98%</span>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600 mb-1">1.2h</div>
-                    <div className="text-xs text-gray-600">Avg Response Time</div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Resolution Rate</h4>
+                  <p className="text-sm text-gray-600">Issues resolved successfully</p>
+                </div>
+
+                <div className="text-center group">
+                  <div className="relative inline-block">
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-green-600 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                    <div className="relative bg-gradient-to-r from-green-500 to-green-600 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
+                      <span className="text-2xl font-bold text-white">1.2h</span>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600 mb-1">24/7</div>
-                    <div className="text-xs text-gray-600">Support Available</div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Avg Response Time</h4>
+                  <p className="text-sm text-gray-600">Lightning fast support</p>
+                </div>
+
+                <div className="text-center group">
+                  <div className="relative inline-block">
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                    <div className="relative bg-gradient-to-r from-purple-500 to-purple-600 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
+                      <span className="text-2xl font-bold text-white">24/7</span>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-orange-600 mb-1">4.9★</div>
-                    <div className="text-xs text-gray-600">Customer Rating</div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Support Available</h4>
+                  <p className="text-sm text-gray-600">Always here for you</p>
+                </div>
+
+                <div className="text-center group">
+                  <div className="relative inline-block">
+                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                    <div className="relative bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
+                      <span className="text-2xl font-bold text-white">4.9★</span>
+                    </div>
                   </div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Customer Rating</h4>
+                  <p className="text-sm text-gray-600">Outstanding satisfaction</p>
                 </div>
               </div>
+            </div>
 
-              {/* Call to Action */}
-              <div className="mt-6 text-center">
-                <p className="text-sm text-gray-600 mb-3">
-                  Have a critical issue? Our priority support team is standing by.
-                </p>
-                <div className="flex items-center justify-center text-xs text-gray-500">
-                  <Star className="w-3 h-3 text-yellow-500 mr-1" />
-                  <span>Trusted by 10,000+ businesses worldwide</span>
+            {/* Call to Action */}
+            <div className="mt-16 text-center">
+              <div className="bg-white rounded-2xl p-8 md:p-12 shadow-xl border border-gray-100">
+                <div className="max-w-2xl mx-auto">
+                  <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                    Have a critical issue?
+                  </h3>
+                  <p className="text-lg text-gray-600 mb-8">
+                    Our priority support team is standing by to help you resolve it quickly.
+                  </p>
+                  
+                  <div className="flex items-center justify-center space-x-6 text-sm text-gray-500">
+                    <div className="flex items-center">
+                      <Star className="w-4 h-4 text-yellow-500 mr-2" />
+                      <span>Trusted by 10,000+ businesses worldwide</span>
+                    </div>
+                    <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
+                    <div className="flex items-center">
+                      <Shield className="w-4 h-4 text-green-500 mr-2" />
+                      <span>Enterprise-grade security</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
