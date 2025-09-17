@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Bot, 
   MessageSquare, 
@@ -24,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import RoleGuard from '@/components/auth/RoleGuard';
 import ProfessionalSpinner from '@/components/ui/ProfessionalSpinner';
+import { useChatBot } from '@/contexts/ChatBotContext';
 
 interface UserStats {
   assignedBots: number;
@@ -41,6 +43,8 @@ interface RecentActivity {
 }
 
 export default function UserOverviewPage() {
+  const router = useRouter();
+  const { triggerChat } = useChatBot();
   const [stats, setStats] = useState<UserStats>({
     assignedBots: 0,
     totalConversations: 0,
@@ -259,24 +263,39 @@ export default function UserOverviewPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      <Button className="w-full justify-start h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300">
+                      <Button 
+                        onClick={() => router.push('/user-dashboard/playground')}
+                        className="w-full justify-start h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300"
+                      >
                         <PlayCircle className="w-5 h-5 mr-3" />
                         Test My Bots
                         <ArrowRight className="w-4 h-4 ml-auto" />
                       </Button>
-                      <Button variant="outline" className="w-full justify-start h-12 border-gray-200 hover:bg-gray-50 rounded-xl font-medium transition-all duration-300">
+                      <Button 
+                        onClick={() => router.push('/user-dashboard/conversations')}
+                        variant="outline" 
+                        className="w-full justify-start h-12 border-gray-200 hover:bg-gray-50 rounded-xl font-medium transition-all duration-300"
+                      >
                         <MessageSquare className="w-5 h-5 mr-3" />
                         View Conversations
                         <ArrowRight className="w-4 h-4 ml-auto" />
                       </Button>
-                      <Button variant="outline" className="w-full justify-start h-12 border-gray-200 hover:bg-gray-50 rounded-xl font-medium transition-all duration-300">
+                      <Button 
+                        onClick={() => router.push('/user-dashboard/analytics')}
+                        variant="outline" 
+                        className="w-full justify-start h-12 border-gray-200 hover:bg-gray-50 rounded-xl font-medium transition-all duration-300"
+                      >
                         <BarChart3 className="w-5 h-5 mr-3" />
                         Analytics
                         <ArrowRight className="w-4 h-4 ml-auto" />
                       </Button>
-                      <Button variant="outline" className="w-full justify-start h-12 border-gray-200 hover:bg-gray-50 rounded-xl font-medium transition-all duration-300">
-                        <Settings className="w-5 h-5 mr-3" />
-                        Settings
+                      <Button 
+                        onClick={() => router.push('/user-dashboard/bots')}
+                        variant="outline" 
+                        className="w-full justify-start h-12 border-gray-200 hover:bg-gray-50 rounded-xl font-medium transition-all duration-300"
+                      >
+                        <Bot className="w-5 h-5 mr-3" />
+                        My Bots
                         <ArrowRight className="w-4 h-4 ml-auto" />
                       </Button>
                     </div>
@@ -284,33 +303,83 @@ export default function UserOverviewPage() {
                 </Card>
 
                 {/* Performance Summary */}
-                <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl shadow-lg border-0">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
-                      <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
-                        <Star className="w-4 h-4 text-white" />
+                <Card className="group bg-white rounded-2xl shadow-lg border-0 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <CardHeader className="pb-6">
+                    <CardTitle className="text-xl font-bold text-gray-900 flex items-center group-hover:scale-105 transition-transform duration-300">
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 rounded-xl flex items-center justify-center mr-3 shadow-lg group-hover:shadow-purple-200 group-hover:scale-110 transition-all duration-300">
+                        <Star className="w-5 h-5 text-white" />
                       </div>
-                      Performance
+                      Performance Metrics
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-600">Bot Uptime</span>
-                        <span className="text-lg font-bold text-green-600">99.9%</span>
+                    <div className="space-y-6">
+                      {/* Bot Uptime */}
+                      <div className="group/metric flex items-center justify-between p-4 bg-white/60 rounded-xl hover:bg-white/80 transition-all duration-300 border border-white/50">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center">
+                            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                          </div>
+                          <div>
+                            <span className="text-sm font-semibold text-gray-700">Bot Uptime</span>
+                            <p className="text-xs text-gray-500">System availability</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-2xl font-bold text-green-600 group-hover/metric:scale-110 transition-transform duration-300">99.9%</span>
+                          <p className="text-xs text-green-500 font-medium">+0.1% this week</p>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-600">User Satisfaction</span>
-                        <span className="text-lg font-bold text-blue-600">4.8★</span>
+
+                      {/* User Satisfaction */}
+                      <div className="group/metric flex items-center justify-between p-4 bg-white/60 rounded-xl hover:bg-white/80 transition-all duration-300 border border-white/50">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
+                            <Star className="w-4 h-4 text-blue-500" />
+                          </div>
+                          <div>
+                            <span className="text-sm font-semibold text-gray-700">User Satisfaction</span>
+                            <p className="text-xs text-gray-500">Customer rating</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center space-x-1">
+                            <span className="text-2xl font-bold text-blue-600 group-hover/metric:scale-110 transition-transform duration-300">4.8</span>
+                            <Star className="w-5 h-5 text-yellow-400 fill-current" />
+                          </div>
+                          <p className="text-xs text-blue-500 font-medium">+0.2 this month</p>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-600">Response Quality</span>
-                        <span className="text-lg font-bold text-purple-600">Excellent</span>
+
+                      {/* Response Quality */}
+                      <div className="group/metric flex items-center justify-between p-4 bg-white/60 rounded-xl hover:bg-white/80 transition-all duration-300 border border-white/50">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg flex items-center justify-center">
+                            <Zap className="w-4 h-4 text-purple-500" />
+                          </div>
+                          <div>
+                            <span className="text-sm font-semibold text-gray-700">Response Quality</span>
+                            <p className="text-xs text-gray-500">AI accuracy</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-2xl font-bold text-purple-600 group-hover/metric:scale-110 transition-transform duration-300">Excellent</span>
+                          <p className="text-xs text-purple-500 font-medium">98% accuracy</p>
+                        </div>
                       </div>
-                      <div className="pt-4 border-t border-gray-200">
-                        <Button variant="ghost" className="w-full text-blue-600 hover:text-blue-700 hover:bg-blue-50">
-                          <HelpCircle className="w-4 h-4 mr-2" />
-                          Get Support
+
+                      {/* Support Button */}
+                      <div className="pt-4 border-t border-gray-200/60">
+                        <Button 
+                          variant="ghost" 
+                          className="w-full text-blue-600 hover:text-blue-700 hover:bg-blue-50/80 rounded-xl font-medium transition-all duration-300 group/btn"
+                          onClick={triggerChat}
+                        >
+                          <div className="flex items-center justify-center space-x-2">
+                            <HelpCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform duration-300" />
+                            <span>Get Support</span>
+                            <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform duration-300" />
+                          </div>
                         </Button>
                       </div>
                     </div>

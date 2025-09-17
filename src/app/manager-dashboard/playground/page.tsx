@@ -382,7 +382,7 @@ const ManagerPlaygroundPage = () => {
                     </div>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">Monitor Performance</h3>
                     <p className="text-sm text-gray-600">
-                      Track response times, accuracy rates, and user satisfaction to optimize your bot's effectiveness.
+                      Track response times, accuracy rates, and user satisfaction to optimize your bot&apos;s effectiveness.
                     </p>
                   </div>
 
@@ -392,7 +392,7 @@ const ManagerPlaygroundPage = () => {
                     </div>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">Iterate and Improve</h3>
                     <p className="text-sm text-gray-600">
-                      Use test results to refine your bot's responses and improve the overall user experience.
+                      Use test results to refine your bot&apos;s responses and improve the overall user experience.
                     </p>
                   </div>
                 </div>

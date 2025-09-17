@@ -20,10 +20,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useChatBot } from '@/contexts/ChatBotContext';
 
 
 const HelpPage = () => {
   const router = useRouter();
+  const { triggerChat } = useChatBot();
   const [activeTab, setActiveTab] = useState('tutorials');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -252,7 +254,7 @@ const HelpPage = () => {
                   <Button 
                     variant="outline" 
                     className="border-gray-300 hover:bg-gray-50 text-gray-700"
-                    onClick={() => handleNavigation('/dashboard/analytics')}
+                    onClick={triggerChat}
                   >
                     Start Chat
                   </Button>

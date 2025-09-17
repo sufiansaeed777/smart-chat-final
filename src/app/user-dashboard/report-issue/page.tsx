@@ -429,7 +429,12 @@ const ReportIssuePage = () => {
             {/* Hero Section */}
             <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 rounded-3xl shadow-2xl">
               {/* Background Pattern */}
-              <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.05"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'repeat'
+                }}></div>
+              </div>
               
               {/* Content */}
               <div className="relative px-8 py-16 md:px-12 md:py-20">
@@ -516,85 +521,6 @@ const ReportIssuePage = () => {
               </div>
             </div>
 
-            {/* Stats Section */}
-            <div className="mt-16 bg-gradient-to-r from-gray-50 to-blue-50 rounded-3xl p-8 md:p-12 border border-gray-200">
-              <div className="text-center mb-12">
-                <h3 className="text-3xl font-bold text-gray-900 mb-4">Proven Results</h3>
-                <p className="text-gray-600 text-lg">Numbers that speak for themselves</p>
-              </div>
-              
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-                <div className="text-center group">
-                  <div className="relative inline-block">
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
-                    <div className="relative bg-gradient-to-r from-blue-500 to-blue-600 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
-                      <span className="text-2xl font-bold text-white">98%</span>
-                    </div>
-                  </div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Resolution Rate</h4>
-                  <p className="text-sm text-gray-600">Issues resolved successfully</p>
-                </div>
-
-                <div className="text-center group">
-                  <div className="relative inline-block">
-                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-green-600 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
-                    <div className="relative bg-gradient-to-r from-green-500 to-green-600 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
-                      <span className="text-2xl font-bold text-white">1.2h</span>
-                    </div>
-                  </div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Avg Response Time</h4>
-                  <p className="text-sm text-gray-600">Lightning fast support</p>
-                </div>
-
-                <div className="text-center group">
-                  <div className="relative inline-block">
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
-                    <div className="relative bg-gradient-to-r from-purple-500 to-purple-600 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
-                      <span className="text-2xl font-bold text-white">24/7</span>
-                    </div>
-                  </div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Support Available</h4>
-                  <p className="text-sm text-gray-600">Always here for you</p>
-                </div>
-
-                <div className="text-center group">
-                  <div className="relative inline-block">
-                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
-                    <div className="relative bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300">
-                      <span className="text-2xl font-bold text-white">4.9★</span>
-                    </div>
-                  </div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Customer Rating</h4>
-                  <p className="text-sm text-gray-600">Outstanding satisfaction</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Call to Action */}
-            <div className="mt-16 text-center">
-              <div className="bg-white rounded-2xl p-8 md:p-12 shadow-xl border border-gray-100">
-                <div className="max-w-2xl mx-auto">
-                  <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-                    Have a critical issue?
-                  </h3>
-                  <p className="text-lg text-gray-600 mb-8">
-                    Our priority support team is standing by to help you resolve it quickly.
-                  </p>
-                  
-                  <div className="flex items-center justify-center space-x-6 text-sm text-gray-500">
-                    <div className="flex items-center">
-                      <Star className="w-4 h-4 text-yellow-500 mr-2" />
-                      <span>Trusted by 10,000+ businesses worldwide</span>
-                    </div>
-                    <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
-                    <div className="flex items-center">
-                      <Shield className="w-4 h-4 text-green-500 mr-2" />
-                      <span>Enterprise-grade security</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

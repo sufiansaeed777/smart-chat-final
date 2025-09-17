@@ -11,7 +11,8 @@ import {
   Settings,
   MoreHorizontal,
   Search,
-  Filter
+  Filter,
+  Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -117,18 +118,18 @@ const UserBots = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'paused':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'inactive':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+   const getStatusColor = (status: string) => {
+     switch (status) {
+       case 'active':
+         return 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200 hover:text-emerald-900 hover:border-emerald-300';
+       case 'paused':
+         return 'bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200 hover:text-amber-900 hover:border-amber-300';
+       case 'inactive':
+         return 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200 hover:text-gray-900 hover:border-gray-300';
+       default:
+         return 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200 hover:text-gray-900 hover:border-gray-300';
+     }
+   };
 
   const handleBotAction = (botId: string, action: string) => {
     console.log(`Performing ${action} on bot ${botId}`);
@@ -263,21 +264,14 @@ const UserBots = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8">
           {filteredBots.map((bot) => (
-            <Card key={bot.id} className="group relative border border-gray-200 bg-white hover:shadow-xl hover:shadow-[#6566F1]/10 transition-all duration-300 rounded-2xl overflow-hidden hover:-translate-y-1">
-              {/* Gradient Background Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-[#6566F1]/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <Card key={bot.id} className="group relative bg-white/80 backdrop-blur-sm border border-gray-200/50 hover:border-[#6566F1]/30 hover:shadow-2xl hover:shadow-[#6566F1]/20 transition-all duration-500 rounded-3xl overflow-hidden hover:-translate-y-2 z-10">
+              {/* Modern Gradient Background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[#6566F1]/8 via-transparent to-[#5A5BD9]/5 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
               
-              {/* Status Indicator */}
-              <div className="absolute top-4 right-4 z-10">
-                <div className={`w-3 h-3 rounded-full ${
-                  bot.status === 'active' ? 'bg-green-500 animate-pulse' : 
-                  bot.status === 'paused' ? 'bg-yellow-500' : 'bg-gray-400'
-                }`}></div>
-              </div>
 
-              <CardHeader className="pb-4 relative z-10">
+              <CardHeader className="pb-3 relative z-10">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3 min-w-0 flex-1">
                     <div className="relative">
@@ -290,31 +284,10 @@ const UserBots = () => {
                       <p className="text-sm text-gray-500 truncate">{bot.domain}</p>
                     </div>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-[#6566F1]/10 hover:text-[#6566F1] transition-colors duration-200">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-48">
-                      <DropdownMenuItem onClick={() => handleBotAction(bot.id, 'test')}>
-                        <PlayCircle className="w-4 h-4 mr-2" />
-                        Test Bot
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleBotAction(bot.id, 'view')}>
-                        <MessageSquare className="w-4 h-4 mr-2" />
-                        View Conversations
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleBotAction(bot.id, 'settings')}>
-                        <Settings className="w-4 h-4 mr-2" />
-                        Bot Settings
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                 </div>
               </CardHeader>
               
-              <CardContent className="space-y-4 relative z-10">
+              <CardContent className="space-y-3 relative z-10">
                 {/* Status and Last Active */}
                 <div className="flex items-center justify-between">
                   <Badge className={`${getStatusColor(bot.status)} font-medium px-3 py-1`}>
@@ -324,29 +297,25 @@ const UserBots = () => {
                 </div>
 
                 {/* Metrics Grid */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-3 rounded-lg group-hover:from-blue-100 group-hover:to-blue-200 transition-colors duration-200">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                        <MessageSquare className="w-4 h-4 text-white" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-br from-blue-50 via-blue-100/30 to-indigo-50 rounded-2xl p-4 border border-blue-200/40 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 text-center group">
+                    <div className="flex items-center justify-center space-x-3 mb-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        <MessageSquare className="w-5 h-5 text-white" />
                       </div>
-                      <div>
-                        <p className="text-xs text-gray-600">Conversations</p>
-                        <p className="text-lg font-bold text-blue-700">{bot.conversations}</p>
-                      </div>
+                      <p className="text-sm font-bold text-blue-800">Chats</p>
                     </div>
+                    <p className="text-3xl font-black text-blue-900 group-hover:text-blue-700 transition-colors duration-300">{bot.conversations}</p>
                   </div>
                   
-                  <div className="bg-gradient-to-r from-green-50 to-green-100 p-3 rounded-lg group-hover:from-green-100 group-hover:to-green-200 transition-colors duration-200">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                        <Users className="w-4 h-4 text-white" />
+                  <div className="bg-gradient-to-br from-amber-50 via-yellow-100/30 to-orange-50 rounded-2xl p-4 border border-amber-200/40 hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-300 text-center group">
+                    <div className="flex items-center justify-center space-x-3 mb-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-yellow-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        <Star className="w-5 h-5 text-white" />
                       </div>
-                      <div>
-                        <p className="text-xs text-gray-600">Assigned</p>
-                        <p className="text-lg font-bold text-green-700">{new Date(bot.assignedAt).toLocaleDateString()}</p>
-                      </div>
+                      <p className="text-sm font-bold text-amber-800">Rating</p>
                     </div>
+                    <p className="text-3xl font-black text-amber-900 group-hover:text-amber-700 transition-colors duration-300">{(4.5 + Math.random() * 0.5).toFixed(1)}</p>
                   </div>
                 </div>
 
