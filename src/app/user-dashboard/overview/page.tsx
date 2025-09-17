@@ -187,78 +187,11 @@ export default function UserOverviewPage() {
         {/* Main Content */}
         <div className="px-6 py-12 md:px-8">
           <div className="max-w-7xl mx-auto">
-            {/* Stats Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-              <Card className="group bg-white rounded-2xl shadow-lg border-0 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                      <Bot className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-gray-900">{stats.assignedBots}</div>
-                      <div className="text-sm text-gray-500">Bots</div>
-                    </div>
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Assigned Bots</h3>
-                  <p className="text-sm text-gray-600">AI assistants under your management</p>
-                </CardContent>
-              </Card>
-
-              <Card className="group bg-white rounded-2xl shadow-lg border-0 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                      <MessageSquare className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-gray-900">{stats.totalConversations}</div>
-                      <div className="text-sm text-gray-500">Total</div>
-                    </div>
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Conversations</h3>
-                  <p className="text-sm text-gray-600">All-time user interactions</p>
-                </CardContent>
-              </Card>
-
-              <Card className="group bg-white rounded-2xl shadow-lg border-0 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                      <TrendingUp className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-gray-900">{stats.activeConversations}</div>
-                      <div className="text-sm text-gray-500">Active</div>
-                    </div>
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Live Sessions</h3>
-                  <p className="text-sm text-gray-600">Currently ongoing conversations</p>
-                </CardContent>
-              </Card>
-
-              <Card className="group bg-white rounded-2xl shadow-lg border-0 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                      <Clock className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-gray-900">{stats.responseTime}</div>
-                      <div className="text-sm text-gray-500">Avg Time</div>
-                    </div>
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Response Time</h3>
-                  <p className="text-sm text-gray-600">Average bot response speed</p>
-                </CardContent>
-              </Card>
-            </div>
-
             {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Recent Activity */}
-              <div className="lg:col-span-2">
-                <Card className="bg-white rounded-2xl shadow-lg border-0">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Recent Activity - Takes up 7 columns */}
+              <div className="lg:col-span-7">
+                <Card className="bg-white rounded-2xl shadow-lg border-0 h-full">
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
@@ -301,9 +234,10 @@ export default function UserOverviewPage() {
                           </div>
                         ))
                       ) : (
-                        <div className="text-center py-8">
-                          <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                          <p className="text-gray-500">No recent activity</p>
+                        <div className="text-center py-12">
+                          <Activity className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                          <p className="text-gray-500 text-lg">No recent activity</p>
+                          <p className="text-gray-400 text-sm mt-2">Your activity will appear here</p>
                         </div>
                       )}
                     </div>
@@ -311,8 +245,8 @@ export default function UserOverviewPage() {
                 </Card>
               </div>
 
-              {/* Quick Actions & Performance */}
-              <div className="space-y-6">
+              {/* Right Side - Takes up 5 columns */}
+              <div className="lg:col-span-5 space-y-6">
                 {/* Quick Actions */}
                 <Card className="bg-white rounded-2xl shadow-lg border-0">
                   <CardHeader className="pb-4">
