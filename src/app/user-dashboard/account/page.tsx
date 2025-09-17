@@ -1,350 +1,473 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  User,
-  Bell,
-  Shield,
-  Globe,
-  Palette,
-  Save,
-  Camera,
-  Key,
-  Edit
-} from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { User, Key, Save, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-
 
 const AccountPage = () => {
-  const [activeTab, setActiveTab] = useState('profile');
+  const { data: session } = useSession();
   const [isEditing, setIsEditing] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   const [profileData, setProfileData] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john@example.com',
-    company: 'Acme Corp',
-    bio: 'Tell us about yourself...'
+    firstName: session?.user?.name?.split(' ')[0] || 'John',
+    lastName: session?.user?.name?.split(' ')[1] || 'Doe',
+    email: session?.user?.email || 'user@example.com'
   });
 
-  const tabs = [
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'security', label: 'Security', icon: Shield },
-    { id: 'integrations', label: 'Integrations', icon: Globe },
-    { id: 'preferences', label: 'Preferences', icon: Palette }
-  ];
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
 
-  const handleSave = () => {
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const handleSaveProfile = async () => {
+    setErrors({});
+    setSuccessMessage('');
+
+    // Validate required fields
+    const newErrors: {[key: string]: string} = {};
+    if (!profileData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    }
+    if (!profileData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    }
+    if (!profileData.email.trim()) {
+      newErrors.email = 'Email is required';
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (profileData.email.trim() && !emailRegex.test(profileData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/user/update-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName: profileData.firstName.trim(),
+          lastName: profileData.lastName.trim(),
+          email: profileData.email.trim()
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update profile');
+      }
+
+      const result = await response.json();
+      console.log('Profile updated successfully:', result);
+      
+      setSuccessMessage('Profile updated successfully!');
     setIsEditing(false);
-    // Save logic here
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setErrors({ general: error instanceof Error ? error.message : 'Unknown error occurred' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setErrors({});
+    setSuccessMessage('');
+
+    // Validate passwords
+    const newErrors: {[key: string]: string} = {};
+    if (!passwordData.currentPassword.trim()) {
+      newErrors.currentPassword = 'Current password is required';
+    }
+    if (!passwordData.newPassword.trim()) {
+      newErrors.newPassword = 'New password is required';
+    }
+    if (!passwordData.confirmPassword.trim()) {
+      newErrors.confirmPassword = 'Please confirm your new password';
+    }
+    
+    if (passwordData.newPassword && passwordData.confirmPassword && 
+        passwordData.newPassword !== passwordData.confirmPassword) {
+      newErrors.confirmPassword = 'New passwords do not match';
+    }
+    
+    if (passwordData.newPassword && passwordData.newPassword.length < 8) {
+      newErrors.newPassword = 'Password must be at least 8 characters long';
+    }
+
+    if (passwordData.currentPassword && passwordData.newPassword && 
+        passwordData.currentPassword === passwordData.newPassword) {
+      newErrors.newPassword = 'New password must be different from current password';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/user/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to change password');
+      }
+
+      const result = await response.json();
+      console.log('Password changed successfully:', result);
+      
+      // Clear password fields
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setSuccessMessage('Password changed successfully!');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('Error changing password:', error);
+      setErrors({ password: error instanceof Error ? error.message : 'Unknown error occurred' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
     setIsEditing(false);
-    // Reset to original data
+    setProfileData({
+      firstName: session?.user?.name?.split(' ')[0] || 'John',
+      lastName: session?.user?.name?.split(' ')[1] || 'Doe',
+      email: session?.user?.email || 'user@example.com'
+    });
   };
 
   return (
-    
-      <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 p-6">
+      <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600 mt-1">
-            Manage your account settings and preferences
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#6566F1] to-[#5A5BD9] rounded-3xl mb-6 shadow-xl">
+            <User className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">Profile Settings</h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            Manage your personal information and security settings
           </p>
         </div>
 
-        {/* Tabs Navigation */}
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === tab.id
-                      ? 'border-purple-600 text-purple-600 bg-purple-50'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+        {/* Success Message */}
+        {successMessage && (
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 text-center shadow-lg">
+            <div className="flex items-center justify-center space-x-3">
+              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="text-green-800 font-semibold text-lg">{successMessage}</p>
+            </div>
+          </div>
+        )}
 
-        {/* Profile Tab Content */}
-        {activeTab === 'profile' && (
-          <Card className="border border-gray-200 bg-white">
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <User className="w-5 h-5 text-purple-600" />
+        {/* General Error Message */}
+        {errors.general && (
+          <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-2xl p-6 text-center shadow-lg">
+            <div className="flex items-center justify-center space-x-3">
+              <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <p className="text-red-800 font-semibold text-lg">{errors.general}</p>
+            </div>
+        </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Profile Information */}
+          <Card className="group bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-100 hover:shadow-3xl transition-all duration-500 hover:-translate-y-2">
+            <CardHeader className="pb-8">
+              <div className="flex items-center space-x-5">
+                <div className="w-14 h-14 bg-gradient-to-br from-[#6566F1] to-[#5A5BD9] rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <User className="w-7 h-7 text-white" />
+                </div>
                 <div>
-                  <CardTitle className="text-lg">Profile Information</CardTitle>
-                  <CardDescription>
-                    Update your profile information and avatar
+                  <CardTitle className="text-2xl font-bold text-gray-900">Personal Information</CardTitle>
+                  <CardDescription className="text-gray-600 text-lg">
+                    Update your name and email address
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Avatar Section */}
-              <div className="flex items-start space-x-4">
-                <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
-                  <User className="w-10 h-10 text-gray-400" />
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
-                    <Camera className="w-4 h-4 mr-2" />
-                    Change Avatar
-                  </Button>
-                  <p className="text-sm text-gray-500">
-                    Recommended: Square image, at least 200x200px
-                  </p>
-                </div>
-              </div>
-
-              {/* Form Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700">
                     First Name
                   </label>
                   <Input
                     value={profileData.firstName}
                     onChange={(e) => setProfileData({...profileData, firstName: e.target.value})}
                     disabled={!isEditing}
-                    className="border-gray-300 focus:border-purple-600 focus:ring-purple-600"
+                    className={`h-14 rounded-2xl border-2 transition-all duration-300 text-lg ${
+                      errors.firstName 
+                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20 bg-red-50' 
+                        : isEditing 
+                          ? 'border-[#6566F1]/30 focus:border-[#6566F1] focus:ring-[#6566F1]/20 bg-white' 
+                          : 'border-gray-200 bg-gray-50'
+                    }`}
+                    placeholder="Enter your first name"
                   />
+                  {errors.firstName && (
+                    <p className="text-sm text-red-600">{errors.firstName}</p>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
                     Last Name
                   </label>
                   <Input
                     value={profileData.lastName}
                     onChange={(e) => setProfileData({...profileData, lastName: e.target.value})}
                     disabled={!isEditing}
-                    className="border-gray-300 focus:border-purple-600 focus:ring-purple-600"
+                    className={`h-14 rounded-2xl border-2 transition-all duration-300 text-lg ${
+                      errors.lastName 
+                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20 bg-red-50' 
+                        : isEditing 
+                          ? 'border-[#6566F1]/30 focus:border-[#6566F1] focus:ring-[#6566F1]/20 bg-white' 
+                          : 'border-gray-200 bg-gray-50'
+                    }`}
+                    placeholder="Enter your last name"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
-                  </label>
-                  <Input
-                    value={profileData.email}
-                    onChange={(e) => setProfileData({...profileData, email: e.target.value})}
-                    disabled={!isEditing}
-                    className="border-gray-300 focus:border-purple-600 focus:ring-purple-600"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Company
-                  </label>
-                  <Input
-                    value={profileData.company}
-                    onChange={(e) => setProfileData({...profileData, company: e.target.value})}
-                    disabled={!isEditing}
-                    className="border-gray-300 focus:border-purple-600 focus:ring-purple-600"
-                  />
+                  {errors.lastName && (
+                    <p className="text-sm text-red-600">{errors.lastName}</p>
+                  )}
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Bio
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Email Address
                 </label>
-                <Textarea
-                  value={profileData.bio}
-                  onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
+                <Input
+                  value={profileData.email}
+                  onChange={(e) => setProfileData({...profileData, email: e.target.value})}
                   disabled={!isEditing}
-                  rows={4}
-                  className="border-gray-300 focus:border-purple-600 focus:ring-purple-600"
+                  className={`h-14 rounded-2xl border-2 transition-all duration-300 text-lg ${
+                    errors.email 
+                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20 bg-red-50' 
+                      : isEditing 
+                        ? 'border-[#6566F1]/30 focus:border-[#6566F1] focus:ring-[#6566F1]/20 bg-white' 
+                        : 'border-gray-200 bg-gray-50'
+                  }`}
+                  placeholder="Enter your email address"
                 />
+                {errors.email && (
+                  <p className="text-sm text-red-600">{errors.email}</p>
+                )}
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex space-x-3">
-                {!isEditing ? (
-                  <Button 
-                    onClick={() => setIsEditing(true)}
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit Profile
-                  </Button>
-                ) : (
+              <div className="flex justify-end space-x-3 pt-6 border-t border-gray-100">
+                {isEditing ? (
                   <>
-                    <Button 
-                      onClick={handleSave}
-                      className="bg-purple-600 hover:bg-purple-700 text-white"
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      Save Changes
-                    </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
                       onClick={handleCancel}
-                      className="border-gray-300 hover:bg-gray-50"
+                      variant="outline"
+                      disabled={loading}
+                      className="h-14 px-8 rounded-2xl border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 text-lg font-semibold"
                     >
                       Cancel
                     </Button>
+                    <Button
+                      onClick={handleSaveProfile}
+                      disabled={loading}
+                      className="h-14 px-10 bg-gradient-to-r from-[#6566F1] to-[#5A5BD9] hover:from-[#5A5BD9] hover:to-[#4A4BC7] text-white rounded-2xl font-bold shadow-xl hover:shadow-2xl transition-all duration-300"
+                    >
+                      {loading ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Saving...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          Save Changes
+                        </>
+                      )}
+                    </Button>
                   </>
+                ) : (
+                  <Button
+                    onClick={() => setIsEditing(true)}
+                    className="h-14 px-10 bg-gradient-to-r from-[#6566F1] to-[#5A5BD9] hover:from-[#5A5BD9] hover:to-[#4A4BC7] text-white rounded-2xl font-bold shadow-xl hover:shadow-2xl transition-all duration-300"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Edit Profile
+                  </Button>
                 )}
               </div>
             </CardContent>
           </Card>
-        )}
 
-        {/* Notifications Tab Content */}
-        {activeTab === 'notifications' && (
-          <Card className="border border-gray-200 bg-white">
-            <CardHeader>
-              <CardTitle className="text-lg">Notification Settings</CardTitle>
-              <CardDescription>
-                Configure how you receive notifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div>
-                    <h3 className="font-medium">Email Notifications</h3>
-                    <p className="text-sm text-gray-600">Receive updates via email</p>
-                  </div>
-                  <Badge variant="outline">Enabled</Badge>
+          {/* Change Password */}
+          <Card className="group bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-100 hover:shadow-3xl transition-all duration-500 hover:-translate-y-2">
+            <CardHeader className="pb-8">
+              <div className="flex items-center space-x-5">
+                <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Key className="w-7 h-7 text-white" />
                 </div>
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div>
-                    <h3 className="font-medium">Push Notifications</h3>
-                    <p className="text-sm text-gray-600">Receive push notifications</p>
-                  </div>
-                  <Badge variant="outline">Disabled</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Security Tab Content */}
-        {activeTab === 'security' && (
-          <Card className="border border-gray-200 bg-white">
-            <CardHeader>
-              <CardTitle className="text-lg">Security Settings</CardTitle>
-              <CardDescription>
-                Manage your account security
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
-                  <Key className="w-4 h-4 mr-2" />
-                  Change Password
-                </Button>
-                <Button variant="outline" className="border-gray-300 hover:bg-gray-50">
-                  <Shield className="w-4 h-4 mr-2" />
-                  Enable Two-Factor Authentication
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Integrations Tab Content */}
-        {activeTab === 'integrations' && (
-          <Card className="border border-gray-200 bg-white">
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <Globe className="w-5 h-5 text-purple-600" />
                 <div>
-                  <CardTitle className="text-lg">Integrations</CardTitle>
-                  <CardDescription>
-                    Connect your bots with external services and platforms
+                  <CardTitle className="text-2xl font-bold text-gray-900">Change Password</CardTitle>
+                  <CardDescription className="text-gray-600 text-lg">
+                    Update your password for better security
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <h3 className="font-medium mb-2">Slack</h3>
-                  <p className="text-sm text-gray-600 mb-3">Send bot notifications to your Slack channels</p>
-                  <Badge variant="outline" className="mb-3">Not Connected</Badge>
-                  <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white">
-                    Connect
-                  </Button>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Current Password
+                </label>
+                <div className="relative">
+                  <Input
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                    className={`h-14 rounded-2xl border-2 pr-12 transition-all duration-300 text-lg ${
+                      errors.currentPassword 
+                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20 bg-red-50' 
+                        : 'border-gray-200 focus:border-emerald-500 focus:ring-emerald-500/20'
+                    }`}
+                    placeholder="Enter your current password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                  >
+                    {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <h3 className="font-medium mb-2">Discord</h3>
-                  <p className="text-sm text-gray-600 mb-3">Add bot capabilities to your Discord server</p>
-                  <Badge variant="outline" className="mb-3">Not Connected</Badge>
-                  <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white">
-                    Connect
-                  </Button>
+                {errors.currentPassword && (
+                  <p className="text-sm text-red-600">{errors.currentPassword}</p>
+                )}
                 </div>
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <h3 className="font-medium mb-2">Zapier</h3>
-                  <p className="text-sm text-gray-600 mb-3">Automate workflows with 5000+ apps</p>
-                  <Badge variant="outline" className="mb-3">Connected</Badge>
-                  <Button size="sm" variant="outline" className="border-gray-300 hover:bg-gray-50">
-                    Configure
-                  </Button>
-                </div>
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <h3 className="font-medium mb-2">WhatsApp</h3>
-                  <p className="text-sm text-gray-600 mb-3">Deploy bots on WhatsApp Business</p>
-                  <Badge variant="outline" className="mb-3">Connected</Badge>
-                  <Button size="sm" variant="outline" className="border-gray-300 hover:bg-gray-50">
-                    Configure
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
-        {/* Preferences Tab Content */}
-        {activeTab === 'preferences' && (
-          <Card className="border border-gray-200 bg-white">
-            <CardHeader>
-              <CardTitle className="text-lg">Preferences</CardTitle>
-              <CardDescription>
-                Customize your experience
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div>
-                    <h3 className="font-medium">Dark Mode</h3>
-                    <p className="text-sm text-gray-600">Switch to dark theme</p>
-                  </div>
-                  <Badge variant="outline">Light</Badge>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  New Password
+                </label>
+                <div className="relative">
+                  <Input
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                    className={`h-14 rounded-2xl border-2 pr-12 transition-all duration-300 text-lg ${
+                      errors.newPassword 
+                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20 bg-red-50' 
+                        : 'border-gray-200 focus:border-emerald-500 focus:ring-emerald-500/20'
+                    }`}
+                    placeholder="Enter your new password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                  >
+                    {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div>
-                    <h3 className="font-medium">Language</h3>
-                    <p className="text-sm text-gray-600">Choose your preferred language</p>
-                  </div>
-                  <Badge variant="outline">English</Badge>
+                {errors.newPassword ? (
+                  <p className="text-sm text-red-600">{errors.newPassword}</p>
+                ) : (
+                  <p className="text-xs text-gray-500">Password must be at least 8 characters long</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Confirm New Password
+                </label>
+                <div className="relative">
+                  <Input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                    className={`h-14 rounded-2xl border-2 pr-12 transition-all duration-300 text-lg ${
+                      errors.confirmPassword 
+                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20 bg-red-50' 
+                        : 'border-gray-200 focus:border-emerald-500 focus:ring-emerald-500/20'
+                    }`}
+                    placeholder="Confirm your new password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
+                {errors.confirmPassword && (
+                  <p className="text-sm text-red-600">{errors.confirmPassword}</p>
+                )}
+                  </div>
+
+              <div className="flex justify-end pt-6 border-t border-gray-100">
+                <Button
+                  onClick={handleChangePassword}
+                  disabled={loading || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                  className="h-14 px-10 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl font-bold shadow-xl hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Changing...</span>
+                </div>
+                  ) : (
+                    <>
+                      <Key className="w-4 h-4 mr-2" />
+                      Change Password
+                    </>
+                  )}
+                </Button>
               </div>
             </CardContent>
           </Card>
-        )}
+        </div>
       </div>
-    
+    </div>
   );
 };
 
