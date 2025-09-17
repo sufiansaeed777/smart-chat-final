@@ -52,7 +52,7 @@ const UserHumanHandoffPage = () => {
       status: 'pending',
       priority: 'high',
       time: '3 minutes',
-      lastMessage: 'I need to speak with a human about my payment issue...',
+      lastMessage: 'Customer needs assistance with payment processing...',
       createdAt: '2024-01-22T10:30:00Z',
       botName: 'Support Bot'
     },
@@ -63,7 +63,7 @@ const UserHumanHandoffPage = () => {
       status: 'in_progress',
       priority: 'medium',
       time: '0 minutes',
-      lastMessage: 'The agent is reviewing your case',
+      lastMessage: 'You are currently assisting this customer',
       agent: 'Sarah Chen',
       createdAt: '2024-01-22T09:15:00Z',
       botName: 'Tech Bot'
@@ -92,7 +92,7 @@ const UserHumanHandoffPage = () => {
     },
     {
       sender: 'System',
-      message: 'Your request has been forwarded to our support team. An agent will be with you shortly.',
+      message: 'Customer has been transferred to human agent. You can now take over this conversation.',
       time: '10:28 AM',
       isBot: true
     }
@@ -183,8 +183,8 @@ const UserHumanHandoffPage = () => {
 
             {/* Page Title */}
             <div className="mt-6">
-              <h1 className="text-3xl font-bold text-gray-900">Human Handoff Requests</h1>
-              <p className="text-lg text-gray-600 mt-2">Track your requests for human assistance from your bots.</p>
+              <h1 className="text-3xl font-bold text-gray-900">Human Handoff Queue</h1>
+              <p className="text-lg text-gray-600 mt-2">Take over AI chatbot conversations that require human assistance.</p>
             </div>
           </div>
         </div>
@@ -193,14 +193,14 @@ const UserHumanHandoffPage = () => {
         <div className="container mx-auto px-6 mb-8">
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="bg-blue-50 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+              <Card className="bg-blue-50 border border-gray-200 rounded-xl shadow-sm hover:shadow-lg hover:scale-105 transition-all duration-300 overflow-hidden group">
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
                       <HandHeart className="w-5 h-5 text-white" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-900 truncate">Total Requests</p>
+                      <p className="text-xs font-medium text-gray-900 truncate">Total Handoffs</p>
                       <p className="text-xl font-bold text-blue-600">{handoffRequests.length}</p>
                       <p className="text-xs text-gray-600 mt-1">All time</p>
                     </div>
@@ -219,7 +219,7 @@ const UserHumanHandoffPage = () => {
                       <p className="text-xl font-bold text-orange-600">
                         {handoffRequests.filter(req => req.status === 'pending').length}
                       </p>
-                      <p className="text-xs text-gray-600 mt-1">Awaiting agent</p>
+                      <p className="text-xs text-gray-600 mt-1">Awaiting you</p>
                     </div>
                   </div>
                 </CardContent>
@@ -236,7 +236,7 @@ const UserHumanHandoffPage = () => {
                       <p className="text-xl font-bold text-purple-600">
                         {handoffRequests.filter(req => req.status === 'in_progress').length}
                       </p>
-                      <p className="text-xs text-gray-600 mt-1">Being handled</p>
+                        <p className="text-xs text-gray-600 mt-1">You&apos;re handling</p>
                     </div>
                   </div>
                 </CardContent>
@@ -275,8 +275,8 @@ const UserHumanHandoffPage = () => {
                         <HandHeart className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <CardTitle className="text-lg font-bold text-gray-900">Your Requests</CardTitle>
-                        <p className="text-sm text-gray-600">Track your human handoff requests</p>
+                        <CardTitle className="text-lg font-bold text-gray-900">Handoff Queue</CardTitle>
+                        <p className="text-sm text-gray-600">Take over conversations from AI bots</p>
                       </div>
                     </div>
                   </CardHeader>
@@ -317,7 +317,7 @@ const UserHumanHandoffPage = () => {
                         {/* Agent Assignment (if in progress) */}
                         {request.agent && (
                           <div className="text-xs text-gray-600">
-                            Agent: {request.agent}
+                            Assigned to: {request.agent}
                           </div>
                         )}
 
@@ -370,7 +370,7 @@ const UserHumanHandoffPage = () => {
 
                 {/* Status Information */}
                 <div className="mb-6">
-                  <h3 className="text-base font-semibold text-gray-900 mb-2">Request Status</h3>
+                  <h3 className="text-base font-semibold text-gray-900 mb-2">Handoff Status</h3>
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex items-center space-x-2 mb-2">
                       {getStatusIcon(selectedRequestData.status)}
@@ -380,17 +380,17 @@ const UserHumanHandoffPage = () => {
                     </div>
                     {selectedRequestData.status === 'pending' && (
                       <p className="text-sm text-gray-600">
-                        Your request is in the queue. An agent will be assigned shortly.
+                        This conversation is waiting for you to take over from the AI bot.
                       </p>
                     )}
                     {selectedRequestData.status === 'in_progress' && selectedRequestData.agent && (
                       <p className="text-sm text-gray-600">
-                        Agent {selectedRequestData.agent} is currently handling your request.
+                        You are currently handling this conversation with the customer.
                       </p>
                     )}
                     {selectedRequestData.status === 'resolved' && (
                       <p className="text-sm text-gray-600">
-                        Your request has been resolved. Thank you for your patience.
+                        This conversation has been successfully resolved and closed.
                       </p>
                     )}
                   </div>
@@ -399,7 +399,7 @@ const UserHumanHandoffPage = () => {
                 {/* Conversation History */}
                 <div>
                   <h3 className="text-base font-semibold text-gray-900 mb-2">Conversation History</h3>
-                  <p className="text-sm text-gray-600 mb-4">Review the chat transcript with the bot.</p>
+                  <p className="text-sm text-gray-600 mb-4">Review the AI bot&apos;s conversation with the customer before taking over.</p>
                   
                   <div className="space-y-4 max-h-64 overflow-y-auto">
                     {conversationHistory.map((message, index) => (
