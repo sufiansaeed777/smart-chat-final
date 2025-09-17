@@ -22,9 +22,11 @@ interface Message {
 
 interface ChatBotProps {
   apiKey?: string; // Made optional since we're not using it anymore
+  externalTrigger?: boolean; // External trigger to open chat
+  onTriggered?: () => void; // Callback when triggered externally
 }
 
-const ChatBot: React.FC<ChatBotProps> = ({ apiKey }) => {
+const ChatBot: React.FC<ChatBotProps> = ({ apiKey, externalTrigger, onTriggered }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -48,6 +50,14 @@ const ChatBot: React.FC<ChatBotProps> = ({ apiKey }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Handle external trigger to open chat
+  useEffect(() => {
+    if (externalTrigger) {
+      setIsOpen(true);
+      onTriggered?.();
+    }
+  }, [externalTrigger, onTriggered]);
 
   // Handle escape key to close modals
   useEffect(() => {
