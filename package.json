@@ -31,6 +31,10 @@
   "dependencies": {
     "@auth/core": "^0.34.2",
     "@stripe/stripe-js": "^7.9.0",
+    "@types/node": "^20.19.11",
+    "@types/nodemailer": "^7.0.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
     "autoprefixer": "^10.4.20",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
@@ -53,22 +57,18 @@
     "stripe": "^18.5.0",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^3.4.10",
-    "typeorm": "^0.3.26"
+    "typeorm": "^0.3.26",
+    "typescript": "^5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^16.0.0",
     "@types/jest": "^29.5.12",
-    "@types/node": "^20.19.11",
-    "@types/nodemailer": "^7.0.1",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "ts-node": "^10.9.2"
   }
 }
