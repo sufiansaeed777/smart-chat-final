@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { stripe, STRIPE_CONFIG } from '@/lib/stripe';
 import { AppDataSource } from '@/config/database';
 import { User } from '@/entities/User';
