@@ -116,7 +116,7 @@ export const initializeDatabase = async () => {
     }
   } catch (error) {
     console.error('Database initialization failed:', error);
-    console.error('Database URL being used:', AppDataSource.options.url?.substring(0, 20) + '...');
+    console.error('Database URL being used:', (AppDataSource.options as any).url?.substring(0, 20) + '...');
     throw error;
   }
 };
