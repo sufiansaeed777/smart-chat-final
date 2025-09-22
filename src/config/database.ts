@@ -50,7 +50,11 @@ const getDatabaseConfig = () => {
     
     // If not found, try alternative environment variable names
     if (!prodDbUrl) {
-      prodDbUrl = process.env.POSTGRES_URL || process.env.POSTGRESQL_URL || process.env.DB_URL;
+      prodDbUrl = process.env.POSTGRES_URL || 
+                  process.env.POSTGRESQL_URL || 
+                  process.env.DB_URL ||
+                  process.env.DATABASE_CONNECTION_STRING ||
+                  process.env.SUPABASE_DATABASE_URL;
     }
     
     if (!prodDbUrl) {
