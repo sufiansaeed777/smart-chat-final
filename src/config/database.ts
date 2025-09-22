@@ -68,8 +68,8 @@ const getDatabaseConfig = () => {
     console.log('Production database URL configured successfully');
     return {
       url: prodDbUrl,
-      synchronize: false, // Never auto-sync in production
-      logging: false
+      synchronize: true, // Temporarily enable sync to create missing tables
+      logging: true // Enable logging to see what's happening
     };
   }
   
