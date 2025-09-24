@@ -408,11 +408,6 @@ const TeamManagement = () => {
                         <div className="space-y-1">
                           <h3 className="text-sm font-semibold text-gray-900">{member.name}</h3>
                           <p className="text-xs text-gray-600">{member.email}</p>
-                          {console.log('Member data for', member.email, ':', {
-                            status: member.status,
-                            lastLoginAt: member.lastLoginAt,
-                            hasLastLogin: !!member.lastLoginAt
-                          })}
                           <div className="flex items-center space-x-2">
                             <Badge className={`text-xs font-medium px-2 py-1 transition-colors duration-200 shadow-sm ${
                               member.onlineStatus === 'online' 
@@ -438,18 +433,15 @@ const TeamManagement = () => {
                             </>
                           ) : (
                             <div className="text-xs text-gray-500 italic">
-                              {member.status === 'pending' && member.lastLoginAt 
-                                ? 'Deactivated' 
-                                : member.status === 'pending' 
-                                  ? 'Pending invitation' 
-                                  : 'Unknown status'}
+                              {member.status === 'pending' 
+                                ? 'Pending invitation' 
+                                : 'Unknown status'}
                             </div>
                           )}
                         </div>
 
                         {/* Actions */}
                         <div className="flex items-center space-x-2">
-                        {console.log('Rendering button for member:', member.id, 'Status:', member.status, 'Toggling:', togglingUser === member.id)}
                         <Button 
                           variant="outline" 
                           size="sm"
@@ -507,11 +499,11 @@ const TeamManagement = () => {
                           }`}
                         >
                           {togglingUser === member.id ? (
-                            <Loader2 className="w-4 h-4 text-red-600 animate-spin" title="Processing..." />
+                            <Loader2 className="w-4 h-4 text-red-600 animate-spin" />
                           ) : member.status === 'accepted' ? (
-                            <UserX className="w-4 h-4 text-orange-600" title="Deactivate User" />
+                            <UserX className="w-4 h-4 text-orange-600" />
                           ) : (
-                            <UserCheck2 className="w-4 h-4 text-green-600" title="Activate User" />
+                            <UserCheck2 className="w-4 h-4 text-green-600" />
                           )}
                         </Button>
                         <Button 
@@ -627,7 +619,7 @@ const TeamManagement = () => {
                   </div>
 
                   {/* Status-specific information */}
-                  {selectedAgentData.status === 'pending' && !selectedAgentData.lastLoginAt && (
+                  {selectedAgentData.status === 'pending' && (
                     <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 hover:border-orange-300 hover:shadow-md transition-all duration-300">
                       <div className="flex items-center space-x-2">
                         <AlertCircle className="w-5 h-5 text-orange-600" />
@@ -639,7 +631,7 @@ const TeamManagement = () => {
                     </div>
                   )}
 
-                  {selectedAgentData.status === 'pending' && selectedAgentData.lastLoginAt && (
+                  {selectedAgentData.status === 'pending' && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4 hover:border-red-300 hover:shadow-md transition-all duration-300">
                       <div className="flex items-center space-x-2">
                         <UserX className="w-5 h-5 text-red-600" />
