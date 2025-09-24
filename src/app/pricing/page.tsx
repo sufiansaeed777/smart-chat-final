@@ -17,14 +17,9 @@ const PricingPage = () => {
         "50 Conversations / Month",
         "1 Team Member",
         "2MB per File (10MB Quota)",
+        "1 Parallel Chat at a time",
         "Unlimited Links",
-        "Default Templates Only",
-        "1 Parallel Chat at a time"
-      ],
-      limitations: [
-        "No Customize Branding",
-        "No API / Integrations",
-        "No Analytics"
+        "Default Templates Only"
       ],
       cta: "Get Started Free",
       popular: false,
@@ -42,18 +37,15 @@ const PricingPage = () => {
         "1,000 Conversations / Month",
         "2 Team Members",
         "5MB per File (50MB Quota)",
-        "Unlimited Links",
         "10 Parallel Chats at a time",
+        "Unlimited Links",
         "Default Templates",
         "Limited Analytics Dashboard",
         "Email Support"
       ],
-      limitations: [
-        "No Customize Branding"
-      ],
       cta: "Start Free Trial",
-      popular: false,
-      highlight: false
+      popular: true,
+      highlight: true
     },
     {
       name: "Pro",
@@ -67,18 +59,17 @@ const PricingPage = () => {
         "10,000 Conversations / Month",
         "5 Team Members",
         "10MB per File (200MB Quota)",
-        "Unlimited Links",
         "25 Parallel Chats at a time",
+        "Unlimited Links",
         "Default + Custom Templates",
         "Customize Branding (Colors, Logo, Theme)",
         "API Access + Integrations",
         "Priority Email & Chat Support",
         "Full Analytics Dashboard"
       ],
-      limitations: [],
       cta: "Start Free Trial",
-      popular: true,
-      highlight: true
+      popular: false,
+      highlight: false
     },
     {
       name: "Enterprise",
@@ -99,7 +90,6 @@ const PricingPage = () => {
         "Premium Integrations",
         "Advanced Reporting & Team Collaboration"
       ],
-      limitations: [],
       cta: "Start Free Trial",
       popular: false,
       highlight: false
@@ -116,52 +106,64 @@ const PricingPage = () => {
           <div className="max-w-6xl mx-auto">
             {/* Page header */}
             <div className="text-center mb-16">
-              <div className="flex items-center justify-center mb-4">
-                <Star className="w-6 h-6 text-blue-600 mr-2" />
-                <span className="text-blue-600 font-medium">Pricing Plans</span>
-              </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 mb-6">
                 Simple, Transparent{" "}
                 <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Pricing
                 </span>
               </h1>
-              <p className="text-xl md:text-2xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
+               <p className="text-xl md:text-2xl text-slate-600 max-w-3xl mx-auto leading-relaxed whitespace-nowrap mb-24">
                 Choose the plan that fits your needs. All paid plans include a 14-day free trial.
               </p>
             </div>
 
             {/* Pricing cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-              {plans.map((plan, index) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+              {plans.slice(0, 3).map((plan, index) => (
                 <div
                   key={index}
-                  className={`relative bg-white border rounded-2xl p-8 shadow-lg transition-all duration-300 hover:shadow-xl flex flex-col ${
+                  className={`relative border rounded-2xl p-8 shadow-lg transition-all duration-300 flex flex-col hover:scale-105 ${
                     plan.popular
-                      ? "border-blue-600 shadow-blue-600/10"
-                      : "border-slate-200 hover:border-blue-600/50"
+                      ? "bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 border-blue-500 shadow-blue-500/30 hover:shadow-blue-500/70"
+                      : "bg-white border-slate-200 hover:shadow-blue-500/60 hover:shadow-4xl"
                   } ${plan.highlight ? "ring-2 ring-blue-600/20" : ""}`}
                 >
                   {plan.popular && (
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                      <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg whitespace-nowrap">
-                        Most Popular
+                    <div className="absolute -top-12 left-1/2 transform -translate-x-1/2">
+                      <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-xl whitespace-nowrap ring-2 ring-blue-600/30">
+                        ★ Most Popular
                       </span>
                     </div>
                   )}
                   
                   <div className="text-center mb-8">
-                    <h3 className="text-xl font-semibold text-slate-900 mb-2">
+                    <h3 className={`text-xl font-semibold mb-2 ${
+                      plan.popular 
+                        ? "text-blue-800 font-bold" 
+                        : "text-slate-900"
+                    }`}>
                       {plan.name}
                     </h3>
-                    <p className="text-slate-600 mb-6">
+                    <p className={`mb-6 ${
+                      plan.popular 
+                        ? "text-blue-600 font-medium" 
+                        : "text-slate-600"
+                    }`}>
                       {plan.description}
                     </p>
                     <div className="flex items-baseline justify-center mb-6">
-                      <span className="text-5xl font-bold text-slate-900">
+                      <span className={`text-5xl font-bold ${
+                        plan.popular 
+                          ? "text-blue-800" 
+                          : "text-slate-900"
+                      }`}>
                         {plan.price}
                       </span>
-                      <span className="text-slate-600 ml-2 text-lg">
+                      <span className={`ml-2 text-lg ${
+                        plan.popular 
+                          ? "text-blue-600 font-medium" 
+                          : "text-slate-600"
+                      }`}>
                         {plan.period}
                       </span>
                     </div>
@@ -187,16 +189,6 @@ const PricingPage = () => {
                         <span className="text-slate-600 text-sm">{feature}</span>
                       </li>
                     ))}
-                    {plan.limitations && plan.limitations.length > 0 && (
-                      <>
-                        {plan.limitations.map((limitation, limitationIndex) => (
-                          <li key={`limitation-${limitationIndex}`} className="flex items-start">
-                            <span className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0 text-center text-lg leading-none">×</span>
-                            <span className="text-slate-400 text-sm line-through">{limitation}</span>
-                          </li>
-                        ))}
-                      </>
-                    )}
                   </ul>
 
                   <button
@@ -213,102 +205,272 @@ const PricingPage = () => {
               ))}
             </div>
 
-            {/* Add-ons Section */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg mb-12">
-              <h3 className="text-2xl font-bold text-center mb-8 text-slate-900">
-                Optional Add-ons
-              </h3>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="text-center space-y-3 p-4 border border-slate-200 rounded-lg">
-                  <div className="w-12 h-12 bg-blue-600/10 rounded-full flex items-center justify-center mx-auto">
-                    <span className="text-2xl">💬</span>
-                  </div>
-                  <h4 className="font-semibold text-slate-900">Extra Conversations</h4>
-                  <p className="text-sm text-slate-600 mb-2">
-                    Add more conversations to your plan
-                  </p>
-                  <div className="text-lg font-bold text-blue-600">
-                    $10 for +5,000 conversations
-                  </div>
+
+            {/* Feature Comparison Table */}
+            <div className="bg-white rounded-3xl p-10 shadow-2xl mb-16 border border-slate-100">
+              <div className="text-center mb-12">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-6">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
                 </div>
-                <div className="text-center space-y-3 p-4 border border-slate-200 rounded-lg">
-                  <div className="w-12 h-12 bg-blue-600/10 rounded-full flex items-center justify-center mx-auto">
-                    <span className="text-2xl">🤖</span>
-                  </div>
-                  <h4 className="font-semibold text-slate-900">Extra Bot Seats</h4>
-                  <p className="text-sm text-slate-600 mb-2">
-                    Add more bots to your plan
+                <h3 className="text-4xl font-bold text-slate-900 mb-4">
+                  Feature <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Comparison</span>
+                </h3>
+                <p className="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+                  Compare features across our pricing tiers to find the best fit for your project.
                   </p>
-                  <div className="text-lg font-bold text-blue-600">
-                    $5 per additional bot
-                  </div>
                 </div>
-                <div className="text-center space-y-3 p-4 border border-slate-200 rounded-lg">
-                  <div className="w-12 h-12 bg-blue-600/10 rounded-full flex items-center justify-center mx-auto">
-                    <span className="text-2xl">🏠</span>
+              
+              <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200">
+                      <th className="text-left py-6 px-8 font-bold text-slate-900 text-lg">Features</th>
+                      <th className="text-center py-6 px-8 font-bold text-slate-900 text-lg">Free</th>
+                      <th className="text-center py-6 px-8 font-bold text-slate-900 text-lg relative">
+                        <div className="bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 rounded-xl p-4 -mx-2 border border-blue-200">
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-blue-600 font-bold">Starter</span>
+                            <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold">
+                              Most Popular
+                            </span>
+                          </div>
+                        </div>
+                      </th>
+                      <th className="text-center py-6 px-8 font-bold text-slate-900 text-lg">Pro</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Bots & Websites</td>
+                      <td className="text-center py-3 px-8 hover:bg-green-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
+                          <Check className="w-5 h-5 text-green-600" />
+                        </div>
+                      </td>
+                      <td className="text-center py-3 px-8 hover:bg-green-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
+                          <Check className="w-5 h-5 text-green-600" />
+                        </div>
+                      </td>
+                      <td className="text-center py-3 px-8 hover:bg-green-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
+                          <Check className="w-5 h-5 text-green-600" />
+                        </div>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Conversations / Month</td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">50</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">1,000</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">10,000</span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Team Members</td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">1</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">2</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">5</span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">File Upload Size</td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">2MB</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">5MB</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">10MB</span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Parallel Chats</td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">1</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">10</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">25</span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Custom Branding</td>
+                      <td className="text-center py-3 px-8 hover:bg-red-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
+                          <span className="text-red-500 text-2xl font-light flex items-center justify-center">×</span>
+                        </div>
+                      </td>
+                      <td className="text-center py-3 px-8 hover:bg-red-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
+                          <span className="text-red-500 text-2xl font-light flex items-center justify-center">×</span>
+                        </div>
+                      </td>
+                      <td className="text-center py-3 px-8 hover:bg-green-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
+                          <Check className="w-5 h-5 text-green-600" />
+                        </div>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">API Access</td>
+                      <td className="text-center py-3 px-8 hover:bg-red-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
+                          <span className="text-red-500 text-2xl font-light flex items-center justify-center">×</span>
+                        </div>
+                      </td>
+                      <td className="text-center py-3 px-8 hover:bg-red-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
+                          <span className="text-red-500 text-2xl font-light flex items-center justify-center">×</span>
+                        </div>
+                      </td>
+                      <td className="text-center py-3 px-8 hover:bg-green-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
+                          <Check className="w-5 h-5 text-green-600" />
+                        </div>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Analytics Dashboard</td>
+                      <td className="text-center py-3 px-8 hover:bg-red-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
+                          <span className="text-red-500 text-2xl font-light flex items-center justify-center">×</span>
+                        </div>
+                      </td>
+                      <td className="text-center py-3 px-8 hover:bg-green-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
+                          <Check className="w-5 h-5 text-green-600" />
+                        </div>
+                      </td>
+                      <td className="text-center py-3 px-8 hover:bg-green-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
+                          <Check className="w-5 h-5 text-green-600" />
+                        </div>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">White Label</td>
+                      <td className="text-center py-3 px-8 hover:bg-red-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
+                          <span className="text-red-500 text-2xl font-light flex items-center justify-center">×</span>
+                        </div>
+                      </td>
+                      <td className="text-center py-3 px-8 hover:bg-red-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
+                          <span className="text-red-500 text-2xl font-light flex items-center justify-center">×</span>
+                        </div>
+                      </td>
+                      <td className="text-center py-3 px-8 hover:bg-red-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
+                          <span className="text-red-500 text-2xl font-light flex items-center justify-center">×</span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Dedicated Support</td>
+                      <td className="text-center py-3 px-8 hover:bg-red-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
+                          <span className="text-red-500 text-2xl font-light flex items-center justify-center">×</span>
                   </div>
-                  <h4 className="font-semibold text-slate-900">Dedicated Hosting</h4>
-                  <p className="text-sm text-slate-600 mb-2">
-                    Get your own dedicated server
-                  </p>
-                  <div className="text-lg font-bold text-blue-600">
-                    +$100 / month
+                      </td>
+                      <td className="text-center py-3 px-8 hover:bg-red-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
+                          <span className="text-red-500 text-2xl font-light flex items-center justify-center">×</span>
                   </div>
+                      </td>
+                      <td className="text-center py-3 px-8 hover:bg-green-50 transition-all duration-300">
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
+                          <Check className="w-5 h-5 text-green-600" />
                 </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            {/* Features comparison */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg mb-12">
-              <h3 className="text-2xl font-bold text-center mb-8 text-slate-900">
-                All plans include our core features
+            {/* Enhanced Contact Section */}
+            <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 rounded-3xl p-12 shadow-2xl text-white relative overflow-hidden">
+              
+              <div className="relative z-10 text-center max-w-4xl mx-auto">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl mb-8">
+                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+                
+                <h3 className="text-5xl font-bold mb-6 bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
+                  Need Help Choosing?
               </h3>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="text-center space-y-3">
-                  <div className="w-12 h-12 bg-blue-600/10 rounded-full flex items-center justify-center mx-auto">
-                    <Check className="w-6 h-6 text-blue-600" />
+                
+                <p className="text-xl text-blue-100 mb-8 leading-relaxed max-w-2xl mx-auto">
+                  Our pricing experts are standing by to help you find the perfect plan for your business needs. Get personalized recommendations and answers to all your questions.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                  <button 
+                    className="group bg-white text-slate-900 px-8 py-4 rounded-2xl font-bold text-lg hover:bg-blue-50 transition-all duration-300 hover:scale-105 shadow-xl hover:shadow-2xl flex items-center gap-3"
+                    onClick={() => window.location.href = '/contact'}
+                  >
+                    <svg className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                    Contact Sales Team
+                  </button>
+                  
+                  <div className="flex items-center gap-2 text-blue-200">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm font-medium">Usually responds within 2 hours</span>
                   </div>
-                  <h4 className="font-semibold text-slate-900">AI-Powered</h4>
-                  <p className="text-sm text-slate-600">
-                    Advanced AI technology for natural conversations
-                  </p>
                 </div>
-                <div className="text-center space-y-3">
-                  <div className="w-12 h-12 bg-blue-600/10 rounded-full flex items-center justify-center mx-auto">
-                    <Check className="w-6 h-6 text-blue-600" />
+                
+                <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                  <div className="space-y-3">
+                    <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h4 className="font-semibold text-white">Free Consultation</h4>
+                    <p className="text-sm text-blue-200">No obligation, expert advice</p>
                   </div>
-                  <h4 className="font-semibold text-slate-900">Easy Integration</h4>
-                  <p className="text-sm text-slate-600">
-                    Simple setup with popular platforms and websites
-                  </p>
-                </div>
-                <div className="text-center space-y-3">
-                  <div className="w-12 h-12 bg-blue-600/10 rounded-full flex items-center justify-center mx-auto">
-                    <Check className="w-6 h-6 text-blue-600" />
+                  
+                  <div className="space-y-3">
+                    <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <h4 className="font-semibold text-white">Custom Solutions</h4>
+                    <p className="text-sm text-blue-200">Tailored to your needs</p>
                   </div>
-                  <h4 className="font-semibold text-slate-900">24/7 Available</h4>
-                  <p className="text-sm text-slate-600">
-                    Your chatbot works around the clock for your customers
-                  </p>
+                  
+                  <div className="space-y-3">
+                    <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
                 </div>
-              </div>
-            </div>
-
-            {/* FAQ and contact */}
-            <div className="text-center space-y-6">
-              <h3 className="text-2xl font-semibold text-slate-900">
-                Questions about pricing?
-              </h3>
-              <p className="text-lg text-slate-600 mb-6">
-                We&apos;re here to help you choose the right plan for your business.
-              </p>
-              <div className="flex justify-center">
-                <button 
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity"
-                  onClick={() => window.location.href = '/contact'}
-                >
-                  Contact Sales
-                </button>
+                    <h4 className="font-semibold text-white">Priority Support</h4>
+                    <p className="text-sm text-blue-200">Dedicated account manager</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
