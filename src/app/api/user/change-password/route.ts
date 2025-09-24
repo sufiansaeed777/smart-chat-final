@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { PrismaClient } from '@prisma/client';
+import { AppDataSource } from '@/config/database';
+import { User } from '@/entities/User';
 import bcrypt from 'bcryptjs';
-
-const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,15 +36,16 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Initialize database connection
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
+
     // Get user with password hash
-    const user = await prisma.user.findUnique({
+    const userRepository = AppDataSource.getRepository(User);
+    const user = await userRepository.findOne({
       where: {
-        id: session.user.id
-      },
-      select: {
-        id: true,
-        email: true,
-        password: true
+        email: session.user.email
       }
     });
 
@@ -54,6 +54,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify current password
+    if (!user.password) {
+      return NextResponse.json({ 
+        error: 'No password set for this account' 
+      }, { status: 400 });
+    }
+    
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
     if (!isCurrentPasswordValid) {
       return NextResponse.json({ 
@@ -66,13 +72,8 @@ export async function POST(request: NextRequest) {
     const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
 
     // Update password
-    await prisma.user.update({
-      where: {
-        id: user.id
-      },
-      data: {
-        password: hashedNewPassword
-      }
+    await userRepository.update(user.id, {
+      password: hashedNewPassword
     });
 
     console.log('Password changed successfully for user:', user.email);
@@ -89,6 +90,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   } finally {
-    await prisma.$disconnect();
+    // TypeORM doesn't need explicit disconnect in this context
   }
 }

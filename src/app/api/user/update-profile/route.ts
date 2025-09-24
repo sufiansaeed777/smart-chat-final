@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
-
-const prisma = new PrismaClient();
+import { AppDataSource } from '@/config/database';
+import { User } from '@/entities/User';
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,41 +29,50 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Initialize database connection
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
+
+    // Get current user first
+    const userRepository = AppDataSource.getRepository(User);
+    const currentUser = await userRepository.findOne({
+      where: { email: session.user.email }
+    });
+
+    if (!currentUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
     // Check if email is already taken by another user
-    const existingUser = await prisma.user.findFirst({
+    const existingUser = await userRepository.findOne({
       where: {
-        email: email,
-        id: { not: session.user.id }
+        email: email
       }
     });
 
-    if (existingUser) {
+    // If user exists and it's not the current user
+    if (existingUser && existingUser.id !== currentUser.id) {
       return NextResponse.json({ 
         error: 'Email address is already in use' 
       }, { status: 400 });
     }
 
     // Update user profile
-    const updatedUser = await prisma.user.update({
-      where: {
-        id: session.user.id
-      },
-      data: {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        email: email.trim(),
-        name: `${firstName.trim()} ${lastName.trim()}`
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        name: true,
-        role: true,
-        createdAt: true
-      }
+    await userRepository.update(currentUser.id, {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.trim()
     });
+
+    // Get updated user
+    const updatedUser = await userRepository.findOne({
+      where: { id: currentUser.id }
+    });
+
+    if (!updatedUser) {
+      return NextResponse.json({ error: 'Failed to retrieve updated user' }, { status: 500 });
+    }
 
     console.log('Profile updated successfully for user:', updatedUser.email);
 
@@ -82,6 +89,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   } finally {
-    await prisma.$disconnect();
+    // TypeORM doesn't need explicit disconnect in this context
   }
 }
