@@ -118,6 +118,24 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
 
   const activeSection = getActiveSection();
 
+  // Get the current page title based on pathname
+  const getPageTitle = () => {
+    if (pathname === basePath) return 'Overview';
+    if (pathname.includes('/team-management')) return 'Team Management';
+    if (pathname.includes('/manager-bots')) return 'Manager Bots';
+    if (pathname.includes('/playground')) return 'Testing Playground';
+    if (pathname.includes('/conversations')) return 'Conversations';
+    if (pathname.includes('/human-handoff')) return 'Human Handoff';
+    if (pathname.includes('/analytics')) return 'Analytics';
+    if (pathname.includes('/chatbot-analytics')) return 'Chatbot Analytics';
+    if (pathname.includes('/billing')) return 'Billing';
+    if (pathname.includes('/test-bot')) return 'Test Bot';
+    if (pathname.includes('/bots')) return 'Bots';
+    if (pathname.includes('/settings')) return 'Settings';
+    if (pathname.includes('/help')) return 'Help';
+    return 'Manager Dashboard';
+  };
+
   const handleNavigation = (path: string) => {
     router.push(path);
     setMobileMenuOpen(false);
@@ -155,12 +173,12 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
         {/* Logo */}
         <div className="flex items-center justify-center h-16 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-[#7F82F3] rounded-lg flex items-center justify-center flex-shrink-0">
-              <Shield className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span className="text-sm font-bold text-white">AI</span>
             </div>
             <div className={`overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
               <span className="text-base font-bold text-gray-900 whitespace-nowrap">
-                {isManager ? 'Manager Portal' : 'ChatBot Pro'}
+                ChatBot Pro
               </span>
             </div>
           </div>
@@ -261,7 +279,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
       {isManager && (
         <div className="fixed top-0 right-0 left-72 bg-white border-b border-gray-200 h-16 z-30 transition-all duration-300" style={{ left: sidebarCollapsed ? '80px' : '288px' }}>
           <div className="flex items-center justify-between h-full px-6">
-            <h1 className="text-lg font-bold text-gray-900">Manager Dashboard</h1>
+            <h1 className="text-lg font-bold text-gray-900">{getPageTitle()}</h1>
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => handleNavigation('/')}

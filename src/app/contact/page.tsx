@@ -207,7 +207,7 @@ const ContactPage = () => {
 
             <div className="grid lg:grid-cols-2 gap-12">
               {/* Contact Form */}
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-[#5A5BD8] hover:shadow-3xl transition-all duration-300 hover:-translate-y-2">
                 <div className="p-6 border-b border-gray-100">
                   <h2 className="text-2xl font-bold text-gray-900">Get in Touch</h2>
                 </div>
@@ -375,7 +375,7 @@ const ContactPage = () => {
               <div className="space-y-8">
                 {/* Success/Error Message - Appears above Email Us on small screens, in right column on large screens */}
                 {submitStatus !== 'idle' && (
-                  <div className={`p-4 rounded-2xl border ${
+                  <div className={`p-4 rounded-2xl border hover:shadow-[#5A5BD8] hover:shadow-3xl transition-all duration-300 hover:-translate-y-2 ${
                     submitStatus === 'success' 
                       ? 'bg-green-50 border-green-200 text-green-800' 
                       : 'bg-red-50 border-red-200 text-red-800'
@@ -391,7 +391,7 @@ const ContactPage = () => {
                   </div>
                 )}
 
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-[#5A5BD8] hover:shadow-3xl transition-all duration-300 hover:-translate-y-2">
                   <div className="flex items-start space-x-4">
                     <div className="w-12 h-12 bg-[#6566F1]/10 rounded-full flex items-center justify-center flex-shrink-0">
                       <svg className="w-6 h-6 text-[#6566F1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -410,7 +410,7 @@ const ContactPage = () => {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-[#5A5BD8] hover:shadow-3xl transition-all duration-300 hover:-translate-y-2">
                   <div className="flex items-start space-x-4">
                     <div className="w-12 h-12 bg-[#6566F1]/10 rounded-full flex items-center justify-center flex-shrink-0">
                       <svg className="w-6 h-6 text-[#6566F1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -429,7 +429,7 @@ const ContactPage = () => {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-[#5A5BD8] hover:shadow-3xl transition-all duration-300 hover:-translate-y-2">
                   <div className="flex items-start space-x-4">
                     <div className="w-12 h-12 bg-[#6566F1]/10 rounded-full flex items-center justify-center flex-shrink-0">
                       <svg className="w-6 h-6 text-[#6566F1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">

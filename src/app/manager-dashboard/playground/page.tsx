@@ -1,26 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   PlayCircle, 
   Bot, 
   MessageSquare, 
-  ArrowRight, 
   Clock, 
   CheckCircle,
   AlertTriangle,
-  Zap,
-  Sparkles,
-  BarChart3,
-  Users,
-  TrendingUp,
-  Shield,
-  Rocket,
-  Star,
-  Activity,
-  Plus
+  Plus,
+  Send,
+  User
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import RoleGuard from '@/components/auth/RoleGuard';
@@ -39,11 +31,24 @@ interface ManagerBot {
   createdBy: string;
 }
 
+interface Message {
+  id: string;
+  content: string;
+  sender: 'user' | 'bot';
+  timestamp: Date;
+}
+
 const ManagerPlaygroundPage = () => {
   const router = useRouter();
   const [bots, setBots] = useState<ManagerBot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedBot, setSelectedBot] = useState<ManagerBot | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchManagerBots = async () => {
@@ -104,141 +109,7 @@ const ManagerPlaygroundPage = () => {
     <RoleGuard allowedRoles={['manager']}>
       <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
 
-        {/* Advanced Testing Environment Section */}
-        <div className="container mx-auto px-6 pt-8 mb-8">
-          <div className="max-w-6xl mx-auto">
-            <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-0 rounded-3xl shadow-xl overflow-hidden">
-              <CardContent className="p-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                  <div>
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mb-6 shadow-lg">
-                      <Sparkles className="w-8 h-8 text-white" />
-                    </div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                      Manager Testing Environment
-                    </h2>
-                    <p className="text-lg text-gray-700 leading-relaxed mb-6">
-                      Test and optimize your bot creations in a controlled environment. 
-                      Analyze performance, test different scenarios, and ensure your bots 
-                      are ready for production deployment.
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <MessageSquare className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">Real-time Testing</span>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                          <Bot className="w-4 h-4 text-purple-600" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">All Your Bots</span>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                          <Zap className="w-4 h-4 text-green-600" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">Instant Analysis</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-                      <div className="flex items-center space-x-3 mb-4">
-                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      </div>
-                      <div className="space-y-3">
-                        <div className="bg-gray-50 rounded-lg p-3">
-                          <p className="text-sm text-gray-600">Testing bot performance metrics...</p>
-                        </div>
-                        <div className="bg-blue-50 rounded-lg p-3">
-                          <p className="text-sm text-blue-800">Analyzing conversation flows...</p>
-                        </div>
-                        <div className="bg-green-50 rounded-lg p-3">
-                          <p className="text-sm text-green-800">Optimization complete!</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
 
-        {/* Stats Cards */}
-        <div className="container mx-auto px-6 mb-12">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="bg-blue-50 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
-                      <Bot className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-900 truncate">Total Bots</p>
-                      <p className="text-xl font-bold text-blue-600">{bots.length}</p>
-                      <p className="text-xs text-gray-600 mt-1">Created by you</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-green-50 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
-                      <CheckCircle className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-900 truncate">Active Bots</p>
-                      <p className="text-xl font-bold text-green-600">
-                        {bots.filter(bot => bot.status === 'active').length}
-                      </p>
-                      <p className="text-xs text-gray-600 mt-1">Ready for testing</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-purple-50 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
-                      <MessageSquare className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-900 truncate">Total Chats</p>
-                      <p className="text-xl font-bold text-purple-600">
-                        {bots.reduce((sum, bot) => sum + bot.conversations, 0)}
-                      </p>
-                      <p className="text-xs text-gray-600 mt-1">All time</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-orange-50 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
-                      <Activity className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-900 truncate">Avg Rating</p>
-                      <p className="text-xl font-bold text-orange-600">4.8</p>
-                      <p className="text-xs text-gray-600 mt-1">Customer satisfaction</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
 
         {/* Bots Grid */}
         <div className="container mx-auto px-6 mb-12">
@@ -350,56 +221,6 @@ const ManagerPlaygroundPage = () => {
           </div>
         </div>
 
-        {/* Quick Tips Section */}
-        <div className="container mx-auto px-6 pb-12">
-          <div className="max-w-6xl mx-auto">
-            <Card className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl shadow-sm border border-gray-200">
-              <CardContent className="p-8">
-                <div className="text-center mb-8">
-                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg mb-4">
-                    <Zap className="w-6 h-6 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-3">Testing Best Practices</h2>
-                  <p className="text-gray-600 max-w-2xl mx-auto">
-                    Get the most out of your bot testing with these proven strategies
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="text-center group">
-                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                      <MessageSquare className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">Test Different Scenarios</h3>
-                    <p className="text-sm text-gray-600">
-                      Try various conversation flows, edge cases, and unexpected inputs to ensure robust performance.
-                    </p>
-                  </div>
-
-                  <div className="text-center group">
-                    <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                      <BarChart3 className="w-6 h-6 text-green-600" />
-                    </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">Monitor Performance</h3>
-                    <p className="text-sm text-gray-600">
-                      Track response times, accuracy rates, and user satisfaction to optimize your bot&apos;s effectiveness.
-                    </p>
-                  </div>
-
-                  <div className="text-center group">
-                    <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                      <Shield className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">Iterate and Improve</h3>
-                    <p className="text-sm text-gray-600">
-                      Use test results to refine your bot&apos;s responses and improve the overall user experience.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
       </div>
     </RoleGuard>
   );

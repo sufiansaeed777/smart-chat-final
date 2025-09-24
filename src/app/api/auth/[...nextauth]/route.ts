@@ -34,7 +34,22 @@ export const authOptions: NextAuthOptions = {
             where: { email: credentials.email }
           });
 
-          if (!user || !user.isActive || !user.isEmailVerified) {
+          // Debug: Log user status for NextAuth
+          console.log('NextAuth login attempt for user:', {
+            email: user?.email,
+            isActive: user?.isActive,
+            hasPassword: !!user?.password,
+            isEmailVerified: user?.isEmailVerified
+          });
+
+          if (!user || !user.isActive || !user.isEmailVerified || !user.password) {
+            console.log('NextAuth login blocked: User validation failed', {
+              hasUser: !!user,
+              isActive: user?.isActive,
+              isEmailVerified: user?.isEmailVerified,
+              hasPassword: !!user?.password,
+              needsPasswordReset: user?.emailVerificationToken === 'PASSWORD_RESET_REQUIRED'
+            });
             return null;
           }
 
@@ -113,6 +128,34 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async jwt({ token, user, account }) {
+      // Validate user is still active on every JWT refresh
+      if (token.email) {
+        try {
+          if (!AppDataSource.isInitialized) {
+            await AppDataSource.initialize();
+          }
+          const userRepository = AppDataSource.getRepository(User);
+          const dbUser = await userRepository.findOne({
+            where: { email: token.email as string }
+          });
+          
+          if (!dbUser || !dbUser.isActive || !dbUser.password) {
+            // User is deactivated or doesn't exist, invalidate the token
+            console.log(`Invalidating session for deactivated user: ${token.email}`);
+            return {}; // Return empty token to force logout
+          }
+          
+          // Update token with current user data
+          token.role = dbUser.role;
+          token.id = dbUser.id;
+          token.isEmailVerified = dbUser.isEmailVerified;
+          token.isActive = dbUser.isActive;
+        } catch (error) {
+          console.error('Error validating user session:', error);
+          return {}; // Return empty token to force logout on error
+        }
+      }
+      
       if (account?.provider === "google" && user) {
         token.provider = "google";
         token.email = user.email;

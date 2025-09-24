@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/SessionProvider";
+import SessionMonitor from "@/components/SessionMonitor";
 import ChatBotWrapper from "@/components/ChatBotWrapper";
 import { ChatBotProvider } from "@/contexts/ChatBotContext";
 
@@ -34,6 +35,7 @@ export default function RootLayout({
       >
         <SessionProvider>
           <ChatBotProvider>
+            <SessionMonitor />
             {children}
             <ChatBotWrapper apiKey={process.env.NEXT_PUBLIC_OPENAI_API_KEY || ""} />
           </ChatBotProvider>

@@ -18,8 +18,10 @@ import {
   UserCheck,
   Loader2
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const ManagerOverview = () => {
+  const router = useRouter();
   const [overviewData, setOverviewData] = useState<{ 
     metrics: { totalUsers: number; activeChats: number; pendingHandoffs: number; resolvedToday: number }; 
     stats: { acceptedUsers: number; chatChange: number }; 
@@ -304,7 +306,7 @@ const ManagerOverview = () => {
           const colors = getMetricColors(metric.title, index);
 
           return (
-            <Card key={index} className={`${colors.bg} border border-gray-200 rounded-xl shadow-sm hover:shadow-lg hover:shadow-gray-200/50 hover:scale-[1.02] transition-all duration-300 overflow-hidden cursor-pointer group`}>
+            <Card key={index} className={`${colors.bg} border border-gray-200 rounded-xl shadow-sm hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02] transition-all duration-300 overflow-hidden cursor-pointer group`}>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
                   <div className={`w-10 h-10 ${colors.iconBg} rounded-lg flex items-center justify-center shadow-sm flex-shrink-0 group-hover:scale-110 group-hover:shadow-md transition-all duration-300`}>
@@ -347,62 +349,10 @@ const ManagerOverview = () => {
           </p>
         </div>
 
-        {/* Connected Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {connectedMetrics.map((metric, index) => {
-            // Define colors for connected metrics - avoid repetition with top row
-            const getConnectedMetricColors = (title: string, index: number) => {
-              if (title.includes('Total Users')) {
-                return {
-                  bg: 'bg-blue-50',
-                  iconBg: 'bg-blue-500',
-                  textColor: 'text-blue-600'
-                };
-              } else if (title.includes('Total Bots') || title.includes('Bots')) {
-                return {
-                  bg: 'bg-purple-50',
-                  iconBg: 'bg-purple-500',
-                  textColor: 'text-purple-600'
-                };
-              } else if (title.includes('Online Users') || title.includes('Online')) {
-                return {
-                  bg: 'bg-emerald-50',
-                  iconBg: 'bg-emerald-500',
-                  textColor: 'text-emerald-600'
-                };
-              } else {
-                return {
-                  bg: 'bg-cyan-50',
-                  iconBg: 'bg-cyan-500',
-                  textColor: 'text-cyan-600'
-                };
-              }
-            };
-
-            const colors = getConnectedMetricColors(metric.title, index);
-
-            return (
-              <Card key={index} className={`${colors.bg} border border-gray-200 rounded-xl shadow-sm hover:shadow-lg hover:shadow-gray-200/50 hover:scale-[1.02] transition-all duration-300 overflow-hidden cursor-pointer group`}>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 ${colors.iconBg} rounded-lg flex items-center justify-center shadow-sm flex-shrink-0 group-hover:scale-110 group-hover:shadow-md transition-all duration-300`}>
-                      <metric.icon className="w-5 h-5 text-white group-hover:scale-110 transition-transform duration-300" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-900 truncate group-hover:text-gray-700 transition-colors duration-300">{metric.title}</p>
-                      <p className={`text-xl font-bold ${colors.textColor} group-hover:scale-105 transition-transform duration-300`}>{metric.value}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
         {/* User List */}
         <div className="space-y-3">
-          {users.map((user, index) => (
-            <Card key={index} className="group relative border border-gray-200 bg-white hover:shadow-lg hover:shadow-gray-200/50 hover:scale-[1.01] transition-all duration-300 rounded-xl overflow-hidden cursor-pointer">
+          {users.slice(0, 3).map((user, index) => (
+            <Card key={index} className="group relative border border-gray-200 bg-white hover:border-[#5A5BD8] hover:scale-[1.01] transition-all duration-300 rounded-xl overflow-hidden cursor-pointer">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -417,18 +367,22 @@ const ManagerOverview = () => {
                       <p className="text-xs text-gray-600 group-hover:text-gray-700 transition-colors duration-300">{user.email}</p>
                       <div className="flex items-center space-x-1.5">
                         {user.badges.map((badge, badgeIndex) => {
-                          // Create hover state that makes colors one step duller
+                          // Create hover state that makes colors darker
                           const getHoverClass = (color: string) => {
                             if (color.includes('bg-green-100 text-green-600')) {
-                              return 'group-hover:bg-green-200 group-hover:text-green-700';
+                              return 'hover:bg-green-600 hover:text-white';
                             } else if (color.includes('bg-yellow-100 text-yellow-600')) {
-                              return 'group-hover:bg-yellow-200 group-hover:text-yellow-700';
+                              return 'hover:bg-yellow-600 hover:text-white';
                             } else if (color.includes('bg-orange-100 text-orange-600')) {
-                              return 'group-hover:bg-orange-200 group-hover:text-orange-700';
+                              return 'hover:bg-orange-600 hover:text-white';
                             } else if (color.includes('bg-gray-100 text-gray-600')) {
-                              return 'group-hover:bg-gray-200 group-hover:text-gray-700';
+                              return 'hover:bg-gray-600 hover:text-white';
+                            } else if (color.includes('bg-blue-100 text-blue-600')) {
+                              return 'hover:bg-blue-600 hover:text-white';
+                            } else if (color.includes('bg-purple-100 text-purple-600')) {
+                              return 'hover:bg-purple-600 hover:text-white';
                             }
-                            return 'group-hover:opacity-80';
+                            return 'hover:opacity-80';
                           };
                           
                           return (
@@ -452,7 +406,8 @@ const ManagerOverview = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      className="bg-white border-gray-200 text-gray-700 group-hover:bg-gray-50 group-hover:border-gray-300 group-hover:scale-110 group-hover:shadow-md transition-all duration-300 rounded-lg text-xs px-3 py-1.5"
+                      onClick={() => router.push(`/manager-dashboard/team-management?select=${overviewData.users[index].id}`)}
+                      className="bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all duration-300 rounded-lg text-xs px-3 py-1.5"
                     >
                       View Details
                     </Button>
@@ -461,13 +416,38 @@ const ManagerOverview = () => {
               </CardContent>
             </Card>
           ))}
+          
+          {/* More Button */}
+          {users.length > 3 && (
+            <Card className="group relative border border-gray-200 bg-white hover:border-[#5A5BD8] hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.01] transition-all duration-300 rounded-xl overflow-hidden cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-[#5A5BD8] rounded-lg flex items-center justify-center">
+                      <Users className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900">Team Management</h3>
+                      <p className="text-xs text-gray-600">{users.length} team members</p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => router.push('/manager-dashboard/team-management')}
+                    className="bg-[#5A5BD8] hover:bg-[#5A5BD8]/90 text-white hover:shadow-md transition-all duration-300 rounded-lg text-sm px-4 py-2"
+                  >
+                    View All
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
       {/* Bottom Section - Recent Activity and Team Performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activity */}
-        <Card className="bg-white rounded-2xl shadow-sm border-0 hover:shadow-lg hover:shadow-gray-200/50 transition-all duration-300 group">
+        <Card className="bg-white rounded-2xl shadow-sm border-0 hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 group">
           <CardHeader className="p-6 pb-4">
             <div className="flex items-center space-x-2">
               <Clock className="w-6 h-6 text-gray-600 group-hover:text-gray-700 transition-colors duration-300" />
@@ -478,7 +458,7 @@ const ManagerOverview = () => {
           <CardContent className="p-6 pt-0">
             <div className="space-y-4">
               {recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 hover:scale-[1.02] hover:shadow-md hover:shadow-gray-200/50 transition-all duration-300 cursor-pointer group">
+                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 hover:scale-[1.02] hover:shadow-md hover:shadow-blue-500/30 transition-all duration-300 cursor-pointer group">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center group-hover:bg-gray-50 group-hover:scale-110 transition-all duration-300">
                       <activity.icon className="w-4 h-4 text-gray-600 group-hover:text-gray-700 group-hover:scale-110 transition-all duration-300" />
@@ -488,10 +468,13 @@ const ManagerOverview = () => {
                       <p className="text-sm text-gray-600 group-hover:text-gray-700 transition-colors duration-300">{activity.description}</p>
                     </div>
                   </div>
-                  <Badge className={`text-xs ${activity.statusColor} ${activity.statusColor.includes('bg-purple-100 text-purple-600') ? 'group-hover:bg-purple-200 group-hover:text-purple-700' : 
-                    activity.statusColor.includes('bg-green-100 text-green-600') ? 'group-hover:bg-green-200 group-hover:text-green-700' : 
-                    activity.statusColor.includes('bg-yellow-100 text-yellow-600') ? 'group-hover:bg-yellow-200 group-hover:text-yellow-700' : 
-                    'group-hover:opacity-80'} transition-all duration-300`}>
+                  <Badge className={`text-xs ${activity.statusColor} ${activity.statusColor.includes('bg-purple-100 text-purple-600') ? 'hover:bg-purple-600 hover:text-white' : 
+                    activity.statusColor.includes('bg-green-100 text-green-600') ? 'hover:bg-green-600 hover:text-white' : 
+                    activity.statusColor.includes('bg-yellow-100 text-yellow-600') ? 'hover:bg-yellow-600 hover:text-white' : 
+                    activity.statusColor.includes('bg-blue-100 text-blue-600') ? 'hover:bg-blue-600 hover:text-white' : 
+                    activity.statusColor.includes('bg-orange-100 text-orange-600') ? 'hover:bg-orange-600 hover:text-white' : 
+                    activity.statusColor.includes('bg-gray-100 text-gray-600') ? 'hover:bg-gray-600 hover:text-white' : 
+                    'hover:opacity-80'} transition-all duration-300`}>
                     {activity.status}
                   </Badge>
                 </div>
@@ -501,7 +484,7 @@ const ManagerOverview = () => {
         </Card>
 
         {/* Team Performance */}
-        <Card className="bg-white rounded-2xl shadow-sm border-0 hover:shadow-lg hover:shadow-gray-200/50 transition-all duration-300 group">
+        <Card className="bg-white rounded-2xl shadow-sm border-0 hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 group">
           <CardHeader className="p-6 pb-4">
             <div className="flex items-center space-x-2">
               <Users className="w-6 h-6 text-gray-600 group-hover:text-gray-700 transition-colors duration-300" />
@@ -512,7 +495,7 @@ const ManagerOverview = () => {
           <CardContent className="p-6 pt-0">
             <div className="space-y-4">
               {teamPerformance.map((agent, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 hover:scale-[1.02] hover:shadow-md hover:shadow-gray-200/50 transition-all duration-300 cursor-pointer group">
+                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 hover:scale-[1.02] hover:shadow-md hover:shadow-blue-500/30 transition-all duration-300 cursor-pointer group">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center group-hover:bg-gray-300 group-hover:scale-110 transition-all duration-300">
                       <span className="text-sm font-medium text-gray-600 group-hover:text-gray-700 transition-colors duration-300">{agent.initials}</span>
@@ -527,10 +510,13 @@ const ManagerOverview = () => {
                       <Star className="w-4 h-4 text-yellow-500 group-hover:text-yellow-600 group-hover:scale-110 transition-all duration-300" />
                       <span className="text-sm font-medium text-gray-900 group-hover:text-gray-700 transition-colors duration-300">{agent.rating}</span>
                     </div>
-                    <Badge className={`text-xs ${agent.statusColor} ${agent.statusColor.includes('bg-green-100 text-green-600') ? 'group-hover:bg-green-200 group-hover:text-green-700' : 
-                      agent.statusColor.includes('bg-orange-100 text-orange-600') ? 'group-hover:bg-orange-200 group-hover:text-orange-700' : 
-                      agent.statusColor.includes('bg-gray-100 text-gray-600') ? 'group-hover:bg-gray-200 group-hover:text-gray-700' : 
-                      'group-hover:opacity-80'} transition-all duration-300`}>
+                    <Badge className={`text-xs ${agent.statusColor} ${agent.statusColor.includes('bg-green-100 text-green-600') ? 'hover:bg-green-600 hover:text-white' : 
+                      agent.statusColor.includes('bg-orange-100 text-orange-600') ? 'hover:bg-orange-600 hover:text-white' : 
+                      agent.statusColor.includes('bg-gray-100 text-gray-600') ? 'hover:bg-gray-600 hover:text-white' : 
+                      agent.statusColor.includes('bg-blue-100 text-blue-600') ? 'hover:bg-blue-600 hover:text-white' : 
+                      agent.statusColor.includes('bg-purple-100 text-purple-600') ? 'hover:bg-purple-600 hover:text-white' : 
+                      agent.statusColor.includes('bg-yellow-100 text-yellow-600') ? 'hover:bg-yellow-600 hover:text-white' : 
+                      'hover:opacity-80'} transition-all duration-300`}>
                       {agent.status}
                     </Badge>
                   </div>

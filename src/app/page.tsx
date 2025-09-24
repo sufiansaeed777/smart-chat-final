@@ -10,14 +10,14 @@ import {
   Zap, 
   BarChart3, 
   Puzzle,
-  Clock,
-  TrendingUp,
-  Shield,
   Upload,
   Settings,
   Rocket,
-  CheckCircle
+  CheckCircle,
+  Sparkles,
+  Bot
 } from 'lucide-react';
+import { Card, CardContent } from '../components/ui/card';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import TestimonialsSection from '@/components/TestimonialsSection';
@@ -53,26 +53,6 @@ const LandingPage = () => {
 
 
 
-  const outcomes = [
-    {
-      icon: <Clock className="w-8 h-8 text-blue-500" />,
-      title: "Faster Support",
-      description: "Customers get accurate answers instantly, in their language. No more waiting or unhelpful responses.",
-      metric: "90% faster response time"
-    },
-    {
-      icon: <TrendingUp className="w-8 h-8 text-green-500" />,
-      title: "More Conversions",
-      description: "Smart lead capture means more qualified prospects in your funnel. Turn every conversation into a potential sale.",
-      metric: "3x more qualified leads"
-    },
-    {
-      icon: <Shield className="w-8 h-8 text-purple-500" />,
-      title: "Peace of Mind",
-      description: "AI handles the busy work, while your team only steps in when needed. Focus on what matters most to your business.",
-      metric: "70% reduction in support load"
-    }
-  ];
 
   const steps = [
     {
@@ -172,59 +152,73 @@ const LandingPage = () => {
         </div>
       </section>
 
-
-
-      {/* Outcome Section */}
-      <section id="outcomes" className="py-16 lg:py-24 bg-gradient-to-b from-white to-gray-50">
+      {/* Advanced Testing Environment Section */}
+      <section className="py-16 lg:py-24 bg-gradient-to-b from-white to-gray-50">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="max-w-6xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-              Imagine Every Visitor Getting{" "}
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Instant, Human-Like Help
-              </span>
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
-              {outcomes.map((outcome, index) => (
-                <div
-                  key={index}
-                  className="bg-white border border-gray-200 rounded-xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 group"
-                >
-                  <div className="flex justify-center mb-6">
-                    <div className="p-3 bg-gray-50 rounded-lg group-hover:scale-110 transition-transform duration-300">
-                      {outcome.icon}
+          <div className="max-w-6xl mx-auto">
+            <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-0 rounded-3xl shadow-xl overflow-hidden">
+              <CardContent className="p-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                  <div>
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mb-6 shadow-lg">
+                      <Sparkles className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                      Advanced AI Testing & Optimization
+                    </h2>
+                    <p className="text-lg text-gray-700 leading-relaxed mb-6">
+                      Deploy AI chatbots with confidence using our comprehensive testing platform. 
+                      Validate responses, optimize conversations, and ensure your AI delivers 
+                      perfect customer experiences before going live.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <MessageSquare className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">Live Testing</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                          <Bot className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">Multi-Bot Management</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                          <Zap className="w-4 h-4 text-green-600" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">Smart Analytics</span>
+                      </div>
                     </div>
                   </div>
-                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-                    {outcome.title}
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed mb-4">
-                    {outcome.description}
-                  </p>
-                  <div className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                    {outcome.metric}
+                  <div className="relative">
+                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <p className="text-sm text-gray-600">Validating AI responses...</p>
+                        </div>
+                        <div className="bg-blue-50 rounded-lg p-3">
+                          <p className="text-sm text-blue-800">Testing conversation scenarios...</p>
+                        </div>
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <p className="text-sm text-green-800">Ready for deployment!</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-            
-            {/* New paradigm */}
-            <div className="mt-16 p-8 bg-blue-50 border border-blue-200 rounded-xl">
-              <h3 className="text-xl md:text-2xl font-semibold text-gray-900 mb-4">
-                The New Way Forward
-              </h3>
-              <p className="text-lg text-gray-600 leading-relaxed mb-6">
-                We combine AI + automation + human handover into one simple platform—so you never have to compromise between customer experience and efficiency.
-              </p>
-                             <Link href="/product" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-3 rounded-2xl font-semibold hover:shadow-lg transition-all duration-200 group flex items-center mx-auto w-fit">
-                 See How It Works
-                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-               </Link>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
+
 
       {/* Product Section */}
       <section id="product" className="py-16 lg:py-24 bg-white">
@@ -301,7 +295,77 @@ const LandingPage = () => {
         </div>
       </section>
 
-
+      {/* Enhanced Contact Section */}
+      <section className="py-16 lg:py-24 bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="max-w-4xl mx-auto text-center text-white relative overflow-hidden">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl mb-8">
+              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </div>
+            
+            <h3 className="text-5xl font-bold mb-6 bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
+              Ready to Get Started?
+            </h3>
+            
+            <p className="text-xl text-blue-100 mb-8 leading-relaxed max-w-2xl mx-auto">
+              Our AI experts are standing by to help you launch your first chatbot. Get personalized setup assistance and answers to all your questions.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <button 
+                className="group bg-white text-slate-900 px-8 py-4 rounded-2xl font-bold text-lg hover:bg-blue-50 transition-all duration-300 hover:scale-105 shadow-xl hover:shadow-2xl flex items-center gap-3"
+                onClick={() => window.location.href = '/contact'}
+              >
+                <svg className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+                Get Expert Help
+              </button>
+              
+              <div className="flex items-center gap-2 text-blue-200">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-sm font-medium">Usually responds within 2 hours</span>
+              </div>
+            </div>
+            
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+              <div className="space-y-3">
+                <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h4 className="font-semibold text-white">Free Setup Consultation</h4>
+                <p className="text-sm text-blue-200">No obligation, expert guidance</p>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <h4 className="font-semibold text-white">Custom Integration</h4>
+                <p className="text-sm text-blue-200">Tailored to your platform</p>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </div>
+                <h4 className="font-semibold text-white">Priority Support</h4>
+                <p className="text-sm text-blue-200">Dedicated success manager</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
       <Footer />

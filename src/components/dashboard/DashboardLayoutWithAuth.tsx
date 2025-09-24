@@ -144,12 +144,12 @@ const DashboardLayoutWithAuth: React.FC<DashboardLayoutProps> = ({
         {/* Logo */}
         <div className="flex items-center justify-center h-16 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-[#6566F1] rounded-lg flex items-center justify-center flex-shrink-0">
-              <Shield className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span className="text-sm font-bold text-white">AI</span>
             </div>
             <div className={`overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
               <span className="text-lg font-bold text-gray-900 whitespace-nowrap">
-                {isManager ? 'Manager Portal' : 'ChatBot Pro'}
+                ChatBot Pro
               </span>
             </div>
           </div>

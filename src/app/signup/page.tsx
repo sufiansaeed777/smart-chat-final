@@ -90,6 +90,21 @@ const SignupComponent = () => {
       fontFeatureSettings: 'normal',
       fontVariationSettings: 'normal'
     }}>
+      {/* Logo */}
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="flex items-center h-16">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold text-sm">AI</span>
+              </div>
+              <span className="ml-2 text-xl font-bold text-gray-900">
+                ChatBot Pro
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
       {/* Card */}
       <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white shadow-sm">
         {/* Card Header */}

@@ -29,7 +29,38 @@ const LoginComponent = () => {
     setMessage('');
 
     try {
-      // Use NextAuth signIn with credentials
+      // First check if user is deactivated using direct API call
+      const checkResponse = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+        }),
+      });
+
+      const checkData = await checkResponse.json();
+
+      // Debug: Log the response for troubleshooting
+      console.log('Login API response:', {
+        status: checkResponse.status,
+        ok: checkResponse.ok,
+        error: checkData.error
+      });
+
+      if (!checkResponse.ok) {
+        // Show specific error message for deactivated accounts
+        if (checkData.error && checkData.error.includes('deactivated')) {
+          setError('Your account has been deactivated. Please contact your administrator.');
+        } else {
+          setError(checkData.error || 'Invalid email or password');
+        }
+        return;
+      }
+
+      // If API login successful, use NextAuth signIn for session management
       const result = await signIn('credentials', {
         email: form.email,
         password: form.password,
@@ -37,7 +68,7 @@ const LoginComponent = () => {
       });
 
       if (result?.error) {
-        throw new Error('Invalid email or password');
+        throw new Error('Session creation failed');
       }
 
       if (result?.ok) {
@@ -83,6 +114,21 @@ const LoginComponent = () => {
       fontFeatureSettings: 'normal',
       fontVariationSettings: 'normal'
     }}>
+      {/* Logo */}
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="flex items-center h-16">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold text-sm">AI</span>
+              </div>
+              <span className="ml-2 text-xl font-bold text-gray-900">
+                ChatBot Pro
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
       {/* Card */}
       <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white shadow-sm">
         {/* Card Header */}
@@ -104,7 +150,17 @@ const LoginComponent = () => {
 
           {/* Error Message */}
           {error && (
-            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+            <div className={`mb-4 p-3 rounded-lg text-sm ${
+              error.includes('deactivated') 
+                ? 'bg-red-200 text-red-800 border border-red-300' 
+                : 'bg-red-100 text-red-700'
+            }`}>
+              {error.includes('deactivated') && (
+                <div className="flex items-center space-x-2 mb-1">
+                  <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                  <span className="font-semibold">Account Deactivated</span>
+                </div>
+              )}
               {error}
             </div>
           )}

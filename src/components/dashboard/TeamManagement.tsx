@@ -18,10 +18,15 @@ import {
   ArrowLeft,
   X,
   UserCheck,
-  AlertCircle
+  AlertCircle,
+  UserX,
+  UserCheck2,
+  Loader2
 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 const TeamManagement = () => {
+  const searchParams = useSearchParams();
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -34,6 +39,7 @@ const TeamManagement = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [togglingUser, setTogglingUser] = useState<string | null>(null);
   const [errors, setErrors] = useState({
     firstName: '',
     lastName: '',
@@ -114,6 +120,14 @@ const TeamManagement = () => {
         const data = await response.json();
         // Add additional stats for each team member
         const membersWithStats = (data.users || []).map((user: {id: string; name: string; email: string; role: string; status: string; lastLoginAt: string; createdAt: string}) => {
+          // Debug: Log user data to see what we're working with
+          console.log('User data:', {
+            name: user.name,
+            status: user.status,
+            lastLoginAt: user.lastLoginAt,
+            hasLastLogin: !!user.lastLoginAt
+          });
+          
           // Determine online status based on actual login time
           let onlineStatus: 'online' | 'offline' = 'offline';
           if (user.status === 'accepted' && user.lastLoginAt) {
@@ -121,22 +135,40 @@ const TeamManagement = () => {
             const now = Date.now();
             const timeDiff = now - lastLoginTime;
             
-            // Consider online if logged in within the last 15 minutes
-            if (timeDiff < 15 * 60 * 1000) {
+            console.log('Time calculation:', {
+              lastLoginTime: new Date(lastLoginTime).toISOString(),
+              now: new Date(now).toISOString(),
+              timeDiffMinutes: Math.round(timeDiff / (1000 * 60)),
+              willBeOnline: timeDiff < 2 * 60 * 60 * 1000
+            });
+            
+            // Consider online if logged in within the last 2 hours (more realistic for team management)
+            if (timeDiff < 2 * 60 * 60 * 1000) {
               onlineStatus = 'online';
             } else {
               onlineStatus = 'offline';
             }
+          } else if (user.status === 'accepted' && !user.lastLoginAt) {
+            // If user is accepted but never logged in, show as offline
+            onlineStatus = 'offline';
           }
           
-          return {
+          const memberData = {
             ...user,
             rating: (4.5 + Math.random() * 0.5).toFixed(1), // Random rating between 4.5-5.0
             totalChats: Math.floor(Math.random() * 50) + 10, // Random total chats
             onlineStatus: onlineStatus,
             specialties: ['Customer Service'], // Default specialty
-            currentStatus: user.status === 'accepted' ? 'Available' : 'Pending invitation'
+            currentStatus: user.status === 'accepted' ? 'Available' : (user.status === 'pending' && user.lastLoginAt ? 'Deactivated' : 'Pending invitation')
           };
+          
+          console.log('Final member data:', {
+            name: memberData.name,
+            onlineStatus: memberData.onlineStatus,
+            status: memberData.status
+          });
+          
+          return memberData;
         });
         setTeamMembers(membersWithStats);
       } else {
@@ -153,6 +185,14 @@ const TeamManagement = () => {
   useEffect(() => {
     fetchTeamMembers();
   }, []);
+
+  // Handle query parameter selection
+  useEffect(() => {
+    const selectId = searchParams.get('select');
+    if (selectId && teamMembers.length > 0) {
+      setSelectedAgent(selectId);
+    }
+  }, [searchParams, teamMembers]);
 
   // Helper function to get status icon and color
   const getStatusIcon = (status: 'accepted' | 'pending') => {
@@ -351,7 +391,7 @@ const TeamManagement = () => {
                     className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer hover:shadow-md ${
                       selectedAgent === member.id 
                         ? 'border-[#6566F1] bg-[#6566F1]/10' 
-                        : 'border-gray-200 bg-white hover:border-gray-300'
+                        : 'border-gray-200 bg-white hover:border-[#5A5BD8]'
                     }`}
                     onClick={() => setSelectedAgent(member.id)}
                   >
@@ -368,10 +408,12 @@ const TeamManagement = () => {
                         <div className="space-y-1">
                           <h3 className="text-sm font-semibold text-gray-900">{member.name}</h3>
                           <p className="text-xs text-gray-600">{member.email}</p>
+                          {console.log('Member data for', member.email, ':', {
+                            status: member.status,
+                            lastLoginAt: member.lastLoginAt,
+                            hasLastLogin: !!member.lastLoginAt
+                          })}
                           <div className="flex items-center space-x-2">
-                            <Badge className="text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors duration-200">
-                              {member.role}
-                            </Badge>
                             <Badge className={`text-xs font-medium px-2 py-1 transition-colors duration-200 shadow-sm ${
                               member.onlineStatus === 'online' 
                                 ? 'bg-green-500 text-white border-green-600 hover:bg-green-600 hover:border-green-700'
@@ -386,21 +428,91 @@ const TeamManagement = () => {
                       <div className="flex items-center space-x-4">
                         {/* Performance Stats */}
                         <div className="text-right">
-                          <div className="flex items-center space-x-1">
-                            <Star className="w-4 h-4 text-yellow-500" />
-                            <span className="text-xs font-medium text-gray-900">{typeof member.rating === 'number' ? member.rating.toFixed(1) : member.rating}</span>
-                          </div>
-                          <p className="text-xs text-gray-600">{member.totalChats || 0} total chats</p>
+                          {member.status === 'accepted' ? (
+                            <>
+                              <div className="flex items-center space-x-1">
+                                <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                                <span className="text-sm font-bold text-gray-900">{typeof member.rating === 'number' ? member.rating.toFixed(1) : member.rating}</span>
+                              </div>
+                              <p className="text-xs text-gray-600 mt-1">{member.totalChats || 0} total chats</p>
+                            </>
+                          ) : (
+                            <div className="text-xs text-gray-500 italic">
+                              {member.status === 'pending' && member.lastLoginAt 
+                                ? 'Deactivated' 
+                                : member.status === 'pending' 
+                                  ? 'Pending invitation' 
+                                  : 'Unknown status'}
+                            </div>
+                          )}
                         </div>
 
                         {/* Actions */}
                         <div className="flex items-center space-x-2">
+                        {console.log('Rendering button for member:', member.id, 'Status:', member.status, 'Toggling:', togglingUser === member.id)}
                         <Button 
                           variant="outline" 
                           size="sm"
-                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                          disabled={togglingUser === member.id}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            console.log('Toggling user:', member.id, 'Current status:', member.status);
+                            setTogglingUser(member.id);
+                            try {
+                              const response = await fetch('/api/manager/toggle-user-status', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                  userId: member.id,
+                                  currentStatus: member.status
+                                }),
+                              });
+                              
+                              if (response.ok) {
+                                const data = await response.json();
+                                console.log('Success:', data.message);
+                                console.log('New status:', data.newStatus);
+                                
+                                // Update the local state immediately for better UX
+                                setTeamMembers(prevMembers => 
+                                  prevMembers.map(prevMember => 
+                                    prevMember.id === member.id 
+                                      ? { ...prevMember, status: data.newStatus }
+                                      : prevMember
+                                  )
+                                );
+                                
+                                // Also refresh team members list to ensure consistency
+                                fetchTeamMembers();
+                              } else {
+                                const errorData = await response.json();
+                                console.error('Failed to toggle user status:', errorData.error);
+                                alert(`Failed to toggle user status: ${errorData.error}`);
+                              }
+                            } catch (error) {
+                              console.error('Error toggling user status:', error);
+                              alert('Network error. Please try again.');
+                            } finally {
+                              setTogglingUser(null);
+                            }
+                          }}
+                          className={`p-2 rounded-lg transition-colors duration-200 ${
+                            togglingUser === member.id 
+                              ? 'bg-red-50 text-red-600 border-red-300' 
+                              : member.status === 'accepted' 
+                                ? 'hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300' 
+                                : 'hover:bg-green-50 hover:text-green-600 hover:border-green-300'
+                          }`}
                         >
-                          <Edit className="w-4 h-4 text-gray-600" />
+                          {togglingUser === member.id ? (
+                            <Loader2 className="w-4 h-4 text-red-600 animate-spin" title="Processing..." />
+                          ) : member.status === 'accepted' ? (
+                            <UserX className="w-4 h-4 text-orange-600" title="Deactivate User" />
+                          ) : (
+                            <UserCheck2 className="w-4 h-4 text-green-600" title="Activate User" />
+                          )}
                         </Button>
                         <Button 
                           variant="outline" 
@@ -426,7 +538,7 @@ const TeamManagement = () => {
         {/* Right Panel - Member Details */}
         <div className="space-y-6">
           {/* Member Profile */}
-          <Card className="bg-white rounded-2xl shadow-sm border-0">
+          <Card className="bg-white rounded-2xl shadow-sm border-0 hover:border-[#5A5BD8] hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300">
             <CardHeader className="p-6 pb-4">
               <div className="flex items-center space-x-2">
                 <Users className="w-5 h-5 text-gray-600" />
@@ -471,10 +583,30 @@ const TeamManagement = () => {
                   </div>
 
                   {/* Performance */}
-                  <div className="flex items-center space-x-3">
-                    <Star className="w-4 h-4 text-yellow-500" />
-                    <span className="text-gray-900">{typeof selectedAgentData.rating === 'number' ? selectedAgentData.rating.toFixed(1) : selectedAgentData.rating} rating • {selectedAgentData.totalChats} total chats</span>
-                  </div>
+                  {selectedAgentData.status === 'accepted' ? (
+                    <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200 hover:border-yellow-300 hover:shadow-md transition-all duration-300">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <div className="flex items-center space-x-1">
+                          <Star className="w-5 h-5 text-yellow-500 fill-current" />
+                          <span className="text-lg font-bold text-yellow-700">{typeof selectedAgentData.rating === 'number' ? selectedAgentData.rating.toFixed(1) : selectedAgentData.rating}</span>
+                          <span className="text-sm text-yellow-600">rating</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4 text-sm text-gray-600">
+                        <span className="flex items-center space-x-1">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span>{selectedAgentData.totalChats} total chats</span>
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                        <span className="text-sm text-gray-600">Performance metrics will be available after invitation is accepted</span>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Specialties */}
                   <div>
@@ -495,8 +627,8 @@ const TeamManagement = () => {
                   </div>
 
                   {/* Status-specific information */}
-                  {selectedAgentData.status === 'pending' && (
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                  {selectedAgentData.status === 'pending' && !selectedAgentData.lastLoginAt && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 hover:border-orange-300 hover:shadow-md transition-all duration-300">
                       <div className="flex items-center space-x-2">
                         <AlertCircle className="w-5 h-5 text-orange-600" />
                         <p className="text-sm font-medium text-orange-800">Pending Invitation</p>
@@ -507,8 +639,20 @@ const TeamManagement = () => {
                     </div>
                   )}
 
+                  {selectedAgentData.status === 'pending' && selectedAgentData.lastLoginAt && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 hover:border-red-300 hover:shadow-md transition-all duration-300">
+                      <div className="flex items-center space-x-2">
+                        <UserX className="w-5 h-5 text-red-600" />
+                        <p className="text-sm font-medium text-red-800">Account Deactivated</p>
+                      </div>
+                      <p className="text-xs text-red-700 mt-1">
+                        This user&apos;s account has been deactivated by the manager. They cannot log in until reactivated.
+                      </p>
+                    </div>
+                  )}
+
                   {selectedAgentData.status === 'accepted' && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 hover:border-green-300 hover:shadow-md transition-all duration-300">
                       <div className="flex items-center space-x-2">
                         <UserCheck className="w-5 h-5 text-green-600" />
                         <p className="text-sm font-medium text-green-800">Active Member</p>

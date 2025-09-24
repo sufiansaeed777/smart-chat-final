@@ -31,10 +31,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Debug: Log user status
+    console.log('Login attempt for user:', {
+      email: user.email,
+      isActive: user.isActive,
+      hasPassword: !!user.password,
+      isEmailVerified: user.isEmailVerified
+    });
+
     // Check if user is active
     if (!user.isActive) {
+      console.log('Login blocked: User is not active');
       return NextResponse.json(
-        { error: 'Account is not active. Please verify your email first.' },
+        { error: 'Your account has been deactivated. Please contact your administrator.' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user has a password (not deactivated)
+    if (!user.password) {
+      console.log('Login blocked: User has no password');
+      return NextResponse.json(
+        { error: 'Your account has been deactivated. Please contact your administrator.' },
         { status: 401 }
       );
     }
