@@ -103,26 +103,6 @@ const PricingPage = () => {
       cta: "Start Free Trial",
       popular: false,
       highlight: false
-    },
-    {
-      name: "Custom",
-      price: "Custom",
-      period: "",
-      description: "For enterprises with special needs",
-      features: [
-        "Unlimited Bots & Conversations",
-        "Unlimited Team Members",
-        "Unlimited File Quota (Custom GB)",
-        "Unlimited Links",
-        "Unlimited Parallel Chats",
-        "Fully White Label + On-Premise Hosting",
-        "Custom Integrations (ERP, CRM, API)",
-        "Dedicated 24/7 Support + SLA"
-      ],
-      limitations: [],
-      cta: "Contact Sales",
-      popular: false,
-      highlight: false
     }
   ];
 
@@ -152,7 +132,7 @@ const PricingPage = () => {
             </div>
 
             {/* Pricing cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-16">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
               {plans.map((plan, index) => (
                 <div
                   key={index}
