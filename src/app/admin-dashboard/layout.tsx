@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { signOut } from 'next-auth/react';
 import { 
   LayoutDashboard, 
   Users, 
@@ -17,7 +18,8 @@ import {
   MessageSquare,
   Activity,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  LogOut
 } from 'lucide-react';
 
 interface NavItem {
@@ -30,6 +32,7 @@ interface NavItem {
 const AdminDashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   const basePath = '/admin-dashboard';
 
@@ -41,10 +44,10 @@ const AdminDashboardLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     { id: 'chatbot-analytics', label: 'Chatbot Analytics', icon: MessageSquare, path: `${basePath}/chatbot-analytics` },
     { id: 'chatbot-issues', label: 'Chatbot Issues', icon: AlertTriangle, path: `${basePath}/chatbot-issues` },
     { id: 'billing-management', label: 'Billing Management', icon: CreditCard, path: `${basePath}/billing-management` },
-    { id: 'database', label: 'Database', icon: Database, path: `${basePath}/database` },
+    // { id: 'database', label: 'Database', icon: Database, path: `${basePath}/database` },
     { id: 'system-health', label: 'System Health', icon: Activity, path: `${basePath}/system-health` },
     { id: 'settings', label: 'Settings', icon: Settings, path: `${basePath}/settings` },
-    { id: 'help', label: 'Help', icon: HelpCircle, path: `${basePath}/help` },
+    // { id: 'help', label: 'Help', icon: HelpCircle, path: `${basePath}/help` },
   ];
 
   const getActiveSection = (pathname: string): string => {
@@ -54,10 +57,10 @@ const AdminDashboardLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     if (pathname.includes('/chatbot-analytics')) return 'chatbot-analytics';
     if (pathname.includes('/chatbot-issues')) return 'chatbot-issues';
     if (pathname.includes('/billing-management')) return 'billing-management';
-    if (pathname.includes('/database')) return 'database';
+    // if (pathname.includes('/database')) return 'database';
     if (pathname.includes('/system-health')) return 'system-health';
     if (pathname.includes('/settings')) return 'settings';
-    if (pathname.includes('/help')) return 'help';
+    // if (pathname.includes('/help')) return 'help';
     return 'overview';
   };
 
@@ -66,6 +69,10 @@ const AdminDashboardLayout: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: '/' });
   };
 
   return (
@@ -140,6 +147,13 @@ const AdminDashboardLayout: React.FC<{ children: React.ReactNode }> = ({ childre
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span>System Online</span>
               </div>
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-red-50 hover:text-red-700 hover:border-red-300 transition-all duration-200"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Logout</span>
+              </button>
             </div>
           </div>
         </div>

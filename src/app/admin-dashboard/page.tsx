@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Bot, 
   Users, 
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 
 const AdminOverview: React.FC = () => {
+  const router = useRouter();
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalBots: 0,
@@ -48,6 +50,10 @@ const AdminOverview: React.FC = () => {
 
     loadAdminStats();
   }, []);
+
+  const handleNavigation = (path: string) => {
+    router.push(path);
+  };
 
   const quickActions = [
     {
@@ -159,7 +165,8 @@ const AdminOverview: React.FC = () => {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-purple-500/20 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer group"
+             onClick={() => handleNavigation('/admin-dashboard/user-management')}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Users</p>
@@ -169,13 +176,14 @@ const AdminOverview: React.FC = () => {
                 +12% this month
               </p>
             </div>
-            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-              <Users className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-purple-50 transition-colors duration-300">
+              <Users className="w-6 h-6 text-blue-600 group-hover:text-purple-600 transition-colors duration-300" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-purple-500/20 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer group"
+             onClick={() => handleNavigation('/admin-dashboard/bots')}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Bots</p>
@@ -185,13 +193,14 @@ const AdminOverview: React.FC = () => {
                 +8% this month
               </p>
             </div>
-            <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
-              <Bot className="w-6 h-6 text-green-600" />
+            <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center group-hover:bg-purple-50 transition-colors duration-300">
+              <Bot className="w-6 h-6 text-green-600 group-hover:text-purple-600 transition-colors duration-300" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-purple-500/20 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer group"
+             onClick={() => handleNavigation('/admin-dashboard/analytics')}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Conversations</p>
@@ -201,13 +210,14 @@ const AdminOverview: React.FC = () => {
                 +15% this month
               </p>
             </div>
-            <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
-              <MessageSquare className="w-6 h-6 text-purple-600" />
+            <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center group-hover:bg-purple-100 transition-colors duration-300">
+              <MessageSquare className="w-6 h-6 text-purple-600 group-hover:text-purple-700 transition-colors duration-300" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-purple-500/20 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer group"
+             onClick={() => handleNavigation('/admin-dashboard/user-management')}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Active Users</p>
@@ -217,8 +227,8 @@ const AdminOverview: React.FC = () => {
                 +5% today
               </p>
             </div>
-            <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center">
-              <Activity className="w-6 h-6 text-orange-600" />
+            <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center group-hover:bg-purple-50 transition-colors duration-300">
+              <Activity className="w-6 h-6 text-orange-600 group-hover:text-purple-600 transition-colors duration-300" />
             </div>
           </div>
         </div>
@@ -226,51 +236,54 @@ const AdminOverview: React.FC = () => {
 
       {/* System Status and Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border-0">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-purple-500/10 hover:shadow-lg transition-all duration-300">
           <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
             <Shield className="w-6 h-6 mr-2 text-[#6566F1]" />
             System Status
           </h3>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-purple-50 hover:shadow-purple-500/10 hover:shadow-md hover:scale-[1.02] transition-all duration-300 cursor-pointer group"
+                 onClick={() => handleNavigation('/admin-dashboard/database')}>
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
+                <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center group-hover:bg-purple-50 transition-colors duration-300">
+                  <CheckCircle className="w-6 h-6 text-green-600 group-hover:text-purple-600 transition-colors duration-300" />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">Database</p>
+                  <p className="font-semibold text-gray-900 group-hover:text-purple-700 transition-colors duration-300">Database</p>
                   <p className="text-sm text-gray-600">PostgreSQL</p>
                 </div>
               </div>
-              <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+              <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full group-hover:bg-purple-100 group-hover:text-purple-800 transition-colors duration-300">
                 Connected
               </span>
             </div>
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-purple-50 hover:shadow-purple-500/10 hover:shadow-md hover:scale-[1.02] transition-all duration-300 cursor-pointer group"
+                 onClick={() => handleNavigation('/admin-dashboard/system-health')}>
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
+                <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center group-hover:bg-purple-50 transition-colors duration-300">
+                  <CheckCircle className="w-6 h-6 text-green-600 group-hover:text-purple-600 transition-colors duration-300" />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">API Services</p>
+                  <p className="font-semibold text-gray-900 group-hover:text-purple-700 transition-colors duration-300">API Services</p>
                   <p className="text-sm text-gray-600">All endpoints</p>
                 </div>
               </div>
-              <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+              <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full group-hover:bg-purple-100 group-hover:text-purple-800 transition-colors duration-300">
                 Operational
               </span>
             </div>
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-purple-50 hover:shadow-purple-500/10 hover:shadow-md hover:scale-[1.02] transition-all duration-300 cursor-pointer group"
+                 onClick={() => handleNavigation('/admin-dashboard/settings')}>
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-yellow-50 rounded-xl flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-yellow-600" />
+                <div className="w-10 h-10 bg-yellow-50 rounded-xl flex items-center justify-center group-hover:bg-purple-50 transition-colors duration-300">
+                  <Clock className="w-6 h-6 text-yellow-600 group-hover:text-purple-600 transition-colors duration-300" />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">N8N Integration</p>
+                  <p className="font-semibold text-gray-900 group-hover:text-purple-700 transition-colors duration-300">N8N Integration</p>
                   <p className="text-sm text-gray-600">Webhook service</p>
                 </div>
               </div>
-              <span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full">
+              <span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full group-hover:bg-purple-100 group-hover:text-purple-800 transition-colors duration-300">
                 Configured
               </span>
             </div>
@@ -288,12 +301,13 @@ const AdminOverview: React.FC = () => {
               return (
                 <button
                   key={index}
-                  className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 hover:scale-105 transition-all duration-200 text-left group"
+                  onClick={() => handleNavigation(action.path)}
+                  className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 hover:scale-105 hover:shadow-purple-500/10 hover:shadow-lg transition-all duration-300 text-left group"
                 >
-                  <div className={`w-10 h-10 ${action.bgColor} rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200`}>
-                    <Icon className={`w-6 h-6 ${action.iconColor}`} />
+                  <div className={`w-10 h-10 ${action.bgColor} rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-purple-50 transition-all duration-300`}>
+                    <Icon className={`w-6 h-6 ${action.iconColor} group-hover:text-purple-600 transition-colors duration-300`} />
                   </div>
-                  <h4 className="font-semibold text-gray-900 text-sm">{action.title}</h4>
+                  <h4 className="font-semibold text-gray-900 text-sm group-hover:text-purple-700 transition-colors duration-300">{action.title}</h4>
                   <p className="text-xs text-gray-600 mt-1">{action.description}</p>
                 </button>
               );
@@ -312,7 +326,19 @@ const AdminOverview: React.FC = () => {
           {recentActivities.map((activity, index) => {
             const Icon = activity.icon;
             return (
-              <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+              <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 hover:scale-[1.02] hover:shadow-purple-500/10 hover:shadow-lg transition-all duration-300 cursor-pointer group"
+                   onClick={() => {
+                     // Navigate based on activity type
+                     if (activity.type === 'user_registration') {
+                       handleNavigation('/admin-dashboard/user-management');
+                     } else if (activity.type === 'bot_created') {
+                       handleNavigation('/admin-dashboard/bots');
+                     } else if (activity.type === 'system_alert') {
+                       handleNavigation('/admin-dashboard/system-health');
+                     } else if (activity.type === 'backup_completed') {
+                       handleNavigation('/admin-dashboard/database');
+                     }
+                   }}>
                 <div className={`w-10 h-10 ${activity.bgColor} rounded-xl flex items-center justify-center`}>
                   <Icon className={`w-6 h-6 ${activity.color}`} />
                 </div>

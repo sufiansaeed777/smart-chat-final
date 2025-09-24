@@ -48,71 +48,56 @@ const UserManagementPage: React.FC = () => {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const mockUsers: User[] = [
-          {
-            id: '1',
-            email: 'admin@example.com',
-            firstName: 'John',
-            lastName: 'Admin',
-            role: 'admin',
-            status: 'active',
-            createdAt: '2024-01-15',
-            lastLoginAt: '2024-01-20',
-            isEmailVerified: true,
-            phone: '+1 (555) 123-4567'
-          },
-          {
-            id: '2',
-            email: 'manager@example.com',
-            firstName: 'Jane',
-            lastName: 'Manager',
-            role: 'manager',
-            status: 'active',
-            createdAt: '2024-01-16',
-            lastLoginAt: '2024-01-19',
-            isEmailVerified: true,
-            phone: '+1 (555) 234-5678'
-          },
-          {
-            id: '3',
-            email: 'user@example.com',
-            firstName: 'Bob',
-            lastName: 'User',
-            role: 'user',
-            status: 'pending',
-            createdAt: '2024-01-17',
-            lastLoginAt: 'Never',
-            isEmailVerified: false,
-            phone: '+1 (555) 345-6789'
-          },
-          {
-            id: '4',
-            email: 'sarah@example.com',
-            firstName: 'Sarah',
-            lastName: 'Wilson',
-            role: 'user',
-            status: 'active',
-            createdAt: '2024-01-18',
-            lastLoginAt: '2024-01-20',
-            isEmailVerified: true,
-            phone: '+1 (555) 456-7890'
-          },
-          {
-            id: '5',
-            email: 'mike@example.com',
-            firstName: 'Mike',
-            lastName: 'Johnson',
-            role: 'manager',
-            status: 'inactive',
-            createdAt: '2024-01-19',
-            lastLoginAt: '2024-01-15',
-            isEmailVerified: true,
-            phone: '+1 (555) 567-8901'
-          }
-        ];
-        setUsers(mockUsers);
-      } catch {
-        // Handle error silently
+        const response = await fetch('/api/admin/users');
+        if (response.ok) {
+          const data = await response.json();
+          setUsers(data.users);
+        } else {
+          // Fallback to mock data if API fails (only managers)
+          const mockUsers: User[] = [
+            {
+              id: '1',
+              email: 'manager1@example.com',
+              firstName: 'Jane',
+              lastName: 'Manager',
+              role: 'manager',
+              status: 'active',
+              createdAt: '2024-01-16',
+              lastLoginAt: '2024-01-19',
+              isEmailVerified: true,
+              phone: '+1 (555) 234-5678'
+            },
+            {
+              id: '2',
+              email: 'manager2@example.com',
+              firstName: 'Mike',
+              lastName: 'Johnson',
+              role: 'manager',
+              status: 'active',
+              createdAt: '2024-01-19',
+              lastLoginAt: '2024-01-15',
+              isEmailVerified: true,
+              phone: '+1 (555) 567-8901'
+            },
+            {
+              id: '3',
+              email: 'manager3@example.com',
+              firstName: 'Sarah',
+              lastName: 'Wilson',
+              role: 'manager',
+              status: 'pending',
+              createdAt: '2024-01-18',
+              lastLoginAt: 'Never',
+              isEmailVerified: false,
+              phone: '+1 (555) 456-7890'
+            }
+          ];
+          setUsers(mockUsers);
+        }
+      } catch (error) {
+        console.error('Error loading users:', error);
+        // Handle error silently and show empty state
+        setUsers([]);
       } finally {
         setLoading(false);
       }
@@ -195,8 +180,8 @@ const UserManagementPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600 mt-2">Manage users, roles, and permissions across the platform</p>
+          <h1 className="text-3xl font-bold text-gray-900">Manager Management</h1>
+          <p className="text-gray-600 mt-2">Manage managers and their permissions across the platform</p>
         </div>
         <div className="flex items-center space-x-3">
           <button className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
@@ -205,7 +190,7 @@ const UserManagementPage: React.FC = () => {
           </button>
           <button className="flex items-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors shadow-lg">
             <UserPlus className="w-5 h-5" />
-            <span>Add User</span>
+            <span>Add Manager</span>
           </button>
         </div>
       </div>
@@ -215,7 +200,7 @@ const UserManagementPage: React.FC = () => {
         <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Users</p>
+              <p className="text-sm font-medium text-gray-600">Total Managers</p>
               <p className="text-3xl font-bold text-gray-900">{users.length}</p>
               <p className="text-sm text-blue-600 flex items-center mt-1">
                 <TrendingUp className="w-4 h-4 mr-1" />
@@ -230,7 +215,7 @@ const UserManagementPage: React.FC = () => {
         <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Active Users</p>
+              <p className="text-sm font-medium text-gray-600">Active Managers</p>
               <p className="text-3xl font-bold text-gray-900">{users.filter(u => u.status === 'active').length}</p>
               <p className="text-sm text-green-600 flex items-center mt-1">
                 <CheckCircle className="w-4 h-4 mr-1" />
@@ -245,7 +230,7 @@ const UserManagementPage: React.FC = () => {
         <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Pending Users</p>
+              <p className="text-sm font-medium text-gray-600">Pending Managers</p>
               <p className="text-3xl font-bold text-gray-900">{users.filter(u => u.status === 'pending').length}</p>
               <p className="text-sm text-yellow-600 flex items-center mt-1">
                 <Clock className="w-4 h-4 mr-1" />
@@ -260,11 +245,11 @@ const UserManagementPage: React.FC = () => {
         <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Admins</p>
-              <p className="text-3xl font-bold text-gray-900">{users.filter(u => u.role === 'admin').length}</p>
+              <p className="text-sm font-medium text-gray-600">Verified Managers</p>
+              <p className="text-3xl font-bold text-gray-900">{users.filter(u => u.isEmailVerified).length}</p>
               <p className="text-sm text-red-600 flex items-center mt-1">
                 <Shield className="w-4 h-4 mr-1" />
-                Full access
+                Email verified
               </p>
             </div>
             <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
@@ -282,10 +267,10 @@ const UserManagementPage: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search users by name or email..."
+                placeholder="Search managers by name or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-gray-50"
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
               />
             </div>
           </div>
@@ -293,22 +278,20 @@ const UserManagementPage: React.FC = () => {
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-gray-50"
+              className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900"
             >
-              <option value="all">All Roles</option>
-              <option value="admin">Admin</option>
-              <option value="manager">Manager</option>
-              <option value="user">User</option>
+              <option value="all" className="text-gray-900">All Managers</option>
+              <option value="manager" className="text-gray-900">Manager</option>
             </select>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-gray-50"
+              className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900"
             >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="pending">Pending</option>
+              <option value="all" className="text-gray-900">All Status</option>
+              <option value="active" className="text-gray-900">Active</option>
+              <option value="inactive" className="text-gray-900">Inactive</option>
+              <option value="pending" className="text-gray-900">Pending</option>
             </select>
           </div>
         </div>
@@ -329,7 +312,7 @@ const UserManagementPage: React.FC = () => {
                   />
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  User
+                  Manager
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Role
@@ -436,10 +419,10 @@ const UserManagementPage: React.FC = () => {
       {filteredUsers.length === 0 && (
         <div className="text-center py-12 bg-white rounded-2xl shadow-sm border-0">
           <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No users found</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No managers found</h3>
           <p className="text-gray-600 mb-6">Try adjusting your search or filter criteria.</p>
           <button className="bg-[#6566F1] text-white px-6 py-3 rounded-xl hover:bg-[#5A5BD9] transition-colors">
-            Add New User
+            Add New Manager
           </button>
         </div>
       )}
@@ -449,7 +432,7 @@ const UserManagementPage: React.FC = () => {
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-xl shadow-lg border border-gray-200 p-4">
           <div className="flex items-center space-x-4">
             <span className="text-sm font-medium text-gray-700">
-              {selectedUsers.length} user{selectedUsers.length > 1 ? 's' : ''} selected
+              {selectedUsers.length} manager{selectedUsers.length > 1 ? 's' : ''} selected
             </span>
             <div className="flex items-center space-x-2">
               <button className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
