@@ -62,10 +62,10 @@ export class User {
   updatedAt!: Date;
 
   // Relations
-  @OneToMany(() => BotAssignment, botAssignment => botAssignment.user)
+  @OneToMany('BotAssignment', 'user')
   botAssignments?: BotAssignment[];
 
-  @OneToMany(() => Conversation, conversation => conversation.user)
+  @OneToMany('Conversation', 'user')
   conversations?: Conversation[];
 
   // Virtual property for full name

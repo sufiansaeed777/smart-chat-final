@@ -9,6 +9,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Skip database operations during build phase
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return NextResponse.json({ error: 'Service unavailable during build' }, { status: 503 });
+    }
+
     const session = await getServerSession(authOptions);
     
     if (!session?.user) {
@@ -54,6 +59,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Skip database operations during build phase
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return NextResponse.json({ error: 'Service unavailable during build' }, { status: 503 });
+    }
+
     const session = await getServerSession(authOptions);
     
     if (!session?.user) {
@@ -79,6 +89,11 @@ export async function PUT(
       maxBots,
       notes
     } = body;
+
+    // Skip database initialization during build phase
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return NextResponse.json({ error: 'Service unavailable during build' }, { status: 503 });
+    }
 
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
@@ -130,6 +145,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Skip database operations during build phase
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return NextResponse.json({ error: 'Service unavailable during build' }, { status: 503 });
+    }
+
     const session = await getServerSession(authOptions);
     
     if (!session?.user) {

@@ -5,6 +5,11 @@ import { User } from '@/entities/User';
 
 export async function POST(request: NextRequest) {
   try {
+    // Skip during build phase
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return NextResponse.json({ error: 'Service unavailable during build' }, { status: 503 });
+    }
+
     const { email, password, firstName, lastName, role } = await request.json();
 
     // Validate input

@@ -1,12 +1,4 @@
 import { DataSource } from "typeorm";
-import { User } from "../entities/User";
-import { Bot } from "../entities/Bot";
-import { BotAssignment } from "../entities/BotAssignment";
-import { Conversation } from "../entities/Conversation";
-import { Subscription } from "../entities/Subscription";
-import { BillingPlan } from "../entities/BillingPlan";
-import { Invoice } from "../entities/Invoice";
-import { ChatbotIssue } from "../entities/ChatbotIssue";
 
 // Environment-specific database configuration
 const getDatabaseConfig = () => {
@@ -22,7 +14,7 @@ const getDatabaseConfig = () => {
   });
   
   // During Next.js build process, don't validate environment variables
-  if (process.env.NEXT_PHASE === 'phase-production-build') {
+  if (process.env.NEXT_PHASE === 'phase-production-build' || process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
     console.log('Build phase detected, using placeholder database config');
     return {
       url: 'postgresql://placeholder:placeholder@localhost:5432/placeholder',
@@ -88,14 +80,32 @@ const getDatabaseConfig = () => {
 
 // Create data source with environment-specific config
 const config = getDatabaseConfig();
-// Database config logging removed for production
 
-export const AppDataSource = new DataSource({
+// Create DataSource with conditional entity loading
+const getEntities = () => {
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return [];
+  }
+  
+  // Dynamic imports to avoid circular dependencies during build
+  const { User } = require("../entities/User");
+  const { Bot } = require("../entities/Bot");
+  const { BotAssignment } = require("../entities/BotAssignment");
+  const { Conversation } = require("../entities/Conversation");
+  const { Subscription } = require("../entities/Subscription");
+  const { BillingPlan } = require("../entities/BillingPlan");
+  const { Invoice } = require("../entities/Invoice");
+  const { ChatbotIssue } = require("../entities/ChatbotIssue");
+  
+  return [User, Bot, BotAssignment, Conversation, Subscription, BillingPlan, Invoice, ChatbotIssue];
+};
+
+const AppDataSource = new DataSource({
   type: "postgres",
   url: config.url,
   synchronize: config.synchronize,
   logging: config.logging,
-  entities: [User, Bot, BotAssignment, Conversation, Subscription, BillingPlan, Invoice, ChatbotIssue],
+  entities: getEntities(),
   migrations: [],
   subscribers: [],
   ssl: process.env.NODE_ENV === 'production' ? {
@@ -110,9 +120,17 @@ export const AppDataSource = new DataSource({
   }
 });
 
+export { AppDataSource };
+
 // Initialize the data source with better error handling
 export const initializeDatabase = async () => {
   try {
+    // Skip initialization during build phase or when DATABASE_URL is not available
+    if (process.env.NEXT_PHASE === 'phase-production-build' || !process.env.DATABASE_URL) {
+      console.log('Skipping database initialization during build phase or missing DATABASE_URL');
+      return;
+    }
+    
     if (!AppDataSource.isInitialized) {
       console.log('Initializing database connection...');
       await AppDataSource.initialize();
