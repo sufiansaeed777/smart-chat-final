@@ -420,7 +420,8 @@ export default function TestBotPage() {
   const showBotSelection = !selectedBotId;
 
   // Memoize the bot list to prevent unnecessary re-renders
-  const BotListSection = React.memo(() => (
+  const BotListSection = React.memo(function BotListSection() {
+    return (
     <div className="w-96 h-screen bg-white/95 backdrop-blur-xl border-r border-gray-200/80 flex flex-col shadow-2xl shadow-gray-200/30 overflow-hidden">
       {/* Enhanced Sidebar Header */}
       <div className="p-6 border-b border-gray-200/80 bg-gradient-to-r from-white via-indigo-50/40 to-purple-50/40">
@@ -563,7 +564,8 @@ export default function TestBotPage() {
         )}
           </div>
         </div>
-  ), [allBots, loadingBots, searchTerm, statusFilter, selectedBotId, isDropdownOpen, filteredBots, handleBotSelect, handleStatusSelect, statusOptions]);
+  );
+  });
 
   return (
     <>
