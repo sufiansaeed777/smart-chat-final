@@ -7,6 +7,8 @@ import { Subscription } from "../entities/Subscription";
 import { BillingPlan } from "../entities/BillingPlan";
 import { Invoice } from "../entities/Invoice";
 import { ChatbotIssue } from "../entities/ChatbotIssue";
+import { Document } from "../entities/Document";
+import { BotDocument } from "../entities/BotDocument";
 
 // Environment-specific database configuration
 const getDatabaseConfig = () => {
@@ -69,7 +71,7 @@ export const AppDataSource = new DataSource({
   url: config.url,
   synchronize: config.synchronize,
   logging: config.logging,
-  entities: [User, Bot, BotAssignment, Conversation, Subscription, BillingPlan, Invoice, ChatbotIssue],
+  entities: [User, Bot, BotAssignment, Conversation, Subscription, BillingPlan, Invoice, ChatbotIssue, Document, BotDocument],
   migrations: [],
   subscribers: [],
   ssl: process.env.NODE_ENV === 'production' ? {
