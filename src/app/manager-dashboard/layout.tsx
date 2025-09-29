@@ -68,7 +68,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
         { id: 'overview', label: 'Overview', icon: LayoutDashboard, path: basePath },
         { id: 'team-management', label: 'Team Management', icon: Users, path: `${basePath}/team-management` },
         { id: 'manager-bots', label: 'Manager Bots', icon: Bot, path: `${basePath}/manager-bots` },
-        { id: 'playground', label: 'Playground', icon: PlayCircle, path: `${basePath}/playground` },
+        { id: 'test-bot', label: 'Playground', icon: PlayCircle, path: `${basePath}/test-bot` },
         { id: 'conversations', label: 'Conversations', icon: MessageSquare, path: `${basePath}/conversations` },
         { id: 'human-handoff', label: 'Human Handoff', icon: MessageCircle, path: `${basePath}/human-handoff` },
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: `${basePath}/analytics` },
@@ -103,12 +103,11 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
     if (pathname === basePath) return 'overview';
     if (pathname.includes('/team-management')) return 'team-management';
     if (pathname.includes('/manager-bots')) return 'manager-bots';
-    if (pathname.includes('/playground')) return 'playground';
+    if (pathname.includes('/test-bot')) return 'test-bot';
     if (pathname.includes('/conversations')) return 'conversations';
     if (pathname.includes('/human-handoff')) return 'human-handoff';
     if (pathname.includes('/analytics')) return 'analytics';
     if (pathname.includes('/billing')) return 'billing';
-    if (pathname.includes('/test-bot')) return 'manager-bots'; // Test bot is part of manager-bots section
     if (pathname.includes('/bots')) return 'bots';
     if (pathname.includes('/chatbot-analytics')) return 'chatbot-analytics';
     if (pathname.includes('/settings')) return 'settings';
@@ -123,13 +122,12 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
     if (pathname === basePath) return 'Overview';
     if (pathname.includes('/team-management')) return 'Team Management';
     if (pathname.includes('/manager-bots')) return 'Manager Bots';
-    if (pathname.includes('/playground')) return 'Testing Playground';
+    if (pathname.includes('/test-bot')) return 'Playground';
     if (pathname.includes('/conversations')) return 'Conversations';
     if (pathname.includes('/human-handoff')) return 'Human Handoff';
     if (pathname.includes('/analytics')) return 'Analytics';
     if (pathname.includes('/chatbot-analytics')) return 'Chatbot Analytics';
     if (pathname.includes('/billing')) return 'Billing';
-    if (pathname.includes('/test-bot')) return 'Test Bot';
     if (pathname.includes('/bots')) return 'Bots';
     if (pathname.includes('/settings')) return 'Settings';
     if (pathname.includes('/help')) return 'Help';
