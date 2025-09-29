@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { Check, ArrowRight, Star, Calculator, Phone } from 'lucide-react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { Check, ArrowRight, Calculator, Phone } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 
@@ -19,7 +19,7 @@ const PricingPage = () => {
   });
 
   // Pricing tiers based on the provided data
-  const pricingTiers = {
+  const pricingTiers = useMemo(() => ({
     bots: [
       { min: 1, max: 4, price: 3 },
       { min: 5, max: 14, price: 2.5 },
@@ -60,20 +60,20 @@ const PricingPage = () => {
       'Full': 3,
       'Enterprise': 5
     }
-  };
+  }), []);
 
   // Calculate pricing based on inputs
-  const calculatePrice = (type: string, value: number) => {
+  const calculatePrice = useCallback((type: string, value: number) => {
     const tiers = pricingTiers[type as keyof typeof pricingTiers];
     if (type === 'analytics') return 0; // Handled separately
     
-    for (const tier of tiers as any[]) {
+    for (const tier of tiers as Array<{min: number, max: number, price: number}>) {
       if (value >= tier.min && value <= tier.max) {
         return tier.price;
       }
     }
     return 0;
-  };
+  }, [pricingTiers]);
 
   // Calculate total price
   const totalPrice = useMemo(() => {
@@ -108,7 +108,7 @@ const PricingPage = () => {
     total += pricingTiers.analytics[calculatorInputs.analytics as keyof typeof pricingTiers.analytics];
     
     return Math.round(total * 100) / 100; // Round to 2 decimal places
-  }, [calculatorInputs]);
+  }, [calculatorInputs, calculatePrice, pricingTiers]);
 
   const plans = [
     {
