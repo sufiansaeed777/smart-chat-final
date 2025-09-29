@@ -19,7 +19,8 @@ import {
   MessageCircle,
   Home,
   LogOut,
-  Shield
+  Shield,
+  BookOpen
 } from 'lucide-react';
 
 interface ManagerDashboardLayoutProps {
@@ -69,6 +70,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
         { id: 'team-management', label: 'Team Management', icon: Users, path: `${basePath}/team-management` },
         { id: 'manager-bots', label: 'Manager Bots', icon: Bot, path: `${basePath}/manager-bots` },
         { id: 'test-bot', label: 'Playground', icon: PlayCircle, path: `${basePath}/test-bot` },
+        { id: 'knowledge-base', label: 'Knowledge Base', icon: BookOpen, path: `${basePath}/knowledge-base` },
         { id: 'conversations', label: 'Conversations', icon: MessageSquare, path: `${basePath}/conversations` },
         { id: 'human-handoff', label: 'Human Handoff', icon: MessageCircle, path: `${basePath}/human-handoff` },
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: `${basePath}/analytics` },
@@ -104,6 +106,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
     if (pathname.includes('/team-management')) return 'team-management';
     if (pathname.includes('/manager-bots')) return 'manager-bots';
     if (pathname.includes('/test-bot')) return 'test-bot';
+    if (pathname.includes('/knowledge-base')) return 'knowledge-base';
     if (pathname.includes('/conversations')) return 'conversations';
     if (pathname.includes('/human-handoff')) return 'human-handoff';
     if (pathname.includes('/analytics')) return 'analytics';
@@ -123,6 +126,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
     if (pathname.includes('/team-management')) return 'Team Management';
     if (pathname.includes('/manager-bots')) return 'Manager Bots';
     if (pathname.includes('/test-bot')) return 'Playground';
+    if (pathname.includes('/knowledge-base')) return 'Knowledge Base';
     if (pathname.includes('/conversations')) return 'Conversations';
     if (pathname.includes('/human-handoff')) return 'Human Handoff';
     if (pathname.includes('/analytics')) return 'Analytics';

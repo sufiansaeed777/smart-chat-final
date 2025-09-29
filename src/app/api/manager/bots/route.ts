@@ -6,6 +6,7 @@ import { User } from '@/entities/User';
 import { Bot } from '@/entities/Bot';
 import { BotAssignment } from '@/entities/BotAssignment';
 import { Conversation } from '@/entities/Conversation';
+import { BotDocument } from '@/entities/BotDocument';
 
 export async function GET(request: NextRequest) {
   try {
@@ -38,9 +39,10 @@ export async function GET(request: NextRequest) {
     // Get bots created by this manager
     const botRepository = AppDataSource.getRepository(Bot);
     const conversationRepository = AppDataSource.getRepository(Conversation);
+    const botDocumentRepository = AppDataSource.getRepository(BotDocument);
     const bots = await botRepository.find({
       where: { createdBy: user.id },
-      relations: ['assignments', 'assignments.user'],
+      relations: ['assignments', 'assignments.user', 'botDocuments', 'botDocuments.document'],
       order: { createdAt: 'DESC' }
     });
 
@@ -77,7 +79,13 @@ export async function GET(request: NextRequest) {
       lastActive: bot.lastActive ? new Date(bot.lastActive).toLocaleString() : 'Never',
       assignedUsers: bot.assignments?.map(assignment => assignment.user?.email).filter(Boolean) || [],
       createdAt: bot.createdAt.toISOString().split('T')[0],
-      lastConversation: bot.lastActive ? new Date(bot.lastActive).toISOString().split('T')[0] : null
+      lastConversation: bot.lastActive ? new Date(bot.lastActive).toISOString().split('T')[0] : null,
+      documents: bot.botDocuments?.map(bd => ({
+        id: bd.document.id,
+        name: bd.document.name,
+        type: bd.document.type,
+        size: Number(bd.document.size) || 0
+      })) || []
     }));
 
     return NextResponse.json({ 

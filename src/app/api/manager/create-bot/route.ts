@@ -4,6 +4,8 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
 import { User } from '@/entities/User';
 import { Bot } from '@/entities/Bot';
+import { BotDocument } from '@/entities/BotDocument';
+import { Document } from '@/entities/Document';
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, domain, status } = body;
+    const { name, description, domain, status, documentIds, newDocuments } = body;
 
     // Validate required fields
     if (!name || !description || !domain) {
@@ -56,6 +58,68 @@ export async function POST(request: NextRequest) {
     });
 
     const savedBot = await botRepository.save(newBot);
+
+    // Handle document associations
+    const botDocumentRepository = AppDataSource.getRepository(BotDocument);
+    const documentRepository = AppDataSource.getRepository(Document);
+    const associatedDocuments = [];
+
+    // Associate existing documents
+    if (documentIds && documentIds.length > 0) {
+      for (const documentId of documentIds) {
+        // Verify the document belongs to the manager
+        const document = await documentRepository.findOne({
+          where: { id: documentId, userId: user.id, status: 'active' }
+        });
+
+        if (document) {
+          const botDocument = botDocumentRepository.create({
+            botId: savedBot.id,
+            documentId: documentId,
+            status: 'active'
+          });
+          await botDocumentRepository.save(botDocument);
+          associatedDocuments.push({
+            id: document.id,
+            name: document.name,
+            type: document.type
+          });
+        }
+      }
+    }
+
+    // Handle new document uploads
+    if (newDocuments && newDocuments.length > 0) {
+      for (const newDoc of newDocuments) {
+        // Create new document
+        const document = documentRepository.create({
+          name: newDoc.name,
+          type: newDoc.type,
+          size: newDoc.size,
+          filePath: newDoc.filePath,
+          content: newDoc.content,
+          mimeType: newDoc.mimeType,
+          userId: user.id,
+          status: 'active'
+        });
+
+        const savedDocument = await documentRepository.save(document);
+
+        // Associate with bot
+        const botDocument = botDocumentRepository.create({
+          botId: savedBot.id,
+          documentId: savedDocument.id,
+          status: 'active'
+        });
+        await botDocumentRepository.save(botDocument);
+
+        associatedDocuments.push({
+          id: savedDocument.id,
+          name: savedDocument.name,
+          type: savedDocument.type
+        });
+      }
+    }
 
     // Create n8n workflow for the bot
     try {
@@ -99,7 +163,8 @@ export async function POST(request: NextRequest) {
         description: savedBot.description,
         domain: savedBot.domain,
         status: savedBot.status,
-        createdAt: savedBot.createdAt
+        createdAt: savedBot.createdAt,
+        associatedDocuments: associatedDocuments
       }
     });
 
