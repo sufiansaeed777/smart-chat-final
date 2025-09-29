@@ -1,11 +1,115 @@
 'use client';
 
-import React from 'react';
-import { Check, ArrowRight, Star } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Check, ArrowRight, Star, Calculator, Phone } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 
 const PricingPage = () => {
+  // Pricing Calculator State
+  const [calculatorInputs, setCalculatorInputs] = useState({
+    bots: 0,
+    members: 0,
+    conversations: 0,
+    storage: 0,
+    fileSize: 0,
+    websites: 0,
+    parallelChats: 0,
+    analytics: 'Basic'
+  });
+
+  // Pricing tiers based on the provided data
+  const pricingTiers = {
+    bots: [
+      { min: 1, max: 4, price: 3 },
+      { min: 5, max: 14, price: 2.5 },
+      { min: 15, max: Infinity, price: 2 }
+    ],
+    members: [
+      { min: 1, max: 4, price: 1 },
+      { min: 5, max: 20, price: 0.8 },
+      { min: 21, max: Infinity, price: 0.5 }
+    ],
+    conversations: [
+      { min: 1, max: 10000, price: 2.5 },
+      { min: 10001, max: 50000, price: 2.5 },
+      { min: 50001, max: Infinity, price: 2 }
+    ],
+    storage: [
+      { min: 1, max: 200, price: 0.5 },
+      { min: 201, max: 1000, price: 0.4 },
+      { min: 1001, max: Infinity, price: 0.3 }
+    ],
+    fileSize: [
+      { min: 1, max: 20, price: 0.5 },
+      { min: 21, max: 50, price: 0.4 },
+      { min: 51, max: Infinity, price: 0.3 }
+    ],
+    websites: [
+      { min: 1, max: 2, price: 4 },
+      { min: 3, max: 5, price: 3.5 },
+      { min: 6, max: Infinity, price: 3 }
+    ],
+    parallelChats: [
+      { min: 1, max: 50, price: 3 },
+      { min: 51, max: 200, price: 2.5 },
+      { min: 201, max: Infinity, price: 2 }
+    ],
+    analytics: {
+      'Basic': 1,
+      'Full': 3,
+      'Enterprise': 5
+    }
+  };
+
+  // Calculate pricing based on inputs
+  const calculatePrice = (type: string, value: number) => {
+    const tiers = pricingTiers[type as keyof typeof pricingTiers];
+    if (type === 'analytics') return 0; // Handled separately
+    
+    for (const tier of tiers as any[]) {
+      if (value >= tier.min && value <= tier.max) {
+        return tier.price;
+      }
+    }
+    return 0;
+  };
+
+  // Calculate total price
+  const totalPrice = useMemo(() => {
+    let total = 0;
+    
+    // Bots pricing
+    total += calculatorInputs.bots * calculatePrice('bots', calculatorInputs.bots);
+    
+    // Members pricing
+    total += calculatorInputs.members * calculatePrice('members', calculatorInputs.members);
+    
+    // Conversations pricing (per 1k)
+    const conversationTier = calculatePrice('conversations', calculatorInputs.conversations);
+    total += Math.ceil(calculatorInputs.conversations / 1000) * conversationTier;
+    
+    // Storage pricing (per 50MB)
+    const storageTier = calculatePrice('storage', calculatorInputs.storage);
+    total += Math.ceil(calculatorInputs.storage / 50) * storageTier;
+    
+    // File size pricing (per 5MB)
+    const fileSizeTier = calculatePrice('fileSize', calculatorInputs.fileSize);
+    total += Math.ceil(calculatorInputs.fileSize / 5) * fileSizeTier;
+    
+    // Websites pricing
+    total += calculatorInputs.websites * calculatePrice('websites', calculatorInputs.websites);
+    
+    // Parallel chats pricing (per 10)
+    const parallelChatTier = calculatePrice('parallelChats', calculatorInputs.parallelChats);
+    total += Math.ceil(calculatorInputs.parallelChats / 10) * parallelChatTier;
+    
+    // Analytics pricing
+    total += pricingTiers.analytics[calculatorInputs.analytics as keyof typeof pricingTiers.analytics];
+    
+    return Math.round(total * 100) / 100; // Round to 2 decimal places
+  }, [calculatorInputs]);
+
   const plans = [
     {
       name: "Free",
@@ -112,13 +216,13 @@ const PricingPage = () => {
                   Pricing
                 </span>
               </h1>
-               <p className="text-xl md:text-2xl text-slate-600 max-w-3xl mx-auto leading-relaxed whitespace-nowrap mb-24">
+               <p className="text-xl md:text-2xl text-slate-600 max-w-3xl mx-auto leading-relaxed mb-24">
                 Choose the plan that fits your needs. All paid plans include a 14-day free trial.
               </p>
             </div>
 
             {/* Pricing cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-16">
               {plans.slice(0, 3).map((plan, index) => (
                 <div
                   key={index}
@@ -205,6 +309,374 @@ const PricingPage = () => {
               ))}
             </div>
 
+            {/* Custom Pricing Calculator */}
+            <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-3xl p-6 md:p-8 shadow-2xl mb-16 border border-slate-200">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mb-4 shadow-lg">
+                  <Calculator className="w-8 h-8 text-white" />
+                </div>
+                <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">Custom Pricing Calculator</h2>
+                <p className="text-base md:text-lg text-slate-600">Build your custom solution and get an instant estimate.</p>
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
+                {/* Select Features Section */}
+                <div className="lg:col-span-2 flex flex-col">
+                  <div className="mb-6">
+                    <h3 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"></div>
+                      Select Features
+                    </h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">
+                      Choose the features you need for your AI chatbot solution.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                    {/* Bots */}
+                    <div 
+                      className={`relative bg-white rounded-xl p-4 border-2 transition-all duration-300 cursor-pointer hover:shadow-[#5A5BD8] hover:shadow-3xl hover:-translate-y-2 group flex flex-col h-full ${
+                        calculatorInputs.bots > 0 
+                          ? 'border-blue-500 shadow-blue-100 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 ring-1 ring-blue-100' 
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                      onClick={() => setCalculatorInputs(prev => ({ 
+                        ...prev, 
+                        bots: prev.bots > 0 ? 0 : 1 
+                      }))}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
+                            calculatorInputs.bots > 0 
+                              ? 'bg-gradient-to-r from-blue-500 to-blue-600 border-blue-500' 
+                              : 'border-slate-300 group-hover:border-slate-400 bg-slate-50'
+                          }`}>
+                            {calculatorInputs.bots > 0 && (
+                              <Check className="w-4 h-4 text-white" />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors">AI Bots</h4>
+                            <p className="text-xs text-slate-500">Intelligent chatbots</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-blue-600">
+                            ${calculatePrice('bots', calculatorInputs.bots)}
+                          </div>
+                          <div className="text-xs text-slate-500">per bot</div>
+                        </div>
+                      </div>
+                      <p className="text-slate-600 mb-3 leading-relaxed flex-1 text-xs">
+                        Deploy intelligent chatbots for customer support and automated responses.
+                      </p>
+                      <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-100">
+                        <label className="text-xs font-semibold text-slate-700">Quantity:</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={calculatorInputs.bots}
+                          onChange={(e) => setCalculatorInputs(prev => ({ ...prev, bots: parseInt(e.target.value) || 0 }))}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-16 px-2 py-1 border border-slate-200 rounded text-center text-xs font-semibold text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Team Members */}
+                    <div 
+                      className={`relative bg-white rounded-xl p-4 border-2 transition-all duration-300 cursor-pointer hover:shadow-[#5A5BD8] hover:shadow-3xl hover:-translate-y-2 group flex flex-col h-full ${
+                        calculatorInputs.members > 0 
+                          ? 'border-blue-500 shadow-blue-100 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 ring-1 ring-blue-100' 
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                      onClick={() => setCalculatorInputs(prev => ({ 
+                        ...prev, 
+                        members: prev.members > 0 ? 0 : 1 
+                      }))}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
+                            calculatorInputs.members > 0 
+                              ? 'bg-gradient-to-r from-blue-500 to-blue-600 border-blue-500' 
+                              : 'border-slate-300 group-hover:border-slate-400 bg-slate-50'
+                          }`}>
+                            {calculatorInputs.members > 0 && (
+                              <Check className="w-4 h-4 text-white" />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Team Members</h4>
+                            <p className="text-xs text-slate-500">User accounts</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-blue-600">
+                            ${calculatePrice('members', calculatorInputs.members)}
+                          </div>
+                          <div className="text-xs text-slate-500">per member</div>
+                        </div>
+                      </div>
+                      <p className="text-slate-600 mb-3 leading-relaxed flex-1 text-xs">
+                        Add team members to collaborate on chatbot management and analytics.
+                      </p>
+                      <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-100">
+                        <label className="text-xs font-semibold text-slate-700">Quantity:</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={calculatorInputs.members}
+                          onChange={(e) => setCalculatorInputs(prev => ({ ...prev, members: parseInt(e.target.value) || 0 }))}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-16 px-2 py-1 border border-slate-200 rounded text-center text-xs font-semibold text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Conversations */}
+                    <div 
+                      className={`relative bg-white rounded-xl p-4 border-2 transition-all duration-300 cursor-pointer hover:shadow-[#5A5BD8] hover:shadow-3xl hover:-translate-y-2 group flex flex-col h-full ${
+                        calculatorInputs.conversations > 0 
+                          ? 'border-blue-500 shadow-blue-100 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 ring-1 ring-blue-100' 
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                      onClick={() => setCalculatorInputs(prev => ({ 
+                        ...prev, 
+                        conversations: prev.conversations > 0 ? 0 : 1000 
+                      }))}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
+                            calculatorInputs.conversations > 0 
+                              ? 'bg-gradient-to-r from-blue-500 to-blue-600 border-blue-500' 
+                              : 'border-slate-300 group-hover:border-slate-400 bg-slate-50'
+                          }`}>
+                            {calculatorInputs.conversations > 0 && (
+                              <Check className="w-4 h-4 text-white" />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Conversations</h4>
+                            <p className="text-xs text-slate-500">Monthly volume</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-blue-600">
+                            ${calculatePrice('conversations', calculatorInputs.conversations)}
+                          </div>
+                          <div className="text-xs text-slate-500">per 1k</div>
+                        </div>
+                      </div>
+                      <p className="text-slate-600 mb-3 leading-relaxed flex-1 text-xs">
+                        Handle high-volume customer conversations with scalable AI infrastructure.
+                      </p>
+                      <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-100">
+                        <label className="text-xs font-semibold text-slate-700">Per month:</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={calculatorInputs.conversations}
+                          onChange={(e) => setCalculatorInputs(prev => ({ ...prev, conversations: parseInt(e.target.value) || 0 }))}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-16 px-2 py-1 border border-slate-200 rounded text-center text-xs font-semibold text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Storage */}
+                    <div 
+                      className={`relative bg-white rounded-xl p-4 border-2 transition-all duration-300 cursor-pointer hover:shadow-[#5A5BD8] hover:shadow-3xl hover:-translate-y-2 group flex flex-col h-full ${
+                        calculatorInputs.storage > 0 
+                          ? 'border-blue-500 shadow-blue-100 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 ring-1 ring-blue-100' 
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                      onClick={() => setCalculatorInputs(prev => ({ 
+                        ...prev, 
+                        storage: prev.storage > 0 ? 0 : 50 
+                      }))}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
+                            calculatorInputs.storage > 0 
+                              ? 'bg-gradient-to-r from-blue-500 to-blue-600 border-blue-500' 
+                              : 'border-slate-300 group-hover:border-slate-400 bg-slate-50'
+                          }`}>
+                            {calculatorInputs.storage > 0 && (
+                              <Check className="w-4 h-4 text-white" />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Storage</h4>
+                            <p className="text-xs text-slate-500">File storage</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-blue-600">
+                            ${calculatePrice('storage', calculatorInputs.storage)}
+                          </div>
+                          <div className="text-xs text-slate-500">per 50MB</div>
+                        </div>
+                      </div>
+                      <p className="text-slate-600 mb-3 leading-relaxed flex-1 text-xs">
+                        Secure cloud storage for your chatbot knowledge base and documents.
+                      </p>
+                      <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-100">
+                        <label className="text-xs font-semibold text-slate-700">MB:</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={calculatorInputs.storage}
+                          onChange={(e) => setCalculatorInputs(prev => ({ ...prev, storage: parseInt(e.target.value) || 0 }))}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-16 px-2 py-1 border border-slate-200 rounded text-center text-xs font-semibold text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Websites */}
+                    <div 
+                      className={`relative bg-white rounded-xl p-4 border-2 transition-all duration-300 cursor-pointer hover:shadow-[#5A5BD8] hover:shadow-3xl hover:-translate-y-2 group flex flex-col h-full ${
+                        calculatorInputs.websites > 0 
+                          ? 'border-blue-500 shadow-blue-100 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 ring-1 ring-blue-100' 
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                      onClick={() => setCalculatorInputs(prev => ({ 
+                        ...prev, 
+                        websites: prev.websites > 0 ? 0 : 1 
+                      }))}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
+                            calculatorInputs.websites > 0 
+                              ? 'bg-gradient-to-r from-blue-500 to-blue-600 border-blue-500' 
+                              : 'border-slate-300 group-hover:border-slate-400 bg-slate-50'
+                          }`}>
+                            {calculatorInputs.websites > 0 && (
+                              <Check className="w-4 h-4 text-white" />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Websites</h4>
+                            <p className="text-xs text-slate-500">Deployment locations</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-blue-600">
+                            ${calculatePrice('websites', calculatorInputs.websites)}
+                          </div>
+                          <div className="text-xs text-slate-500">per site</div>
+                        </div>
+                      </div>
+                      <p className="text-slate-600 mb-3 leading-relaxed flex-1 text-xs">
+                        Deploy your AI chatbots across multiple websites with easy integration.
+                      </p>
+                      <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-100">
+                        <label className="text-xs font-semibold text-slate-700">Quantity:</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={calculatorInputs.websites}
+                          onChange={(e) => setCalculatorInputs(prev => ({ ...prev, websites: parseInt(e.target.value) || 0 }))}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-16 px-2 py-1 border border-slate-200 rounded text-center text-xs font-semibold text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Analytics */}
+                    <div 
+                      className={`relative bg-white rounded-xl p-4 border-2 transition-all duration-300 cursor-pointer hover:shadow-[#5A5BD8] hover:shadow-3xl hover:-translate-y-2 group flex flex-col h-full ${
+                        calculatorInputs.analytics !== 'Basic' 
+                          ? 'border-blue-500 shadow-blue-100 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 ring-1 ring-blue-100' 
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                      onClick={() => setCalculatorInputs(prev => ({ 
+                        ...prev, 
+                        analytics: prev.analytics === 'Basic' ? 'Full' : 'Basic' 
+                      }))}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
+                            calculatorInputs.analytics !== 'Basic' 
+                              ? 'bg-gradient-to-r from-blue-500 to-blue-600 border-blue-500' 
+                              : 'border-slate-300 group-hover:border-slate-400 bg-slate-50'
+                          }`}>
+                            {calculatorInputs.analytics !== 'Basic' && (
+                              <Check className="w-4 h-4 text-white" />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Analytics</h4>
+                            <p className="text-xs text-slate-500">Advanced reporting</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-blue-600">
+                            ${pricingTiers.analytics[calculatorInputs.analytics as keyof typeof pricingTiers.analytics]}
+                          </div>
+                          <div className="text-xs text-slate-500">per month</div>
+                        </div>
+                      </div>
+                      <p className="text-slate-600 mb-3 leading-relaxed flex-1 text-xs">
+                        Get detailed insights into chatbot performance and user interactions.
+                      </p>
+                      <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-100">
+                        <label className="text-xs font-semibold text-slate-700">Type:</label>
+                        <select
+                          value={calculatorInputs.analytics}
+                          onChange={(e) => setCalculatorInputs(prev => ({ ...prev, analytics: e.target.value }))}
+                          onClick={(e) => e.stopPropagation()}
+                          className="px-2 py-1 border border-slate-200 rounded text-xs font-semibold text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-200"
+                        >
+                          <option value="Basic">Basic</option>
+                          <option value="Full">Full</option>
+                          <option value="Enterprise">Enterprise</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Price Estimate Section */}
+                <div className="bg-gradient-to-br from-slate-900 to-blue-900 rounded-2xl p-6 md:p-8 border border-slate-700 shadow-2xl">
+                  <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                    Price Estimate
+                  </h3>
+                  
+                  <div className="text-center mb-8">
+                    <p className="text-slate-300 mb-6">Select features to see pricing</p>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                      <div className="text-center">
+                        <div className="text-6xl font-bold text-white mb-2">
+                          ${totalPrice.toFixed(0)}
+                        </div>
+                        <p className="text-slate-300 text-lg">per month</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-400 italic mt-4">
+                      * Final price may vary based on detailed requirements.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5">
+                      <Calculator className="w-5 h-5" />
+                      Get Custom Quote
+                    </button>
+                    <button className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-6 rounded-xl border-2 border-white/30 hover:border-white/50 transition-all duration-300 flex items-center justify-center gap-3 shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 backdrop-blur-sm">
+                      <Phone className="w-5 h-5" />
+                      Discuss Pricing
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Feature Comparison Table */}
             <div className="bg-white rounded-3xl p-10 shadow-2xl mb-16 border border-slate-100">
@@ -216,7 +688,7 @@ const PricingPage = () => {
                 </div>
                 <h3 className="text-4xl font-bold text-slate-900 mb-4">
                   Feature <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Comparison</span>
-                </h3>
+              </h3>
                 <p className="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
                   Compare features across our pricing tiers to find the best fit for your project.
                   </p>
