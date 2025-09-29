@@ -1,0 +1,28 @@
+Metadata
+use_case
+
+A mid-sized private label seller is running a quarterly inventory compliance and replenishment check for their FBA operations, aiming to ensure all inbound products meet regulatory standards, shipping logistics are managed, and reports are accessed for continuous optimization.
+user_journey
+
+Compliance Review > Creating Inbound Shipment Plans > Shipment Preparation > Retrieving Transportation Documents > Performance & Inventory Reporting
+user_journey_tool_flow
+
+list_item_compliance_details_fba > list_inbound_plans_fba > get_shipments_fba > get_labels_fba > get_bill_of_lading > get_reports
+task_category
+
+Feasible tool use, Datetime Reasoning (When applicable), Default Clarification Behavior, Context Information System Prompt, High Level Instructions
+task_type
+
+Natural User
+secondary_category
+
+Search Refinement
+number_of_turns
+
+13
+mcp_app
+
+["amazon_v2"]
+database_id
+
+["db_1758150759699_3v9mas6l9"]

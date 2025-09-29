@@ -1,0 +1,497 @@
+System Message mistake:
+{
+  "score": 2,
+  "issues": [
+    {
+      "description": "The example for `update_shipment_status` uses an invalid value for the `shipment_status` parameter. It uses 'Shipped', which is not a valid option.",
+      "why_it_is_wrong": "Incorrect tool usage hint. The provided value 'Shipped' is not in the allowed enum list for the `shipment_status` parameter, which is ['ReadyForPickup', 'PickedUp', 'RefusedPickup']. This teaches the model to make invalid tool calls.",
+      "location": "Tool Usage Logic and Examples: Restricted Product Compliance",
+      "reference": "update_shipment_status (order_id, status=\"Shipped\")"
+    },
+    {
+      "description": "The system message explicitly lists the parameters for the `get_orders` tool.",
+      "why_it_is_wrong": "Restating tool defaults. The SM must not copy or paraphrase argument lists from the tool documentation. This adds unnecessary length and can become outdated if the tool changes.",
+      "location": "Key Operational Guidelines: Order Compliance and Fulfillment Workflow",
+      "reference": "get_orders (marketplace_ids , created_after, created_before, order_statuses, fulfillment_channels, max_results_per_page)"
+    },
+    {
+      "description": "The system message explicitly lists the parameters for the `create_report_schedule` tool.",
+      "why_it_is_wrong": "Restating tool defaults. The SM must not copy or paraphrase argument lists from the tool documentation.",
+      "location": "Key Operational Guidelines: Reporting Automation Protocols",
+      "reference": "create_report_schedule (report_type, marketplace_ids, period, report_options)"
+    },
+    {
+      "description": "The system message explicitly lists the parameters for the `create_feed` tool.",
+      "why_it_is_wrong": "Restating tool defaults. The SM must not copy or paraphrase argument lists from the tool documentation.",
+      "location": "Tool Usage Logic and Examples: Feed Management Example",
+      "reference": "create_feed (feed_type, marketplace_ids, input_feed_document_id, feed_options)"
+    },
+    {
+      "description": "The system message explicitly lists the parameters for the `get_feeds` tool.",
+      "why_it_is_wrong": "Restating tool defaults. The SM must not copy or paraphrase argument lists from the tool documentation.",
+      "location": "Tool Usage Logic and Examples: Feed Management Example",
+      "reference": "get_feeds (feed_types, marketplace_ids, page_size, processing_statuses, created_since, created_until, next_token)"
+    },
+    {
+      "description": "The example for `update_listing_partial` includes an 'attributes' parameter that does not exist for this tool.",
+      "why_it_is_wrong": "Unknown tool parameter. The model is being instructed to use a parameter that is not defined in the tool's schema, which will result in failed tool calls.",
+      "location": "Tool Usage Logic and Examples: Catalog Management Example",
+      "reference": "update_listing_partial (seller_sku, marketplace_ids=[\"ATVPDKIKX0DER\"], attributes={title: \"Handmade Soy Candle\"})"
+    },
+    {
+      "description": "The example for `update_inventory_quantity` includes a 'reason' parameter that does not exist for this tool.",
+      "why_it_is_wrong": "Unknown tool parameter. The model is being instructed to use a parameter that is not defined in the tool's schema, which will result in failed tool calls.",
+      "location": "Tool Usage Logic and Examples: Inventory Adjustment Example",
+      "reference": "update_inventory_quantity (seller_sku, quantity_data={quantity: 50}, reason=\"restock\")"
+    },
+    {
+      "description": "The example for `search_listings_items` omits the 'marketplace_ids' parameter, which is a required field.",
+      "why_it_is_wrong": "Incorrect tool usage hint. The example shows an invalid tool call that will fail because a required parameter is missing.",
+      "location": "Tool Usage Logic and Examples: Catalog Management Example",
+      "reference": "search_listings_items (seller_id=\"S-0101-00000\", keywords=\"candle\", product_type=\"HOME\")"
+    },
+    {
+      "description": "The example for `create_or_update_listing` omits the 'seller_id' parameter, which is a required field.",
+      "why_it_is_wrong": "Incorrect tool usage hint. The example shows an invalid tool call that will fail because a required parameter is missing.",
+      "location": "Tool Usage Logic and Examples: Competitive Pricing Example",
+      "reference": "create_or_update_listing (seller_sku, marketplace_ids, price)"
+    },
+    {
+      "description": "The logic for handling ambiguous queries is described in the introductory paragraph and then explained again in its own dedicated section.",
+      "why_it_is_wrong": "Redundant repetition. The same instruction is repeated in multiple places without adding significant new information, making the prompt unnecessarily long.",
+      "location": "Introductory paragraph and 'Handling Ambiguous Queries' section",
+      "reference": "When queries are ambiguous or yield insufficient results, refine searches logically... vs. Handling Ambiguous Queries: For vague requests like \"find low-stock items,\" disambiguate..."
+    }
+  ]
+}
+{
+  "score": 2,
+  "issues": [
+    {
+      "description": "The system message restates multiple parameters for the 'get_listing_offers_batch' tool, including 'marketplace_ids' and 'item_condition'.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Key Operational Guidelines: Competitive Pricing Analysis",
+      "reference": "For pricing insights, use get_listing_offers_batch (up to 20 SKUs, specify marketplace_ids, item_condition)..."
+    },
+    {
+      "description": "The system message restates the 'sku' parameter for the 'get_featured_offer_expected_price_batch' tool.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Key Operational Guidelines: Competitive Pricing Analysis",
+      "reference": "...then chain to get_featured_offer_expected_price_batch (requests array with sku) for buy box projections."
+    },
+    {
+      "description": "The system message restates multiple parameters for the 'create_report_schedule' tool, including 'report_type', 'marketplace_ids', 'period', and 'report_options'.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Key Operational Guidelines: Reporting Automation Protocols",
+      "reference": "...create_report_schedule (requires report_type like GET_FLAT_FILE_OPEN_LISTINGS_DATA, marketplace_ids, period, report_options)..."
+    },
+    {
+      "description": "The system message restates the 'schedule_id' parameter for the 'cancel_report_schedule' tool.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Key Operational Guidelines: Reporting Automation Protocols",
+      "reference": "Cancel overlaps via cancel_report_schedule using schedule_id."
+    },
+    {
+      "description": "The system message restates multiple parameters for the 'get_orders' tool, including 'created_after', 'created_before', 'order_statuses', and 'fulfillment_channels'.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Key Operational Guidelines: Order Compliance and Fulfillment Workflow",
+      "reference": "Start with get_orders (filter by created_after/created_before in ISO 8601 UTC, order_statuses like Unshipped or Pending, fulfillment_channels like AFN)..."
+    },
+    {
+      "description": "The system message restates the 'order_id' parameter for the 'get_order' tool.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Key Operational Guidelines: Order Compliance and Fulfillment Workflow",
+      "reference": "...drill into details with get_order (by order_id)..."
+    },
+    {
+      "description": "Spelling error in the word 'deletetion'.",
+      "why_it_is_wrong": "Spelling and Grammar: The system message contains spelling mistakes.",
+      "location": "Security and Confirmation Protocols",
+      "reference": "...operations involving the deletetion or updatition of the data..."
+    },
+    {
+      "description": "Grammatical error or neologism in the word 'updatition'.",
+      "why_it_is_wrong": "Spelling and Grammar: The system message contains grammatical errors or non-standard words.",
+      "location": "Security and Confirmation Protocols",
+      "reference": "...operations involving the deletetion or updatition of the data..."
+    },
+    {
+      "description": "Spelling error in the word 'hundered'.",
+      "why_it_is_wrong": "Spelling and Grammar: The system message contains spelling mistakes.",
+      "location": "Security and Confirmation Protocols",
+      "reference": "...if the quantity is greater than hundered..."
+    },
+    {
+      "description": "The system message restates multiple parameters for the 'update_listing_partial' tool, including 'seller_sku', 'marketplace_ids', and 'attributes'.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Tool Usage Logic and Examples: Catalog Management Example",
+      "reference": "...call update_listing_partial (seller_sku, marketplace_ids=[\"ATVPDKIKX0DER\"], attributes={title: \"Handmade Soy Candle\"})."
+    },
+    {
+      "description": "The system message restates multiple parameters for the 'search_listings_items' tool, including 'seller_id', 'keywords', and 'product_type'.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Tool Usage Logic and Examples: Catalog Management Example",
+      "reference": "...first use search_listings_items (seller_id=\"S-0101-00000\", keywords=\"candle\", product_type=\"HOME\")."
+    },
+    {
+      "description": "The system message restates multiple parameters for the 'get_inventory_summaries' tool, including 'seller_sku' and 'marketplace_ids'.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Tool Usage Logic and Examples: Inventory Adjustment Example",
+      "reference": "...call get_inventory_summaries (seller_sku, marketplace_ids=[\"ATVPDKIKX0DER\"]) to check quantities."
+    },
+    {
+      "description": "The system message restates parameters for the 'update_inventory_quantity' tool ('seller_sku', 'quantity_data') and references a non-existent parameter 'reason'.",
+      "why_it_is_wrong": "Unknown tool: The system message references a tool parameter ('reason') that is not defined in the allowed_tools.",
+      "location": "Tool Usage Logic and Examples: Inventory Adjustment Example",
+      "reference": "...use update_inventory_quantity (seller_sku, quantity_data={quantity: 50}, reason=\"restock\")..."
+    },
+    {
+      "description": "The system message restates multiple parameters for the 'get_competitive_pricing' tool, including 'marketplace_id', 'item_type', and 'asins'.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Tool Usage Logic and Examples: Competitive Pricing Example",
+      "reference": "...use get_competitive_pricing (marketplace_id=\"ATVPDKIKX0DER\", item_type=\"Asin\", asins=[\"B09XYZ123VASE\"])..."
+    },
+    {
+      "description": "The system message restates multiple parameters for the 'create_or_update_listing' tool, including 'seller_sku', 'marketplace_ids', and 'price'.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Tool Usage Logic and Examples: Competitive Pricing Example",
+      "reference": "...set a listing price with create_or_update_listing (seller_sku, marketplace_ids, price)."
+    },
+    {
+      "description": "The system message restates the 'content_type' parameter for the 'create_feed_document' tool.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Tool Usage Logic and Examples: Feed Management Example",
+      "reference": "...create a feed with create_feed_document (content_type=\"text/csv\")..."
+    },
+    {
+      "description": "The system message restates the 'feed_type' parameter for the 'create_feed' tool.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Tool Usage Logic and Examples: Feed Management Example",
+      "reference": "...upload data via create_feed (feed_type=\"POST_FLAT_FILE_LISTINGS_DATA\")..."
+    },
+    {
+      "description": "The system message restates the 'feed_id' parameter for the 'get_feeds' tool.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Tool Usage Logic and Examples: Feed Management Example",
+      "reference": "...and monitor status with get_feeds (feed_id)."
+    },
+    {
+      "description": "The system message restates multiple parameters for the 'create_or_update_listing' tool, including 'seller_sku', 'marketplace_ids', and 'attributes'.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Tool Usage Logic and Examples: Bulk Listing Creation",
+      "reference": "...use create_or_update_listing for each SKU (seller_sku, marketplace_ids=[\"ATVPDKIKX0DER\"], attributes={title, description, price})."
+    },
+    {
+      "description": "The system message restates multiple parameters for the 'search_catalog_items' tool, including 'keywords' and 'marketplace_ids'.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Tool Usage Logic and Examples: Bulk Listing Creation",
+      "reference": "...call search_catalog_items (keywords=\"ceramic mug\", marketplace_ids=[\"ATVPDKIKX0DER\"]) to find matches..."
+    },
+    {
+      "description": "The system message incorrectly lists 'marketplace_ids' as a parameter for the 'get_order_regulated_info' tool, which is not a valid parameter for that tool.",
+      "why_it_is_wrong": "Unknown tool: The system message references a tool parameter ('marketplace_ids') that is not defined for the 'get_order_regulated_info' tool in allowed_tools.",
+      "location": "Tool Usage Logic and Examples: Restricted Product Compliance",
+      "reference": "...verify compliance with get_order_regulated_info (order_id, marketplace_ids=[\"ATVPDKIKX0DER\"])."
+    },
+    {
+      "description": "The system message restates the 'order_id' parameter for the 'get_order_buyer_info' tool.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Tool Usage Logic and Examples: Restricted Product Compliance",
+      "reference": "If restricted, use get_order_buyer_info (order_id) to confirm buyer eligibility..."
+    },
+    {
+      "description": "The system message restates multiple parameters for the 'update_shipment_status' tool, including 'order_id' and 'status'.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Tool Usage Logic and Examples: Restricted Product Compliance",
+      "reference": "...proceeding with update_shipment_status (order_id, status=\"Shipped\")."
+    },
+    {
+      "description": "The system message restates multiple parameters for the 'get_report_schedules' tool, including 'report_types' and 'marketplace_ids'.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Tool Usage Logic and Examples: Report Cancellation",
+      "reference": "...call get_report_schedules (report_types=[\"GET_FLAT_FILE_SALES_DATA\"], marketplace_ids=[\"ATVPDKIKX0DER\"]) to identify schedule_id..."
+    },
+    {
+      "description": "The system message restates the 'schedule_id' parameter for the 'cancel_report_schedule' tool.",
+      "why_it_is_wrong": "Restating tool defaults: The SM must not copy or paraphrase argument lists or behaviors from the allowed_tools documentation.",
+      "location": "Tool Usage Logic and Examples: Report Cancellation",
+      "reference": "...then use cancel_report_schedule (schedule_id) to terminate it."
+    },
+    {
+      "description": "The system message incorrectly lists 'marketplace_ids' as a parameter for the 'get_order_items' tool, which is not a valid parameter for that tool.",
+      "why_it_is_wrong": "Unknown tool: The system message references a tool parameter ('marketplace_ids') that is not defined for the 'get_order_items' tool in allowed_tools.",
+      "location": "Tool Usage Logic and Examples: Order Item Details",
+      "reference": "...use get_order_items (order_id, marketplace_ids=[\"ATVPDKIKX0DER\"]) to retrieve purchased items..."
+    },
+    {
+      "description": "The system message uses a long dash ('—'), which is a formatting violation.",
+      "why_it_is_wrong": "Formatting constraint: The system message must not use long dashes (—, –) or other markdown-like structures.",
+      "location": "User Persona and Assistant's Involvement",
+      "reference": "...aligned with her journey—from catalog discovery to compliance checks."
+    },
+    {
+      "description": "The system message uses a long dash ('—'), which is a formatting violation.",
+      "why_it_is_wrong": "Formatting constraint: The system message must not use long dashes (—, –) or other markdown-like structures.",
+      "location": "Key Operational Guidelines: Response Style",
+      "reference": "...(\"Optimizing for fall is a great move\")—and structure outputs clearly..."
+    },
+    {
+      "description": "The system message uses a long dash ('—'), which is a formatting violation.",
+      "why_it_is_wrong": "Formatting constraint: The system message must not use long dashes (—, –) or other markdown-like structures.",
+      "location": "Key Operational Guidelines: Security and Confirmation Protocols",
+      "reference": "...for the write operations...—e.g., update_inventory_quantity for changes >100 units..."
+    },
+    {
+      "description": "The system message uses a long dash ('—'), which is a formatting violation.",
+      "why_it_is_wrong": "Formatting constraint: The system message must not use long dashes (—, –) or other markdown-like structures.",
+      "location": "Key Operational Guidelines: Error and Failure Handling",
+      "reference": "...and refine progressively—avoid identical retries."
+    },
+    {
+      "description": "The system message uses a long dash ('—'), which is a formatting violation.",
+      "why_it_is_wrong": "Formatting constraint: The system message must not use long dashes (—, –) or other markdown-like structures.",
+      "location": "Additional Constraints",
+      "reference": "...no web_search for trends—rely on competitive data."
+    }
+  ]
+}
+{
+  "score": 2,
+  "issues": [
+    {
+      "description": "A non-US location/timezone abbreviation 'PKT' is used.",
+      "why_it_is_wrong": "Non-US location; All locations mentioned in the system message must be US-based.",
+      "location": "User Persona and Assistant's Involvement section",
+      "reference": "09:33 PM PKT (UTC+5...)"
+    },
+    {
+      "description": "The system message instructs the model to use markdown tables in its responses.",
+      "why_it_is_wrong": "Markdown heading used; The system message must not contain or instruct the use of markdown formatting.",
+      "location": "Response Style section",
+      "reference": "Use markdown tables for data comparisons (e.g., | SKU | Quantity | Price |)"
+    },
+    {
+      "description": "The system message uses a long dash '—' instead of a standard hyphen.",
+      "why_it_is_wrong": "Formatting violation; The system message must not use long dashes (—, –).",
+      "location": "User Persona and Assistant's Involvement section",
+      "reference": "...aligned with her journey—from catalog discovery to compliance checks."
+    },
+    {
+      "description": "The system message uses a long dash '—' instead of a standard hyphen.",
+      "why_it_is_wrong": "Formatting violation; The system message must not use long dashes (—, –).",
+      "location": "Response Style section",
+      "reference": "...(\"Optimizing for fall is a great move\")—and structure outputs clearly..."
+    },
+    {
+      "description": "The system message uses a long dash '—' instead of a standard hyphen.",
+      "why_it_is_wrong": "Formatting violation; The system message must not use long dashes (—, –).",
+      "location": "Security and Confirmation Protocols section",
+      "reference": "...for write operations delete and update ... —e.g., update_inventory_quantity..."
+    },
+    {
+      "description": "The system message uses a long dash '—' instead of a standard hyphen.",
+      "why_it_is_wrong": "Formatting violation; The system message must not use long dashes (—, –).",
+      "location": "Error and Failure Handling section",
+      "reference": "...refine progressively—avoid identical retries."
+    },
+    {
+      "description": "The system message uses a long dash '—' instead of a standard hyphen.",
+      "why_it_is_wrong": "Formatting violation; The system message must not use long dashes (—, –).",
+      "location": "Current Context Information section under 'Competitive Data'",
+      "reference": "...pressure in shoes and electronics—average featured offer prices..."
+    },
+    {
+      "description": "The system message uses a long dash '—' instead of a standard hyphen.",
+      "why_it_is_wrong": "Formatting violation; The system message must not use long dashes (—, –).",
+      "location": "Additional Constraints section",
+      "reference": "...no web_search for trends—rely on competitive data."
+    },
+    {
+      "description": "The tool 'delete' is referenced, which is not an allowed tool. The correct tool name is likely 'delete_listing_item'.",
+      "why_it_is_wrong": "Unknown tool; Tool referenced in the system message must match an exact name in `allowed_tools`.",
+      "location": "Security and Confirmation Protocols section",
+      "reference": "Require user confirmation for write operations delete and update"
+    },
+    {
+      "description": "The generic action 'update' is referenced as a tool, which is not an allowed tool name. Specific tools like 'update_listing_partial' or 'update_inventory_quantity' should be used.",
+      "why_it_is_wrong": "Unknown tool; Tool referenced in the system message must match an exact name in `allowed_tools`.",
+      "location": "Security and Confirmation Protocols section",
+      "reference": "Require user confirmation for write operations delete and update"
+    },
+    {
+      "description": "The description for the 'get_featured_offer_expected_price_batch' tool incorrectly lists 'quantity' and 'merchant_customer_rating' as parameters.",
+      "why_it_is_wrong": "Restating tool defaults; The system message must not invent or misstate tool parameters. The allowed parameters are sku, marketplace_id, and segment.",
+      "location": "Key Operational Guidelines section, 'Competitive Pricing Analysis' item",
+      "reference": "get_featured_offer_expected_price_batch (requests array with sku, quantity, merchant_customer_rating)"
+    },
+    {
+      "description": "The description for the 'create_report_schedule' tool incorrectly references a 'schedule_frequency' parameter. The correct parameter is 'period'.",
+      "why_it_is_wrong": "Restating tool defaults; The system message must not invent or misstate tool parameters.",
+      "location": "Key Operational Guidelines section, 'Reporting Automation Protocols' item",
+      "reference": "create_report_schedule (requires report_type..., schedule_frequency like DAILY...)"
+    },
+    {
+      "description": "The description for the 'search_listings_items' tool incorrectly lists 'item_condition' and 'included_data' as parameters for this specific tool.",
+      "why_it_is_wrong": "Restating tool defaults; The system message must not invent or misstate tool parameters for a given tool. These parameters do not exist for 'search_listings_items'.",
+      "location": "Tool Usage Logic and Examples section, 'Catalog Discovery' item",
+      "reference": "search_listings_items (seller_id S-0101-00000, query keywords, item_condition New, included_data summaries/attributes)"
+    },
+    {
+      "description": "The description for the 'update_inventory_quantity' tool incorrectly lists 'sku', 'quantity_change', and 'reason' as parameters. The correct parameters are 'seller_sku' and 'quantity_data'.",
+      "why_it_is_wrong": "Restating tool defaults; The system message must not invent or misstate tool parameters.",
+      "location": "Tool Usage Logic and Examples section, 'Inventory Update Chain' item",
+      "reference": "update_inventory_quantity (sku, quantity_change e.g., +50, reason \"restock\")"
+    },
+    {
+      "description": "The description for the 'get_order' tool incorrectly suggests it takes 'purchase_date' and 'shipment_service' as parameters. Its only parameter is 'order_id'.",
+      "why_it_is_wrong": "Restating tool defaults; The system message must not invent or misstate tool parameters.",
+      "location": "Tool Usage Logic and Examples section, 'Order Tools' item",
+      "reference": "get_order (purchase_date, shipment_service)"
+    },
+    {
+      "description": "The system message restates multiple arguments for the 'get_orders' tool.",
+      "why_it_is_wrong": "Restating tool defaults; The system message must not copy or paraphrase argument lists from the tool documentation.",
+      "location": "Key Operational Guidelines section, 'Order Compliance and Fulfillment Workflow' item",
+      "reference": "get_orders (filter by created_after/created_before in ISO 8601 UTC, order_statuses like Unshipped or Pending, fulfillment_channels like AFN)"
+    },
+    {
+      "description": "The instruction to 'avoid assumptions' is stated in the introduction and repeated later.",
+      "why_it_is_wrong": "Redundant repetition; The same instruction should not be repeated in multiple places without adding new nuance.",
+      "location": "Introduction and 'Security and Confirmation Protocols' section",
+      "reference": "...always cross-referencing data from available tools to avoid assumptions.' and 'Never assume data; verify across tools.'"
+    },
+    {
+      "description": "The logic for handling ambiguous queries and refining searches is described in the introduction and then repeated in more detail later.",
+      "why_it_is_wrong": "Redundant repetition; The same instruction is repeated, which adds unnecessary length.",
+      "location": "Introduction and 'Handling Ambiguous Queries' section",
+      "reference": "When queries are ambiguous or yield insufficient results, refine searches logically... vs. 'Handling Ambiguous Queries: For vague requests like 'find low-stock items,' disambiguate...'"
+    },
+    {
+      "description": "The system message includes instructions that are standard model defaults, such as safety constraints.",
+      "why_it_is_wrong": "Restating model defaults; Instructions should not be filler that restates default model behavior.",
+      "location": "Additional Constraints section",
+      "reference": "Adhere to safety: No disallowed activities; assume good intent."
+    },
+    {
+      "description": "The confirmation logic for update operations is ambiguous.",
+      "why_it_is_wrong": "The instruction is ambiguous and not actionable as written.",
+      "location": "Security and Confirmation Protocols section",
+      "reference": "...only ask for confirmation by the user if the quantity is greater"
+    }
+  ]
+}
+{
+  "score": 3,
+  "issues": [
+    {
+      "description": "The system message uses a long dash '–' in a date range instead of a simple hyphen '-'.",
+      "why_it_is_wrong": "Formatting constraints prohibit the use of long dashes (—, –). All content must be plain text using standard characters.",
+      "location": "Sales Trends section under 'Historical Performance Metrics'",
+      "reference": "Over the past quarter (June 17–September 17, 2025)..."
+    },
+    {
+      "description": "A grammatical error exists where a comma or conjunction is missing between two verbs.",
+      "why_it_is_wrong": "Spelling and grammar errors must be flagged. The sentence structure is incorrect.",
+      "location": "Response Style section under 'Key Operational Guidelines'",
+      "reference": "...adopt a natural, empathetic tone acknowledge Emma’s goals..."
+    },
+    {
+      "description": "There is a typo with the word 'the' being repeated consecutively.",
+      "why_it_is_wrong": "Spelling mistakes and obvious typos are not allowed and must be flagged.",
+      "location": "Security and Confirmation Protocols section under 'Key Operational Guidelines'",
+      "reference": "...(Only inventory stock updating operations require the the permission...)"
+    },
+    {
+      "description": "The instruction to require user confirmation for 'update_inventory_quantity' on changes greater than 100 units is stated twice.",
+      "why_it_is_wrong": "Redundant repetition of the same instruction in multiple places without adding new information is not allowed.",
+      "location": "The rule appears in both the 'Security and Confirmation Protocols' section and the 'Inventory Adjustment Example' section.",
+      "reference": "First instance: '...update_inventory_quantity for changes >100 units...'; Second instance: '...use update_inventory_quantity after user confirmation for changes >100 units.'"
+    },
+    {
+      "description": "The instruction to avoid redundant or identical tool retries is stated in two separate sections.",
+      "why_it_is_wrong": "Redundant repetition of the same constraint in multiple places is not allowed.",
+      "location": "The instruction appears in the main introductory paragraph and again in the 'Error and Failure Handling' section.",
+      "reference": "First instance: '...without redundant calls.'; Second instance: '...avoid identical retries.'"
+    }
+  ]
+}
+
+
+User COnverastion review:
+{
+  "score": 4,
+  "issues": [
+    {
+      "description": "Several user prompts are structured like developer test cases, combining multiple distinct commands (e.g., a search, a conditional filter, and an update action) into a single turn. A natural user would likely break these into separate, sequential requests.",
+      "why_it_is_wrong": "The prompts feel unnatural and robotic because they are overly complex and resemble a scripted test rather than a genuine human interaction. For example, 'Check the pricing info for the top 3 SKUs. After that, for the products having a price greater than or equal to 100 USD, update the product titles...' is not a typical conversational request.",
+      "location": "user_turn_3",
+      "reference": "Check the pricing info for the top 3 SKUs. After that, for the products having a price greater than or equal to 100 USD, update the product titles to include ‘Fall 2025 Limited Edition’."
+    },
+    {
+      "description": "The assistant repeatedly uses the same smiley emoji (😊) at the end of its responses, which creates a formulaic and slightly robotic pattern over the course of the conversation.",
+      "why_it_is_wrong": "While the tone is meant to be natural, the repetitive use of the exact same closing element in multiple turns makes the interaction feel scripted and less adaptive.",
+      "location": "assistant_turn_2",
+      "reference": "Let me know if you'd like help analyzing their performance, adjusting quantities, or updating descriptions to optimize for fall demand! 😊"
+    },
+    {
+      "description": "The user asks the assistant to first check pricing and then perform a conditional update. The assistant proceeds directly to the update without first presenting the pricing information it used to make the decision, which is an illogical step in a natural conversation.",
+      "why_it_is_wrong": "The flow is broken because the assistant doesn't follow the user's two-step request. A natural interaction would involve showing the prices first and then asking for confirmation to update, rather than performing the action based on unseen data.",
+      "location": "assistant_turn_6",
+      "reference": "The pricing details for your top 3 shoe SKUs were reviewed. Based on the condition of having a price greater than or equal to $100, the following updates were made..."
+    }
+  ]
+}
+
+{
+  "score": 2,
+  "issues": [
+    {
+      "description": "Several user prompts are structured like programmatic, multi-step commands rather than natural, conversational requests. For example, in one turn, the user asks the assistant to get competitive pricing, analyze it against a condition, and then perform an action based on the result: \"Get competitive pricing offers from others for AS-B0COYUJAOG-563 to ensure my price is competitive, and remove the listing item if any offer of the listing has a higher price than the competitors.\"",
+      "why_it_is_wrong": "This type of complex, conditional instruction feels like a developer's test case. A natural user would likely break this down into multiple turns: first asking for the pricing, then reviewing it, and finally deciding whether to delete the item.",
+      "location": "user_turn_5",
+      "reference": null
+    },
+    {
+      "description": "There is a significant break in the logical flow and context of the conversation. After the assistant confirms that it has deleted a specific listing (SKU: AS-B0COYUJAOG-563), the user immediately asks for the featured offer price for that same, just-deleted SKU. The assistant proceeds to provide the pricing information without acknowledging that the item was just removed.",
+      "why_it_is_wrong": "This is a major failure in contextual continuity. The assistant should have recognized that the request contradicts the immediately preceding action and state of the conversation. A logical response would be to inform the user that the item has been deleted and pricing information may no longer be available or relevant.",
+      "location": "assistant_turn_12",
+      "reference": null
+    },
+    {
+      "description": "The assistant repeatedly uses a formulaic closing statement across most of its responses.",
+      "why_it_is_wrong": "The repeated use of phrases like \"Let me know if you'd like help... 😊\", \"Let me know if you want to make any adjustments... 😊\", and \"Let me know if there’s anything else...\" makes the conversation feel scripted and robotic, rather than adaptive and natural.",
+      "location": "assistant_turn_2, assistant_turn_4, assistant_turn_6, assistant_turn_8, assistant_turn_10, assistant_turn_12, assistant_turn_14, assistant_turn_17",
+      "reference": null
+    }
+  ]
+}
+{
+  "score": 2,
+  "issues": [
+    {
+      "description": "The user asks to check the 'featured offer expected price' for a product SKU that they had explicitly asked to be deleted in the immediately preceding turn. A human user would not logically ask for pricing information on an item they just deleted.",
+      "why_it_is_wrong": "This represents a significant break in the logical flow of the conversation. The user's prompt is nonsensical in the context of the previous turn's action (deleting the item).",
+      "location": "user_turn_8",
+      "reference": "In user_turn_7, the user confirms the deletion ('Yes, delete it.'). In user_turn_8, they ask, 'Check the featured offer expected price for AS-B0COYUJAOG-563...'"
+    },
+    {
+      "description": "The assistant fails to recognize the contextual contradiction when the user asks for pricing information on a just-deleted item. Instead of pointing out that the item was just removed and therefore has no offers, it simply executes the search and states that no offers were found, which is an unhelpful and unnatural response.",
+      "why_it_is_wrong": "The assistant demonstrates a lack of contextual awareness, breaking the natural flow. A human-like assistant would have pointed out the user's contradictory request (e.g., 'I just deleted that item for you, so I can no longer check its price.').",
+      "location": "assistant_turn_12",
+      "reference": "The assistant's response is, 'There are no featured offer expected prices found for AS-B0COYUJAOG-563...'"
+    },
+    {
+      "description": "Several user prompts are structured like developer commands or test cases rather than natural user requests. They combine multiple distinct actions, often with conditional logic, into a single, complex sentence.",
+      "why_it_is_wrong": "These prompts feel robotic and are not representative of how a typical user would interact with an assistant. Natural conversation usually involves breaking down complex tasks into smaller, sequential steps.",
+      "location": "user_turn_3",
+      "reference": "Example: 'Check the pricing info for the top 3 SKUs. After that, for the products having a price greater than or equal to 100 USD, update the product titles to include ‘Fall 2025 Limited Edition’.'"
+    },
+    {
+      "description": "The user prompt to 'remove the listing item if any offer of the listing has a higher price than the competitors' is an overly complex, conditional command that feels unnatural for a typical user.",
+      "why_it_is_wrong": "A more natural user flow would be to first ask for the competitive pricing, review it, and then decide to delete the item in a separate turn. Combining the data retrieval and the conditional action into one command is not conversational.",
+      "location": "user_turn_6",
+      "reference": "The user prompt states: 'Get competitive pricing offers from others for AS-B0COYUJAOG-563 to ensure my price is competitive, and remove the listing item if any offer of the listing has a higher price than the competitors.'"
+    }
+  ]
+}
+

@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { BotAssignment } from './BotAssignment';
 import { Conversation } from './Conversation';
+import { BotDocument } from './BotDocument';
 
 @Entity('bots')
 export class Bot {
@@ -83,4 +84,7 @@ export class Bot {
 
   @OneToMany('Conversation', 'bot')
   conversations?: Conversation[];
+
+  @OneToMany('BotDocument', 'bot')
+  botDocuments?: BotDocument[];
 }

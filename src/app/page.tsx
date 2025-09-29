@@ -165,7 +165,7 @@ const LandingPage = () => {
                     </div>
                     <h2 className="text-3xl font-bold text-gray-900 mb-4">
                       Advanced AI Testing & Optimization
-                    </h2>
+            </h2>
                     <p className="text-lg text-gray-700 leading-relaxed mb-6">
                       Deploy AI chatbots with confidence using our comprehensive testing platform. 
                       Validate responses, optimize conversations, and ensure your AI delivers 

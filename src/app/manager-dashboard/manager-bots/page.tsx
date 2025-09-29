@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import {
@@ -18,7 +18,15 @@ import {
   UserPlus,
   UserMinus,
   Mail,
-  X
+  X,
+  BarChart3,
+  CheckCircle,
+  PauseCircle,
+  XCircle,
+  FileText,
+  File,
+  FileImage,
+  Upload
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -116,7 +124,16 @@ export default function BotsPage() {
     name: "",
     description: "",
     domain: "",
-    status: "active"
+    status: "active",
+    documentIds: [] as string[],
+    newDocuments: [] as Array<{
+      name: string;
+      type: string;
+      size: number;
+      filePath: string;
+      content: string;
+      mimeType: string;
+    }>
   });
   const [editBot, setEditBot] = useState({
     id: "",
@@ -146,6 +163,8 @@ export default function BotsPage() {
   const [loading, setLoading] = useState(true);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
   const [users, setUsers] = useState<Array<{id: string; firstName: string; lastName: string; email: string; role: string; createdAt: string; name: string; status: string}>>([]);
   const [botAssignments, setBotAssignments] = useState<Array<{id: string; userId: string; botId: string; assignedAt: string; userEmail: string; userName: string; userStatus: string; userRole: string; botName: string}>>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -167,6 +186,26 @@ export default function BotsPage() {
     isTestMessage: boolean;
   }> | null>(null);
   const [showConversationDetail, setShowConversationDetail] = useState(false);
+  
+  // Document management state
+  const [availableDocuments, setAvailableDocuments] = useState<Array<{
+    id: string;
+    name: string;
+    type: string;
+    size: number;
+    uploadDate: string;
+  }>>([]);
+  const [documentSearchTerm, setDocumentSearchTerm] = useState('');
+  const [isUploadingDocument, setIsUploadingDocument] = useState(false);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
+  const [showAllDocuments, setShowAllDocuments] = useState(false);
+
+  const statusOptions = [
+    { value: 'all', label: 'All Status', icon: BarChart3 },
+    { value: 'active', label: 'Active', icon: CheckCircle },
+    { value: 'paused', label: 'Paused', icon: PauseCircle },
+    { value: 'inactive', label: 'Inactive', icon: XCircle }
+  ];
 
   // Fetch bots from API
   const fetchBots = async () => {
@@ -190,6 +229,7 @@ export default function BotsPage() {
 
   useEffect(() => {
     fetchBots();
+    loadDocuments();
   }, []);
 
   // Fetch users and assignments when modal opens
@@ -247,6 +287,9 @@ export default function BotsPage() {
         setOpenDropdown(null);
         setDropdownPosition(null);
       }
+      if (isStatusDropdownOpen && statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
+        setIsStatusDropdownOpen(false);
+      }
     };
 
     const handleScroll = () => {
@@ -254,9 +297,12 @@ export default function BotsPage() {
         setOpenDropdown(null);
         setDropdownPosition(null);
       }
+      if (isStatusDropdownOpen) {
+        setIsStatusDropdownOpen(false);
+      }
     };
 
-    if (openDropdown) {
+    if (openDropdown || isStatusDropdownOpen) {
       document.addEventListener('click', handleClickOutside);
       window.addEventListener('scroll', handleScroll, true); // Use capture phase
     }
@@ -265,7 +311,40 @@ export default function BotsPage() {
       document.removeEventListener('click', handleClickOutside);
       window.removeEventListener('scroll', handleScroll, true);
     };
-  }, [openDropdown]);
+  }, [openDropdown, isStatusDropdownOpen]);
+
+  // Close modals with Escape key
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (showCreateModal) {
+          setShowCreateModal(false);
+          // Reset document selection when closing modal
+          setNewBot(prev => ({
+            ...prev,
+            documentIds: [],
+            newDocuments: []
+          }));
+          setDocumentSearchTerm('');
+        } else if (showEditModal) {
+          setShowEditModal(false);
+        } else if (showAssignModal) {
+          setShowAssignModal(false);
+        } else if (showConversationHistory) {
+          setShowConversationHistory(false);
+        } else if (showInviteModal) {
+          setShowInviteModal(false);
+        } else if (showConversationDetail) {
+          setShowConversationDetail(false);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [showCreateModal, showEditModal, showAssignModal, showConversationHistory, showInviteModal, showConversationDetail]);
 
   const filteredBots = bots.filter(bot => {
     const matchesSearch = bot.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -290,6 +369,128 @@ export default function BotsPage() {
   const getStatusIcon = (status: string) => {
     const color = status === 'online' ? 'bg-green-500' : status === 'away' ? 'bg-yellow-500' : 'bg-gray-400';
     return <div className={`w-2 h-2 rounded-full ${color}`}></div>;
+  };
+
+  // Load available documents
+  const loadDocuments = async () => {
+    try {
+      setLoadingDocuments(true);
+      const response = await fetch('/api/manager/bot-documents');
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Loaded documents:', data.documents);
+        setAvailableDocuments(data.documents || []);
+      } else {
+        console.error('Failed to load documents:', response.status, response.statusText);
+        setAvailableDocuments([]);
+      }
+    } catch (error) {
+      console.error('Error loading documents:', error);
+      setAvailableDocuments([]);
+    } finally {
+      setLoadingDocuments(false);
+    }
+  };
+
+  // Handle document selection
+  const handleDocumentSelect = (docId: string) => {
+    setNewBot(prev => ({
+      ...prev,
+      documentIds: prev.documentIds.includes(docId)
+        ? prev.documentIds.filter(id => id !== docId)
+        : [...prev.documentIds, docId]
+    }));
+  };
+
+  // Handle document upload
+  const handleDocumentUpload = async (files: FileList) => {
+    setIsUploadingDocument(true);
+    try {
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('documents', file);
+        
+        // Use XMLHttpRequest for progress tracking
+        const xhr = new XMLHttpRequest();
+        
+        await new Promise<void>((resolve, reject) => {
+          xhr.upload.addEventListener('progress', (event) => {
+            if (event.lengthComputable) {
+              const progress = Math.round((event.loaded / event.total) * 100);
+              // You could add a progress state here if needed
+              console.log(`Upload progress: ${progress}%`);
+            }
+          });
+
+          xhr.addEventListener('load', () => {
+            if (xhr.status === 200) {
+              try {
+                const data = JSON.parse(xhr.responseText);
+                // The API returns { documents: [...] }, so we need to get the first document
+                const uploadedDoc = data.documents && data.documents.length > 0 ? data.documents[0] : null;
+                
+                if (uploadedDoc) {
+                  const newDoc = {
+                    name: uploadedDoc.name,
+                    type: uploadedDoc.type,
+                    size: uploadedDoc.size,
+                    filePath: uploadedDoc.id, // Use ID as filePath since that's what we have
+                    content: uploadedDoc.content || '',
+                    mimeType: file.type
+                  };
+                  
+                  setNewBot(prev => ({
+                    ...prev,
+                    newDocuments: [...prev.newDocuments, newDoc]
+                  }));
+                }
+                resolve();
+              } catch (error) {
+                console.error('Error parsing response:', error);
+                reject(error);
+              }
+            } else {
+              try {
+                const errorData = JSON.parse(xhr.responseText);
+                console.error('Upload failed:', errorData.error);
+                reject(new Error(errorData.error));
+              } catch {
+                reject(new Error(xhr.statusText));
+              }
+            }
+          });
+
+          xhr.addEventListener('error', () => {
+            console.error('Upload error');
+            reject(new Error('Network error'));
+          });
+
+          xhr.open('POST', '/api/manager/documents');
+          xhr.send(formData);
+        });
+      }
+      // Reload documents to update the list
+      await loadDocuments();
+    } catch (error) {
+      console.error('Error uploading document:', error);
+    } finally {
+      setIsUploadingDocument(false);
+    }
+  };
+
+  // Get file icon based on type
+  const getFileIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'pdf':
+        return <FileText className="w-5 h-5 text-red-500" />;
+      case 'doc':
+      case 'docx':
+        return <File className="w-5 h-5 text-blue-500" />;
+      case 'txt':
+        return <FileText className="w-5 h-5 text-gray-500" />;
+      default:
+        return <File className="w-5 h-5 text-gray-500" />;
+    }
   };
 
   const handleCreateBot = async () => {
@@ -322,7 +523,9 @@ export default function BotsPage() {
           name: newBot.name,
           description: newBot.description,
           domain: newBot.domain,
-          status: 'active'
+          status: newBot.status,
+          documentIds: newBot.documentIds,
+          newDocuments: newBot.newDocuments
         }),
       });
 
@@ -816,11 +1019,20 @@ export default function BotsPage() {
       {/* Create Bot Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg mx-4 shadow-2xl">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Create New Bot</h2>
               <button
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => {
+                  setShowCreateModal(false);
+                  // Reset document selection when closing modal
+                  setNewBot(prev => ({
+                    ...prev,
+                    documentIds: [],
+                    newDocuments: []
+                  }));
+                  setDocumentSearchTerm('');
+                }}
                 className="text-gray-900 hover:text-gray-700 transition-colors"
               >
                 <X className="w-6 h-6" />
@@ -884,16 +1096,171 @@ export default function BotsPage() {
                   <option value="inactive">Inactive</option>
                 </select>
               </div>
+
+              {/* Document Selection */}
+              <div>
+                <Label className="text-sm font-semibold text-gray-700 block mb-3">
+                  Knowledge Base Documents
+                </Label>
+                <div className="space-y-3">
+                  {/* Search Documents */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      value={documentSearchTerm}
+                      onChange={(e) => setDocumentSearchTerm(e.target.value)}
+                      placeholder="Search documents..."
+                      className="pl-10 text-gray-900"
+                    />
+                  </div>
+
+                  {/* Document List */}
+                  <div className="max-h-32 overflow-y-auto border rounded-lg p-2 space-y-2">
+                    {console.log('Available documents:', availableDocuments)}
+                    {console.log('Search term:', documentSearchTerm)}
+                    {loadingDocuments ? (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="ml-2 text-sm text-gray-500">Loading documents...</span>
+                      </div>
+                    ) : (() => {
+                      const filteredDocs = availableDocuments.filter(doc => 
+                        documentSearchTerm === '' || doc.name.toLowerCase().includes(documentSearchTerm.toLowerCase())
+                      );
+                      const docsToShow = showAllDocuments ? filteredDocs : filteredDocs.slice(0, 3);
+                      const hasMore = filteredDocs.length > 3;
+                      
+                      return (
+                        <>
+                          {docsToShow.map((doc) => (
+                        <div
+                          key={doc.id}
+                          className={`flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                            newBot.documentIds.includes(doc.id)
+                              ? 'bg-blue-50 border border-blue-200'
+                              : 'hover:bg-gray-50'
+                          }`}
+                          onClick={() => handleDocumentSelect(doc.id)}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={newBot.documentIds.includes(doc.id)}
+                            onChange={() => handleDocumentSelect(doc.id)}
+                            className="rounded"
+                          />
+                          <div className="flex items-center space-x-2 flex-1 min-w-0">
+                            {getFileIcon(doc.type)}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {doc.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {doc.type.toUpperCase()} • {Math.round(doc.size / 1024)} KB
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                          ))}
+                          {hasMore && !showAllDocuments && (
+                            <button
+                              onClick={() => setShowAllDocuments(true)}
+                              className="w-full p-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors border border-blue-200"
+                            >
+                              Show {filteredDocs.length - 3} more documents...
+                            </button>
+                          )}
+                          {hasMore && showAllDocuments && (
+                            <button
+                              onClick={() => setShowAllDocuments(false)}
+                              className="w-full p-2 text-sm text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
+                            >
+                              Show less
+                            </button>
+                          )}
+                        </>
+                      );
+                    })()}
+                    {!loadingDocuments && availableDocuments.length === 0 && (
+                      <p className="text-sm text-gray-500 text-center py-4">
+                        No documents available. Upload some documents in the Knowledge Base first.
+                      </p>
+                    )}
+                    {!loadingDocuments && availableDocuments.length > 0 && availableDocuments.filter(doc => 
+                        documentSearchTerm === '' || doc.name.toLowerCase().includes(documentSearchTerm.toLowerCase())
+                      ).length === 0 && (
+                      <p className="text-sm text-gray-500 text-center py-4">
+                        No documents match your search.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Upload New Documents */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.doc,.docx,.txt"
+                      onChange={(e) => e.target.files && handleDocumentUpload(e.target.files)}
+                      className="hidden"
+                      id="document-upload"
+                    />
+                    <label
+                      htmlFor="document-upload"
+                      className="cursor-pointer flex flex-col items-center space-y-2"
+                    >
+                      <Upload className="w-6 h-6 text-gray-400" />
+                      <span className="text-sm text-gray-600">
+                        {isUploadingDocument ? 'Uploading...' : 'Upload New Documents'}
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Selected Documents Summary */}
+                  {(newBot.documentIds.length > 0 || newBot.newDocuments.length > 0) && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <p className="text-sm font-medium text-green-800 mb-2">
+                        Selected Documents ({newBot.documentIds.length + newBot.newDocuments.length})
+                      </p>
+                      <div className="space-y-1">
+                        {newBot.documentIds.map(docId => {
+                          const doc = availableDocuments.find(d => d.id === docId);
+                          return doc ? (
+                            <div key={docId} className="flex items-center space-x-2 text-xs text-green-700">
+                              {getFileIcon(doc.type)}
+                              <span>{doc.name}</span>
+                            </div>
+                          ) : null;
+                        })}
+                        {newBot.newDocuments.map((doc, index) => (
+                          <div key={index} className="flex items-center space-x-2 text-xs text-green-700">
+                            {getFileIcon(doc.type)}
+                            <span>{doc.name} (new)</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
             
             <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
               <Button
                 variant="outline"
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => {
+                  setShowCreateModal(false);
+                  // Reset document selection when closing modal
+                  setNewBot(prev => ({
+                    ...prev,
+                    documentIds: [],
+                    newDocuments: []
+                  }));
+                  setDocumentSearchTerm('');
+                }}
                 className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl"
               >
-                  Cancel
-                </Button>
+                Cancel
+              </Button>
               <Button
                 onClick={handleCreateBot}
                 disabled={!newBot.name || !newBot.description || !newBot.domain || loading}
@@ -1021,23 +1388,60 @@ export default function BotsPage() {
             className="pl-10 border-gray-300 focus:border-[#6566F1] focus:ring-[#6566F1] rounded-xl h-11 text-gray-900"
           />
         </div>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-2 focus:ring-[#6566F1]/20 bg-white h-11 text-gray-900 font-medium shadow-sm hover:border-gray-400 transition-colors duration-200 appearance-none cursor-pointer text-center"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
-            backgroundPosition: 'right 0.5rem center',
-            backgroundRepeat: 'no-repeat',
-            backgroundSize: '1.5em 1.5em',
-            paddingRight: '2.5rem'
-          }}
-        >
-          <option value="all" className="text-gray-900 py-2">All</option>
-          <option value="active" className="text-gray-900 py-2">Active</option>
-          <option value="paused" className="text-gray-900 py-2">Paused</option>
-          <option value="inactive" className="text-gray-900 py-2">Inactive</option>
-        </select>
+        <div className="relative w-48" ref={statusDropdownRef}>
+          <button
+            onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+            className="flex items-center justify-between w-full px-4 py-2 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-2 focus:ring-[#6566F1]/20 bg-white h-11 text-gray-900 font-medium shadow-sm hover:border-gray-400 transition-colors duration-200 text-center"
+          >
+            <span className="flex items-center space-x-2">
+              {(() => {
+                const option = statusOptions.find(opt => opt.value === filterStatus);
+                const IconComponent = option?.icon;
+                return IconComponent ? <IconComponent className="w-4 h-4" /> : null;
+              })()}
+              <span>{statusOptions.find(opt => opt.value === filterStatus)?.label}</span>
+            </span>
+            <svg
+              className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                isStatusDropdownOpen ? 'rotate-180' : ''
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {isStatusDropdownOpen && (
+            <div className="absolute z-[9999] mt-2 w-full bg-white/95 backdrop-blur-xl border border-gray-200/80 rounded-2xl shadow-2xl shadow-gray-200/40 ring-2 ring-gray-100/50 overflow-hidden">
+              {statusOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    setFilterStatus(option.value);
+                    setIsStatusDropdownOpen(false);
+                  }}
+                  className={`w-full px-4 py-3 text-left transition-all duration-200 flex items-center space-x-3 group ${
+                    filterStatus === option.value
+                      ? 'bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 border-l-4 border-[#6566F1] text-[#6566F1] font-semibold shadow-sm'
+                      : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50/30 hover:text-gray-900'
+                  }`}
+                >
+                  <option.icon className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
+                  <span className="flex-1 font-medium">{option.label}</span>
+                  {filterStatus === option.value && (
+                    <div className="w-5 h-5 bg-[#6566F1] rounded-full flex items-center justify-center">
+                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         </div>
         
         {/* Quick Stats */}

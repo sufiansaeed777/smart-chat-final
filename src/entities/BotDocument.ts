@@ -1,4 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Bot } from './Bot';
+import { Document } from './Document';
 
 @Entity('bot_documents')
 @Index(['botId', 'documentId'], { unique: true }) // Ensure unique bot-document pairs
@@ -20,11 +22,11 @@ export class BotDocument {
 
   @ManyToOne('Bot', { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'botId' })
-  bot!: any;
+  bot!: Bot;
 
   @ManyToOne('Document', { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'documentId' })
-  document!: any;
+  document!: Document;
 
   @CreateDateColumn()
   createdAt!: Date;

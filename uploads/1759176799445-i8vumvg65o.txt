@@ -1,0 +1,203 @@
+Task Sub-Categories and Scenarios
+When creating a scenario, first determine which category it falls into and design accordingly:
+[round_7_update] Search Refinement:
+
+
+Goal: Simulate realistic assistant behavior when dealing with ambiguous or incomplete queries where initial tool calls may not yield relevant results. The assistant is expected to refine its search intelligently, either by adjusting arguments or switching tools, to eventually fulfill the user’s request.
+Approach: Search refinement can occur in two distinct ways, depending on the nature of the query and tool behavior:
+Refining Arguments for the Same Tool: When the tool is appropriate but the search results are insufficient or empty, the assistant should adjust arguments or query structure to improve the outcome.
+ Example:
+User Prompt: “Do I have any meetings with John in the morning?”
+The assistant might proceed like this:
+First attempt: search_calendar_events with query="John" and start_time_range = 9AM–12PM
+Second attempt: use "John" as a participant name instead of a query term
+Third attempt: search only by time range (9AM–12PM)
+Final attempt: search for "John" across the entire day
+This showcases progressive narrowing or broadening of the same tool's parameters to improve result quality.
+Trying Alternative Tools for User Queries: When the user’s query is vague or open-ended or if the initial tool doesn't yield results, the assistant should consider alternative interpretations by using other tools.
+ Example:
+User Prompt: “Can you find the Dream Theater concert?”
+The assistant might attempt:
+First: search_events (assumes it's a local or scheduled concert)
+Then: spotify_artist_goods (interprets it as a music-related query)
+Then: web_search (tries to find online listings or news)
+Finally: search_calendar_events (checks user’s calendar for related entries)
+This flow shows that the assistant is unsure what the user meant by “Dream Theater concert”, so it explores multiple interpretations across tools until it finds useful results.
+Important Notes:
+Search refinement must be purposeful and logically progressive—each step should build on the previous one.
+The refinement logic should be guided by tool output and assistant reasoning, not random trial and error.
+You may define how far the refinement can go using the System Message.
+Avoid repeating identical queries without modification. Each retry must offer a clear improvement or alternate angle.
+This category is designed to showcase the assistant’s ability to adapt, explore options, and reason through ambiguity when retrieving information.
+ [round_8_update] High Level Instructions
+Goal:
+Empower assistant behavior through more expressive and conditional system prompts that influence reasoning, not just tool invocation. Trainers should go beyond declarative instructions and instead write prompts that:
+Include conditional logic, guiding assistant behavior in edge cases.
+Include examples that concretely show what is expected.
+Clarify both what to do and what not to do, as appropriate.
+Help models learn search optimization, natural dialogue follow-ups, and tool reasoning patterns.
+This update encourages richer, example-driven, and conditional instructions inside system prompts to help shape more realistic, controllable, and nuanced assistant behavior.
+Source: Inspired by arXiv paper
+✅ Mention What to Do in SM: Use Conditional + Example-Driven System Prompts
+Trainers are expected to include clear, scenario-based conditional logic in system prompts, ideally with 1–2 inline examples showing assistant behavior. This increases task richness and better reflects real-world reasoning.
+
+🧾 Sample Instruction Format:
+When you don't have the right tool to complete the task, always search the web to see if there's an alternative method to fulfill the user's request, and suggest it to the user if so. Otherwise explain why you couldn't complete the task and your current attempts.
+
+Always end your response with suggestions for next steps. For example:
+- [after searching restaurant hours, and you have a calendar tool] ... Restaurant Gish opens 6–10 PM this Tuesday. Would you like to add this as a calendar event?
+- [after finding positive reviews for a product] ... Some of the top reviews say <actual review>. Would you like to hear some negative ones as well?
+
+When using `web_search`, always transform the user request into keyword-optimized queries. For example:
+User: I need a good vacuum cleaner that's easy to carry around and can be used multiple times without charging  
+Tool call: web_search("lightweight vacuum cleaner long battery life")
+
+What are the pointers in the above example?
+1. Use Conditional + Example-Driven Instructions
+📌 Goal: Help the model reason contextually with “when… then…” logic.
+ This approach improves generalization and fallback handling when tools or data are incomplete or unavailable.
+✅ Example:
+When you don't have the right tool to complete the task, always search the web to see if there's an alternative method to fulfill the user's request, and suggest it to the user if so. Otherwise explain why you couldn't complete the task and your current attempts.
+This teaches the model how to adapt behavior conditionally (e.g., fallback to web search if a tool is missing)
+
+2. Add Next-Step Suggestions in User Replies
+📌 Goal: Encourage follow-up actions and keep the interaction naturally flowing.
+✅ Example:
+[after searching restaurant hours, and you have a calendar tool]
+Restaurant Gish opens 6–10 PM this Tuesday. Would you like to add this as a calendar event?
+[after finding positive reviews for a product]
+some of the top reviews say <actual review here>, would you like to hear some negative ones as well?
+Note: It is encouraged to use such placeholder structure < > in SM.
+Benefits:
+Drives next-step tool usage
+Increases engagement
+Aligns assistant responses with common user needs
+Note: These are just examples and not restrictions, you can come up with more on your own.
+
+Mention What NOT to Do in SM: Anti-Patterns via Prohibitive Instructions
+Instead of always telling the assistant what to do, you may now also specify what the assistant must not do, especially in domains where user experience or safety is a concern.
+Sample Format:
+Never talk about tools, IDs, or other software lingo that the user would not understand. Try to use tools to resolve issues without surfacing implementation details.
+Never use user request as it is when issuing a search call, transform the user request into keyword-optimized queries. 
+For example:
+User: I need a good vacuum cleaner that's easy to carry around and can be used multiple times without charging  
+Expected Tool call: web_search("lightweight vacuum cleaner long battery life")
+
+What are the pointers in the above example?
+ Explicitly Specify What NOT to Do
+📌 Goal: Instruct the model to avoid undesirable behavior instead of only describing what to do.
+✅ Example:
+
+Never talk about tools, IDs, or other software lingo that the user would not understand.
+Try to use the tools you have to resolve issues without surfacing implementation details.
+This is especially useful when:
+You want to hide system/tool complexity
+You want the assistant to remain user-facing and natural
+
+
+Context Information
+
+You can provide identity prompts to define the agent's identity. 
+For example:
+You are a helpful agent developed by Human corporation. You name is IRIS. For any questions related to your design and origin, direct the user to www.human_corporation.com/iris
+Sometimes there are tools that provide access to context information, like the current location, current time, device settings etc. For example:
+Location: Montalvo Arts Center, Saratoga, California, USA (37°14′26″N 122°1′49″W)
+Current time: Friday, May 23, 2025 at 4:08 PM
+Wifi: off
+You can choose to provide all context information, a subset, a superset or no context information in your system prompt. E.g.
+You are a virtual assistant on a personal user device. You are currently located in 5000 Forbes Ave, Pittsburgh, PA 15213.
+The user's phone number is 412-302-1232. 
+Here on the list of Apps you have access to:
+Calendar  
+Settings  
+...
+If a context information is provided, e.g. current location, the agent should no longer need to invoke related tool to acquire context information.
+
+
+If a context information is modified and its status is unclear, the agent would need to invoke the related tool instead of relying on stale system prompt context information.
+[round_7_update] You can provide context information about applications and entities the user is currently working with.
+This info is immediately available to the model, and search won’t be necessary when referring to this info.
+The user could refer to this info simply with “this”, requiring the model to refer to this context.
+
+The user is currently looking at spotify app. The song currently playing is
+    uri:"spotify:track:5q2KGgJV5l4MAnnGIrvKSK"
+    id:"5q2KGgJV5l4MAnnGIrvKSK"
+    name:"Human After All / Together / One More Time / Music Sounds Better with You"
+    uri:"spotify:artist:4tZwfgrHOc3mvqYlEYSvVi"
+    name:"Daft Punk"
+The page the user is looking at contains
+    uri:"spotify:artist:4tZwfgrHOc3mvqYlEYSvVi"
+    name:"Daft Punk"
+    uri:"spotify:artist:1gR0gsQYfi6joyO1dlp76N"
+    name:"Justice"
+    uri:"spotify:artist:3AA28KZvwAUcZuOKwyblJQ"
+    name:"Gorillaz"
+    uri:"spotify:artist:066X20Nz7iquqkkCW6Jxy6"
+    name:"LCD Soundsystem"
+Tool Invocation Instruction
+You can offer certain requirements for how tools should be invoked.
+You can define certain actions to always happen:
+# Tool Use Policy
+
+## Settings
+- When modifying settings database, make sure you confirm with the user beforehand.
+- Some tools require certain device settings to be enabled in order to be executed (e.g. accessing the web requires wifi). Always check if those device settings are as expected before calling these tools.
+Make the instructions very fine-granular:
+# Tool Use Policy
+
+## Settings
+- When modifying settings database, make sure you confirm with the user beforehand.
+- Some tools require certain device settings to be enabled in order to be executed (e.g. accessing the web requires wifi). Always check if those device settings are as expected before calling these tools. If the settings were checked before and have not been modified since, you don't need to check again.
+## Calendar
+- When creating calendar events, make sure to confirm with the user which calendar they want to set it in. However, if an event obviously belongs to an existing calendar of an event that was just searched / created, no need to confirm.
+
+You can explain the caveats of certain tools:
+A couple things to keep in mind especially for calendar events:
+1. When searching for calendar events, always provide a time range, otherwise you won't be able to locate recurring events that happen indefinitely.  
+2. If a recurring event is found, the search result will also return the parent recurrence of that event to let you know the info about the recurrence like its interval.  
+3. If you want to delete / modify a recurring event instance, use the instance ID. If you want to delete all instances, use the parent ID. Always confirm with the user which one they want in face of this.
+You can explain the inner working of certain tools:
+
+
+Here's what each internal database field of settings means:
+- `device_id`: UUID  
+- `place_id`, `latitude`, `longitude`, and `formatted_address`: Canonical information of the current location. They must be consistent.  
+  Can be found through Google Search, as well as https://developers.google.com/maps/documentation/places/web-service/place-id.  
+- `wifi`: When disabled, wifi-related tools will result in errors (e.g. searching maps), until wifi is turned on.  
+- `location_service`: When disabled, location_service-related tools will result in errors (e.g. getting current location info), until location_service is turned on.  
+- `cellular`: When disabled, cellular-related tools will result in errors (e.g. sending messages), until cellular is turned on.  
+- `low_battery_mode`: When enabled, `wifi`, `location_service`, and `cellular` must be turned off. When enabled, `wifi`, `location_service`, and `cellular` cannot be turned on until `low_battery_mode` is turned off.  
+- `utc_offset_seconds`: Number of seconds the current device timezone differs from UTC. E.g. -25200.0 represents UTC-07:00  
+- `locale`: Locale code. This will affect the default behavior of locale-sensitive tools when locale arguments are not provided with the request (e.g. searching maps).
+When there are overlapping tool functionalities, you can ask the model to never use some tools in cases, prefer one over the other in certain cases, use any of them, or use both for cross-referencing:
+
+
+- When the user asks for something you can answer with your own knowledge, never use web_search.
+- If the user asks for restaurant related information, prefer to use yelp over google maps. 
+- If the user asks for something you can answer with other tools, prefer them over web_search, excpt for e-commerce, see the next bullet for more details.
+- If the user asks for shopping advices, cross reference reviews between amazon, reddit and web_search to summarize your findings.
+You can control when parallel tool calls should be issued:
+
+
+When calling place_details, you can issue multiple tool calls in parallel. For create_calendar_event, always issue them one at a time.
+
+
+User Preference
+You can explain certain user preferences that can help the agent make better decisions.
+You can add user preference among entities:
+The user likes Thai food the most. The user likes to refer to John Petrucci as “my guy.”
+You can add engagement preferences:
+Note: The user really hates it when you ask too many questions. Make sure to solve the problem yourself as much as possible, even when there's a chance it could be wrong.
+You can add background information:
+
+
+The user just got back from a trip from NYC and is very sleep-deprived. He likely won't appreciate early meetings and could really use some light food.
+
+
+Tonal Control
+You can control how the model responds to the user.
+You should assume that the user does not have access to anything visually. You should explain yourself in detail in a colloquial tone, as if you are directly speaking to the user. Don't be too formal. Be lighthearted and cheerful.
+
+###### PAY SPECIAL ATTENTION ########
+
+The user is able to see the screen while you are talking. You don't need to explain every detail. Provide the key information for the user to confirm what you did. Proactively suggest if the user would like to make changes or not.

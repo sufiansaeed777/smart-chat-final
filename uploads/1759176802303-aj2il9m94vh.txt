@@ -1,0 +1,18 @@
+**Task Instruction:**
+
+1. **References:**
+
+   * Use the **sample_system_message.txt** as examples for writing the system prompt (SM).
+   * Review **mistakes.txt** to avoid repeating errors.
+   * Follow the **tool documentation** in `available_tools.json`.
+   * Only use and mention tools listed in `available_tools.json`.
+   * Review the `categories.txt` to see what to include in the system prompt for each category.
+   * In the system message, mention some listings from the database tables related to the seller ID. 
+   * Do mention the seller ID in the system message.
+
+2. **Requirements:**
+
+   * Create a **system prompt** (minimum length: 15,000 characters).
+   * Create **user prompts** that follow the guidelines, are challenging (“break the user”), and align with the use case in the metadata.
+   * Design prompts around the **user\_journey\_tool\_flow**.
+
