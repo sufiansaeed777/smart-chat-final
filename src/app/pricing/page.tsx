@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { Check, ArrowRight, Calculator, Phone } from 'lucide-react';
+import { Check, ArrowRight, Calculator, Phone, ChevronUp, ChevronDown } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 
@@ -61,6 +61,68 @@ const PricingPage = () => {
       'Enterprise': 5
     }
   }), []);
+
+  // Custom Counter Component
+  const CustomCounter = ({ value, onChange, min = 0, max = 999, step = 1, className = "" }: {
+    value: number;
+    onChange: (value: number) => void;
+    min?: number;
+    max?: number;
+    step?: number;
+    className?: string;
+  }) => {
+    const handleIncrement = (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const newValue = Math.min(value + step, max);
+      onChange(newValue);
+    };
+
+    const handleDecrement = (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const newValue = Math.max(value - step, min);
+      onChange(newValue);
+    };
+
+    return (
+      <div className={`flex items-center bg-white border-2 border-slate-200 rounded-lg overflow-hidden ${className}`}>
+        {/* Button Group on the Left */}
+        <div className="flex flex-col">
+          <button
+            type="button"
+            onClick={handleIncrement}
+            className="flex items-center justify-center w-6 h-4 bg-[#5A5BD8] hover:bg-[#4A4BC8] text-white transition-all duration-200 border-b border-[#4A4BC8]"
+          >
+            <ChevronUp className="w-3 h-3" />
+          </button>
+          <button
+            type="button"
+            onClick={handleDecrement}
+            className="flex items-center justify-center w-6 h-4 bg-[#5A5BD8] hover:bg-[#4A4BC8] text-white transition-all duration-200"
+          >
+            <ChevronDown className="w-3 h-3" />
+          </button>
+        </div>
+        
+        {/* Input Field */}
+        <input
+          type="number"
+          value={value}
+          onChange={(e) => {
+            const newValue = parseInt(e.target.value) || min;
+            if (newValue >= min && newValue <= max) {
+              onChange(newValue);
+            }
+          }}
+          min={min}
+          max={max}
+          step={step}
+          className="w-12 px-2 py-1 text-center text-xs font-semibold text-slate-900 focus:outline-none border-0 bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+      </div>
+    );
+  };
 
   // Calculate pricing based on inputs
   const calculatePrice = useCallback((type: string, value: number) => {
@@ -325,8 +387,8 @@ const PricingPage = () => {
                   <div className="mb-6">
                     <h3 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
                       <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"></div>
-                      Select Features
-                    </h3>
+                    Select Features
+              </h3>
                     <p className="text-slate-600 text-sm leading-relaxed">
                       Choose the features you need for your AI chatbot solution.
                     </p>
@@ -335,9 +397,9 @@ const PricingPage = () => {
                     {/* Bots */}
                     <div 
                       className={`relative bg-white rounded-xl p-4 border-2 transition-all duration-300 cursor-pointer hover:shadow-[#5A5BD8] hover:shadow-3xl hover:-translate-y-2 group flex flex-col h-full ${
-                        calculatorInputs.bots > 0 
+                      calculatorInputs.bots > 0 
                           ? 'border-blue-500 shadow-blue-100 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 ring-1 ring-blue-100' 
-                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow-lg'
                       }`}
                       onClick={() => setCalculatorInputs(prev => ({ 
                         ...prev, 
@@ -358,8 +420,8 @@ const PricingPage = () => {
                           <div>
                             <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors">AI Bots</h4>
                             <p className="text-xs text-slate-500">Intelligent chatbots</p>
-                          </div>
                         </div>
+                      </div>
                         <div className="text-right">
                           <div className="text-lg font-bold text-blue-600">
                             ${calculatePrice('bots', calculatorInputs.bots)}
@@ -372,13 +434,13 @@ const PricingPage = () => {
                       </p>
                       <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-100">
                         <label className="text-xs font-semibold text-slate-700">Quantity:</label>
-                        <input
-                          type="number"
-                          min="0"
+                        <CustomCounter
                           value={calculatorInputs.bots}
-                          onChange={(e) => setCalculatorInputs(prev => ({ ...prev, bots: parseInt(e.target.value) || 0 }))}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-16 px-2 py-1 border border-slate-200 rounded text-center text-xs font-semibold text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          onChange={(value) => setCalculatorInputs(prev => ({ ...prev, bots: value }))}
+                          min={0}
+                          max={100}
+                          step={1}
+                          className="focus-within:border-[#5A5BD8] focus-within:ring-2 focus-within:ring-[#5A5BD8]/20"
                         />
                       </div>
                     </div>
@@ -386,9 +448,9 @@ const PricingPage = () => {
                     {/* Team Members */}
                     <div 
                       className={`relative bg-white rounded-xl p-4 border-2 transition-all duration-300 cursor-pointer hover:shadow-[#5A5BD8] hover:shadow-3xl hover:-translate-y-2 group flex flex-col h-full ${
-                        calculatorInputs.members > 0 
+                      calculatorInputs.members > 0 
                           ? 'border-blue-500 shadow-blue-100 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 ring-1 ring-blue-100' 
-                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow-lg'
                       }`}
                       onClick={() => setCalculatorInputs(prev => ({ 
                         ...prev, 
@@ -409,8 +471,8 @@ const PricingPage = () => {
                           <div>
                             <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Team Members</h4>
                             <p className="text-xs text-slate-500">User accounts</p>
-                          </div>
                         </div>
+                      </div>
                         <div className="text-right">
                           <div className="text-lg font-bold text-blue-600">
                             ${calculatePrice('members', calculatorInputs.members)}
@@ -423,13 +485,13 @@ const PricingPage = () => {
                       </p>
                       <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-100">
                         <label className="text-xs font-semibold text-slate-700">Quantity:</label>
-                        <input
-                          type="number"
-                          min="0"
+                        <CustomCounter
                           value={calculatorInputs.members}
-                          onChange={(e) => setCalculatorInputs(prev => ({ ...prev, members: parseInt(e.target.value) || 0 }))}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-16 px-2 py-1 border border-slate-200 rounded text-center text-xs font-semibold text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          onChange={(value) => setCalculatorInputs(prev => ({ ...prev, members: value }))}
+                          min={0}
+                          max={100}
+                          step={1}
+                          className="focus-within:border-[#5A5BD8] focus-within:ring-2 focus-within:ring-[#5A5BD8]/20"
                         />
                       </div>
                     </div>
@@ -437,9 +499,9 @@ const PricingPage = () => {
                     {/* Conversations */}
                     <div 
                       className={`relative bg-white rounded-xl p-4 border-2 transition-all duration-300 cursor-pointer hover:shadow-[#5A5BD8] hover:shadow-3xl hover:-translate-y-2 group flex flex-col h-full ${
-                        calculatorInputs.conversations > 0 
+                      calculatorInputs.conversations > 0 
                           ? 'border-blue-500 shadow-blue-100 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 ring-1 ring-blue-100' 
-                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow-lg'
                       }`}
                       onClick={() => setCalculatorInputs(prev => ({ 
                         ...prev, 
@@ -460,8 +522,8 @@ const PricingPage = () => {
                           <div>
                             <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Conversations</h4>
                             <p className="text-xs text-slate-500">Monthly volume</p>
-                          </div>
                         </div>
+                      </div>
                         <div className="text-right">
                           <div className="text-lg font-bold text-blue-600">
                             ${calculatePrice('conversations', calculatorInputs.conversations)}
@@ -474,13 +536,13 @@ const PricingPage = () => {
                       </p>
                       <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-100">
                         <label className="text-xs font-semibold text-slate-700">Per month:</label>
-                        <input
-                          type="number"
-                          min="0"
+                        <CustomCounter
                           value={calculatorInputs.conversations}
-                          onChange={(e) => setCalculatorInputs(prev => ({ ...prev, conversations: parseInt(e.target.value) || 0 }))}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-16 px-2 py-1 border border-slate-200 rounded text-center text-xs font-semibold text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          onChange={(value) => setCalculatorInputs(prev => ({ ...prev, conversations: value }))}
+                          min={0}
+                          max={100000}
+                          step={1000}
+                          className="focus-within:border-[#5A5BD8] focus-within:ring-2 focus-within:ring-[#5A5BD8]/20"
                         />
                       </div>
                     </div>
@@ -488,9 +550,9 @@ const PricingPage = () => {
                     {/* Storage */}
                     <div 
                       className={`relative bg-white rounded-xl p-4 border-2 transition-all duration-300 cursor-pointer hover:shadow-[#5A5BD8] hover:shadow-3xl hover:-translate-y-2 group flex flex-col h-full ${
-                        calculatorInputs.storage > 0 
+                      calculatorInputs.storage > 0 
                           ? 'border-blue-500 shadow-blue-100 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 ring-1 ring-blue-100' 
-                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow-lg'
                       }`}
                       onClick={() => setCalculatorInputs(prev => ({ 
                         ...prev, 
@@ -511,8 +573,8 @@ const PricingPage = () => {
                           <div>
                             <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Storage</h4>
                             <p className="text-xs text-slate-500">File storage</p>
-                          </div>
                         </div>
+                      </div>
                         <div className="text-right">
                           <div className="text-lg font-bold text-blue-600">
                             ${calculatePrice('storage', calculatorInputs.storage)}
@@ -525,13 +587,13 @@ const PricingPage = () => {
                       </p>
                       <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-100">
                         <label className="text-xs font-semibold text-slate-700">MB:</label>
-                        <input
-                          type="number"
-                          min="0"
+                        <CustomCounter
                           value={calculatorInputs.storage}
-                          onChange={(e) => setCalculatorInputs(prev => ({ ...prev, storage: parseInt(e.target.value) || 0 }))}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-16 px-2 py-1 border border-slate-200 rounded text-center text-xs font-semibold text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          onChange={(value) => setCalculatorInputs(prev => ({ ...prev, storage: value }))}
+                          min={0}
+                          max={5000}
+                          step={50}
+                          className="focus-within:border-[#5A5BD8] focus-within:ring-2 focus-within:ring-[#5A5BD8]/20"
                         />
                       </div>
                     </div>
@@ -539,9 +601,9 @@ const PricingPage = () => {
                     {/* Websites */}
                     <div 
                       className={`relative bg-white rounded-xl p-4 border-2 transition-all duration-300 cursor-pointer hover:shadow-[#5A5BD8] hover:shadow-3xl hover:-translate-y-2 group flex flex-col h-full ${
-                        calculatorInputs.websites > 0 
+                      calculatorInputs.websites > 0 
                           ? 'border-blue-500 shadow-blue-100 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 ring-1 ring-blue-100' 
-                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow-lg'
                       }`}
                       onClick={() => setCalculatorInputs(prev => ({ 
                         ...prev, 
@@ -562,8 +624,8 @@ const PricingPage = () => {
                           <div>
                             <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Websites</h4>
                             <p className="text-xs text-slate-500">Deployment locations</p>
-                          </div>
                         </div>
+                  </div>
                         <div className="text-right">
                           <div className="text-lg font-bold text-blue-600">
                             ${calculatePrice('websites', calculatorInputs.websites)}
@@ -576,23 +638,23 @@ const PricingPage = () => {
                       </p>
                       <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-100">
                         <label className="text-xs font-semibold text-slate-700">Quantity:</label>
-                        <input
-                          type="number"
-                          min="0"
+                        <CustomCounter
                           value={calculatorInputs.websites}
-                          onChange={(e) => setCalculatorInputs(prev => ({ ...prev, websites: parseInt(e.target.value) || 0 }))}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-16 px-2 py-1 border border-slate-200 rounded text-center text-xs font-semibold text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          onChange={(value) => setCalculatorInputs(prev => ({ ...prev, websites: value }))}
+                          min={0}
+                          max={100}
+                          step={1}
+                          className="focus-within:border-[#5A5BD8] focus-within:ring-2 focus-within:ring-[#5A5BD8]/20"
                         />
-                      </div>
-                    </div>
+                  </div>
+                </div>
 
                     {/* Analytics */}
                     <div 
                       className={`relative bg-white rounded-xl p-4 border-2 transition-all duration-300 cursor-pointer hover:shadow-[#5A5BD8] hover:shadow-3xl hover:-translate-y-2 group flex flex-col h-full ${
-                        calculatorInputs.analytics !== 'Basic' 
+                      calculatorInputs.analytics !== 'Basic' 
                           ? 'border-blue-500 shadow-blue-100 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 ring-1 ring-blue-100' 
-                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow-lg'
                       }`}
                       onClick={() => setCalculatorInputs(prev => ({ 
                         ...prev, 
@@ -613,12 +675,12 @@ const PricingPage = () => {
                           <div>
                             <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Analytics</h4>
                             <p className="text-xs text-slate-500">Advanced reporting</p>
-                          </div>
+                        </div>
                         </div>
                         <div className="text-right">
                           <div className="text-lg font-bold text-blue-600">
-                            ${pricingTiers.analytics[calculatorInputs.analytics as keyof typeof pricingTiers.analytics]}
-                          </div>
+                          ${pricingTiers.analytics[calculatorInputs.analytics as keyof typeof pricingTiers.analytics]}
+                      </div>
                           <div className="text-xs text-slate-500">per month</div>
                         </div>
                       </div>
@@ -638,7 +700,7 @@ const PricingPage = () => {
                           <option value="Enterprise">Enterprise</option>
                         </select>
                       </div>
-                    </div>
+                  </div>
                   </div>
                 </div>
 
@@ -655,8 +717,8 @@ const PricingPage = () => {
                       <div className="text-center">
                         <div className="text-6xl font-bold text-white mb-2">
                           ${totalPrice.toFixed(0)}
-                        </div>
-                        <p className="text-slate-300 text-lg">per month</p>
+                      </div>
+                      <p className="text-slate-300 text-lg">per month</p>
                       </div>
                     </div>
                     <p className="text-xs text-slate-400 italic mt-4">

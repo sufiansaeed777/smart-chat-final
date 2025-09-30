@@ -20,7 +20,9 @@ import {
   Home,
   LogOut,
   Shield,
-  BookOpen
+  BookOpen,
+  AlertTriangle,
+  HandHeart
 } from 'lucide-react';
 
 interface ManagerDashboardLayoutProps {
@@ -72,8 +74,9 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
         { id: 'test-bot', label: 'Playground', icon: PlayCircle, path: `${basePath}/test-bot` },
         { id: 'knowledge-base', label: 'Knowledge Base', icon: BookOpen, path: `${basePath}/knowledge-base` },
         { id: 'conversations', label: 'Conversations', icon: MessageSquare, path: `${basePath}/conversations` },
-        { id: 'human-handoff', label: 'Human Handoff', icon: MessageCircle, path: `${basePath}/human-handoff` },
+        { id: 'human-handoff', label: 'Human Handoff', icon: HandHeart, path: `${basePath}/human-handoff` },
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: `${basePath}/analytics` },
+        { id: 'issues', label: 'Issues', icon: AlertTriangle, path: `${basePath}/issues` },
         { id: 'billing', label: 'Billing', icon: CreditCard, path: `${basePath}/billing` },
       ];
     } else if (isAdmin) {

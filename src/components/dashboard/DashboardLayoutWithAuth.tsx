@@ -20,7 +20,8 @@ import {
   MessageCircle,
   Home,
   LogOut,
-  Shield
+  Shield,
+  HandHeart
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -79,7 +80,7 @@ const DashboardLayoutWithAuth: React.FC<DashboardLayoutProps> = ({
         { id: 'overview', label: 'Overview', icon: LayoutDashboard, path: basePath },
         { id: 'team-management', label: 'Team Management', icon: Users, path: `${basePath}/team-management` },
         { id: 'manager-bots', label: 'Manager Bots', icon: Bot, path: `${basePath}/manager-bots` },
-        { id: 'human-handoff', label: 'Human Handoff', icon: MessageCircle, path: `${basePath}/human-handoff` },
+        { id: 'human-handoff', label: 'Human Handoff', icon: HandHeart, path: `${basePath}/human-handoff` },
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: `${basePath}/analytics` },
         { id: 'billing', label: 'Billing', icon: CreditCard, path: `${basePath}/billing` },
       ];
