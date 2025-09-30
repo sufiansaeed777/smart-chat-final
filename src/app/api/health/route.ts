@@ -1,6 +1,17 @@
 import { NextResponse } from 'next/server';
 import { AppDataSource } from '@/config/database';
 
+// CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function GET() {
   try {
     const healthCheck = {
@@ -43,8 +54,8 @@ export async function GET() {
     }
 
     const statusCode = healthCheck.status === 'healthy' ? 200 : 503;
-    
-    return NextResponse.json(healthCheck, { status: statusCode });
+
+    return NextResponse.json(healthCheck, { status: statusCode, headers: corsHeaders });
   } catch (error) {
     return NextResponse.json(
       {
@@ -52,7 +63,7 @@ export async function GET() {
         timestamp: new Date().toISOString(),
         error: 'Health check failed'
       },
-      { status: 503 }
+      { status: 503, headers: corsHeaders }
     );
   }
 }

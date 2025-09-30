@@ -1,0 +1,318 @@
+<?php
+/**
+ * Synofex API Client
+ * Handles all communication with the Synofex SaaS platform
+ */
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+class Synofex_API_Client {
+
+    /**
+     * API base URL
+     */
+    private $api_url;
+
+    /**
+     * Auth token
+     */
+    private $auth_token;
+
+    /**
+     * Cache instance
+     */
+    private $cache;
+
+    /**
+     * Constructor
+     */
+    public function __construct($auth_token) {
+        // Default to localhost for development, can be overridden in settings
+        // TODO: For production, change default to your live domain
+        // TODO: Future - Add support for JavaScript widget (non-WordPress sites)
+        $this->api_url = get_option('synofex_api_url', 'http://localhost:3000');
+        $this->auth_token = $auth_token;
+        $this->cache = new Synofex_Cache();
+    }
+
+    /**
+     * Validate token and domain binding
+     */
+    public function validate_token($domain) {
+        $cache_key = 'token_validation_' . md5($this->auth_token . $domain);
+        $cached = $this->cache->get($cache_key);
+
+        if ($cached !== false) {
+            return $cached;
+        }
+
+        // Updated to match Next.js WordPress API endpoint
+        $response = $this->make_request('POST', '/api/wordpress/validate-token', [
+            'token' => $this->auth_token,
+            'domain' => $domain,
+        ]);
+
+        if ($response && isset($response['valid'])) {
+            $this->cache->set($cache_key, $response, 3600); // Cache for 1 hour
+            return $response;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get bot configuration
+     */
+    public function get_bot_config($bot_id = null) {
+        $cache_key = 'bot_config_' . ($bot_id ?: 'default');
+        $cached = $this->cache->get($cache_key);
+
+        if ($cached !== false) {
+            return $cached;
+        }
+
+        $endpoint = $bot_id ? "/api/settings/{$bot_id}" : '/api/settings';
+        $response = $this->make_request('GET', $endpoint);
+
+        if ($response) {
+            $this->cache->set($cache_key, $response, 300); // Cache for 5 minutes
+            return $response;
+        }
+
+        return false;
+    }
+
+    /**
+     * Send message to bot
+     */
+    public function send_message($bot_id, $message, $metadata = []) {
+        // Updated to match Next.js WordPress API endpoint
+        $response = $this->make_request('POST', '/api/wordpress/send-message', [
+            'token' => $this->auth_token,
+            'bot_id' => $bot_id,
+            'message' => $message,
+            'metadata' => $metadata,
+            'sessionId' => $_COOKIE['synofex_session'] ?? session_id(),
+            'source' => 'wordpress',
+        ]);
+
+        // Log message locally
+        $this->log_message($bot_id, $message, 'user', $metadata);
+
+        if ($response && isset($response['response'])) {
+            // Log bot response
+            $this->log_message($bot_id, $response['response'], 'bot', $response);
+            return $response;
+        }
+
+        // Return fallback response if API fails
+        return $this->get_fallback_response($message);
+    }
+
+    /**
+     * Get chat logs
+     */
+    public function get_logs($bot_id = null, $limit = 100) {
+        $endpoint = $bot_id ? "/api/get-logs/{$bot_id}" : '/api/get-logs';
+
+        return $this->make_request('GET', $endpoint, [
+            'limit' => $limit,
+        ]);
+    }
+
+    /**
+     * Report issue
+     */
+    public function report_issue($bot_id, $issue_type, $description, $conversation_id = null) {
+        return $this->make_request('POST', '/api/report-issue', [
+            'bot_id' => $bot_id,
+            'issue_type' => $issue_type,
+            'description' => $description,
+            'conversation_id' => $conversation_id,
+            'source' => 'wordpress',
+        ]);
+    }
+
+    /**
+     * Request human handoff
+     */
+    public function request_human_handoff($bot_id, $conversation_id, $reason = '') {
+        return $this->make_request('POST', '/api/human-handoff', [
+            'bot_id' => $bot_id,
+            'conversation_id' => $conversation_id,
+            'reason' => $reason,
+            'priority' => 'normal',
+        ]);
+    }
+
+    /**
+     * Heartbeat check
+     */
+    public function heartbeat() {
+        $response = $this->make_request('GET', '/api/health');
+        return $response && isset($response['status']) ? $response['status'] : 'offline';
+    }
+
+    /**
+     * Get analytics data
+     */
+    public function get_analytics($bot_id = null, $period = '7days') {
+        $cache_key = 'analytics_' . ($bot_id ?: 'all') . '_' . $period;
+        $cached = $this->cache->get($cache_key);
+
+        if ($cached !== false) {
+            return $cached;
+        }
+
+        $endpoint = $bot_id ? "/api/analytics/{$bot_id}" : '/api/analytics';
+        $response = $this->make_request('GET', $endpoint, [
+            'period' => $period,
+        ]);
+
+        if ($response) {
+            $this->cache->set($cache_key, $response, 3600); // Cache for 1 hour
+            return $response;
+        }
+
+        return false;
+    }
+
+    /**
+     * Make API request
+     */
+    private function make_request($method, $endpoint, $data = []) {
+        $url = $this->api_url . $endpoint;
+
+        $args = [
+            'method' => $method,
+            'headers' => [
+                'Authorization' => 'Bearer ' . $this->auth_token,
+                'Content-Type' => 'application/json',
+                'X-Source' => 'wordpress',
+                'X-Domain' => get_site_url(),
+            ],
+            'timeout' => 30,
+            'sslverify' => true,
+        ];
+
+        if ('GET' === $method && !empty($data)) {
+            $url = add_query_arg($data, $url);
+        } else if (!empty($data)) {
+            $args['body'] = json_encode($data);
+        }
+
+        $response = wp_remote_request($url, $args);
+
+        if (is_wp_error($response)) {
+            $this->log_error('API request failed', [
+                'endpoint' => $endpoint,
+                'error' => $response->get_error_message(),
+            ]);
+            return false;
+        }
+
+        $status_code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+
+        if ($status_code >= 200 && $status_code < 300) {
+            return json_decode($body, true);
+        }
+
+        $this->log_error('API request failed with status ' . $status_code, [
+            'endpoint' => $endpoint,
+            'response' => $body,
+        ]);
+
+        return false;
+    }
+
+    /**
+     * Get fallback response
+     */
+    private function get_fallback_response($message) {
+        $fallback_responses = [
+            'greeting' => [
+                'Hello! How can I help you today?',
+                'Hi there! What can I do for you?',
+                'Welcome! How may I assist you?',
+            ],
+            'help' => [
+                'I\'m here to help! What do you need assistance with?',
+                'Sure, I\'d be happy to help. What\'s your question?',
+                'How can I assist you today?',
+            ],
+            'thanks' => [
+                'You\'re welcome! Is there anything else?',
+                'Happy to help! Let me know if you need anything else.',
+                'My pleasure! Anything else I can do for you?',
+            ],
+            'default' => [
+                'I understand. Could you tell me more?',
+                'I see. How can I help you with that?',
+                'Thank you for your message. Let me assist you.',
+            ],
+        ];
+
+        $message_lower = strtolower($message);
+
+        if (preg_match('/\b(hi|hello|hey|greetings)\b/', $message_lower)) {
+            $responses = $fallback_responses['greeting'];
+        } elseif (preg_match('/\b(help|support|assist)\b/', $message_lower)) {
+            $responses = $fallback_responses['help'];
+        } elseif (preg_match('/\b(thank|thanks)\b/', $message_lower)) {
+            $responses = $fallback_responses['thanks'];
+        } else {
+            $responses = $fallback_responses['default'];
+        }
+
+        return [
+            'response' => $responses[array_rand($responses)],
+            'fallback' => true,
+        ];
+    }
+
+    /**
+     * Log message locally
+     */
+    private function log_message($bot_id, $message, $sender, $metadata = []) {
+        global $wpdb;
+
+        $session_id = $this->get_session_id();
+
+        $wpdb->insert(
+            $wpdb->prefix . 'synofex_conversations',
+            [
+                'session_id' => $session_id,
+                'message' => $message,
+                'sender' => $sender,
+                'metadata' => json_encode(array_merge($metadata, ['bot_id' => $bot_id])),
+            ]
+        );
+    }
+
+    /**
+     * Get session ID
+     */
+    private function get_session_id() {
+        if (!session_id()) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['synofex_session_id'])) {
+            $_SESSION['synofex_session_id'] = wp_generate_uuid4();
+        }
+
+        return $_SESSION['synofex_session_id'];
+    }
+
+    /**
+     * Log error
+     */
+    private function log_error($message, $context = []) {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Synofex Chatbot: ' . $message . ' ' . json_encode($context));
+        }
+    }
+}

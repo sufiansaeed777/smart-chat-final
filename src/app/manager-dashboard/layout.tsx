@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Bot, 
-  BarChart3, 
-  Settings, 
-  CreditCard, 
+import {
+  LayoutDashboard,
+  Bot,
+  BarChart3,
+  Settings,
+  CreditCard,
   HelpCircle,
   PlayCircle,
   PanelLeftClose,
@@ -22,7 +22,8 @@ import {
   Shield,
   BookOpen,
   AlertTriangle,
-  HandHeart
+  HandHeart,
+  Plug
 } from 'lucide-react';
 
 interface ManagerDashboardLayoutProps {
@@ -73,6 +74,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
         { id: 'manager-bots', label: 'Manager Bots', icon: Bot, path: `${basePath}/manager-bots` },
         { id: 'test-bot', label: 'Playground', icon: PlayCircle, path: `${basePath}/test-bot` },
         { id: 'knowledge-base', label: 'Knowledge Base', icon: BookOpen, path: `${basePath}/knowledge-base` },
+        { id: 'integrations', label: 'Integrations', icon: Plug, path: '/dashboard/integrations' },
         { id: 'conversations', label: 'Conversations', icon: MessageSquare, path: `${basePath}/conversations` },
         { id: 'human-handoff', label: 'Human Handoff', icon: HandHeart, path: `${basePath}/human-handoff` },
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: `${basePath}/analytics` },
@@ -110,6 +112,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
     if (pathname.includes('/manager-bots')) return 'manager-bots';
     if (pathname.includes('/test-bot')) return 'test-bot';
     if (pathname.includes('/knowledge-base')) return 'knowledge-base';
+    if (pathname.includes('/integrations')) return 'integrations';
     if (pathname.includes('/conversations')) return 'conversations';
     if (pathname.includes('/human-handoff')) return 'human-handoff';
     if (pathname.includes('/analytics')) return 'analytics';
