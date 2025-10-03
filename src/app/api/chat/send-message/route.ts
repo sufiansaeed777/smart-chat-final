@@ -202,8 +202,8 @@ export async function POST(request: NextRequest) {
               content: message
             }
           ],
-          temperature: parseFloat(bot.temperature as string) || 0.7,
-          max_tokens: parseInt((bot.maxTokens || bot["maxTokens"]) as string) || 500
+          temperature: bot.temperature || 0.7,
+          max_tokens: bot.maxTokens || 500
         })
       });
 
