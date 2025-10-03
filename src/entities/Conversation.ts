@@ -31,6 +31,9 @@ export class Conversation {
   @Column({ type: 'boolean', default: false })
   isTestMessage!: boolean; // Flag to identify test messages
 
+  @Column({ type: 'timestamp', nullable: true })
+  lastMessageAt?: Date; // Track when the last message was sent in this conversation
+
   @CreateDateColumn()
   createdAt!: Date;
 
