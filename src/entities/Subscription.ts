@@ -49,6 +49,18 @@ export class Subscription {
   @Column({ type: 'int', default: 0 })
   maxBots!: number;
 
+  @Column({ type: 'int', default: 1000 })
+  messageLimit!: number;
+
+  @Column({ type: 'int', default: 0 })
+  messagesUsed!: number;
+
+  @Column({ type: 'bigint', default: 104857600 })
+  storageLimit!: number;
+
+  @Column({ type: 'bigint', default: 0 })
+  storageUsed!: number;
+
   @Column({ type: 'varchar', length: 255, nullable: true })
   stripeSubscriptionId?: string;
 
@@ -63,4 +75,21 @@ export class Subscription {
 
   @UpdateDateColumn()
   updatedAt!: Date;
+
+  // Helper methods
+  hasMessagesRemaining(): boolean {
+    return this.messagesUsed < this.messageLimit;
+  }
+
+  getMessagesRemaining(): number {
+    return Math.max(0, this.messageLimit - this.messagesUsed);
+  }
+
+  canCreateBot(): boolean {
+    return this.botsCount < this.maxBots;
+  }
+
+  isActive(): boolean {
+    return this.status === 'active';
+  }
 }

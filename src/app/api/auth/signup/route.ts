@@ -4,14 +4,22 @@ import { AppDataSource } from '@/config/database';
 import { User } from '@/entities/User';
 import { UserRole } from '@/types/UserRole';
 import { EmailVerificationService } from '@/services/emailVerificationService';
+import { checkRateLimit, getClientIdentifier, RateLimits } from '@/middleware/rateLimit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting for signup attempts
+    const identifier = getClientIdentifier(request);
+    const rateLimitResponse = checkRateLimit(identifier, RateLimits.AUTH);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Initialize database connection only if not already initialized
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
     }
-    
+
     const { email, password, firstName, lastName } = await request.json();
 
     // Validate input

@@ -1,0 +1,27 @@
+
+> smart-chat@0.1.0 dev
+> next dev
+
+ ⚠ Attempted to load /mnt/d/Admininstartor downloads/Downloads/smart-chat-main/smart-chat-main/node_modules/next/next-swc-fallback/@next/swc-linux-x64-gnu/next-swc.linux-x64-gnu.node, but it was not installed
+ ⚠ Attempted to load /mnt/d/Admininstartor downloads/Downloads/smart-chat-main/smart-chat-main/node_modules/next/next-swc-fallback/@next/swc-linux-x64-musl/next-swc.linux-x64-musl.node, but it was not installed
+ ⚠ Attempted to load @next/swc-linux-x64-gnu, but it was not installed
+ ⚠ Attempted to load @next/swc-linux-x64-musl, but it was not installed
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /mnt/d/Admininstartor downloads/Downloads/package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * /mnt/d/Admininstartor downloads/Downloads/smart-chat-main/smart-chat-main/package-lock.json
+
+ ⚠ Attempted to load /mnt/d/Admininstartor downloads/Downloads/smart-chat-main/smart-chat-main/node_modules/next/next-swc-fallback/@next/swc-linux-x64-gnu/next-swc.linux-x64-gnu.node, but it was not installed
+ ⚠ Attempted to load /mnt/d/Admininstartor downloads/Downloads/smart-chat-main/smart-chat-main/node_modules/next/next-swc-fallback/@next/swc-linux-x64-musl/next-swc.linux-x64-musl.node, but it was not installed
+ ⚠ Attempted to load @next/swc-linux-x64-gnu, but it was not installed
+ ⚠ Attempted to load @next/swc-linux-x64-musl, but it was not installed
+   ▲ Next.js 15.5.0
+   - Local:        http://localhost:3000
+   - Network:      http://10.255.255.254:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 51.3s
+[?25h

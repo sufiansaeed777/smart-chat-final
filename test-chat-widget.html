@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Chat Widget</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            display: none;
+        }
+        .response.show {
+            display: block;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .status.success {
+            background: #48bb78;
+            color: white;
+        }
+        .status.error {
+            background: #f56565;
+            color: white;
+        }
+        #chat-messages {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            background: white;
+            margin-top: 15px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 8px 12px;
+            border-radius: 5px;
+        }
+        .message.user {
+            background: #667eea;
+            color: white;
+            text-align: right;
+            margin-left: 20%;
+        }
+        .message.bot {
+            background: #f0f0f0;
+            margin-right: 20%;
+        }
+        input[type="text"] {
+            width: 70%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Chatbot Test Page</h1>
+
+        <div class="info-box">
+            <h3>Test Your Chatbot Integration</h3>
+            <p>This page simulates what your WordPress plugin will do. Test the chatbot functionality here!</p>
+        </div>
+
+        <!-- Token Configuration -->
+        <div class="test-section">
+            <h3>1. Configuration</h3>
+            <label>API Token (from Integrations page):</label><br>
+            <input type="text" id="token" value="8a1ea0cc-651e-45da-8f14-5440f63c9b99:b94cda28-f61d-4029-b200-3cc067a488ce:wp_qa11hsg83c9wq4f31h3zq" style="width: 90%; margin: 10px 0;">
+            <br>
+            <button onclick="validateToken()">Test Token</button>
+            <div id="validation-response" class="response"></div>
+        </div>
+
+        <!-- Chat Test -->
+        <div class="test-section">
+            <h3>2. Chat Test</h3>
+            <div id="chat-messages"></div>
+            <div style="margin-top: 15px;">
+                <input type="text" id="message-input" placeholder="Type your message here...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+
+        <!-- API Status -->
+        <div class="test-section">
+            <h3>3. System Status</h3>
+            <button onclick="checkStatus()">Check All Systems</button>
+            <div id="status-response" class="response"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+        let sessionId = 'test-session-' + Date.now();
+        let botConfig = null;
+
+        async function validateToken() {
+            const token = document.getElementById('token').value.trim();
+            const responseDiv = document.getElementById('validation-response');
+
+            responseDiv.innerHTML = 'Validating token...';
+            responseDiv.className = 'response show';
+
+            // Use 'localhost' when opening file directly
+            const domain = window.location.hostname || 'localhost';
+
+            try {
+                const response = await fetch(`${API_URL}/api/wordpress/validate-token`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: token,
+                        domain: domain
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.valid) {
+                    botConfig = data.bot;
+                    responseDiv.innerHTML = `
+                        <span class="status success">✓ Valid</span>
+                        <h4>Bot Configuration:</h4>
+                        <ul>
+                            <li><strong>Name:</strong> ${data.bot.name}</li>
+                            <li><strong>Model:</strong> ${data.bot.model}</li>
+                            <li><strong>Welcome Message:</strong> ${data.bot.welcomeMessage}</li>
+                            <li><strong>Status:</strong> Ready to chat!</li>
+                        </ul>
+                    `;
+
+                    // Add welcome message to chat
+                    const chatDiv = document.getElementById('chat-messages');
+                    chatDiv.innerHTML = `<div class="message bot">${data.bot.welcomeMessage}</div>`;
+                } else {
+                    responseDiv.innerHTML = `
+                        <span class="status error">✗ Invalid</span>
+                        <p>Error: ${data.error}</p>
+                    `;
+                }
+            } catch (error) {
+                responseDiv.innerHTML = `
+                    <span class="status error">✗ Error</span>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+
+        async function sendMessage() {
+            const token = document.getElementById('token').value.trim();
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value.trim();
+
+            if (!message) return;
+
+            const chatDiv = document.getElementById('chat-messages');
+
+            // Add user message
+            chatDiv.innerHTML += `<div class="message user">${message}</div>`;
+            messageInput.value = '';
+
+            // Add thinking message
+            chatDiv.innerHTML += `<div class="message bot" id="thinking">Thinking...</div>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+
+            const domain = window.location.hostname || 'localhost';
+
+            try {
+                const response = await fetch(`${API_URL}/api/wordpress/send-message-v2`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: token,
+                        domain: domain,
+                        message: message,
+                        sessionId: sessionId
+                    })
+                });
+
+                const data = await response.json();
+
+                // Remove thinking message
+                document.getElementById('thinking').remove();
+
+                if (data.response) {
+                    chatDiv.innerHTML += `<div class="message bot">${data.response}</div>`;
+                } else if (data.error) {
+                    chatDiv.innerHTML += `<div class="message bot" style="color: red;">Error: ${data.error}</div>`;
+                }
+
+                chatDiv.scrollTop = chatDiv.scrollHeight;
+            } catch (error) {
+                document.getElementById('thinking').remove();
+                chatDiv.innerHTML += `<div class="message bot" style="color: red;">Connection error: ${error.message}</div>`;
+            }
+        }
+
+        async function checkStatus() {
+            const responseDiv = document.getElementById('status-response');
+            responseDiv.innerHTML = 'Checking systems...';
+            responseDiv.className = 'response show';
+
+            let status = '<h4>System Check:</h4><ul>';
+
+            // Check API
+            try {
+                const response = await fetch(`${API_URL}/api/health`, { method: 'GET' });
+                status += `<li>API Server: <span class="status success">✓ Online</span></li>`;
+            } catch {
+                status += `<li>API Server: <span class="status error">✗ Offline</span></li>`;
+            }
+
+            // Check token
+            const token = document.getElementById('token').value;
+            if (token) {
+                status += `<li>Token Configured: <span class="status success">✓ Yes</span></li>`;
+            } else {
+                status += `<li>Token Configured: <span class="status error">✗ No</span></li>`;
+            }
+
+            // Check OpenAI (indirectly through bot config)
+            if (botConfig) {
+                status += `<li>Bot Loaded: <span class="status success">✓ Yes</span></li>`;
+                status += `<li>Model: ${botConfig.model}</li>`;
+            }
+
+            status += '</ul>';
+            responseDiv.innerHTML = status;
+        }
+
+        // Allow Enter key to send message
+        document.getElementById('message-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Auto-validate token on load
+        window.onload = function() {
+            validateToken();
+        };
+    </script>
+</body>
+</html>

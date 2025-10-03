@@ -125,13 +125,13 @@ export async function GET(request: NextRequest) {
       const firstName = user.firstName || '';
       const lastName = user.lastName || '';
       const fullName = `${firstName} ${lastName}`.trim();
-      
+
       // Determine online status
       let onlineStatus: 'online' | 'busy' | 'offline' = 'offline';
       if (user.lastLoginAt) {
         const lastLoginTime = new Date(user.lastLoginAt).getTime();
         const timeDiff = now - lastLoginTime;
-        
+
         if (timeDiff < 15 * 60 * 1000) {
           onlineStatus = 'online';
         } else if (timeDiff < 60 * 60 * 1000) {
@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
       if (user.lastLoginAt) {
         const lastLoginTime = new Date(user.lastLoginAt).getTime();
         const timeDiff = now - lastLoginTime;
-        
+
         if (timeDiff < 60 * 1000) {
           lastActive = 'Just now';
         } else if (timeDiff < 60 * 60 * 1000) {
@@ -163,6 +163,22 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      // Calculate user rating based on response time
+      const userConvs = recentConversations.filter(c => c.userId === user.id && c.lastMessageAt);
+      let rating = '4.0';
+      if (userConvs.length > 0) {
+        const avgMs = userConvs.reduce((acc, conv) => {
+          const responseTime = new Date(conv.lastMessageAt!).getTime() - new Date(conv.createdAt).getTime();
+          return acc + responseTime;
+        }, 0) / userConvs.length;
+
+        const avgMinutes = avgMs / (1000 * 60);
+        if (avgMinutes < 2) rating = '5.0';
+        else if (avgMinutes < 5) rating = '4.8';
+        else if (avgMinutes < 10) rating = '4.5';
+        else if (avgMinutes < 30) rating = '4.2';
+      }
+
       return {
         id: user.id,
         name: fullName || user.email.split('@')[0] || 'Unknown User',
@@ -172,7 +188,7 @@ export async function GET(request: NextRequest) {
         assignedBots: assignedBots,
         lastActive: lastActive,
         status: user.password ? 'accepted' : 'pending',
-        rating: (4.5 + Math.random() * 0.5).toFixed(1) // Mock rating
+        rating: rating
       };
     });
 

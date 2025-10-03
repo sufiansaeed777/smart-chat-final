@@ -2,14 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { AppDataSource } from '@/config/database';
 import { User } from '@/entities/User';
+import { checkRateLimit, getClientIdentifier, RateLimits } from '@/middleware/rateLimit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting for login attempts
+    const identifier = getClientIdentifier(request);
+    const rateLimitResponse = checkRateLimit(identifier, RateLimits.AUTH);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Initialize database connection only if not already initialized
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
     }
-    
+
     const { email, password } = await request.json();
 
     // Validate input

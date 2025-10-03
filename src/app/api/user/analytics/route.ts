@@ -73,8 +73,30 @@ export async function GET(request: NextRequest) {
       .andWhere('conversation.createdAt >= :oneDayAgo', { oneDayAgo })
       .getCount();
 
-    // Calculate average response time (mock calculation for now)
-    const avgResponseTime = totalConversations > 0 ? '2.3 min' : '0 min';
+    // Calculate average response time from actual conversation data
+    let avgResponseTime = '0 min';
+    if (totalConversations > 0) {
+      const conversationsWithMessages = await conversationRepository
+        .createQueryBuilder('conversation')
+        .where('conversation.botId IN (:...botIds)', { botIds })
+        .andWhere('conversation.userId = :userId', { userId: user.id })
+        .select('conversation.id')
+        .addSelect('conversation.createdAt')
+        .addSelect('conversation.lastMessageAt')
+        .getMany();
+
+      const validConversations = conversationsWithMessages.filter(c => c.lastMessageAt);
+      if (validConversations.length > 0) {
+        const totalResponseTimeMs = validConversations.reduce((acc, conv) => {
+          const responseTime = new Date(conv.lastMessageAt!).getTime() - new Date(conv.createdAt).getTime();
+          return acc + responseTime;
+        }, 0);
+
+        const avgMs = totalResponseTimeMs / validConversations.length;
+        const avgMinutes = Math.round(avgMs / (1000 * 60) * 10) / 10;
+        avgResponseTime = `${avgMinutes} min`;
+      }
+    }
 
     // Get recent activity
     const recentActivity = await conversationRepository

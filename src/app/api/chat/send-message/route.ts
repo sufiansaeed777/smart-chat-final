@@ -135,12 +135,11 @@ export async function POST(request: NextRequest) {
     // Save user message to conversation
     await saveConversation(botId, user.id, message, 'user', isTestMessage);
 
-    // Send message to n8n webhook or API
-    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
-    const n8nApiKey = process.env.N8N_API_KEY;
-    
-    if (!n8nWebhookUrl && !n8nApiKey) {
-      console.log('N8N webhook URL not configured, returning intelligent mock response');
+    // Use OpenAI for AI responses (skip N8N)
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+
+    if (!openaiApiKey) {
+      console.log('OpenAI API key not configured, returning intelligent mock response');
       
       // Generate intelligent responses based on the message content
       const lowerMessage = message.toLowerCase();
@@ -171,99 +170,91 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // If we have an N8N webhook URL, use it for AI responses
-    if (n8nWebhookUrl) {
-      try {
-        console.log('Using N8N webhook for AI response');
-        
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json'
-        };
-        
-        if (n8nApiKey) {
-          headers['Authorization'] = `Bearer ${n8nApiKey}`;
-        }
-        
-        const requestBody = JSON.stringify({
-          message: message
-        });
-        
-        console.log('N8N Request URL:', n8nWebhookUrl);
-        console.log('N8N Request Body:', requestBody);
-        console.log('N8N Request Headers:', headers);
-        
-        const n8nResponse = await fetch(n8nWebhookUrl, {
-          method: 'POST',
-          headers,
-          body: requestBody,
-        });
+    // Use OpenAI API for AI responses
+    try {
+      console.log('Using OpenAI API for AI response');
 
-        console.log('N8N Response Status:', n8nResponse.status);
-        console.log('N8N Response Headers:', Object.fromEntries(n8nResponse.headers.entries()));
+      const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
-        if (n8nResponse.ok) {
-          try {
-            const responseText = await n8nResponse.text();
-            console.log('N8N Response Text:', responseText);
-            let n8nData;
-            
-            if (responseText.trim()) {
-              n8nData = JSON.parse(responseText);
-            } else {
-              console.log('N8N returned empty response, showing no response');
-              n8nData = { response: 'No response' };
+      // Build system prompt
+      const systemPrompt = bot.systemPrompt || `You are ${bot.name}, a helpful assistant specializing in ${bot.domain}.`;
+
+      // Call OpenAI API
+      const openAIResponse = await fetch(OPENAI_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openaiApiKey}`
+        },
+        body: JSON.stringify({
+          model: bot.model || 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt
+            },
+            {
+              role: 'user',
+              content: message
             }
-            
-            const botResponse = n8nData.response || n8nData.message || 'Message received successfully';
-            
-            // Save bot response to conversation
-            await saveConversation(botId, user.id, botResponse, 'bot', isTestMessage, n8nData);
-            
-            return NextResponse.json({
-              response: botResponse,
-              success: true
-            });
-          } catch (parseError) {
-            console.error('Error parsing N8N response:', parseError);
-            // Fall back to no response
-            const fallbackResponse = 'No response';
-            await saveConversation(botId, user.id, fallbackResponse, 'bot', isTestMessage);
-            return NextResponse.json({
-              response: fallbackResponse,
-              success: true
-            });
-          }
-        } else {
-          const errorText = await n8nResponse.text();
-          console.error('N8N webhook error:', n8nResponse.status, n8nResponse.statusText);
-          console.error('N8N error response:', errorText);
-          // Fall back to no response
-          const fallbackResponse = 'No response';
-          await saveConversation(botId, user.id, fallbackResponse, 'bot', isTestMessage);
+          ],
+          temperature: parseFloat(bot.temperature as string) || 0.7,
+          max_tokens: parseInt((bot.maxTokens || bot["maxTokens"]) as string) || 500
+        })
+      });
+
+      if (openAIResponse.ok) {
+        const openAIData = await openAIResponse.json();
+        if (openAIData.choices && openAIData.choices[0]) {
+          const botResponse = openAIData.choices[0].message.content;
+
+          // Save bot response to conversation
+          await saveConversation(botId, user.id, botResponse, 'bot', isTestMessage);
+
           return NextResponse.json({
-            response: fallbackResponse,
+            response: botResponse,
             success: true
           });
         }
-      } catch (n8nError) {
-        console.error('Error calling N8N webhook:', n8nError);
-        // Fall back to no response
-        const fallbackResponse = 'No response';
-        await saveConversation(botId, user.id, fallbackResponse, 'bot', isTestMessage);
+      } else {
+        const errorData = await openAIResponse.json();
+        console.error('OpenAI API error:', errorData);
+
+        // Handle specific OpenAI errors
+        let errorResponse = 'I encountered an error processing your request. Please try again.';
+        if (openAIResponse.status === 401) {
+          errorResponse = 'Authentication error with AI service. Please check the API configuration.';
+        } else if (openAIResponse.status === 429) {
+          errorResponse = 'AI service rate limit reached. Please try again later.';
+        } else if (errorData.error?.message) {
+          console.error('OpenAI error message:', errorData.error.message);
+        }
+
+        // Save error response to conversation
+        await saveConversation(botId, user.id, errorResponse, 'bot', isTestMessage);
+
         return NextResponse.json({
-          response: fallbackResponse,
+          response: errorResponse,
           success: true
         });
       }
+    } catch (openAIError) {
+      console.error('Error calling OpenAI:', openAIError);
+      const errorResponse = 'I apologize, but I encountered an error connecting to the AI service.';
+
+      // Save error response to conversation
+      await saveConversation(botId, user.id, errorResponse, 'bot', isTestMessage);
+
+      return NextResponse.json({
+        response: errorResponse,
+        success: true
+      });
     }
 
-
-    // Final fallback - show no response when N8N fails
-    const fallbackResponse = 'No response';
-    
-    // Save bot response to conversation
+    // Final fallback
+    const fallbackResponse = 'I apologize, but I could not generate a response at this time.';
     await saveConversation(botId, user.id, fallbackResponse, 'bot', isTestMessage);
-    
+
     return NextResponse.json({
       response: fallbackResponse,
       success: true

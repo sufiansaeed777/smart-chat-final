@@ -3,6 +3,7 @@ import { stripe } from '@/lib/stripe';
 import { AppDataSource } from '@/config/database';
 import { Bot } from '@/entities/Bot';
 import { User } from '@/entities/User';
+import { Subscription } from '@/entities/Subscription';
 import Stripe from 'stripe';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -30,15 +31,35 @@ export async function POST(request: NextRequest) {
       case 'checkout.session.completed':
         await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
         break;
-      
+
+      case 'customer.subscription.created':
+        await handleSubscriptionCreated(event.data.object as Stripe.Subscription);
+        break;
+
+      case 'customer.subscription.updated':
+        await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
+        break;
+
+      case 'customer.subscription.deleted':
+        await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+        break;
+
+      case 'invoice.payment_succeeded':
+        await handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice);
+        break;
+
+      case 'invoice.payment_failed':
+        await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+        break;
+
       case 'payment_intent.succeeded':
         await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
         break;
-      
+
       case 'payment_intent.payment_failed':
         await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
         break;
-      
+
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }
@@ -203,4 +224,224 @@ async function handleSignupPlanRefund(paymentIntentId: string, botId: string) {
   } catch (error) {
     console.error('Error processing refund:', error);
   }
+}
+
+// Subscription Event Handlers
+async function handleSubscriptionCreated(stripeSubscription: Stripe.Subscription) {
+  console.log('Subscription created:', stripeSubscription.id);
+
+  if (!AppDataSource.isInitialized) {
+    await AppDataSource.initialize();
+  }
+
+  const subscriptionRepository = AppDataSource.getRepository(Subscription);
+  const userRepository = AppDataSource.getRepository(User);
+
+  const customerId = stripeSubscription.customer as string;
+  const userId = stripeSubscription.metadata?.userId;
+
+  if (!userId) {
+    console.error('No userId in subscription metadata');
+    return;
+  }
+
+  // Get user
+  const user = await userRepository.findOne({ where: { id: userId } });
+  if (!user) {
+    console.error('User not found:', userId);
+    return;
+  }
+
+  // Get plan details from price
+  const priceId = stripeSubscription.items.data[0]?.price.id;
+  const planType = getPlanTypeFromPriceId(priceId);
+  const limits = getPlanLimits(planType);
+
+  // Create subscription record
+  const subscription = subscriptionRepository.create({
+    managerId: userId,
+    planName: planType,
+    status: stripeSubscription.status as any,
+    amount: (stripeSubscription.items.data[0]?.price.unit_amount || 0) / 100,
+    currency: stripeSubscription.currency.toUpperCase(),
+    billingCycle: stripeSubscription.items.data[0]?.price.recurring?.interval === 'year' ? 'yearly' : 'monthly',
+    startDate: new Date(stripeSubscription.current_period_start * 1000),
+    endDate: new Date(stripeSubscription.current_period_end * 1000),
+    nextBillingDate: new Date(stripeSubscription.current_period_end * 1000),
+    stripeSubscriptionId: stripeSubscription.id,
+    stripeCustomerId: customerId,
+    messageLimit: limits.messages,
+    messagesUsed: 0,
+    maxBots: limits.bots,
+    botsCount: 0,
+    maxUsers: limits.users,
+    usersCount: 0,
+    storageLimit: limits.storage,
+    storageUsed: 0,
+  });
+
+  await subscriptionRepository.save(subscription);
+  console.log('Subscription created in database:', subscription.id);
+}
+
+async function handleSubscriptionUpdated(stripeSubscription: Stripe.Subscription) {
+  console.log('Subscription updated:', stripeSubscription.id);
+
+  if (!AppDataSource.isInitialized) {
+    await AppDataSource.initialize();
+  }
+
+  const subscriptionRepository = AppDataSource.getRepository(Subscription);
+
+  // Find existing subscription
+  const subscription = await subscriptionRepository.findOne({
+    where: { stripeSubscriptionId: stripeSubscription.id }
+  });
+
+  if (!subscription) {
+    console.error('Subscription not found:', stripeSubscription.id);
+    return;
+  }
+
+  // Update subscription details
+  const priceId = stripeSubscription.items.data[0]?.price.id;
+  const planType = getPlanTypeFromPriceId(priceId);
+  const limits = getPlanLimits(planType);
+
+  subscription.planName = planType;
+  subscription.status = stripeSubscription.status as any;
+  subscription.amount = (stripeSubscription.items.data[0]?.price.unit_amount || 0) / 100;
+  subscription.endDate = new Date(stripeSubscription.current_period_end * 1000);
+  subscription.nextBillingDate = new Date(stripeSubscription.current_period_end * 1000);
+  subscription.messageLimit = limits.messages;
+  subscription.maxBots = limits.bots;
+  subscription.maxUsers = limits.users;
+  subscription.storageLimit = limits.storage;
+
+  // Reset usage if new billing period
+  const now = new Date();
+  const periodStart = new Date(stripeSubscription.current_period_start * 1000);
+  if (subscription.startDate < periodStart) {
+    subscription.messagesUsed = 0;
+    subscription.startDate = periodStart;
+  }
+
+  await subscriptionRepository.save(subscription);
+  console.log('Subscription updated in database:', subscription.id);
+}
+
+async function handleSubscriptionDeleted(stripeSubscription: Stripe.Subscription) {
+  console.log('Subscription deleted/cancelled:', stripeSubscription.id);
+
+  if (!AppDataSource.isInitialized) {
+    await AppDataSource.initialize();
+  }
+
+  const subscriptionRepository = AppDataSource.getRepository(Subscription);
+
+  // Find and cancel subscription
+  const subscription = await subscriptionRepository.findOne({
+    where: { stripeSubscriptionId: stripeSubscription.id }
+  });
+
+  if (!subscription) {
+    console.error('Subscription not found:', stripeSubscription.id);
+    return;
+  }
+
+  // Mark as cancelled
+  subscription.status = 'cancelled';
+  await subscriptionRepository.save(subscription);
+
+  console.log('Subscription marked as cancelled:', subscription.id);
+}
+
+async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
+  console.log('Invoice payment succeeded:', invoice.id);
+
+  if (!AppDataSource.isInitialized) {
+    await AppDataSource.initialize();
+  }
+
+  const subscriptionRepository = AppDataSource.getRepository(Subscription);
+
+  if (!invoice.subscription) {
+    return;
+  }
+
+  // Find subscription and reactivate if needed
+  const subscription = await subscriptionRepository.findOne({
+    where: { stripeSubscriptionId: invoice.subscription as string }
+  });
+
+  if (subscription) {
+    subscription.status = 'active';
+    await subscriptionRepository.save(subscription);
+    console.log('Subscription reactivated after payment:', subscription.id);
+  }
+}
+
+async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
+  console.log('Invoice payment failed:', invoice.id);
+
+  if (!AppDataSource.isInitialized) {
+    await AppDataSource.initialize();
+  }
+
+  const subscriptionRepository = AppDataSource.getRepository(Subscription);
+
+  if (!invoice.subscription) {
+    return;
+  }
+
+  // Find subscription and suspend
+  const subscription = await subscriptionRepository.findOne({
+    where: { stripeSubscriptionId: invoice.subscription as string }
+  });
+
+  if (subscription) {
+    subscription.status = 'past_due';
+    await subscriptionRepository.save(subscription);
+    console.log('Subscription marked as past_due:', subscription.id);
+  }
+}
+
+// Helper functions
+function getPlanTypeFromPriceId(priceId: string): string {
+  // Map Stripe price IDs to plan types
+  // You'll need to update these with your actual Stripe price IDs
+  const priceMap: { [key: string]: string } = {
+    'price_free': 'Free',
+    'price_pro_monthly': 'Pro',
+    'price_pro_yearly': 'Pro',
+    'price_enterprise_monthly': 'Enterprise',
+    'price_enterprise_yearly': 'Enterprise',
+  };
+
+  return priceMap[priceId] || 'Free';
+}
+
+function getPlanLimits(planType: string) {
+  const limits: { [key: string]: { messages: number; bots: number; users: number; storage: number } } = {
+    'Free': {
+      messages: 100,
+      bots: 1,
+      users: 1,
+      storage: 10485760, // 10MB
+    },
+    'Pro': {
+      messages: 10000,
+      bots: 10,
+      users: 5,
+      storage: 104857600, // 100MB
+    },
+    'Enterprise': {
+      messages: 100000,
+      bots: 100,
+      users: 50,
+      storage: 1073741824, // 1GB
+    },
+  };
+
+  return limits[planType] || limits['Free'];
 }

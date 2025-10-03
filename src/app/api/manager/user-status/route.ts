@@ -88,8 +88,38 @@ export async function GET(request: NextRequest) {
       const userConversations = recentConversations.filter(c => c.userId === user.id);
       const recentChatCount = userConversations.length;
 
-      // Calculate average response time (mock for now)
-      const avgResponseTime = userConversations.length > 0 ? '2.3 min' : 'N/A';
+      // Calculate average response time from actual data
+      let avgResponseTime = 'N/A';
+      const conversationsWithTimes = userConversations.filter(c => c.lastMessageAt);
+      if (conversationsWithTimes.length > 0) {
+        const totalResponseTimeMs = conversationsWithTimes.reduce((acc, conv) => {
+          const responseTime = new Date(conv.lastMessageAt!).getTime() - new Date(conv.createdAt).getTime();
+          return acc + responseTime;
+        }, 0);
+        const avgMs = totalResponseTimeMs / conversationsWithTimes.length;
+        const avgMinutes = Math.round(avgMs / (1000 * 60) * 10) / 10;
+        avgResponseTime = `${avgMinutes} min`;
+      }
+
+      // Get total chat count for this user
+      const totalUserChats = await conversationRepository.count({
+        where: { userId: user.id }
+      });
+
+      // Calculate user rating based on response time (faster = higher rating)
+      let rating = '4.0';
+      if (conversationsWithTimes.length > 0) {
+        const avgMs = conversationsWithTimes.reduce((acc, conv) => {
+          const responseTime = new Date(conv.lastMessageAt!).getTime() - new Date(conv.createdAt).getTime();
+          return acc + responseTime;
+        }, 0) / conversationsWithTimes.length;
+
+        const avgMinutes = avgMs / (1000 * 60);
+        if (avgMinutes < 2) rating = '5.0';
+        else if (avgMinutes < 5) rating = '4.8';
+        else if (avgMinutes < 10) rating = '4.5';
+        else if (avgMinutes < 30) rating = '4.2';
+      }
 
       return {
         id: user.id,
@@ -103,8 +133,8 @@ export async function GET(request: NextRequest) {
         assignedBots: assignedBots,
         recentChats: recentChatCount,
         avgResponseTime: avgResponseTime,
-        rating: (4.5 + Math.random() * 0.5).toFixed(1), // Mock rating between 4.5-5.0
-        totalChats: Math.floor(Math.random() * 50) + 10 // Mock total chats
+        rating: rating,
+        totalChats: totalUserChats
       };
     });
 

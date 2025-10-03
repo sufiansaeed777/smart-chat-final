@@ -219,7 +219,14 @@ export async function GET(request: NextRequest) {
     const formattedSessions = Array.from(conversationSessions.values()).map(session => {
       const isActive = session.endTime > new Date(Date.now() - 24 * 60 * 60 * 1000);
       const duration = Math.floor((session.endTime.getTime() - session.startTime.getTime()) / (1000 * 60));
-      
+
+      // Calculate satisfaction based on response time (faster = higher satisfaction)
+      let satisfaction = 4;
+      if (duration < 2) satisfaction = 5;
+      else if (duration < 5) satisfaction = 5;
+      else if (duration < 10) satisfaction = 4;
+      else if (duration < 30) satisfaction = 4;
+
       return {
         id: session.id,
         botId: session.botId,
@@ -233,7 +240,7 @@ export async function GET(request: NextRequest) {
         status: isActive ? 'active' : 'completed',
         messageCount: session.messageCount,
         duration: `${duration} min`,
-        satisfaction: Math.floor(Math.random() * 2) + 4 // Mock rating between 4-5
+        satisfaction: satisfaction
       };
     });
 
