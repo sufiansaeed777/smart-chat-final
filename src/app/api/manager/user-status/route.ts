@@ -52,11 +52,20 @@ export async function GET(request: NextRequest) {
     
     const recentConversations = await conversationRepository
       .createQueryBuilder('conversation')
-      .where('conversation.userId IN (:...userIds)', { 
-        userIds: invitedUsers.map(u => u.id) 
+      .where('conversation.userId IN (:...userIds)', {
+        userIds: invitedUsers.map(u => u.id)
       })
       .andWhere('conversation.createdAt >= :twentyFourHoursAgo', { twentyFourHoursAgo })
       .getMany();
+
+    // Get total chat counts for all users
+    const totalChatCounts = await Promise.all(
+      invitedUsers.map(user =>
+        conversationRepository.count({ where: { userId: user.id } })
+          .then(count => ({ userId: user.id, count }))
+      )
+    );
+    const chatCountMap = new Map(totalChatCounts.map(item => [item.userId, item.count]));
 
     // Process user data with online status and stats
     const usersWithStatus = invitedUsers.map(user => {
@@ -101,10 +110,8 @@ export async function GET(request: NextRequest) {
         avgResponseTime = `${avgMinutes} min`;
       }
 
-      // Get total chat count for this user
-      const totalUserChats = await conversationRepository.count({
-        where: { userId: user.id }
-      });
+      // Get total chat count for this user from pre-fetched map
+      const totalUserChats = chatCountMap.get(user.id) || 0;
 
       // Calculate user rating based on response time (faster = higher rating)
       let rating = '4.0';
