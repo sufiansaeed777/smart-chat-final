@@ -7,6 +7,7 @@ import { UserRole } from "@/types/UserRole"
 import bcrypt from "bcryptjs"
 
 export const authOptions: NextAuthOptions = {
+  trustHost: true,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,

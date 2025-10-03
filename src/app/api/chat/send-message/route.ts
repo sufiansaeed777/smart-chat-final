@@ -100,8 +100,12 @@ export async function POST(request: NextRequest) {
         description: 'General purpose AI assistant',
         domain: 'general',
         status: 'active',
-        createdBy: 'system'
-      } as { id: string; name: string; description: string; domain: string; status: string; createdBy: string };
+        createdBy: 'system',
+        systemPrompt: 'You are a helpful AI assistant.',
+        model: 'gpt-4o-mini',
+        temperature: 0.7,
+        maxTokens: 1000
+      } as Bot;
     } else if (isTestMessage) {
       // For test messages, check if the user is a manager and owns the bot
       bot = await botRepository.findOne({
