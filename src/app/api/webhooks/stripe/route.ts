@@ -258,17 +258,18 @@ async function handleSubscriptionCreated(stripeSubscription: Stripe.Subscription
   const limits = getPlanLimits(planType);
 
   // Create subscription record
+  const stripeSub = stripeSubscription as Stripe.Subscription;
   const subscription = subscriptionRepository.create({
     managerId: userId,
     planName: planType,
-    status: stripeSubscription.status as any,
-    amount: (stripeSubscription.items.data[0]?.price.unit_amount || 0) / 100,
-    currency: stripeSubscription.currency.toUpperCase(),
-    billingCycle: stripeSubscription.items.data[0]?.price.recurring?.interval === 'year' ? 'yearly' : 'monthly',
-    startDate: new Date(stripeSubscription.current_period_start * 1000),
-    endDate: new Date(stripeSubscription.current_period_end * 1000),
-    nextBillingDate: new Date(stripeSubscription.current_period_end * 1000),
-    stripeSubscriptionId: stripeSubscription.id,
+    status: stripeSub.status as any,
+    amount: (stripeSub.items.data[0]?.price.unit_amount || 0) / 100,
+    currency: stripeSub.currency.toUpperCase(),
+    billingCycle: stripeSub.items.data[0]?.price.recurring?.interval === 'year' ? 'yearly' : 'monthly',
+    startDate: new Date(stripeSub.current_period_start * 1000),
+    endDate: new Date(stripeSub.current_period_end * 1000),
+    nextBillingDate: new Date(stripeSub.current_period_end * 1000),
+    stripeSubscriptionId: stripeSub.id,
     stripeCustomerId: customerId,
     messageLimit: limits.messages,
     messagesUsed: 0,
