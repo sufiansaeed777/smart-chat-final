@@ -5,6 +5,7 @@ import { User } from '@/entities/User';
 import { Bot } from '@/entities/Bot';
 import { Document } from '@/entities/Document';
 import { Conversation } from '@/entities/Conversation';
+import { UserRole } from '@/types/UserRole';
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
     const [users, bots, documents, conversations] = await Promise.all([
       // Count team members (users invited by this manager)
       userRepository.count({
-        where: { role: 'user' }
+        where: { role: UserRole.USER }
       }),
       // Count bots created by this manager
       botRepository.count({
