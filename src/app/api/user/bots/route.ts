@@ -7,9 +7,21 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || !session.user) {
+    if (!session || !session.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Get user ID from email first
+    const userResult = await pool.query(
+      `SELECT id FROM users WHERE email = $1`,
+      [session.user.email]
+    );
+
+    if (userResult.rows.length === 0) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const userId = userResult.rows[0].id;
 
     // Fetch all bots created by the user
     const result = await pool.query(
@@ -29,7 +41,7 @@ export async function GET() {
       FROM bots
       WHERE "createdBy" = $1
       ORDER BY "createdAt" DESC`,
-      [session.user.id]
+      [userId]
     );
 
     return NextResponse.json({
