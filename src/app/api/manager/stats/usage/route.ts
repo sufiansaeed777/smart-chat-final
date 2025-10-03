@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       }),
       // Count bots created by this manager
       botRepository.count({
-        where: { managerId: currentUser.id }
+        where: { createdBy: currentUser.id }
       }),
       // Count documents uploaded by this manager
       documentRepository.count({
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       conversationRepository
         .createQueryBuilder('conversation')
         .innerJoin('bots', 'bot', 'bot.id = conversation.botId')
-        .where('bot.managerId = :managerId', { managerId: currentUser.id })
+        .where('bot.createdBy = :createdBy', { createdBy: currentUser.id })
         .getCount()
     ]);
 
