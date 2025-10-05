@@ -1,7 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from "typeorm";
 import { UserRole } from "../types/UserRole";
-import { BotAssignment } from "./BotAssignment";
-import { Conversation } from "./Conversation";
 
 @Entity("users")
 export class User {
@@ -60,13 +58,6 @@ export class User {
 
   @UpdateDateColumn({ type: "timestamp" })
   updatedAt!: Date;
-
-  // Relations
-  @OneToMany('BotAssignment', 'user')
-  botAssignments?: BotAssignment[];
-
-  @OneToMany('Conversation', 'user')
-  conversations?: Conversation[];
 
   // Virtual property for full name
   get fullName(): string {
