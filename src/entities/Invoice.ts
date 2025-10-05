@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { User } from './User';
 import { Subscription } from './Subscription';
 
-@Entity('invoices')
+@Entity({ name: 'invoices' })
 export class Invoice {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

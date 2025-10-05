@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
-@Entity('chatbot_issues')
+@Entity({ name: 'chatbot_issues' })
 export class ChatbotIssue {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

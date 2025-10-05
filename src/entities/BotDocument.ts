@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, Jo
 import { Bot } from './Bot';
 import { Document } from './Document';
 
-@Entity('bot_documents')
+@Entity({ name: 'bot_documents' })
 @Index(['botId', 'documentId'], { unique: true }) // Ensure unique bot-document pairs
 export class BotDocument {
   @PrimaryGeneratedColumn('uuid')

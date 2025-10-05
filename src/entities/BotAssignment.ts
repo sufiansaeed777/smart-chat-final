@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { User } from './User';
 import { Bot } from './Bot';
 
-@Entity('bot_assignments')
+@Entity({ name: 'bot_assignments' })
 @Index(['userId', 'botId'], { unique: true }) // Ensure a user can only be assigned to a bot once
 export class BotAssignment {
   @PrimaryGeneratedColumn('uuid')
