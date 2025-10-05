@@ -3,7 +3,7 @@ import { stripe } from '@/lib/stripe';
 import { AppDataSource } from '@/config/database';
 import { Bot } from '@/entities/Bot';
 import { User } from '@/entities/User';
-import { Subscription } from '@/entities/Subscription';
+import { Subscription as SubscriptionEntity } from '@/entities/Subscription';
 import Stripe from 'stripe';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -234,7 +234,7 @@ async function handleSubscriptionCreated(stripeSubscription: Stripe.Subscription
     await AppDataSource.initialize();
   }
 
-  const subscriptionRepository = AppDataSource.getRepository(Subscription);
+  const subscriptionRepository = AppDataSource.getRepository(SubscriptionEntity);
   const userRepository = AppDataSource.getRepository(User);
 
   const customerId = stripeSubscription.customer as string;
@@ -292,7 +292,7 @@ async function handleSubscriptionUpdated(stripeSubscription: Stripe.Subscription
     await AppDataSource.initialize();
   }
 
-  const subscriptionRepository = AppDataSource.getRepository(Subscription);
+  const subscriptionRepository = AppDataSource.getRepository(SubscriptionEntity);
 
   // Find existing subscription
   const subscription = await subscriptionRepository.findOne({
@@ -338,7 +338,7 @@ async function handleSubscriptionDeleted(stripeSubscription: Stripe.Subscription
     await AppDataSource.initialize();
   }
 
-  const subscriptionRepository = AppDataSource.getRepository(Subscription);
+  const subscriptionRepository = AppDataSource.getRepository(SubscriptionEntity);
 
   // Find and cancel subscription
   const subscription = await subscriptionRepository.findOne({
@@ -364,7 +364,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     await AppDataSource.initialize();
   }
 
-  const subscriptionRepository = AppDataSource.getRepository(Subscription);
+  const subscriptionRepository = AppDataSource.getRepository(SubscriptionEntity);
 
   if (!invoice.subscription) {
     return;
@@ -389,7 +389,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     await AppDataSource.initialize();
   }
 
-  const subscriptionRepository = AppDataSource.getRepository(Subscription);
+  const subscriptionRepository = AppDataSource.getRepository(SubscriptionEntity);
 
   if (!invoice.subscription) {
     return;
