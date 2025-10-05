@@ -1,14 +1,4 @@
 import { DataSource } from "typeorm";
-import { User } from "../entities/User";
-import { Bot } from "../entities/Bot";
-import { BotAssignment } from "../entities/BotAssignment";
-import { Conversation } from "../entities/Conversation";
-import { Subscription } from "../entities/Subscription";
-import { BillingPlan } from "../entities/BillingPlan";
-import { Invoice } from "../entities/Invoice";
-import { ChatbotIssue } from "../entities/ChatbotIssue";
-import { Document } from "../entities/Document";
-import { BotDocument } from "../entities/BotDocument";
 
 // Environment-specific database configuration
 const getDatabaseConfig = () => {
@@ -71,7 +61,9 @@ export const AppDataSource = new DataSource({
   url: config.url,
   synchronize: config.synchronize,
   logging: config.logging,
-  entities: [User, Bot, BotAssignment, Conversation, Subscription, BillingPlan, Invoice, ChatbotIssue, Document, BotDocument],
+  entities: [
+    __dirname + "/../entities/**/*.{js,ts}"
+  ],
   migrations: [],
   subscribers: [],
   ssl: process.env.NODE_ENV === 'production' ? {
