@@ -268,7 +268,7 @@ export default function IntegrationsPage() {
                                 <div>
                                   <strong>Activate the Plugin</strong>
                                   <p className="text-gray-600 mt-1">
-                                    Click "Activate" after installation
+                                    Click &quot;Activate&quot; after installation
                                   </p>
                                 </div>
                               </li>

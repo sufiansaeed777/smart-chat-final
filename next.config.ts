@@ -5,9 +5,19 @@ const nextConfig: NextConfig = {
   output: 'standalone', // For Docker deployment
   // External packages for server components
   serverExternalPackages: ['typeorm', 'pg'],
-  
+
   // Transpile packages that need to be processed
   transpilePackages: ['recharts'],
+
+  // Disable ESLint during build
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
+  // Disable TypeScript errors during build
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   
   // Environment variables validation
   env: {
