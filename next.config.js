@@ -11,6 +11,13 @@ const nextConfig = {
     // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
+  // Enable standalone output for Docker
+  output: 'standalone',
 }
 
 module.exports = nextConfig
