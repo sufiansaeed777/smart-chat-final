@@ -18,7 +18,19 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  
+
+  // Webpack configuration to preserve class names for TypeORM entities
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Disable minification for server bundles to preserve entity class names
+      config.optimization = {
+        ...config.optimization,
+        minimize: false,
+      };
+    }
+    return config;
+  },
+
   // Environment variables validation
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
