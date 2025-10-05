@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user from database and validate they're still active
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({ 
       where: { email: session.user.email } 
     });

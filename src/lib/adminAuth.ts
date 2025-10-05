@@ -16,7 +16,7 @@ export async function isAdmin(): Promise<boolean> {
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({
       where: { email: session.user.email }
     });
@@ -40,7 +40,7 @@ export async function isManager(): Promise<boolean> {
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({
       where: { email: session.user.email }
     });
@@ -64,7 +64,7 @@ export async function getCurrentUser() {
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({
       where: { email: session.user.email }
     });

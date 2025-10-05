@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({
       where: { invitationToken: token }
     });

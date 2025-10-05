@@ -25,9 +25,9 @@ export async function POST(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const botRepository = AppDataSource.getRepository(Bot);
-    const userRepository = AppDataSource.getRepository(User);
-    const assignmentRepository = AppDataSource.getRepository(BotAssignment);
+    const botRepository = AppDataSource.getRepository("bots");
+    const userRepository = AppDataSource.getRepository("users");
+    const assignmentRepository = AppDataSource.getRepository("bot_assignments");
 
     // First, get the current user to find their ID
     const currentUser = await userRepository.findOne({

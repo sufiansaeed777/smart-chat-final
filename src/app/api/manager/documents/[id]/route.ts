@@ -24,8 +24,8 @@ export async function GET(
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository(User);
-    const documentRepository = AppDataSource.getRepository(Document);
+    const userRepository = AppDataSource.getRepository("users");
+    const documentRepository = AppDataSource.getRepository("documents");
 
     // Get the current user
     const user = await userRepository.findOne({
@@ -87,8 +87,8 @@ export async function PUT(
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository(User);
-    const documentRepository = AppDataSource.getRepository(Document);
+    const userRepository = AppDataSource.getRepository("users");
+    const documentRepository = AppDataSource.getRepository("documents");
 
     // Get the current user
     const user = await userRepository.findOne({
@@ -163,8 +163,8 @@ export async function DELETE(
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository(User);
-    const documentRepository = AppDataSource.getRepository(Document);
+    const userRepository = AppDataSource.getRepository("users");
+    const documentRepository = AppDataSource.getRepository("documents");
 
     // Get the current user
     const user = await userRepository.findOne({

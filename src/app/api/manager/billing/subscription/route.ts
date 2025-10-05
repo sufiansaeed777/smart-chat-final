@@ -21,8 +21,8 @@ export async function GET(request: NextRequest) {
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
     }
-    const subscriptionRepository = AppDataSource.getRepository(Subscription);
-    const userRepository = AppDataSource.getRepository(User);
+    const subscriptionRepository = AppDataSource.getRepository("subscriptions");
+    const userRepository = AppDataSource.getRepository("users");
 
     // Get current user
     const currentUser = await userRepository.findOne({
@@ -47,8 +47,8 @@ export async function GET(request: NextRequest) {
     const { BotAssignment } = await import('@/entities/BotAssignment');
     const { Bot } = await import('@/entities/Bot');
     
-    const assignmentRepository = AppDataSource.getRepository(BotAssignment);
-    const botRepository = AppDataSource.getRepository(Bot);
+    const assignmentRepository = AppDataSource.getRepository("bot_assignments");
+    const botRepository = AppDataSource.getRepository("bots");
 
     // Count assigned users
     const assignedUsers = await assignmentRepository

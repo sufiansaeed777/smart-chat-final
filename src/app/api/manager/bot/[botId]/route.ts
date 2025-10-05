@@ -22,7 +22,7 @@ export async function GET(
     }
 
     // Get user from database
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({ 
       where: { email: session.user.email } 
     });
@@ -39,7 +39,7 @@ export async function GET(
     const { botId } = await params;
 
     // Get the bot from database
-    const botRepository = AppDataSource.getRepository(Bot);
+    const botRepository = AppDataSource.getRepository("bots");
     const bot = await botRepository.findOne({
       where: { 
         id: botId,

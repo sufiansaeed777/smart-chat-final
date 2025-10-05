@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user with password hash
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({
       where: {
         email: session.user.email

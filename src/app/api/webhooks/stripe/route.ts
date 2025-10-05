@@ -57,8 +57,8 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     await AppDataSource.initialize();
   }
 
-  const botRepository = AppDataSource.getRepository(Bot);
-  const userRepository = AppDataSource.getRepository(User);
+  const botRepository = AppDataSource.getRepository("bots");
+  const userRepository = AppDataSource.getRepository("users");
 
   const userId = session.metadata?.userId;
   const planType = session.metadata?.planType;
@@ -133,7 +133,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     await AppDataSource.initialize();
   }
 
-  const botRepository = AppDataSource.getRepository(Bot);
+  const botRepository = AppDataSource.getRepository("bots");
   
   const bot = await botRepository.findOne({
     where: { paymentSessionId: paymentIntent.metadata?.sessionId }
@@ -154,7 +154,7 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
     await AppDataSource.initialize();
   }
 
-  const botRepository = AppDataSource.getRepository(Bot);
+  const botRepository = AppDataSource.getRepository("bots");
   
   const bot = await botRepository.findOne({
     where: { paymentSessionId: paymentIntent.metadata?.sessionId }
@@ -190,7 +190,7 @@ async function handleSignupPlanRefund(paymentIntentId: string, botId: string) {
       await AppDataSource.initialize();
     }
 
-    const botRepository = AppDataSource.getRepository(Bot);
+    const botRepository = AppDataSource.getRepository("bots");
     const bot = await botRepository.findOne({ where: { id: botId } });
 
     if (bot) {

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user from database
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({ 
       where: { email: session.user.email } 
     });
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's issues
-    const issueRepository = AppDataSource.getRepository(ChatbotIssue);
+    const issueRepository = AppDataSource.getRepository("chatbot_issues");
     const issues = await issueRepository.find({
       where: { 
         userId: user.id,

@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get bot configuration
-    const botRepository = AppDataSource.getRepository(Bot);
+    const botRepository = AppDataSource.getRepository("bots");
     const bot = await botRepository.findOne({
       where: {
         id: botId,
@@ -79,14 +79,14 @@ export async function POST(request: NextRequest) {
     }
 
     // TODO: Check user's message quota
-    // const userRepository = AppDataSource.getRepository(User);
+    // const userRepository = AppDataSource.getRepository("users");
     // const subscription = await checkUserSubscription(userId);
     // if (subscription.messagesUsed >= subscription.messagesLimit) {
     //   return NextResponse.json({ error: 'Message quota exceeded' }, { status: 429 });
     // }
 
     // Create or get conversation
-    const conversationRepository = AppDataSource.getRepository(Conversation);
+    const conversationRepository = AppDataSource.getRepository("conversations");
     let conversation = await conversationRepository.findOne({
       where: {
         botId: botId,

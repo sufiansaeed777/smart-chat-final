@@ -19,7 +19,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get current user from database
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const currentUser = await userRepository.findOne({ 
       where: { email: session.user.email } 
     });
@@ -64,7 +64,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete all bot assignments for this user first
-    const assignmentRepository = AppDataSource.getRepository(BotAssignment);
+    const assignmentRepository = AppDataSource.getRepository("bot_assignments");
     await assignmentRepository.delete({ user: { id: userId } });
 
     // Delete the user

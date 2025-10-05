@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const issueRepository = AppDataSource.getRepository(ChatbotIssue);
+    const issueRepository = AppDataSource.getRepository("chatbot_issues");
     const issues = await issueRepository.find({
       order: { createdAt: 'DESC' }
     });
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const issueRepository = AppDataSource.getRepository(ChatbotIssue);
+    const issueRepository = AppDataSource.getRepository("chatbot_issues");
     
     const newIssue = issueRepository.create({
       type,

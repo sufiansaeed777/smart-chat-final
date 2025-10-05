@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user is admin
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const currentUser = await userRepository.findOne({
       where: { email: session.user.email },
       select: ['role']

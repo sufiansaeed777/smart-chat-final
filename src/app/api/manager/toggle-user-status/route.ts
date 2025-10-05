@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the current user to check if they're a manager
-    const currentUser = await AppDataSource.getRepository(User).findOne({
+    const currentUser = await AppDataSource.getRepository("users").findOne({
       where: { email: session.user.email }
     });
 
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the user to toggle
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const userToToggle = await userRepository.findOne({
       where: { id: userId }
     });

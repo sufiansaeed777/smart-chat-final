@@ -7,7 +7,7 @@ const getUserRepository = () => {
   if (!AppDataSource.isInitialized) {
     throw new Error("Database connection not initialized. Call initializeDatabase() first.");
   }
-  return AppDataSource.getRepository(User);
+  return AppDataSource.getRepository("users");
 };
 
 export class UserService {

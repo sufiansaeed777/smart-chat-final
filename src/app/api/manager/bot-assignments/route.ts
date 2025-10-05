@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const assignmentRepository = AppDataSource.getRepository(BotAssignment);
-    const userRepository = AppDataSource.getRepository(User);
+    const assignmentRepository = AppDataSource.getRepository("bot_assignments");
+    const userRepository = AppDataSource.getRepository("users");
 
     // First, get the current user to verify they're a manager
     const currentUser = await userRepository.findOne({

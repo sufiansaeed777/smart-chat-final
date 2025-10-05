@@ -25,7 +25,7 @@ export async function GET(
     const { botId } = await params;
 
     // Get user
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({ 
       where: { email: session.user.email } 
     });
@@ -39,7 +39,7 @@ export async function GET(
     // For users: check if they are assigned to the bot
     if (user.role === 'manager') {
       // Managers can access conversations for bots they created
-      const botRepository = AppDataSource.getRepository(Bot);
+      const botRepository = AppDataSource.getRepository("bots");
       const bot = await botRepository.findOne({
         where: {
           id: botId,
@@ -53,7 +53,7 @@ export async function GET(
     } else {
       // Regular users need to be assigned to the bot
       const { BotAssignment } = await import('@/entities/BotAssignment');
-      const assignmentRepository = AppDataSource.getRepository(BotAssignment);
+      const assignmentRepository = AppDataSource.getRepository("bot_assignments");
       const assignment = await assignmentRepository.findOne({
         where: {
           userId: user.id,
@@ -68,7 +68,7 @@ export async function GET(
     }
 
     // Get conversations for the bot
-    const conversationRepository = AppDataSource.getRepository(Conversation);
+    const conversationRepository = AppDataSource.getRepository("conversations");
     let conversations;
     
     if (user.role === 'manager') {

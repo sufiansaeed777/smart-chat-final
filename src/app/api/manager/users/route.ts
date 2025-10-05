@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     }
 
     // First, get the current user to find their ID and verify role
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const currentUser = await userRepository.findOne({
       where: { email: session.user.email }
     });

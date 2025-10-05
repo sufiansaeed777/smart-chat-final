@@ -22,7 +22,7 @@ export async function PATCH(
     }
 
     // Get user from database and check if they're a manager
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({ 
       where: { email: session.user.email } 
     });
@@ -40,7 +40,7 @@ export async function PATCH(
     const { status, notes, response, assignedTo } = body;
 
     // Get the issue
-    const issueRepository = AppDataSource.getRepository(ChatbotIssue);
+    const issueRepository = AppDataSource.getRepository("chatbot_issues");
     const issue = await issueRepository.findOne({
       where: { id: params.id }
     });
@@ -101,7 +101,7 @@ export async function GET(
     }
 
     // Get user from database and check if they're a manager
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({ 
       where: { email: session.user.email } 
     });
@@ -116,7 +116,7 @@ export async function GET(
     }
 
     // Get the specific issue
-    const issueRepository = AppDataSource.getRepository(ChatbotIssue);
+    const issueRepository = AppDataSource.getRepository("chatbot_issues");
     const issue = await issueRepository.findOne({
       where: { id: params.id }
     });

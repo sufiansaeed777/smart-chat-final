@@ -21,8 +21,8 @@ export async function GET(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository(User);
-    const documentRepository = AppDataSource.getRepository(Document);
+    const userRepository = AppDataSource.getRepository("users");
+    const documentRepository = AppDataSource.getRepository("documents");
 
     // Get the current user
     const user = await userRepository.findOne({
@@ -113,8 +113,8 @@ export async function POST(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository(User);
-    const documentRepository = AppDataSource.getRepository(Document);
+    const userRepository = AppDataSource.getRepository("users");
+    const documentRepository = AppDataSource.getRepository("documents");
 
     // Get the current user
     const user = await userRepository.findOne({

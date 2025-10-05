@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
 export class EmailVerificationService {
-  private static userRepository = AppDataSource.getRepository(User);
+  private static userRepository = AppDataSource.getRepository("users");
 
   /**
    * Generate a secure verification token

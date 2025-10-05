@@ -1,0 +1,45 @@
+# Database Configuration - Supabase
+# Connect to Supabase via connection pooling (DNS fix applied in code)
+DATABASE_URL="postgresql://postgres.aucvnpwyrbefzfiqnrvd:DT5X7gFAThRZNzNc@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres"
+
+# Alternative direct connection (if pooler fails)
+ALT_DATABASE_URL="postgresql://postgres:DT5X7gFAThRZNzNc@db.aucvnpwyrbefzfiqnrvd.supabase.co:5432/postgres"
+
+# Direct connection to the database (for migrations)
+DIRECT_URL="postgresql://postgres:DT5X7gFAThRZNzNc@db.aucvnpwyrbefzfiqnrvd.supabase.co:5432/postgres"
+
+# Environment
+NODE_ENV=development
+
+# DNS Workaround - Set to true ONLY if you have DNS issues
+USE_IP_WORKAROUND=true
+
+# Email Configuration
+EMAIL_USER=shared.affan@gmail.com
+EMAIL_APP_PASSWORD=ijxhpmsnoencaszj
+
+# Application URL
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID=636012994727-62r7d926m7j2rrbdouf5l5p1smv8l1uh.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=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
+
+# NextAuth Configuration
+NEXTAUTH_SECRET=213e23fr2D@EDFWW@ERWE
+NEXTAUTH_URL=http://localhost:3000
+
+# OpenAI Configuration
+OPENAI_API_KEY=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
+
+# N8N Webhook Configuration
+N8N_WEBHOOK_URL=https://vizterasolutions.app.n8n.cloud/webhook/chat
+
+# Stripe Configuration
+STRIPE_SECRET_KEY=sk_test_51SDPdcHtme0FXmzaaVojNgIoPI0TwInyNk4PbKY70nNoh7Leb2NA3ahrwZ86hmfhk6vdzcz7Eqn57gfsI2nIPM1c00FtoL2Rlc
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51SDPdcHtme0FXmzaNu6HlJA8uLnVfD41gl7N4dV6mStU8fORclEJ3lzrDZVqmfJ5PDvYXzpnQLbLK6IPTOeqeBct00afgFcQn4
+STRIPE_WEBHOOK_SECRET=whsec_uhqb0Fopwfq6rsSHa9xdiOrdCFA2rLak
+
+# Resend API Key (placeholder - update when you get the key)
+RESEND_API_KEY=re_placeholder_key

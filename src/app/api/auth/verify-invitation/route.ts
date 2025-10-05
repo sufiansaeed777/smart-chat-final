@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({
       where: { invitationToken: token }
     });

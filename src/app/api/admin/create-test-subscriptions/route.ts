@@ -22,8 +22,8 @@ export async function POST(request: NextRequest) {
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
     }
-    const userRepository = AppDataSource.getRepository(User);
-    const subscriptionRepository = AppDataSource.getRepository(Subscription);
+    const userRepository = AppDataSource.getRepository("users");
+    const subscriptionRepository = AppDataSource.getRepository("subscriptions");
 
     // Find a manager user
     const manager = await userRepository.findOne({

@@ -34,9 +34,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user and bot
-    const userRepository = AppDataSource.getRepository(User);
-    const botRepository = AppDataSource.getRepository(Bot);
-    const conversationRepository = AppDataSource.getRepository(Conversation);
+    const userRepository = AppDataSource.getRepository("users");
+    const botRepository = AppDataSource.getRepository("bots");
+    const conversationRepository = AppDataSource.getRepository("conversations");
 
     const user = await userRepository.findOne({ 
       where: { email: session.user.email } 

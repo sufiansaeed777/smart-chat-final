@@ -19,7 +19,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Get user from database
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({ 
       where: { email: session.user.email } 
     });
@@ -43,7 +43,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Get the bot from database
-    const botRepository = AppDataSource.getRepository(Bot);
+    const botRepository = AppDataSource.getRepository("bots");
     const bot = await botRepository.findOne({
       where: { 
         id: id,

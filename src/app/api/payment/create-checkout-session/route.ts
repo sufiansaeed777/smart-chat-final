@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
     }
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
 
     // Get user details
     const user = await userRepository.findOne({

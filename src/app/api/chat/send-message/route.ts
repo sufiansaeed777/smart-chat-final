@@ -9,7 +9,7 @@ import { Conversation } from '@/entities/Conversation';
 // Helper function to save conversation
 async function saveConversation(botId: string, userId: string, message: string, sender: 'user' | 'bot', isTestMessage: boolean = false, metadata?: Record<string, unknown>) {
   try {
-    const conversationRepository = AppDataSource.getRepository(Conversation);
+    const conversationRepository = AppDataSource.getRepository("conversations");
     
     const conversation = new Conversation();
     conversation.botId = botId;
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Get user from database
-      const userRepository = AppDataSource.getRepository(User);
+      const userRepository = AppDataSource.getRepository("users");
       user = await userRepository.findOne({ 
         where: { email: session.user.email } 
       });
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     // Check if user is assigned to this bot (unless it's a test message from manager or guest user)
     if (!isTestMessage && userId !== 'guest-user') {
       const { BotAssignment } = await import('@/entities/BotAssignment');
-      const assignmentRepository = AppDataSource.getRepository(BotAssignment);
+      const assignmentRepository = AppDataSource.getRepository("bot_assignments");
       const assignment = await assignmentRepository.findOne({
         where: {
           userId: user.id,
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the bot from database
-    const botRepository = AppDataSource.getRepository(Bot);
+    const botRepository = AppDataSource.getRepository("bots");
     let bot;
     
     // Handle special case for general assistant (main chatbot)

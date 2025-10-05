@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user from database
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({ 
       where: { email: session.user.email } 
     });
@@ -37,9 +37,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get bots created by this manager
-    const botRepository = AppDataSource.getRepository(Bot);
-    const conversationRepository = AppDataSource.getRepository(Conversation);
-    const botDocumentRepository = AppDataSource.getRepository(BotDocument);
+    const botRepository = AppDataSource.getRepository("bots");
+    const conversationRepository = AppDataSource.getRepository("conversations");
+    const botDocumentRepository = AppDataSource.getRepository("bot_documents");
     const bots = await botRepository.find({
       where: { createdBy: user.id },
       relations: ['assignments', 'assignments.user', 'botDocuments', 'botDocuments.document'],

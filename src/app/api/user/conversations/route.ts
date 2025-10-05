@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user from database
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({ 
       where: { email: session.user.email } 
     });
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get bot assignments for this user
-    const assignmentRepository = AppDataSource.getRepository(BotAssignment);
+    const assignmentRepository = AppDataSource.getRepository("bot_assignments");
     const assignments = await assignmentRepository.find({
       where: { 
         userId: user.id,
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get conversations for assigned bots
-    const conversationRepository = AppDataSource.getRepository(Conversation);
+    const conversationRepository = AppDataSource.getRepository("conversations");
     const conversations = await conversationRepository
       .createQueryBuilder('conversation')
       .leftJoinAndSelect('conversation.bot', 'bot')

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user from database and check if they're a manager
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({ 
       where: { email: session.user.email } 
     });
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all issues
-    const issueRepository = AppDataSource.getRepository(ChatbotIssue);
+    const issueRepository = AppDataSource.getRepository("chatbot_issues");
     const issues = await issueRepository.find({
       order: { createdAt: 'DESC' }
     });

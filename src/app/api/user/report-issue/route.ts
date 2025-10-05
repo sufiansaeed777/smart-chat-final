@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user from database
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({ 
       where: { email: session.user.email } 
     });
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new issue
-    const issueRepository = AppDataSource.getRepository(ChatbotIssue);
+    const issueRepository = AppDataSource.getRepository("chatbot_issues");
     
     const newIssue = issueRepository.create({
       type: 'issue_report',

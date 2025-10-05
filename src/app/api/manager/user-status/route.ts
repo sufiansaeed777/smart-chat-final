@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get manager from database
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const manager = await userRepository.findOne({ 
       where: { email: session.user.email } 
     });
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Get bot assignments for these users
-    const assignmentRepository = AppDataSource.getRepository(BotAssignment);
+    const assignmentRepository = AppDataSource.getRepository("bot_assignments");
     const assignments = await assignmentRepository.find({
       where: { 
         userId: In(invitedUsers.map(u => u.id)),
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Get recent conversations for these users (last 24 hours)
-    const conversationRepository = AppDataSource.getRepository(Conversation);
+    const conversationRepository = AppDataSource.getRepository("conversations");
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     
     const recentConversations = await conversationRepository

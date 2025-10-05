@@ -23,7 +23,7 @@ export async function GET(
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
     }
-    const subscriptionRepository = AppDataSource.getRepository(Subscription);
+    const subscriptionRepository = AppDataSource.getRepository("subscriptions");
 
     const { id } = await params;
     const subscription = await subscriptionRepository.findOne({
@@ -83,7 +83,7 @@ export async function PUT(
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
     }
-    const subscriptionRepository = AppDataSource.getRepository(Subscription);
+    const subscriptionRepository = AppDataSource.getRepository("subscriptions");
 
     const subscription = await subscriptionRepository.findOne({
       where: { id: (await params).id }
@@ -144,7 +144,7 @@ export async function DELETE(
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
     }
-    const subscriptionRepository = AppDataSource.getRepository(Subscription);
+    const subscriptionRepository = AppDataSource.getRepository("subscriptions");
 
     const subscription = await subscriptionRepository.findOne({
       where: { id: (await params).id }

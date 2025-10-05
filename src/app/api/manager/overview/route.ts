@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get manager from database
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const manager = await userRepository.findOne({ 
       where: { email: session.user.email } 
     });
@@ -40,14 +40,14 @@ export async function GET(request: NextRequest) {
     const invitedUserIds = invitedUsers.map(u => u.id);
 
     // Get all bots created by this manager
-    const botRepository = AppDataSource.getRepository(Bot);
+    const botRepository = AppDataSource.getRepository("bots");
     const managerBots = await botRepository.find({
       where: { createdBy: manager.id },
       select: ['id', 'name', 'status', 'createdAt']
     });
 
     // Get bot assignments (only if there are invited users)
-    const assignmentRepository = AppDataSource.getRepository(BotAssignment);
+    const assignmentRepository = AppDataSource.getRepository("bot_assignments");
     let assignments: BotAssignment[] = [];
     if (invitedUserIds.length > 0) {
       assignments = await assignmentRepository.find({
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get conversations from last 24 hours
-    const conversationRepository = AppDataSource.getRepository(Conversation);
+    const conversationRepository = AppDataSource.getRepository("conversations");
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     
     let recentConversations: Conversation[] = [];

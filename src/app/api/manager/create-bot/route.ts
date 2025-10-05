@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user from database
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({ 
       where: { email: session.user.email } 
     });
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the bot in database
-    const botRepository = AppDataSource.getRepository(Bot);
+    const botRepository = AppDataSource.getRepository("bots");
     const newBot = botRepository.create({
       name,
       description,
@@ -60,8 +60,8 @@ export async function POST(request: NextRequest) {
     const savedBot = await botRepository.save(newBot);
 
     // Handle document associations
-    const botDocumentRepository = AppDataSource.getRepository(BotDocument);
-    const documentRepository = AppDataSource.getRepository(Document);
+    const botDocumentRepository = AppDataSource.getRepository("bot_documents");
+    const documentRepository = AppDataSource.getRepository("documents");
     const associatedDocuments = [];
 
     // Associate existing documents

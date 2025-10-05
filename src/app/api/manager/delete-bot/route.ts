@@ -20,7 +20,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get user from database
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({ 
       where: { email: session.user.email } 
     });
@@ -44,7 +44,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get the bot from database
-    const botRepository = AppDataSource.getRepository(Bot);
+    const botRepository = AppDataSource.getRepository("bots");
     const bot = await botRepository.findOne({
       where: { 
         id: botId,
@@ -59,7 +59,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete all bot assignments first
-    const assignmentRepository = AppDataSource.getRepository(BotAssignment);
+    const assignmentRepository = AppDataSource.getRepository("bot_assignments");
     await assignmentRepository.delete({ botId: botId });
 
     // Delete the bot

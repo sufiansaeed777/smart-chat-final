@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       await AppDataSource.initialize();
     }
     
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
 
     // Check if manager already exists
     const existingManager = await userRepository.findOne({

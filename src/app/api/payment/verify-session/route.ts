@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
     }
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({
       where: { email: session.user.email || '' }
     });
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const botRepository = AppDataSource.getRepository(Bot);
+    const botRepository = AppDataSource.getRepository("bots");
 
     // Check if bot already exists for this session
     const existingBot = await botRepository.findOne({

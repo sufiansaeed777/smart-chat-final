@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
     const currentUser = await userRepository.findOne({
       where: { email: session.user.email }
     });

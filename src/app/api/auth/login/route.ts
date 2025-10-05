@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user by email
-    const userRepository = AppDataSource.getRepository(User);
+    // Find user by email - use string to avoid minification issues
+    const userRepository = AppDataSource.getRepository("users");
     const user = await userRepository.findOne({ where: { email } });
 
     if (!user) {

@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       await AppDataSource.initialize();
     }
     
-    const userRepository = AppDataSource.getRepository(User);
+    const userRepository = AppDataSource.getRepository("users");
 
     // Check if user already exists
     const existingUser = await userRepository.findOne({

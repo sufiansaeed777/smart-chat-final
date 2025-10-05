@@ -29,7 +29,7 @@ export const authOptions: NextAuthOptions = {
             await AppDataSource.initialize();
           }
 
-          const userRepository = AppDataSource.getRepository(User);
+          const userRepository = AppDataSource.getRepository("users");
           const user = await userRepository.findOne({
             where: { email: credentials.email }
           });
@@ -87,7 +87,7 @@ export const authOptions: NextAuthOptions = {
             await AppDataSource.initialize();
           }
 
-          const userRepository = AppDataSource.getRepository(User);
+          const userRepository = AppDataSource.getRepository("users");
           
           // Check if user already exists
           const existingUser = await userRepository.findOne({
@@ -134,7 +134,7 @@ export const authOptions: NextAuthOptions = {
           if (!AppDataSource.isInitialized) {
             await AppDataSource.initialize();
           }
-          const userRepository = AppDataSource.getRepository(User);
+          const userRepository = AppDataSource.getRepository("users");
           const dbUser = await userRepository.findOne({
             where: { email: token.email as string }
           });
@@ -165,7 +165,7 @@ export const authOptions: NextAuthOptions = {
           if (!AppDataSource.isInitialized) {
             await AppDataSource.initialize();
           }
-          const userRepository = AppDataSource.getRepository(User);
+          const userRepository = AppDataSource.getRepository("users");
           const dbUser = await userRepository.findOne({
             where: { email: user.email! }
           });
