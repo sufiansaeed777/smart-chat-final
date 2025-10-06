@@ -25,9 +25,13 @@ export default function IntegrationsPage() {
   const fetchUserBots = async () => {
     try {
       const response = await fetch('/api/user/assigned-bots');
+      console.log('Response status:', response.status);
       if (response.ok) {
         const data = await response.json();
+        console.log('Fetched bots data:', data);
         setBots(data.bots || []);
+      } else {
+        console.error('Failed to fetch bots:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error fetching bots:', error);
@@ -133,7 +137,7 @@ export default function IntegrationsPage() {
                     You need to create a chatbot first before you can integrate it with WordPress.
                   </p>
                   <button
-                    onClick={() => router.push('/dashboard/bots')}
+                    onClick={() => router.push('/manager-dashboard/manager-bots')}
                     className="mt-2 text-sm font-medium text-yellow-600 hover:text-yellow-500"
                   >
                     Create a Bot →
