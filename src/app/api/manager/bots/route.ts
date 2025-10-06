@@ -42,7 +42,6 @@ export async function GET(request: NextRequest) {
     const botDocumentRepository = AppDataSource.getRepository("bot_documents");
     const bots = await botRepository.find({
       where: { createdBy: user.id },
-      relations: ['assignments', 'assignments.user', 'botDocuments', 'botDocuments.document'],
       order: { createdAt: 'DESC' }
     });
 
