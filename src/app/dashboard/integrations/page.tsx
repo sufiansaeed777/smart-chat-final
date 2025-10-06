@@ -24,8 +24,14 @@ export default function IntegrationsPage() {
 
   const fetchUserBots = async () => {
     try {
-      const response = await fetch('/api/user/assigned-bots');
-      console.log('Response status:', response.status);
+      // Check user role and fetch appropriate bots
+      const userRole = session?.user?.role;
+      const endpoint = userRole === 'manager'
+        ? '/api/manager/bots'  // Managers see their created bots
+        : '/api/user/assigned-bots';  // Regular users see assigned bots
+
+      const response = await fetch(endpoint);
+      console.log('Fetching from:', endpoint, 'Status:', response.status);
       if (response.ok) {
         const data = await response.json();
         console.log('Fetched bots data:', data);
