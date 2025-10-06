@@ -24,7 +24,7 @@ export default function IntegrationsPage() {
 
   const fetchUserBots = async () => {
     try {
-      const response = await fetch('/api/user/bots');
+      const response = await fetch('/api/user/assigned-bots');
       if (response.ok) {
         const data = await response.json();
         setBots(data.bots || []);
