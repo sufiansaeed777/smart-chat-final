@@ -36,14 +36,24 @@ export async function POST(request: NextRequest) {
 
     // Check if user already exists
     const existingUser = await userRepository.findOne({ where: { email } });
-    
+
     if (existingUser) {
-      // If user exists and has a password, they've already accepted the invitation
-      if (existingUser.password) {
-        return NextResponse.json({ error: 'User already exists and has accepted invitation' }, { status: 400 });
+      // If user exists and is already active, just update their role and inviter
+      if (existingUser.password && existingUser.isActive) {
+        // Update the user's role and who invited them
+        existingUser.role = role || existingUser.role;
+        existingUser.invitedBy = currentUser.id;
+        existingUser.updatedAt = new Date();
+
+        await userRepository.save(existingUser);
+
+        return NextResponse.json({
+          message: 'User already exists and has been added to your team',
+          userId: existingUser.id
+        }, { status: 200 });
       }
-      
-      // If user exists but has no password, they haven't accepted the invitation yet
+
+      // If user exists but has no password or is inactive, send invitation
       // Update their invitation token and expiry
       const invitationToken = crypto.randomBytes(32).toString('hex');
       const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours

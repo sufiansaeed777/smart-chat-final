@@ -5,7 +5,6 @@ import { AppDataSource } from '@/config/database';
 import { Document } from '@/entities/Document';
 import { User } from '@/entities/User';
 import path from 'path';
-import fs from 'fs/promises';
 
 // GET /api/manager/documents - Get all documents for the manager
 export async function GET(request: NextRequest) {
@@ -133,45 +132,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No files provided' }, { status: 400 });
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), 'uploads');
-    try {
-      await fs.access(uploadsDir);
-    } catch {
-      await fs.mkdir(uploadsDir, { recursive: true });
-    }
-
     const uploadedDocuments = [];
 
     for (const file of files) {
       // Validate file type
-      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'text/csv', 'application/json'];
       if (!allowedTypes.includes(file.type)) {
         continue; // Skip invalid files
       }
 
       // Generate unique filename
       const fileExtension = path.extname(file.name);
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}${fileExtension}`;
-      const filePath = path.join(uploadsDir, fileName);
 
-      // Save file to disk
+      // Read file content
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      await fs.writeFile(filePath, buffer);
 
-      // Extract content for text files
+      // Extract content for text-based files
       let content = '';
-      if (file.type === 'text/plain') {
+      let fileData = '';
+
+      // For text files, store the actual content
+      if (file.type === 'text/plain' || file.type === 'text/csv' || file.type === 'application/json') {
         content = buffer.toString('utf-8');
+        fileData = content; // Store text directly
+      } else {
+        // For binary files (PDF, DOC), store as base64
+        fileData = buffer.toString('base64');
+        content = `Binary file: ${file.name}`; // Placeholder content for search
       }
 
-      // Create document record
+      // Create document record - store file data in database
       const document = documentRepository.create({
         name: file.name,
         type: fileExtension.substring(1).toLowerCase(),
         size: file.size,
-        filePath: filePath,
+        filePath: fileData, // Store the actual file data instead of file path
         content: content,
         mimeType: file.type,
         userId: user.id,

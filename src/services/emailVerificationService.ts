@@ -99,9 +99,16 @@ export class EmailVerificationService {
       };
 
       await transporter.sendMail(mailOptions);
+      console.log('Verification email sent successfully to:', user.email);
       return true;
 
-    } catch {
+    } catch (error) {
+      console.error('Failed to send verification email:', error);
+      console.error('Email config:', {
+        user: process.env.EMAIL_USER,
+        hasPassword: !!process.env.EMAIL_APP_PASSWORD,
+        baseUrl: process.env.NEXT_PUBLIC_BASE_URL
+      });
       return false;
     }
   }
