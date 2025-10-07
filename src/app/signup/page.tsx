@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 // Standalone Signup Component for Next.js
@@ -318,13 +319,13 @@ const SignupComponent = () => {
           {/* Bottom Link */}
           <div className="mt-6 text-center text-sm">
             <span className="text-gray-600">Already have an account? </span>
-            <a 
+            <Link
               href="/login"
               className="hover:underline font-semibold"
               style={{ color: '#6566F1' }}
             >
               Sign in
-            </a>
+            </Link>
           </div>
         </div>
       </div>

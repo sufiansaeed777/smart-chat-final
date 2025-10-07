@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 const LoginComponent = () => {
@@ -245,13 +246,13 @@ const LoginComponent = () => {
           {/* Bottom Link */}
           <div className="mt-6 text-center text-sm">
             <span className="text-gray-600">Don&apos;t have an account? </span>
-            <a 
+            <Link
               href="/signup"
               className="hover:underline font-semibold"
               style={{ color: '#6566F1' }}
             >
               Sign up
-            </a>
+            </Link>
           </div>
         </div>
       </div>
