@@ -1,12 +1,18 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Clock, User, Search, Filter, MoreHorizontal, Loader2, SortAsc, SortDesc, Calendar, Bot, Users } from 'lucide-react';
+import { MessageSquare, Clock, User, Search, Filter, MoreHorizontal, Loader2, SortAsc, SortDesc, Calendar, Bot, Users, Eye, Download, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import RoleGuard from '@/components/auth/RoleGuard';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface ConversationSession {
   id: string;
@@ -58,6 +64,65 @@ const ManagerConversationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [conversationsLoading, setConversationsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Handle conversation actions
+  const handleViewConversation = (conversationId: string) => {
+    // Navigate to conversation details page or open modal
+    console.log('View conversation:', conversationId);
+    // TODO: Implement navigation to conversation details
+    window.open(`/manager-dashboard/conversations/${conversationId}`, '_blank');
+  };
+
+  const handleExportConversation = async (conversationId: string) => {
+    try {
+      console.log('Exporting conversation:', conversationId);
+      const response = await fetch(`/api/manager/conversations/${conversationId}/export`);
+      if (response.ok) {
+        const data = await response.json();
+        // Create and download JSON file
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `conversation-${conversationId}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        console.error('Failed to export conversation');
+        alert('Failed to export conversation. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error exporting conversation:', error);
+      alert('Error exporting conversation. Please try again.');
+    }
+  };
+
+  const handleDeleteConversation = async (conversationId: string) => {
+    if (!confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      console.log('Deleting conversation:', conversationId);
+      const response = await fetch(`/api/manager/conversations/${conversationId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Refresh the conversations list
+        await fetchConversations();
+        alert('Conversation deleted successfully');
+      } else {
+        console.error('Failed to delete conversation');
+        alert('Failed to delete conversation. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      alert('Error deleting conversation. Please try again.');
+    }
+  };
 
   // Fetch conversations from API
   const fetchConversations = async (isInitialLoad = false) => {
@@ -455,9 +520,36 @@ const ManagerConversationsPage = () => {
 
                     {/* Actions */}
                     <div className="col-span-1">
-                      <Button variant="outline" size="sm" className="h-6 w-6 p-0 border-gray-200 text-gray-600 hover:bg-gray-50">
-                        <MoreHorizontal className="w-3 h-3" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-6 w-6 p-0 border-gray-200 text-gray-600 hover:bg-gray-50">
+                            <MoreHorizontal className="w-3 h-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handleViewConversation(conversation.id)}
+                            className="cursor-pointer"
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleExportConversation(conversation.id)}
+                            className="cursor-pointer"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Export Chat
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteConversation(conversation.id)}
+                            className="cursor-pointer text-red-600 focus:text-red-600"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 </div>

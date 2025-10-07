@@ -5,6 +5,7 @@ import { AppDataSource } from '@/config/database';
 import { Document } from '@/entities/Document';
 import { User } from '@/entities/User';
 import path from 'path';
+import { supabase, isSupabaseStorageConfigured } from '@/lib/supabase';
 
 // GET /api/manager/documents - Get all documents for the manager
 export async function GET(request: NextRequest) {
@@ -100,9 +101,22 @@ export async function GET(request: NextRequest) {
 
 // POST /api/manager/documents - Upload new documents
 export async function POST(request: NextRequest) {
+  // TODO: Migrate to Supabase Storage or AWS S3 for better file handling
+  // Current implementation stores files directly in database which is not ideal for:
+  // - Large files (PDFs, documents) that can slow down database
+  // - Database storage is more expensive than object storage
+  // - Can hit database size limits with many documents
+  //
+  // Recommended: Use Supabase Storage since we're already using Supabase for DB
+  // Steps needed:
+  // 1. Enable Storage in Supabase dashboard
+  // 2. Install @supabase/supabase-js
+  // 3. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to env
+  // 4. Update this endpoint to upload to Supabase Storage and store only URLs in DB
+
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -133,6 +147,7 @@ export async function POST(request: NextRequest) {
     }
 
     const uploadedDocuments = [];
+    const useSupabaseStorage = isSupabaseStorageConfigured();
 
     for (const file of files) {
       // Validate file type
@@ -143,6 +158,7 @@ export async function POST(request: NextRequest) {
 
       // Generate unique filename
       const fileExtension = path.extname(file.name);
+      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}${fileExtension}`;
 
       // Read file content
       const bytes = await file.arrayBuffer();
@@ -150,27 +166,56 @@ export async function POST(request: NextRequest) {
 
       // Extract content for text-based files
       let content = '';
+      let storageUrl = '';
       let fileData = '';
 
-      // For text files, store the actual content
+      // For text files, always extract content for searchability
       if (file.type === 'text/plain' || file.type === 'text/csv' || file.type === 'application/json') {
         content = buffer.toString('utf-8');
-        fileData = content; // Store text directly
       } else {
-        // For binary files (PDF, DOC), store as base64
-        fileData = buffer.toString('base64');
         content = `Binary file: ${file.name}`; // Placeholder content for search
       }
 
-      // Create document record - store file data in database
+      if (useSupabaseStorage) {
+        // Upload to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('documents') // You need to create this bucket in Supabase dashboard
+          .upload(fileName, buffer, {
+            contentType: file.type,
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('Supabase upload error:', uploadError);
+          // Fall back to database storage if upload fails
+          fileData = buffer.toString('base64');
+        } else {
+          // Get public URL for the uploaded file
+          const { data: urlData } = supabase.storage
+            .from('documents')
+            .getPublicUrl(fileName);
+
+          storageUrl = urlData.publicUrl;
+        }
+      } else {
+        // Fall back to storing in database if Supabase Storage not configured
+        if (file.type === 'text/plain' || file.type === 'text/csv' || file.type === 'application/json') {
+          fileData = content; // Store text directly
+        } else {
+          fileData = buffer.toString('base64'); // Store binary as base64
+        }
+      }
+
+      // Create document record
       const document = documentRepository.create({
         name: file.name,
         type: fileExtension.substring(1).toLowerCase(),
         size: file.size,
-        filePath: fileData, // Store the actual file data instead of file path
+        filePath: storageUrl || fileData, // Store URL if using Supabase, otherwise store data
         content: content,
         mimeType: file.type,
         userId: user.id,
+        url: storageUrl, // Store Supabase URL separately
         status: 'active'
       });
 
