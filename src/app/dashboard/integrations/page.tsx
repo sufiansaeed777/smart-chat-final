@@ -337,7 +337,6 @@ export default function IntegrationsPage() {
                   )}
                 </>
               )}
-            </div>
 
             {/* Future Integrations */}
             <div className="mt-12 pt-8 border-t border-gray-200">
