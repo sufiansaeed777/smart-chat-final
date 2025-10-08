@@ -3,6 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Puzzle } from 'lucide-react';
 
 export default function IntegrationsPage() {
   const { data: session, status } = useSession();
@@ -109,31 +113,32 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">Integrations</h1>
-            <p className="mt-1 text-sm text-gray-600">
-              Connect your chatbots to different platforms
-            </p>
-          </div>
+    <div className="p-6 space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+          <Puzzle className="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Integrations</h1>
+          <p className="text-sm text-gray-600">Connect your chatbots to different platforms</p>
+        </div>
+      </div>
 
-          <div className="p-6">
-            {/* WordPress Integration Section */}
-            <div className="mb-8">
-              <div className="flex items-center mb-4">
-                <img
-                  src="/wordpress-logo.png"
-                  alt="WordPress"
-                  className="w-12 h-12 mr-3"
-                  onError={(e) => { e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNDAwIj48cGF0aCBmaWxsPSIjMjE3NTlhIiBkPSJNMCAwaDQwMHY0MDBIMHoiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNNTAgMjAwYzAtODIuOCA2Ny4yLTE1MCAxNTAtMTUwczE1MCA2Ny4yIDE1MCAxNTAtNjcuMiAxNTAtMTUwIDE1MFM1MCAyODIuOCA1MCAyMDB6bTI3LjMgMGMwIDY3LjggNTUgMTIyLjcgMTIyLjcgMTIyLjdzMTIyLjctNTUgMTIyLjctMTIyLjdTMjY3LjggNzcuMyAyMDAgNzcuMyA3Ny4zIDEzMi4yIDc3LjMgMjAweiIvPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik0xMDQuNyAyMDQuN2wxOC40IDUwLjVMMTQxLjUgMjA1bDE4LjQgNTAuMiAxOC40LTUwLjVIMjA0bC0zNi44IDk1aC0yNS44bC0xOC4zLTQ3LjctMTguMyA0Ny43SDc5TDQyLjIgMjA0LjdoMjUuN2wxOC40IDUwLjUgMTguNC01MC41eiIvPjwvc3ZnPg=='; }}
-                />
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">WordPress Plugin</h2>
-                  <p className="text-sm text-gray-600">Add AI chatbot to your WordPress website</p>
-                </div>
-              </div>
+      {/* WordPress Integration Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center space-x-3">
+            <img
+              src="/wordpress-logo.png"
+              alt="WordPress"
+              className="w-10 h-10"
+              onError={(e) => { e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNDAwIj48cGF0aCBmaWxsPSIjMjE3NTlhIiBkPSJNMCAwaDQwMHY0MDBIMHoiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNNTAgMjAwYzAtODIuOCA2Ny4yLTE1MCAxNTAtMTUwczE1MCA2Ny4yIDE1MCAxNTAtNjcuMiAxNTAtMTUwIDE1MFM1MCAyODIuOCA1MCAyMDB6bTI3LjMgMGMwIDY3LjggNTUgMTIyLjcgMTIyLjcgMTIyLjdzMTIyLjctNTUgMTIyLjctMTIyLjdTMjY3LjggNzcuMyAyMDAgNzcuMyA3Ny4zIDEzMi4yIDc3LjMgMjAweiIvPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik0xMDQuNyAyMDQuN2wxOC40IDUwLjVMMTQxLjUgMjA1bDE4LjQgNTAuMiAxOC40LTUwLjVIMjA0bC0zNi44IDk1aC0yNS44bC0xOC4zLTQ3LjctMTguMyA0Ny43SDc5TDQyLjIgMjA0LjdoMjUuN2wxOC40IDUwLjUgMTguNC01MC41eiIvPjwvc3ZnPg=='; }}
+            />
+            <CardTitle>WordPress Plugin Integration</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
 
               {loading ? (
                 <div className="text-center py-4">Loading your bots...</div>
@@ -143,7 +148,12 @@ export default function IntegrationsPage() {
                     You need to create a chatbot first before you can integrate it with WordPress.
                   </p>
                   <button
-                    onClick={() => router.push('/manager-dashboard/manager-bots')}
+                    onClick={() => {
+                      // Navigate to appropriate dashboard based on user role
+                      const userRole = session?.user?.role;
+                      const dashboardPath = userRole === 'manager' ? '/manager-dashboard/manager-bots' : '/dashboard/bots';
+                      router.push(dashboardPath);
+                    }}
                     className="mt-2 text-sm font-medium text-yellow-600 hover:text-yellow-500"
                   >
                     Create a Bot →
@@ -206,12 +216,13 @@ export default function IntegrationsPage() {
 
                       {/* Generate Token Button */}
                       {!showInstructions && (
-                        <button
+                        <Button
                           onClick={() => generateWordPressToken(selectedBot.id)}
-                          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200"
+                          className="w-full"
+                          variant="default"
                         >
                           Generate WordPress Integration Token
-                        </button>
+                        </Button>
                       )}
 
                       {/* Installation Instructions */}
@@ -375,9 +386,8 @@ export default function IntegrationsPage() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

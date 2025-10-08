@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Eye, EyeOff } from 'lucide-react';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 // Standalone Signup Component for Next.js
@@ -18,6 +19,8 @@ const SignupComponent = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -222,50 +225,76 @@ const SignupComponent = () => {
             
             {/* Password */}
             <div className="space-y-2">
-              <label 
+              <label
                 htmlFor="password"
                 className="text-sm font-semibold leading-none text-gray-900"
               >
                 Password
               </label>
-              <input
-                id="password"
-                type="password"
-                placeholder="Create a strong password"
-                value={form.password}
-                onChange={(e) => handleInputChange('password', e.target.value)}
-                required
-                className="flex h-10 w-full border border-gray-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                style={{ 
-                  borderRadius: '10px', 
-                  color: '#111827',
-                  '--tw-ring-color': '#6566F1'
-                } as React.CSSProperties}
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Create a strong password"
+                  value={form.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  required
+                  className="flex h-10 w-full border border-gray-200 bg-white px-3 py-2 pr-10 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{
+                    borderRadius: '10px',
+                    color: '#111827',
+                    '--tw-ring-color': '#6566F1'
+                  } as React.CSSProperties}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
-            
+
             {/* Confirm Password */}
             <div className="space-y-2">
-              <label 
+              <label
                 htmlFor="confirmPassword"
                 className="text-sm font-semibold leading-none text-gray-900"
               >
                 Confirm Password
               </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                placeholder="Confirm your password"
-                value={form.confirmPassword}
-                onChange={(e) => handleInputChange('confirmPassword', e.target.value )}
-                required
-                className="flex h-10 w-full border border-gray-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                style={{ 
-                  borderRadius: '10px', 
-                  color: '#111827',
-                  '--tw-ring-color': '#6566F1'
-                } as React.CSSProperties}
-              />
+              <div className="relative">
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirm your password"
+                  value={form.confirmPassword}
+                  onChange={(e) => handleInputChange('confirmPassword', e.target.value )}
+                  required
+                  className="flex h-10 w-full border border-gray-200 bg-white px-3 py-2 pr-10 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  style={{
+                    borderRadius: '10px',
+                    color: '#111827',
+                    '--tw-ring-color': '#6566F1'
+                  } as React.CSSProperties}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
             
             {/* Terms Checkbox */}
