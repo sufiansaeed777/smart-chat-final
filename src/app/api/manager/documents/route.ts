@@ -5,7 +5,6 @@ import { AppDataSource } from '@/config/database';
 import { Document } from '@/entities/Document';
 import { User } from '@/entities/User';
 import path from 'path';
-import { supabase, isSupabaseStorageConfigured } from '@/lib/supabase';
 
 // GET /api/manager/documents - Get all documents for the manager
 export async function GET(request: NextRequest) {
@@ -147,7 +146,6 @@ export async function POST(request: NextRequest) {
     }
 
     const uploadedDocuments = [];
-    const useSupabaseStorage = isSupabaseStorageConfigured();
 
     for (const file of files) {
       // Validate file type
@@ -158,7 +156,6 @@ export async function POST(request: NextRequest) {
 
       // Generate unique filename
       const fileExtension = path.extname(file.name);
-      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}${fileExtension}`;
 
       // Read file content
       const bytes = await file.arrayBuffer();
@@ -166,56 +163,27 @@ export async function POST(request: NextRequest) {
 
       // Extract content for text-based files
       let content = '';
-      let storageUrl = '';
       let fileData = '';
 
-      // For text files, always extract content for searchability
+      // For text files, store the actual content
       if (file.type === 'text/plain' || file.type === 'text/csv' || file.type === 'application/json') {
         content = buffer.toString('utf-8');
+        fileData = content; // Store text directly
       } else {
+        // For binary files (PDF, DOC), store as base64
+        fileData = buffer.toString('base64');
         content = `Binary file: ${file.name}`; // Placeholder content for search
       }
 
-      if (useSupabaseStorage) {
-        // Upload to Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('documents') // You need to create this bucket in Supabase dashboard
-          .upload(fileName, buffer, {
-            contentType: file.type,
-            upsert: false
-          });
-
-        if (uploadError) {
-          console.error('Supabase upload error:', uploadError);
-          // Fall back to database storage if upload fails
-          fileData = buffer.toString('base64');
-        } else {
-          // Get public URL for the uploaded file
-          const { data: urlData } = supabase.storage
-            .from('documents')
-            .getPublicUrl(fileName);
-
-          storageUrl = urlData.publicUrl;
-        }
-      } else {
-        // Fall back to storing in database if Supabase Storage not configured
-        if (file.type === 'text/plain' || file.type === 'text/csv' || file.type === 'application/json') {
-          fileData = content; // Store text directly
-        } else {
-          fileData = buffer.toString('base64'); // Store binary as base64
-        }
-      }
-
-      // Create document record
+      // Create document record - store file data in database
       const document = documentRepository.create({
         name: file.name,
         type: fileExtension.substring(1).toLowerCase(),
         size: file.size,
-        filePath: storageUrl || fileData, // Store URL if using Supabase, otherwise store data
+        filePath: fileData, // Store the actual file data
         content: content,
         mimeType: file.type,
         userId: user.id,
-        url: storageUrl, // Store Supabase URL separately
         status: 'active'
       });
 
