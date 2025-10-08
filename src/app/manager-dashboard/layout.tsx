@@ -74,7 +74,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
         { id: 'manager-bots', label: 'Manager Bots', icon: Bot, path: `${basePath}/manager-bots` },
         { id: 'test-bot', label: 'Playground', icon: PlayCircle, path: `${basePath}/test-bot` },
         { id: 'knowledge-base', label: 'Knowledge Base', icon: BookOpen, path: `${basePath}/knowledge-base` },
-        { id: 'integrations', label: 'Integrations', icon: Plug, path: '/dashboard/integrations' },
+        { id: 'integrations', label: 'Integrations', icon: Plug, path: `${basePath}/integrations` },
         { id: 'conversations', label: 'Conversations', icon: MessageSquare, path: `${basePath}/conversations` },
         { id: 'human-handoff', label: 'Human Handoff', icon: HandHeart, path: `${basePath}/human-handoff` },
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: `${basePath}/analytics` },

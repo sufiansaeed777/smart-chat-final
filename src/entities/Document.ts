@@ -15,7 +15,7 @@ export class Document {
   @Column({ type: 'bigint', transformer: { to: (value: number) => value, from: (value: string) => parseInt(value) } })
   size!: number;
 
-  @Column({ type: 'varchar', length: 500 })
+  @Column({ type: 'text' })
   filePath!: string;
 
   @Column({ type: 'text', nullable: true })
