@@ -520,13 +520,13 @@ const ManagerConversationsPage = () => {
 
                     {/* Actions */}
                     <div className="col-span-1">
-                      <DropdownMenu>
+                      <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" size="sm" className="h-6 w-6 p-0 border-gray-200 text-gray-600 hover:bg-gray-50">
                             <MoreHorizontal className="w-3 h-3" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" side="top" sideOffset={5}>
+                        <DropdownMenuContent align="end" side="top" sideOffset={5} onEscapeKeyDown={(e) => e.preventDefault()}>
                           <DropdownMenuItem
                             onClick={() => handleViewConversation(conversation.id)}
                             className="cursor-pointer"
