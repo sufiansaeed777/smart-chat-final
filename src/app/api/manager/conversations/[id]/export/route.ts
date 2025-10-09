@@ -33,9 +33,17 @@ export async function GET(
 
     const conversationId = params.id;
 
+    // Parse the session ID (format: botId-userId)
+    const parts = conversationId.split('-');
+    const userId = parts.slice(-5).join('-'); // Last 5 parts = userId UUID
+    const botId = parts.slice(0, -5).join('-'); // First parts = botId UUID
+
     // Get conversation details with all messages
     const conversations = await conversationRepository.find({
-      where: { botId: conversationId.split('-')[0] }, // Adjust based on actual session tracking
+      where: {
+        botId: botId,
+        userId: userId
+      },
       order: { createdAt: 'ASC' }
     });
 

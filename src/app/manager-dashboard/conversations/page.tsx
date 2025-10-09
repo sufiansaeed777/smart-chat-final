@@ -526,7 +526,7 @@ const ManagerConversationsPage = () => {
                             <MoreHorizontal className="w-3 h-3" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" side="top" sideOffset={5}>
                           <DropdownMenuItem
                             onClick={() => handleViewConversation(conversation.id)}
                             className="cursor-pointer"

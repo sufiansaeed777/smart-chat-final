@@ -33,10 +33,18 @@ export async function GET(
 
     const conversationId = params.id;
 
+    // Parse the session ID (format: botId-userId)
+    // Split by the last dash to separate botId and userId (UUIDs contain dashes)
+    const parts = conversationId.split('-');
+    const userId = parts.slice(-5).join('-'); // Last 5 parts = userId UUID
+    const botId = parts.slice(0, -5).join('-'); // First parts = botId UUID
+
     // Get conversation details with messages
-    // Note: The conversationId represents a session, we need to find all messages for this bot-user pair
     const conversations = await conversationRepository.find({
-      where: { botId: conversationId.split('-')[0] }, // This needs proper session tracking
+      where: {
+        botId: botId,
+        userId: userId
+      },
       order: { createdAt: 'ASC' }
     });
 
@@ -97,10 +105,17 @@ export async function DELETE(
 
     const conversationId = params.id;
 
+    // Parse the session ID (format: botId-userId)
+    const parts = conversationId.split('-');
+    const userId = parts.slice(-5).join('-'); // Last 5 parts = userId UUID
+    const botId = parts.slice(0, -5).join('-'); // First parts = botId UUID
+
     // Delete all messages in this conversation session
-    // This needs proper session tracking - for now delete by conversation ID pattern
     const conversations = await conversationRepository.find({
-      where: { botId: conversationId.split('-')[0] } // Adjust based on actual session tracking
+      where: {
+        botId: botId,
+        userId: userId
+      }
     });
 
     if (conversations.length === 0) {
