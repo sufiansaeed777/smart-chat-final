@@ -9,7 +9,7 @@ ALT_DATABASE_URL="postgresql://postgres:DT5X7gFAThRZNzNc@db.aucvnpwyrbefzfiqnrvd
 DIRECT_URL="postgresql://postgres:DT5X7gFAThRZNzNc@db.aucvnpwyrbefzfiqnrvd.supabase.co:5432/postgres"
 
 # Environment
-NODE_ENV=development
+NODE_ENV=production
 
 # DNS Workaround - Set to true ONLY if you have DNS issues
 USE_IP_WORKAROUND=true
@@ -18,17 +18,17 @@ USE_IP_WORKAROUND=true
 EMAIL_USER=shared.affan@gmail.com
 EMAIL_APP_PASSWORD=ijxhpmsnoencaszj
 
-# Application URL
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+# Application URL - PRODUCTION
+NEXT_PUBLIC_BASE_URL=https://smart-chat-finale.vercel.app
+NEXT_PUBLIC_APP_URL=https://smart-chat-finale.vercel.app
 
-# Google OAuth Configuration
-GOOGLE_CLIENT_ID=636012994727-62r7d926m7j2rrbdouf5l5p1smv8l1uh.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=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
+# Google OAuth Configuration - Updated for production
+GOOGLE_CLIENT_ID=978252573021-bo92a47ougid7eq0nf5og3um3dht74qm.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=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
 
-# NextAuth Configuration
+# NextAuth Configuration - PRODUCTION
 NEXTAUTH_SECRET=213e23fr2D@EDFWW@ERWE
-NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_URL=https://smart-chat-finale.vercel.app
 
 # OpenAI Configuration
 OPENAI_API_KEY=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
@@ -43,3 +43,19 @@ STRIPE_WEBHOOK_SECRET=whsec_uhqb0Fopwfq6rsSHa9xdiOrdCFA2rLak
 
 # Resend API Key (placeholder - update when you get the key)
 RESEND_API_KEY=re_placeholder_key
+
+# ===== IMPORTANT NOTES FOR PRODUCTION =====
+#
+# 1. This file contains PRODUCTION settings for https://smart-chat-finale.vercel.app
+# 2. NODE_ENV is set to "production"
+# 3. All URLs point to https://smart-chat-finale.vercel.app (not localhost)
+# 4. Google OAuth credentials are updated for production
+#
+# 5. REQUIRED: Update Google OAuth redirect URI in Google Cloud Console to:
+#    https://smart-chat-finale.vercel.app/api/auth/callback/google
+#
+# 6. Database migration needed for file upload fix:
+#    ALTER TABLE documents ALTER COLUMN "filePath" TYPE TEXT;
+#
+# 7. Keep this file secure - it contains sensitive API keys
+# 8. Copy these values to Vercel Environment Variables for deployment

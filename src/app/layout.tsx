@@ -37,7 +37,7 @@ export default function RootLayout({
           <ChatBotProvider>
             <SessionMonitor />
             {children}
-            <ChatBotWrapper apiKey={process.env.NEXT_PUBLIC_OPENAI_API_KEY || ""} />
+            <ChatBotWrapper />
           </ChatBotProvider>
         </SessionProvider>
       </body>

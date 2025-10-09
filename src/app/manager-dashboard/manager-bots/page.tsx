@@ -120,6 +120,16 @@ export default function BotsPage() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showConversationHistory, setShowConversationHistory] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [botSettings, setBotSettings] = useState({
+    id: "",
+    name: "",
+    maxTokens: 2000,
+    temperature: 0.7,
+    responseTime: "normal",
+    autoSaveConversations: true,
+    enableAnalytics: true
+  });
   const [newBot, setNewBot] = useState({
     name: "",
     description: "",
@@ -336,6 +346,8 @@ export default function BotsPage() {
           setShowInviteModal(false);
         } else if (showConversationDetail) {
           setShowConversationDetail(false);
+        } else if (showSettingsModal) {
+          setShowSettingsModal(false);
         }
       }
     };
@@ -344,7 +356,7 @@ export default function BotsPage() {
     return () => {
       document.removeEventListener('keydown', handleEscapeKey);
     };
-  }, [showCreateModal, showEditModal, showAssignModal, showConversationHistory, showInviteModal, showConversationDetail]);
+  }, [showCreateModal, showEditModal, showAssignModal, showConversationHistory, showInviteModal, showConversationDetail, showSettingsModal]);
 
   const filteredBots = bots.filter(bot => {
     const matchesSearch = bot.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -682,10 +694,73 @@ export default function BotsPage() {
     router.push(`/manager-dashboard/test-bot?botId=${bot.id}`);
   };
 
-  const handleBotSettings = (bot: {id: string; name: string}) => {
-    console.log('Bot settings:', bot);
-    // TODO: Implement bot settings functionality
-    console.log('Bot settings functionality will be implemented soon');
+  const handleBotSettings = async (bot: any) => {
+    // Fetch current bot settings
+    try {
+      const response = await fetch(`/api/manager/bot/${bot.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        const botData = data.bot || bot;
+
+        setBotSettings({
+          id: botData.id,
+          name: botData.name,
+          maxTokens: botData.maxTokens || 2000,
+          temperature: botData.temperature || 0.7,
+          responseTime: botData.responseTime || "normal",
+          autoSaveConversations: botData.autoSaveConversations !== undefined ? botData.autoSaveConversations : true,
+          enableAnalytics: botData.enableAnalytics !== undefined ? botData.enableAnalytics : true
+        });
+      } else {
+        // Fallback to default values
+        setBotSettings({
+          id: bot.id,
+          name: bot.name,
+          maxTokens: 2000,
+          temperature: 0.7,
+          responseTime: "normal",
+          autoSaveConversations: true,
+          enableAnalytics: true
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching bot settings:', error);
+      // Fallback to default values
+      setBotSettings({
+        id: bot.id,
+        name: bot.name,
+        maxTokens: 2000,
+        temperature: 0.7,
+        responseTime: "normal",
+        autoSaveConversations: true,
+        enableAnalytics: true
+      });
+    }
+    setShowSettingsModal(true);
+  };
+
+  const handleUpdateSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const response = await fetch('/api/manager/bot-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(botSettings),
+      });
+
+      if (response.ok) {
+        setShowSettingsModal(false);
+        console.log('Bot settings updated successfully');
+      } else {
+        const error = await response.json();
+        console.error('Failed to update bot settings:', error.message || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Error updating bot settings:', error);
+    }
   };
 
   const handleDeleteBot = async (bot: {id: string; name: string}) => {
@@ -1369,6 +1444,139 @@ export default function BotsPage() {
                   className="px-6 py-2 bg-[#6566F1] hover:bg-[#5A5BD9] text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Update Bot
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bot Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
+                <Settings className="w-6 h-6 text-[#6566F1]" />
+                <span>Bot Settings - {botSettings.name}</span>
+              </h2>
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="text-gray-900 hover:text-gray-700 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateSettings} className="space-y-6">
+              {/* AI Configuration */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">AI Configuration</h3>
+
+                <div>
+                  <Label htmlFor="max-tokens" className="text-sm font-medium text-gray-700 mb-2 block">
+                    Max Tokens
+                  </Label>
+                  <Input
+                    id="max-tokens"
+                    type="number"
+                    min="100"
+                    max="4000"
+                    value={botSettings.maxTokens}
+                    onChange={(e) => setBotSettings({ ...botSettings, maxTokens: parseInt(e.target.value) })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] text-gray-900"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Maximum number of tokens for responses (100-4000)</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="temperature" className="text-sm font-medium text-gray-700 mb-2 block">
+                    Temperature: {botSettings.temperature}
+                  </Label>
+                  <input
+                    id="temperature"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={botSettings.temperature}
+                    onChange={(e) => setBotSettings({ ...botSettings, temperature: parseFloat(e.target.value) })}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>More focused (0)</span>
+                    <span>More creative (1)</span>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="response-time" className="text-sm font-medium text-gray-700 mb-2 block">
+                    Response Time
+                  </Label>
+                  <select
+                    id="response-time"
+                    value={botSettings.responseTime}
+                    onChange={(e) => setBotSettings({ ...botSettings, responseTime: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] text-gray-900 bg-white"
+                  >
+                    <option value="fast">Fast (shorter responses)</option>
+                    <option value="normal">Normal (balanced)</option>
+                    <option value="detailed">Detailed (longer responses)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Features */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Features</h3>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">Auto-save Conversations</p>
+                    <p className="text-sm text-gray-500">Automatically save all conversations to database</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={botSettings.autoSaveConversations}
+                      onChange={(e) => setBotSettings({ ...botSettings, autoSaveConversations: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#6566F1]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#6566F1]"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">Enable Analytics</p>
+                    <p className="text-sm text-gray-500">Track conversation metrics and user engagement</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={botSettings.enableAnalytics}
+                      onChange={(e) => setBotSettings({ ...botSettings, enableAnalytics: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#6566F1]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#6566F1]"></div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => setShowSettingsModal(false)}
+                  className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="px-6 py-2 bg-[#6566F1] hover:bg-[#5A5BD9] text-white rounded-xl"
+                >
+                  Save Settings
                 </Button>
               </div>
             </form>

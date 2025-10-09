@@ -1,7 +1,9 @@
 import { Pool } from 'pg';
 
-// Set SSL for Supabase connection
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// Set SSL for Supabase connection - ONLY in development
+if (process.env.NODE_ENV === 'development') {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
 
 // DNS Fix: ONLY for developers with DNS issues (like corporate networks)
 if (process.env.USE_IP_WORKAROUND === 'true' && process.env.NODE_ENV === 'development' && process.env.DATABASE_URL) {

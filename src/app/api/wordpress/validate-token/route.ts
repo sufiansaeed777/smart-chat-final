@@ -8,8 +8,10 @@ import pool from '@/utils/db';
  * and checks if the domain is authorized for this bot
  */
 
-// Set SSL for Supabase connection
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// Set SSL for Supabase connection - ONLY in development
+if (process.env.NODE_ENV === 'development') {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
 
 // CORS headers
 const corsHeaders = {

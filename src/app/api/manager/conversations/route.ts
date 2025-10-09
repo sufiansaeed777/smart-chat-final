@@ -181,7 +181,8 @@ export async function GET(request: NextRequest) {
       
       if (!conversationSessions.has(sessionKey)) {
         const user = allRelevantUsers.find(u => u.id === conv.userId);
-        const bot = [...assignments.map(a => a.bot), ...managerBots].find(b => b?.id === conv.botId);
+        // Filter out undefined bots before searching
+        const bot = [...assignments.map(a => a.bot).filter(Boolean), ...managerBots].find(b => b?.id === conv.botId);
         
         conversationSessions.set(sessionKey, {
           id: sessionKey,

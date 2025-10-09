@@ -16,8 +16,10 @@ import { User } from '@/entities/User';
  * - Implement message queuing for high traffic
  */
 
-// Set SSL for Supabase connection
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// Set SSL for Supabase connection - ONLY in development
+if (process.env.NODE_ENV === 'development') {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
 
 // OpenAI configuration
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;

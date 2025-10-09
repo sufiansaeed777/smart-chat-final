@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       const fullName = `${firstName} ${lastName}`.trim();
       return {
         id: user.id,
-        name: fullName || user.email.split('@')[0] || 'Unknown User', // Fallback to email username or 'Unknown User'
+        name: fullName || (user.email ? user.email.split('@')[0] : 'Unknown User'), // Safely handle null email
         email: user.email,
         role: user.role,
         status: user.password ? 'accepted' : 'pending', // accepted if they have password, pending if not

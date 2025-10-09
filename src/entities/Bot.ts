@@ -1,4 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { BotAssignment } from './BotAssignment';
+import { BotDocument } from './BotDocument';
 
 @Entity({ name: 'bots' })
 export class Bot {
@@ -68,6 +70,22 @@ export class Bot {
 
   @Column({ type: 'int', default: 1000 })
   maxTokens!: number;
+
+  @Column({ type: 'varchar', length: 50, default: 'normal' })
+  responseTime!: string;
+
+  @Column({ type: 'boolean', default: true })
+  autoSaveConversations!: boolean;
+
+  @Column({ type: 'boolean', default: true })
+  enableAnalytics!: boolean;
+
+  // Relations
+  @OneToMany(() => BotAssignment, (assignment) => assignment.bot)
+  assignments?: BotAssignment[];
+
+  @OneToMany(() => BotDocument, (botDocument) => botDocument.bot)
+  botDocuments?: BotDocument[];
 
   @CreateDateColumn()
   createdAt!: Date;

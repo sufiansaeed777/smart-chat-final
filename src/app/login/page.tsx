@@ -210,12 +210,21 @@ const LoginComponent = () => {
             
             {/* Password */}
             <div className="space-y-2">
-              <label
-                htmlFor="password"
-                className="text-sm font-semibold leading-none text-gray-900"
-              >
-                Password
-              </label>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="password"
+                  className="text-sm font-semibold leading-none text-gray-900"
+                >
+                  Password
+                </label>
+                <Link
+                  href="/forgot-password"
+                  className="text-xs hover:underline"
+                  style={{ color: '#6566F1' }}
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <input
                   id="password"

@@ -42,7 +42,8 @@ export async function GET(request: NextRequest) {
     const botDocumentRepository = AppDataSource.getRepository("bot_documents");
     const bots = await botRepository.find({
       where: { createdBy: user.id },
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
+      relations: ['assignments', 'assignments.user', 'botDocuments', 'botDocuments.document']
     });
 
     // Get real conversation counts for each bot
