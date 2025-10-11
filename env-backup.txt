@@ -30,10 +30,16 @@ GOOGLE_CLIENT_SECRET=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
 NEXTAUTH_SECRET=213e23fr2D@EDFWW@ERWE
 NEXTAUTH_URL=https://smart-chat-finale.vercel.app
 
-# OpenAI Configuration
+# OpenAI Configuration (REQUIRED for embeddings and chat)
 OPENAI_API_KEY=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
 
-# N8N Webhook Configuration
+# Supabase Configuration (REQUIRED for document training with pgvector)
+# Get these from: https://supabase.com/dashboard/project/aucvnpwyrbefzfiqnrvd/settings/api
+NEXT_PUBLIC_SUPABASE_URL=https://aucvnpwyrbefzfiqnrvd.supabase.co
+# TODO: Get this from Supabase Dashboard > Project Settings > API > service_role key (secret)
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY_HERE
+
+# N8N Webhook Configuration (ONLY for chat responses, NOT for training)
 N8N_WEBHOOK_URL=https://vizterasolutions.app.n8n.cloud/webhook/chat
 
 # Stripe Configuration
@@ -54,8 +60,19 @@ RESEND_API_KEY=re_placeholder_key
 # 5. REQUIRED: Update Google OAuth redirect URI in Google Cloud Console to:
 #    https://smart-chat-finale.vercel.app/api/auth/callback/google
 #
-# 6. Database migration needed for file upload fix:
-#    ALTER TABLE documents ALTER COLUMN "filePath" TYPE TEXT;
+# 6. Database migrations needed:
+#    a) ALTER TABLE documents ALTER COLUMN "filePath" TYPE TEXT;
+#    b) Run: migrations/create_document_embeddings_table.sql (for Phase 3 training)
 #
-# 7. Keep this file secure - it contains sensitive API keys
-# 8. Copy these values to Vercel Environment Variables for deployment
+# 7. Get Supabase Service Role Key:
+#    - Go to: https://supabase.com/dashboard/project/aucvnpwyrbefzfiqnrvd/settings/api
+#    - Copy "service_role" key (NOT "anon" key)
+#    - Add to SUPABASE_SERVICE_ROLE_KEY above
+#
+# 8. Keep this file secure - it contains sensitive API keys
+# 9. Copy these values to Vercel Environment Variables for deployment
+#
+# 10. PHASE 2 & 3 STATUS:
+#     ✅ Phase 2 Complete: WordPress plugin, n8n chat integration
+#     ✅ Phase 3 Complete: Document training, Stripe billing, plan limits
+#     ⚠️  Pending: Database migration + Supabase service role key + n8n workflow update
