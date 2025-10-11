@@ -36,8 +36,7 @@ OPENAI_API_KEY=sk-proj-LS-DD5rE7cvk5hdZF2WRJo4K9EYNZfmDQt1SFHwVQvWNKK4O-pzbgUBvq
 # Supabase Configuration (REQUIRED for document training with pgvector)
 # Get these from: https://supabase.com/dashboard/project/aucvnpwyrbefzfiqnrvd/settings/api
 NEXT_PUBLIC_SUPABASE_URL=https://aucvnpwyrbefzfiqnrvd.supabase.co
-# TODO: Get this from Supabase Dashboard > Project Settings > API > service_role key (secret)
-SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY_HERE
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1Y3ZucHd5cmJlZnpmaXFucnZkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTg2ODc0MCwiZXhwIjoyMDcxNDQ0NzQwfQ.AYmWHDmBqv_bS0_9gu_DH3C-9wIogf5JivffCZqvANg
 
 # N8N Webhook Configuration (ONLY for chat responses, NOT for training)
 N8N_WEBHOOK_URL=https://vizterasolutions.app.n8n.cloud/webhook/chat
