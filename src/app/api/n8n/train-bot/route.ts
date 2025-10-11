@@ -3,8 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
 import { N8nService } from '@/services/n8nService';
-import fs from 'fs/promises';
-import path from 'path';
 
 /**
  * API endpoint to train a bot via n8n (per ROADMAP Phase 3)
@@ -91,23 +89,41 @@ export async function POST(request: NextRequest) {
       try {
         console.log(`\n📄 Processing document: ${document.name}`);
 
-        // Get document file path
-        const filePath = document.filePath || document.path;
-        if (!filePath) {
+        // Get document content from database (serverless-compatible)
+        let documentContent: string;
+
+        if (document.content) {
+          // Use content stored in database
+          documentContent = document.content;
+          console.log(`✅ Retrieved ${document.name} from database (${documentContent.length} characters)`);
+        } else if (document.url) {
+          // Fallback: fetch from URL if available
+          try {
+            const response = await fetch(document.url);
+            if (!response.ok) {
+              throw new Error(`Failed to fetch document from URL: ${response.statusText}`);
+            }
+            documentContent = await response.text();
+            console.log(`✅ Retrieved ${document.name} from URL (${documentContent.length} characters)`);
+          } catch (urlError) {
+            results.push({
+              documentId: document.id,
+              documentName: document.name,
+              success: false,
+              error: `Failed to fetch from URL: ${urlError instanceof Error ? urlError.message : 'Unknown error'}`,
+            });
+            continue;
+          }
+        } else {
+          // No content available
           results.push({
             documentId: document.id,
             documentName: document.name,
             success: false,
-            error: 'File path not found',
+            error: 'Document content not found (no content or URL)',
           });
           continue;
         }
-
-        // Read file content
-        const fileBuffer = await fs.readFile(path.join(process.cwd(), filePath));
-        const documentContent = fileBuffer.toString('utf-8');
-
-        console.log(`✅ Read ${document.name} (${fileBuffer.length} bytes)`);
 
         // Send to n8n for processing
         // n8n will: parse → chunk → generate embeddings (text-embedding-3-large) → store in pgvector
