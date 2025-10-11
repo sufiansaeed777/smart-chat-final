@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
 import { User } from '@/entities/User';
 import { Bot } from '@/entities/Bot';
+import { BotDocument } from '@/entities/BotDocument';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -34,11 +35,12 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, name, description, domain, status } = body;
+    const { id, name, description, domain, status, knowledgeIds } = body;
 
-    if (!id || !name || !description || !domain || !status) {
-      return NextResponse.json({ 
-        error: 'All fields are required' 
+    // Check required fields (only id is always required)
+    if (!id) {
+      return NextResponse.json({
+        error: 'Bot ID is required'
       }, { status: 400 });
     }
 
@@ -57,14 +59,33 @@ export async function PUT(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Update the bot
-    bot.name = name;
-    bot.description = description;
-    bot.domain = domain;
-    bot.status = status;
+    // Update the bot fields if provided
+    if (name !== undefined) bot.name = name;
+    if (description !== undefined) bot.description = description;
+    if (domain !== undefined) bot.domain = domain;
+    if (status !== undefined) bot.status = status;
     bot.updatedAt = new Date();
 
     await botRepository.save(bot);
+
+    // Handle knowledge base assignment if provided
+    if (knowledgeIds !== undefined && Array.isArray(knowledgeIds)) {
+      const botDocumentRepository = AppDataSource.getRepository("bot_documents");
+
+      // Delete existing bot-document relationships
+      await botDocumentRepository.delete({ botId: bot.id });
+
+      // Create new bot-document relationships
+      if (knowledgeIds.length > 0) {
+        const botDocuments = knowledgeIds.map(documentId => ({
+          botId: bot.id,
+          documentId: documentId,
+          status: 'active'
+        }));
+
+        await botDocumentRepository.save(botDocuments);
+      }
+    }
 
     return NextResponse.json({
       message: 'Bot updated successfully',
