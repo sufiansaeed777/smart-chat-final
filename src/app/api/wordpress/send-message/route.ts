@@ -3,6 +3,8 @@ import { AppDataSource } from '@/config/database';
 import { Bot } from '@/entities/Bot';
 import { Conversation } from '@/entities/Conversation';
 import { User } from '@/entities/User';
+import { N8nService } from '@/services/n8nService';
+import { getUserPlanLimits, checkLimit } from '@/middleware/planLimits';
 
 /**
  * WordPress Plugin Message Handler
@@ -80,12 +82,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Check user's message quota
-    // const userRepository = AppDataSource.getRepository("users");
-    // const subscription = await checkUserSubscription(userId);
-    // if (subscription.messagesUsed >= subscription.messagesLimit) {
-    //   return NextResponse.json({ error: 'Message quota exceeded' }, { status: 429 });
-    // }
+    // Check user's message quota
+    const userRepository = AppDataSource.getRepository("users");
+    const botOwner = await userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!botOwner) {
+      return NextResponse.json(
+        { error: 'Bot owner not found' },
+        { status: 404, headers: corsHeaders }
+      );
+    }
+
+    // Check plan limits
+    const planLimits = getUserPlanLimits(botOwner.subscriptionPlan || 'free');
+    const limitCheck = checkLimit(
+      botOwner.messagesUsedThisMonth || 0,
+      planLimits.monthlyMessages,
+      'messages'
+    );
+
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Quota exceeded',
+          message: limitCheck.message,
+          upgradeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/manager-dashboard/settings?tab=billing`,
+        },
+        { status: 429, headers: corsHeaders }
+      );
+    }
+
+    // Check if subscription is active
+    if (botOwner.subscriptionStatus && ['past_due', 'cancelled', 'suspended'].includes(botOwner.subscriptionStatus)) {
+      return NextResponse.json(
+        {
+          error: 'Subscription inactive',
+          message: 'Please update your payment method to continue using this bot.',
+          billingUrl: `${process.env.NEXT_PUBLIC_APP_URL}/manager-dashboard/settings?tab=billing`,
+        },
+        { status: 402, headers: corsHeaders }
+      );
+    }
 
     // Create or get conversation
     const conversationRepository = AppDataSource.getRepository("conversations");
@@ -108,18 +147,61 @@ export async function POST(request: NextRequest) {
       await conversationRepository.save(conversation);
     }
 
-    // Prepare context from bot training data
-    // TODO: Implement RAG (Retrieval Augmented Generation)
-    // - Fetch relevant documents from vector database
-    // - Include in context for better responses
+    // Check if bot is trained with n8n (preferred method)
+    let aiResponse = 'I apologize, but I am currently unable to process your request.';
+
+    // Priority 1: Use n8n trained bot (RAG with vector embeddings)
+    if (bot.trainingStatus === 'trained' && process.env.N8N_WEBHOOK_URL) {
+      try {
+        const n8nResult = await N8nService.sendChatMessage({
+          botId: bot.id,
+          chatId: sessionId || `wp_${Date.now()}`,
+          message: message,
+          userId: userId
+        });
+
+        if (n8nResult.success && n8nResult.response) {
+          aiResponse = n8nResult.response;
+
+          // Save messages and return early
+          const messages = conversation.messages || [];
+          messages.push(
+            {
+              role: 'user',
+              content: message,
+              timestamp: new Date().toISOString()
+            },
+            {
+              role: 'assistant',
+              content: aiResponse,
+              timestamp: new Date().toISOString(),
+              source: 'n8n_trained'
+            }
+          );
+
+          conversation.messages = messages;
+          conversation.lastMessageAt = new Date();
+          await conversationRepository.save(conversation);
+
+          return NextResponse.json({
+            success: true,
+            response: aiResponse,
+            sessionId: conversation.sessionId,
+            source: 'n8n_rag'
+          }, { headers: corsHeaders });
+        }
+      } catch (error) {
+        console.error('n8n trained bot error:', error);
+        // Fall through to OpenAI fallback
+      }
+    }
+
+    // Priority 2: Use OpenAI directly (if bot not trained)
     const systemPrompt = `You are ${bot.name}, a helpful AI assistant.
     Your personality is ${bot.tone || 'professional'}.
     ${bot.customInstructions || ''}
     ${bot.trainingContext || ''}
     Always be helpful, accurate, and concise.`;
-
-    // Call OpenAI API
-    let aiResponse = 'I apologize, but I am currently unable to process your request.';
 
     if (OPENAI_API_KEY) {
       try {
@@ -214,14 +296,16 @@ export async function POST(request: NextRequest) {
     conversation.lastMessageAt = new Date();
     await conversationRepository.save(conversation);
 
-    // TODO: Increment message usage counter
-    // await incrementUserMessageCount(userId);
+    // Increment message usage counter
+    botOwner.messagesUsedThisMonth = (botOwner.messagesUsedThisMonth || 0) + 1;
+    await userRepository.save(botOwner);
 
     // Return response
     return NextResponse.json({
       success: true,
       response: aiResponse,
       sessionId: conversation.sessionId,
+      source: bot.trainingStatus === 'trained' ? 'openai_fallback' : 'openai_direct',
       // TODO: Add for real-time features
       // typing: false,
       // suggestedActions: bot.suggestedActions || []
