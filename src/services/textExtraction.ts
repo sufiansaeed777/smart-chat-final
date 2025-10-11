@@ -3,6 +3,7 @@
  * Extracts text content from various file types (PDF, CSV, TXT)
  */
 
+// @ts-ignore - pdf-parse has inconsistent type definitions
 import pdf from 'pdf-parse';
 import { parse } from 'csv-parse/sync';
 
@@ -20,7 +21,7 @@ export interface ExtractionResult {
  */
 export async function extractFromPDF(buffer: Buffer): Promise<ExtractionResult> {
   try {
-    const data = await pdf(buffer);
+    const data = await (pdf as any)(buffer);
 
     return {
       text: data.text,
