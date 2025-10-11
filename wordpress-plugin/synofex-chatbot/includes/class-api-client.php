@@ -29,10 +29,9 @@ class Synofex_API_Client {
      * Constructor
      */
     public function __construct($auth_token) {
-        // Default to localhost for development, can be overridden in settings
-        // TODO: For production, change default to your live domain
-        // TODO: Future - Add support for JavaScript widget (non-WordPress sites)
-        $this->api_url = get_option('synofex_api_url', 'http://localhost:3000');
+        // Default to production URL, can be overridden in settings
+        // For local development, change this in WordPress admin settings
+        $this->api_url = get_option('synofex_api_url', 'https://smart-chat-finale.vercel.app');
         $this->auth_token = $auth_token;
         $this->cache = new Synofex_Cache();
     }

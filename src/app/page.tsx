@@ -124,13 +124,13 @@ const LandingPage = () => {
             
             {/* CTA buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-                             <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-semibold hover:shadow-xl transition-all duration-200 group flex items-center">
-                 Get Started Free
-                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-               </button>
-               <button className="border border-gray-300 text-gray-700 px-8 py-4 rounded-2xl font-semibold hover:bg-gray-50 transition-all duration-200">
-                 Watch Demo
-               </button>
+              <Link href="/signup" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-semibold hover:shadow-xl transition-all duration-200 group flex items-center">
+                Get Started Free
+                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link href="/product" className="border border-gray-300 text-gray-700 px-8 py-4 rounded-2xl font-semibold hover:bg-gray-50 transition-all duration-200">
+                Watch Demo
+              </Link>
             </div>
             
             {/* Trust indicators */}
@@ -280,10 +280,10 @@ const LandingPage = () => {
                   Start your free trial today and see the difference—no credit card required.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                  <button className="bg-white text-blue-600 px-8 py-3 rounded-2xl font-semibold hover:bg-gray-50 transition-all duration-200 group flex items-center">
+                  <Link href="/signup" className="bg-white text-blue-600 px-8 py-3 rounded-2xl font-semibold hover:bg-gray-50 transition-all duration-200 group flex items-center">
                     Launch My Chatbot
                     <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </button>
+                  </Link>
                   <div className="flex items-center gap-2 text-sm opacity-90">
                     <CheckCircle className="w-4 h-4" />
                     <span>14-day free trial included</span>

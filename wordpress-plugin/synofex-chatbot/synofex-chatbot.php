@@ -26,7 +26,7 @@ define('SYNOFEX_CHATBOT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('SYNOFEX_CHATBOT_PLUGIN_BASENAME', plugin_basename(__FILE__));
 
 // API Configuration
-define('SYNOFEX_API_BASE_URL', get_option('synofex_api_url', 'https://api.synofex.com'));
+define('SYNOFEX_API_BASE_URL', get_option('synofex_api_url', 'https://smart-chat-finale.vercel.app'));
 define('SYNOFEX_API_VERSION', 'v1');
 
 /**
@@ -97,11 +97,14 @@ class SynofexChatbot {
      */
     private function load_dependencies() {
         require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-api-client.php';
-        require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-widget.php';
-        require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-admin.php';
-        require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-token-auth.php';
-        require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-cache.php';
-        require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-settings.php';
+        require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-ajax-handler.php';
+
+        // TODO: Create these missing classes
+        // require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-widget.php';
+        // require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-admin.php';
+        // require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-token-auth.php';
+        // require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-cache.php';
+        // require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-settings.php';
     }
 
     /**

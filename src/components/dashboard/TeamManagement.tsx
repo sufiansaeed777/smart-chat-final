@@ -35,8 +35,11 @@ const TeamManagement = () => {
     firstName: '',
     lastName: '',
     email: '',
-    phone: ''
+    phone: '',
+    countryCode: '+1'
   });
+  const [selectedKnowledge, setSelectedKnowledge] = useState<string[]>([]);
+  const [knowledgeBase, setKnowledgeBase] = useState<Array<{id: string; name: string}>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [togglingUser, setTogglingUser] = useState<string | null>(null);
@@ -181,9 +184,26 @@ const TeamManagement = () => {
     }
   };
 
-  // Load team members on component mount
+  // Fetch knowledge base documents
+  const fetchKnowledgeBase = async () => {
+    try {
+      const response = await fetch('/api/manager/documents');
+      if (response.ok) {
+        const data = await response.json();
+        setKnowledgeBase((data.documents || []).map((doc: any) => ({
+          id: doc.id,
+          name: doc.name
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching knowledge base:', error);
+    }
+  };
+
+  // Load team members and knowledge base on component mount
   useEffect(() => {
     fetchTeamMembers();
+    fetchKnowledgeBase();
   }, []);
 
   // Handle query parameter selection
@@ -258,8 +278,9 @@ const TeamManagement = () => {
     }
 
     setIsLoading(true);
-    
+
     try {
+      const fullPhone = `${newMember.countryCode}${newMember.phone}`;
       const response = await fetch('/api/admin/invite-user', {
         method: 'POST',
         headers: {
@@ -268,7 +289,9 @@ const TeamManagement = () => {
         body: JSON.stringify({
           name: `${newMember.firstName} ${newMember.lastName}`,
           email: newMember.email,
-          role: 'user'
+          phone: fullPhone,
+          role: 'user',
+          knowledgeIds: selectedKnowledge
         }),
       });
 
@@ -276,16 +299,19 @@ const TeamManagement = () => {
         const data = await response.json();
         console.log('Invitation sent successfully:', data);
         setIsAddModalOpen(false);
-        setNewMember({ firstName: '', lastName: '', email: '', phone: '' });
+        setNewMember({ firstName: '', lastName: '', email: '', phone: '', countryCode: '+1' });
+        setSelectedKnowledge([]);
         setErrors({ firstName: '', lastName: '', email: '', phone: '' });
         // Refresh team members list
         fetchTeamMembers();
       } else {
         const errorData = await response.json();
         console.error('Failed to send invitation:', errorData.error || 'Unknown error');
+        alert(errorData.error || 'Failed to send invitation');
       }
     } catch (error) {
       console.error('Error sending invitation:', error);
+      alert('Network error. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -734,27 +760,85 @@ const TeamManagement = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                <input
-                  type="tel"
-                  value={newMember.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent text-gray-900 ${
-                    errors.phone ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter phone number"
-                />
+                <div className="flex space-x-2">
+                  <select
+                    value={newMember.countryCode}
+                    onChange={(e) => setNewMember({...newMember, countryCode: e.target.value})}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent text-gray-900"
+                  >
+                    <option value="+1">+1 (US/CA)</option>
+                    <option value="+44">+44 (UK)</option>
+                    <option value="+91">+91 (IN)</option>
+                    <option value="+61">+61 (AU)</option>
+                    <option value="+86">+86 (CN)</option>
+                    <option value="+49">+49 (DE)</option>
+                    <option value="+33">+33 (FR)</option>
+                    <option value="+81">+81 (JP)</option>
+                    <option value="+82">+82 (KR)</option>
+                    <option value="+92">+92 (PK)</option>
+                    <option value="+880">+880 (BD)</option>
+                    <option value="+971">+971 (AE)</option>
+                    <option value="+966">+966 (SA)</option>
+                  </select>
+                  <input
+                    type="tel"
+                    value={newMember.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    className={`flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent text-gray-900 ${
+                      errors.phone ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter phone number"
+                  />
+                </div>
                 {errors.phone && (
                   <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
                 )}
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Assign Knowledge Base (Optional)</label>
+                <div className="border border-gray-300 rounded-lg max-h-40 overflow-y-auto">
+                  {knowledgeBase.length === 0 ? (
+                    <div className="p-3 text-sm text-gray-500 text-center">
+                      No knowledge base documents available
+                    </div>
+                  ) : (
+                    <div className="p-2 space-y-1">
+                      {knowledgeBase.map((doc) => (
+                        <label key={doc.id} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedKnowledge.includes(doc.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedKnowledge([...selectedKnowledge, doc.id]);
+                              } else {
+                                setSelectedKnowledge(selectedKnowledge.filter(id => id !== doc.id));
+                              }
+                            }}
+                            className="w-4 h-4 text-[#6566F1] border-gray-300 rounded focus:ring-[#6566F1]"
+                          />
+                          <span className="text-sm text-gray-700">{doc.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {selectedKnowledge.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {selectedKnowledge.length} document{selectedKnowledge.length > 1 ? 's' : ''} selected
+                  </p>
+                )}
+              </div>
             </div>
-            
+
             <div className="flex justify-end space-x-3 mt-6">
               <Button
                 variant="outline"
                 onClick={() => {
                   setIsAddModalOpen(false);
-                  setNewMember({ firstName: '', lastName: '', email: '', phone: '' });
+                  setNewMember({ firstName: '', lastName: '', email: '', phone: '', countryCode: '+1' });
+                  setSelectedKnowledge([]);
                   setErrors({ firstName: '', lastName: '', email: '', phone: '' });
                 }}
                 className="px-4 py-2 text-gray-700 border-gray-300 hover:bg-gray-50"

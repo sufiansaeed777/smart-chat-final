@@ -277,7 +277,7 @@ class Synofex_AJAX_Handler {
 
         wp_localize_script('synofex-chat', 'synofexConfig', [
             'token' => $auth_token,
-            'apiUrl' => get_option('synofex_api_url', 'http://localhost:3000'),
+            'apiUrl' => get_option('synofex_api_url', 'https://smart-chat-finale.vercel.app'),
             'botId' => $bot_config['bot_id'] ?? 'default',
             'botName' => $bot_config['name'] ?? 'AI Assistant',
             'botAvatar' => $bot_config['avatar'] ?? '',

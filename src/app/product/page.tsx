@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { MessageCircle, Bot, Zap, Shield, BarChart3 } from "lucide-react";
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
@@ -57,12 +58,12 @@ const ProductPage = () => {
               capture leads, and scale their operations without hiring more staff.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-2xl font-medium text-lg hover:opacity-90 transition-opacity">
+              <Link href="/signup" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-2xl font-medium text-lg hover:opacity-90 transition-opacity text-center">
                 Start Building Free
-              </button>
-              <button className="border border-gray-300 text-gray-700 px-8 py-3 rounded-2xl font-medium text-lg hover:bg-gray-50 transition-colors">
+              </Link>
+              <Link href="/contact" className="border border-gray-300 text-gray-700 px-8 py-3 rounded-2xl font-medium text-lg hover:bg-gray-50 transition-colors text-center">
                 Watch Demo
-              </button>
+              </Link>
             </div>
             <div className="flex items-center justify-center space-x-8 text-sm text-gray-500">
               <div className="flex items-center space-x-2">

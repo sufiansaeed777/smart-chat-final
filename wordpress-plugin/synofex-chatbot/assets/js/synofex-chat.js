@@ -17,7 +17,7 @@
     const SynofexChat = {
         // Configuration
         config: window.synofexConfig || {},
-        apiUrl: window.synofexConfig?.apiUrl || 'http://localhost:3000',
+        apiUrl: window.synofexConfig?.apiUrl || 'https://smart-chat-finale.vercel.app',
         token: window.synofexConfig?.token || '',
         botId: window.synofexConfig?.botId || 'default',
         sessionId: null,

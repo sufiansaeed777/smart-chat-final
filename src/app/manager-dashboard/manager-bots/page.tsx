@@ -152,6 +152,8 @@ export default function BotsPage() {
     domain: "",
     status: "active"
   });
+  const [editBotKnowledge, setEditBotKnowledge] = useState<string[]>([]);
+  const [knowledgeBase, setKnowledgeBase] = useState<Array<{id: string; name: string}>>([]);
   const [inviteData, setInviteData] = useState({
     email: "",
     name: ""
@@ -392,13 +394,20 @@ export default function BotsPage() {
         const data = await response.json();
         console.log('Loaded documents:', data.documents);
         setAvailableDocuments(data.documents || []);
+        // Also populate knowledge base for edit modal
+        setKnowledgeBase((data.documents || []).map((doc: any) => ({
+          id: doc.id,
+          name: doc.name
+        })));
       } else {
         console.error('Failed to load documents:', response.status, response.statusText);
         setAvailableDocuments([]);
+        setKnowledgeBase([]);
       }
     } catch (error) {
       console.error('Error loading documents:', error);
       setAvailableDocuments([]);
+      setKnowledgeBase([]);
     } finally {
       setLoadingDocuments(false);
     }
@@ -648,7 +657,7 @@ export default function BotsPage() {
     }
   };
 
-  const handleEditBot = (bot: {id: string; name: string; description: string; domain: string; status: string}) => {
+  const handleEditBot = async (bot: {id: string; name: string; description: string; domain: string; status: string}) => {
     setEditBot({
       id: bot.id,
       name: bot.name,
@@ -656,19 +665,38 @@ export default function BotsPage() {
       domain: bot.domain,
       status: bot.status
     });
+
+    // Load bot's current knowledge documents
+    try {
+      const response = await fetch(`/api/manager/bot-documents?botId=${bot.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        const docIds = (data.documents || []).map((doc: any) => doc.documentId);
+        setEditBotKnowledge(docIds);
+      } else {
+        setEditBotKnowledge([]);
+      }
+    } catch (error) {
+      console.error('Error loading bot documents:', error);
+      setEditBotKnowledge([]);
+    }
+
     setShowEditModal(true);
   };
 
   const handleUpdateBot = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const response = await fetch('/api/manager/update-bot', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editBot),
+        body: JSON.stringify({
+          ...editBot,
+          knowledgeIds: editBotKnowledge
+        }),
       });
 
       if (response.ok) {
@@ -680,6 +708,7 @@ export default function BotsPage() {
         }
         setShowEditModal(false);
         setEditBot({ id: "", name: "", description: "", domain: "", status: "active" });
+        setEditBotKnowledge([]);
       } else {
         const error = await response.json();
         console.error('Failed to update bot:', error.message || 'Unknown error');
@@ -1430,7 +1459,45 @@ export default function BotsPage() {
                   <option value="inactive">Inactive</option>
                 </select>
               </div>
-              
+
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Assign Knowledge Base (Optional)
+                </Label>
+                <div className="border border-gray-300 rounded-xl max-h-40 overflow-y-auto">
+                  {knowledgeBase.length === 0 ? (
+                    <div className="p-3 text-sm text-gray-500 text-center">
+                      No knowledge base documents available
+                    </div>
+                  ) : (
+                    <div className="p-2 space-y-1">
+                      {knowledgeBase.map((doc) => (
+                        <label key={doc.id} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={editBotKnowledge.includes(doc.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEditBotKnowledge([...editBotKnowledge, doc.id]);
+                              } else {
+                                setEditBotKnowledge(editBotKnowledge.filter(id => id !== doc.id));
+                              }
+                            }}
+                            className="w-4 h-4 text-[#6566F1] border-gray-300 rounded focus:ring-[#6566F1]"
+                          />
+                          <span className="text-sm text-gray-700">{doc.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {editBotKnowledge.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {editBotKnowledge.length} document{editBotKnowledge.length > 1 ? 's' : ''} selected
+                  </p>
+                )}
+              </div>
+
               <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
                 <Button
                   variant="outline"

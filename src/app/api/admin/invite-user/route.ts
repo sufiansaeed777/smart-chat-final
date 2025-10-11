@@ -34,6 +34,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email and name are required' }, { status: 400 });
     }
 
+    // Prevent manager from inviting themselves
+    if (email.toLowerCase() === currentUser.email.toLowerCase()) {
+      return NextResponse.json({ error: 'You cannot add your own email as a team member' }, { status: 400 });
+    }
+
     // Check if user already exists
     const existingUser = await userRepository.findOne({ where: { email } });
 
