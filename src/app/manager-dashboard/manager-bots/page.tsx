@@ -124,6 +124,7 @@ export default function BotsPage() {
   const [showKnowledgeModal, setShowKnowledgeModal] = useState(false);
   const [selectedBotForKnowledge, setSelectedBotForKnowledge] = useState<{id: string; name: string} | null>(null);
   const [botKnowledgeIds, setBotKnowledgeIds] = useState<string[]>([]);
+  const [trainingBot, setTrainingBot] = useState<string | null>(null); // Bot ID currently being trained
   const [botSettings, setBotSettings] = useState({
     id: "",
     name: "",
@@ -812,6 +813,12 @@ export default function BotsPage() {
         setShowKnowledgeModal(false);
         setSelectedBotForKnowledge(null);
         setBotKnowledgeIds([]);
+
+        // Prompt user to train the bot after knowledge assignment
+        const shouldTrain = confirm('Knowledge assigned successfully! Would you like to train the bot now with n8n?');
+        if (shouldTrain) {
+          await handleTrainBot({ id: selectedBotForKnowledge.id, name: selectedBotForKnowledge.name });
+        }
       } else {
         const error = await response.json();
         console.error('Failed to update knowledge:', error.message || 'Unknown error');
@@ -820,6 +827,42 @@ export default function BotsPage() {
     } catch (error) {
       console.error('Error updating knowledge:', error);
       alert('Network error. Please try again.');
+    }
+  };
+
+  const handleTrainBot = async (bot: {id: string; name: string}) => {
+    try {
+      setTrainingBot(bot.id);
+
+      const response = await fetch('/api/n8n/train-bot', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          botId: bot.id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(`✅ Training initiated for "${bot.name}"!\n\n${result.message}\n\nDocuments processed: ${result.documentsProcessed || 0}\nStatus: ${result.trainingStatus || 'unknown'}`);
+
+        // Refresh bots list to show updated training status
+        const refreshResponse = await fetch('/api/manager/bots');
+        if (refreshResponse.ok) {
+          const refreshData = await refreshResponse.json();
+          setBots(refreshData.bots || []);
+        }
+      } else {
+        alert(`❌ Training failed: ${result.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error training bot:', error);
+      alert('Network error while initiating training. Please try again.');
+    } finally {
+      setTrainingBot(null);
     }
   };
 
@@ -2331,6 +2374,21 @@ export default function BotsPage() {
               >
                 <FileText className="w-4 h-4 mr-2" />
                 Assign Knowledge
+              </button>
+              <button
+                onClick={() => {
+                  const bot = bots.find(b => b.id === openDropdown);
+                  if (bot) {
+                    handleTrainBot(bot);
+                  }
+                  setOpenDropdown(null);
+                  setDropdownPosition(null);
+                }}
+                className="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center"
+                disabled={trainingBot === openDropdown}
+              >
+                <Bot className="w-4 h-4 mr-2" />
+                {trainingBot === openDropdown ? 'Training...' : 'Train Bot (n8n)'}
               </button>
               <button
                 onClick={() => {

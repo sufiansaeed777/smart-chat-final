@@ -78,6 +78,23 @@ export class Bot {
   @Column({ type: 'boolean', default: true })
   enableAnalytics!: boolean;
 
+  // n8n Training Status
+  @Column({
+    type: 'enum',
+    enum: ['untrained', 'training', 'trained', 'training_failed'],
+    default: 'untrained'
+  })
+  trainingStatus!: 'untrained' | 'training' | 'trained' | 'training_failed';
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastTrainedAt?: Date;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  n8nWebhookUrl?: string; // Unique webhook URL for this bot's chat
+
+  @Column({ type: 'text', nullable: true })
+  trainingLog?: string; // JSON log of training attempts
+
   // Relations
   @OneToMany('BotAssignment', 'bot')
   assignments?: any[];
