@@ -121,6 +121,9 @@ export default function BotsPage() {
   const [showConversationHistory, setShowConversationHistory] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showKnowledgeModal, setShowKnowledgeModal] = useState(false);
+  const [selectedBotForKnowledge, setSelectedBotForKnowledge] = useState<{id: string; name: string} | null>(null);
+  const [botKnowledgeIds, setBotKnowledgeIds] = useState<string[]>([]);
   const [botSettings, setBotSettings] = useState({
     id: "",
     name: "",
@@ -766,6 +769,58 @@ export default function BotsPage() {
       });
     }
     setShowSettingsModal(true);
+  };
+
+  const handleAssignKnowledge = async (bot: {id: string; name: string}) => {
+    setSelectedBotForKnowledge(bot);
+
+    // Fetch current bot's assigned documents
+    try {
+      const response = await fetch(`/api/manager/bot-documents?botId=${bot.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        const docIds = (data.documents || []).map((doc: any) => doc.documentId);
+        setBotKnowledgeIds(docIds);
+      } else {
+        setBotKnowledgeIds([]);
+      }
+    } catch (error) {
+      console.error('Error loading bot documents:', error);
+      setBotKnowledgeIds([]);
+    }
+
+    setShowKnowledgeModal(true);
+  };
+
+  const handleSaveKnowledge = async () => {
+    if (!selectedBotForKnowledge) return;
+
+    try {
+      const response = await fetch('/api/manager/update-bot', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: selectedBotForKnowledge.id,
+          knowledgeIds: botKnowledgeIds
+        }),
+      });
+
+      if (response.ok) {
+        console.log('Knowledge updated successfully');
+        setShowKnowledgeModal(false);
+        setSelectedBotForKnowledge(null);
+        setBotKnowledgeIds([]);
+      } else {
+        const error = await response.json();
+        console.error('Failed to update knowledge:', error.message || 'Unknown error');
+        alert('Failed to update knowledge. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error updating knowledge:', error);
+      alert('Network error. Please try again.');
+    }
   };
 
   const handleUpdateSettings = async (e: React.FormEvent) => {
@@ -2267,6 +2322,20 @@ export default function BotsPage() {
                 onClick={() => {
                   const bot = bots.find(b => b.id === openDropdown);
                   if (bot) {
+                    handleAssignKnowledge(bot);
+                  }
+                  setOpenDropdown(null);
+                  setDropdownPosition(null);
+                }}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Assign Knowledge
+              </button>
+              <button
+                onClick={() => {
+                  const bot = bots.find(b => b.id === openDropdown);
+                  if (bot) {
                     handleEditBot(bot);
                   }
                   setOpenDropdown(null);
@@ -2324,6 +2393,89 @@ export default function BotsPage() {
           </div>
         </>,
         document.body
+      )}
+
+      {/* Knowledge Assignment Modal */}
+      {showKnowledgeModal && selectedBotForKnowledge && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg mx-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Assign Knowledge to {selectedBotForKnowledge.name}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowKnowledgeModal(false);
+                  setSelectedBotForKnowledge(null);
+                  setBotKnowledgeIds([]);
+                }}
+                className="text-gray-900 hover:text-gray-700 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-6">Select knowledge base documents to assign to this bot.</p>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Knowledge Base Documents</label>
+              <div className="border border-gray-300 rounded-lg max-h-96 overflow-y-auto">
+                {knowledgeBase.length === 0 ? (
+                  <div className="p-4 text-sm text-gray-500 text-center">
+                    No knowledge base documents available
+                  </div>
+                ) : (
+                  <div className="p-2 space-y-1">
+                    {knowledgeBase.map((doc) => (
+                      <label key={doc.id} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={botKnowledgeIds.includes(doc.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setBotKnowledgeIds([...botKnowledgeIds, doc.id]);
+                            } else {
+                              setBotKnowledgeIds(botKnowledgeIds.filter(id => id !== doc.id));
+                            }
+                          }}
+                          className="w-4 h-4 text-[#6566F1] border-gray-300 rounded focus:ring-[#6566F1]"
+                        />
+                        <span className="text-sm text-gray-700">{doc.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {botKnowledgeIds.length > 0 && (
+                <p className="text-xs text-gray-500 mt-2">
+                  {botKnowledgeIds.length} document{botKnowledgeIds.length > 1 ? 's' : ''} selected
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => {
+                  setShowKnowledgeModal(false);
+                  setSelectedBotForKnowledge(null);
+                  setBotKnowledgeIds([]);
+                }}
+                className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSaveKnowledge}
+                className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white px-6 py-2 rounded-xl"
+              >
+                Save Knowledge
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

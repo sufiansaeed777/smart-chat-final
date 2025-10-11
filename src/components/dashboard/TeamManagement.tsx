@@ -38,8 +38,6 @@ const TeamManagement = () => {
     phone: '',
     countryCode: '+1'
   });
-  const [selectedKnowledge, setSelectedKnowledge] = useState<string[]>([]);
-  const [knowledgeBase, setKnowledgeBase] = useState<Array<{id: string; name: string}>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [togglingUser, setTogglingUser] = useState<string | null>(null);
@@ -184,26 +182,9 @@ const TeamManagement = () => {
     }
   };
 
-  // Fetch knowledge base documents
-  const fetchKnowledgeBase = async () => {
-    try {
-      const response = await fetch('/api/manager/documents');
-      if (response.ok) {
-        const data = await response.json();
-        setKnowledgeBase((data.documents || []).map((doc: any) => ({
-          id: doc.id,
-          name: doc.name
-        })));
-      }
-    } catch (error) {
-      console.error('Error fetching knowledge base:', error);
-    }
-  };
-
-  // Load team members and knowledge base on component mount
+  // Load team members on component mount
   useEffect(() => {
     fetchTeamMembers();
-    fetchKnowledgeBase();
   }, []);
 
   // Handle query parameter selection
@@ -290,8 +271,7 @@ const TeamManagement = () => {
           name: `${newMember.firstName} ${newMember.lastName}`,
           email: newMember.email,
           phone: fullPhone,
-          role: 'user',
-          knowledgeIds: selectedKnowledge
+          role: 'user'
         }),
       });
 
@@ -300,7 +280,6 @@ const TeamManagement = () => {
         console.log('Invitation sent successfully:', data);
         setIsAddModalOpen(false);
         setNewMember({ firstName: '', lastName: '', email: '', phone: '', countryCode: '+1' });
-        setSelectedKnowledge([]);
         setErrors({ firstName: '', lastName: '', email: '', phone: '' });
         // Refresh team members list
         fetchTeamMembers();
@@ -794,42 +773,6 @@ const TeamManagement = () => {
                   <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
                 )}
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Assign Knowledge Base (Optional)</label>
-                <div className="border border-gray-300 rounded-lg max-h-40 overflow-y-auto">
-                  {knowledgeBase.length === 0 ? (
-                    <div className="p-3 text-sm text-gray-500 text-center">
-                      No knowledge base documents available
-                    </div>
-                  ) : (
-                    <div className="p-2 space-y-1">
-                      {knowledgeBase.map((doc) => (
-                        <label key={doc.id} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={selectedKnowledge.includes(doc.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedKnowledge([...selectedKnowledge, doc.id]);
-                              } else {
-                                setSelectedKnowledge(selectedKnowledge.filter(id => id !== doc.id));
-                              }
-                            }}
-                            className="w-4 h-4 text-[#6566F1] border-gray-300 rounded focus:ring-[#6566F1]"
-                          />
-                          <span className="text-sm text-gray-700">{doc.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {selectedKnowledge.length > 0 && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    {selectedKnowledge.length} document{selectedKnowledge.length > 1 ? 's' : ''} selected
-                  </p>
-                )}
-              </div>
             </div>
 
             <div className="flex justify-end space-x-3 mt-6">
@@ -838,7 +781,6 @@ const TeamManagement = () => {
                 onClick={() => {
                   setIsAddModalOpen(false);
                   setNewMember({ firstName: '', lastName: '', email: '', phone: '', countryCode: '+1' });
-                  setSelectedKnowledge([]);
                   setErrors({ firstName: '', lastName: '', email: '', phone: '' });
                 }}
                 className="px-4 py-2 text-gray-700 border-gray-300 hover:bg-gray-50"
