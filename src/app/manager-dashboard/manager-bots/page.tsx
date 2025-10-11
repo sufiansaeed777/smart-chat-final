@@ -175,6 +175,7 @@ export default function BotsPage() {
     assignedUsers: string[];
     createdAt: string;
     lastConversation: string | null;
+    documents?: Array<{ id: string; name: string; type: string; size: number }>;
   }>>([]);
   const [loading, setLoading] = useState(true);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -810,12 +811,20 @@ export default function BotsPage() {
 
       if (response.ok) {
         console.log('Knowledge updated successfully');
+
+        // Refresh bots list to show updated knowledge count
+        const refreshResponse = await fetch('/api/manager/bots');
+        if (refreshResponse.ok) {
+          const refreshData = await refreshResponse.json();
+          setBots(refreshData.bots || []);
+        }
+
         setShowKnowledgeModal(false);
         setSelectedBotForKnowledge(null);
         setBotKnowledgeIds([]);
 
         // Prompt user to train the bot after knowledge assignment
-        const shouldTrain = confirm('Knowledge assigned successfully! Would you like to train the bot now with n8n?');
+        const shouldTrain = confirm(`✅ Knowledge assigned successfully!\n\n${botKnowledgeIds.length} document(s) assigned to "${selectedBotForKnowledge.name}".\n\nWould you like to train the bot now with n8n?`);
         if (shouldTrain) {
           await handleTrainBot({ id: selectedBotForKnowledge.id, name: selectedBotForKnowledge.name });
         }
@@ -1992,6 +2001,18 @@ export default function BotsPage() {
                      <div>
                        <p className="text-xs text-gray-600">Assigned</p>
                        <p className="text-lg font-bold text-[#4A4BC8]">{bot.totalUsers}</p>
+                </div>
+                   </div>
+                </div>
+
+                 <div className="bg-orange-50 border border-orange-200 p-3 rounded-lg group-hover:bg-orange-100 transition-colors duration-200">
+                  <div className="flex items-center space-x-2">
+                     <div className="w-8 h-8 bg-orange-400 rounded-lg flex items-center justify-center">
+                       <FileText className="w-4 h-4 text-white" />
+                  </div>
+                     <div>
+                       <p className="text-xs text-gray-600">Knowledge</p>
+                       <p className="text-lg font-bold text-orange-600">{bot.documents?.length || 0}</p>
                 </div>
                    </div>
                 </div>

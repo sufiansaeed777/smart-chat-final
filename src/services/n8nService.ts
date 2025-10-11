@@ -48,10 +48,33 @@ export class N8nService {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ n8n training failed (${response.status}):`, errorText);
         throw new Error(`n8n training failed: ${response.statusText}`);
       }
 
-      const result = await response.json();
+      // Handle empty or non-JSON responses from n8n
+      const contentType = response.headers.get('content-type');
+      let result: any = {};
+
+      if (contentType && contentType.includes('application/json')) {
+        const responseText = await response.text();
+        if (responseText.trim()) {
+          try {
+            result = JSON.parse(responseText);
+          } catch (parseError) {
+            console.warn('⚠️ n8n returned invalid JSON:', responseText);
+            result = { raw: responseText };
+          }
+        } else {
+          console.warn('⚠️ n8n returned empty response body');
+        }
+      } else {
+        const responseText = await response.text();
+        console.warn('⚠️ n8n returned non-JSON response:', responseText);
+        result = { raw: responseText };
+      }
+
       console.log('✅ n8n training triggered:', result);
 
       return { success: true, message: 'Training initiated successfully' };
@@ -91,10 +114,36 @@ export class N8nService {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ n8n chat failed (${response.status}):`, errorText);
         throw new Error(`n8n chat failed: ${response.statusText}`);
       }
 
-      const result = await response.json();
+      // Handle empty or non-JSON responses from n8n
+      const contentType = response.headers.get('content-type');
+      let result: any = {};
+
+      if (contentType && contentType.includes('application/json')) {
+        const responseText = await response.text();
+        if (responseText.trim()) {
+          try {
+            result = JSON.parse(responseText);
+          } catch (parseError) {
+            console.warn('⚠️ n8n returned invalid JSON:', responseText);
+            // Treat the response text as the bot's reply
+            return { success: true, response: responseText };
+          }
+        } else {
+          console.warn('⚠️ n8n returned empty response body');
+          return { success: false, message: 'Empty response from n8n' };
+        }
+      } else {
+        const responseText = await response.text();
+        console.warn('⚠️ n8n returned non-JSON response:', responseText);
+        // Treat the response text as the bot's reply
+        return { success: true, response: responseText };
+      }
+
       console.log('✅ n8n chat response:', result);
 
       return {

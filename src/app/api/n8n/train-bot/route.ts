@@ -92,10 +92,17 @@ export async function POST(request: NextRequest) {
         // Get document content from database (serverless-compatible)
         let documentContent: string;
 
-        if (document.content) {
-          // Use content stored in database
+        // Check if content is a placeholder for binary files
+        const isBinaryPlaceholder = document.content && document.content.startsWith('Binary file:');
+
+        if (document.content && !isBinaryPlaceholder) {
+          // Use text content stored in database
           documentContent = document.content;
           console.log(`✅ Retrieved ${document.name} from database (${documentContent.length} characters)`);
+        } else if (isBinaryPlaceholder && document.filePath) {
+          // For binary files, use the base64-encoded content from filePath
+          documentContent = document.filePath;
+          console.log(`✅ Retrieved ${document.name} as base64 from filePath (${documentContent.length} characters)`);
         } else if (document.url) {
           // Fallback: fetch from URL if available
           try {
