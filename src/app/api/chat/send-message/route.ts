@@ -5,6 +5,7 @@ import { AppDataSource } from '@/config/database';
 import { User } from '@/entities/User';
 import { Bot } from '@/entities/Bot';
 import { Conversation } from '@/entities/Conversation';
+import { N8nService } from '@/services/n8nService';
 import OpenAI from 'openai';
 
 // Helper function to save conversation
@@ -140,7 +141,36 @@ export async function POST(request: NextRequest) {
     // Save user message to conversation
     await saveConversation(botId, user.id, message, 'user', isTestMessage);
 
-    // Use OpenAI for chat responses
+    // Priority 1: Use n8n trained bot (RAG with vector embeddings) if bot is trained
+    if (bot.trainingStatus === 'trained' && process.env.N8N_WEBHOOK_URL) {
+      try {
+        console.log(`🤖 Bot is trained, using n8n RAG for response`);
+        const n8nResult = await N8nService.sendChatMessage({
+          botId: bot.id,
+          chatId: `dashboard_${Date.now()}`,
+          message: message,
+          userId: user.id
+        });
+
+        if (n8nResult.success && n8nResult.response) {
+          console.log(`✅ n8n RAG response received`);
+          await saveConversation(botId, user.id, n8nResult.response, 'bot', isTestMessage, {
+            source: 'n8n_rag'
+          });
+
+          return NextResponse.json({
+            response: n8nResult.response,
+            success: true,
+            source: 'n8n_rag'
+          });
+        }
+      } catch (error) {
+        console.error('❌ n8n RAG error, falling back to OpenAI:', error);
+        // Fall through to OpenAI fallback
+      }
+    }
+
+    // Priority 2: Use OpenAI for chat responses (fallback or if bot not trained)
     const openaiApiKey = process.env.OPENAI_API_KEY;
 
     if (!openaiApiKey) {
