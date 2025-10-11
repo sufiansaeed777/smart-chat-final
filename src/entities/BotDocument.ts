@@ -18,7 +18,7 @@ export class BotDocument {
   status!: string;
 
   @Column({ type: 'text', nullable: true })
-  notes!: string;
+  notes?: string;
 
   @ManyToOne('Bot', { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'botId' })
