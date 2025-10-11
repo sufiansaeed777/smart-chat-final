@@ -1,6 +1,7 @@
 -- Migration: Create document_embeddings table for vector storage
 -- Description: Stores text chunks and their embeddings for RAG retrieval
 -- Date: 2025-10-11
+-- Updated: 2025-10-11 - Changed to text-embedding-3-large (3072 dimensions) per ROADMAP
 
 -- Enable pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
@@ -14,7 +15,7 @@ CREATE TABLE IF NOT EXISTS document_embeddings (
   chunk_text TEXT NOT NULL,
   chunk_index INTEGER NOT NULL,
   total_chunks INTEGER NOT NULL,
-  embedding vector(1536) NOT NULL, -- OpenAI ada-002 produces 1536 dimensions
+  embedding vector(3072) NOT NULL, -- OpenAI text-embedding-3-large: 3072 dimensions (per ROADMAP)
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 
   -- Foreign keys
@@ -34,7 +35,7 @@ WITH (lists = 100);
 
 -- Create function for vector similarity search
 CREATE OR REPLACE FUNCTION match_document_embeddings(
-  query_embedding vector(1536),
+  query_embedding vector(3072),
   match_threshold float DEFAULT 0.7,
   match_count int DEFAULT 5,
   filter_bot_id UUID DEFAULT NULL
@@ -71,7 +72,7 @@ $$;
 
 -- Add comments
 COMMENT ON TABLE document_embeddings IS 'Stores document chunks and their vector embeddings for RAG retrieval';
-COMMENT ON COLUMN document_embeddings.embedding IS 'Vector embedding (1536 dimensions from OpenAI text-embedding-ada-002)';
+COMMENT ON COLUMN document_embeddings.embedding IS 'Vector embedding (3072 dimensions from OpenAI text-embedding-3-large)';
 COMMENT ON FUNCTION match_document_embeddings IS 'Searches for similar document chunks using cosine similarity';
 
 -- Grant permissions (adjust role name as needed)

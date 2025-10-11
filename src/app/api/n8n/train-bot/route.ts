@@ -2,16 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
-import { extractText } from '@/services/textExtraction';
-import { splitTextIntoChunks } from '@/services/textChunking';
-import { generateEmbeddings, deleteBotEmbeddings } from '@/services/embeddingService';
+import { N8nService } from '@/services/n8nService';
 import fs from 'fs/promises';
 import path from 'path';
 
 /**
- * API endpoint to train a bot directly (no n8n for training)
- * Processes documents: Extract → Chunk → Generate Embeddings → Store in Supabase
- * n8n is ONLY used for chat responses (RAG retrieval)
+ * API endpoint to train a bot via n8n (per ROADMAP Phase 3)
+ * Sends documents to n8n for processing: parse → chunk → generate embeddings → store
+ * n8n uses text-embedding-3-large (3072 dimensions) and stores in pgvector
  */
 export async function POST(request: NextRequest) {
   try {
@@ -76,12 +74,16 @@ export async function POST(request: NextRequest) {
     bot.updatedAt = new Date();
     await botRepository.save(bot);
 
-    // Delete existing embeddings for this bot (retrain from scratch)
-    await deleteBotEmbeddings(bot.id);
+    console.log(`\n🚀 Starting n8n-based training for bot: ${bot.name} (${bot.id})`);
+    console.log(`📦 Documents to process: ${botDocuments.length}`);
 
-    // Process each document
-    const results: Array<{ documentId: string; documentName: string; success: boolean; chunksCreated: number; error?: string }> = [];
-    let totalEmbeddings = 0;
+    // Process each document via n8n
+    const results: Array<{
+      documentId: string;
+      documentName: string;
+      success: boolean;
+      error?: string
+    }> = [];
 
     for (const bd of botDocuments) {
       const document = bd.document;
@@ -96,82 +98,97 @@ export async function POST(request: NextRequest) {
             documentId: document.id,
             documentName: document.name,
             success: false,
-            chunksCreated: 0,
             error: 'File path not found',
           });
           continue;
         }
 
-        // Read file
+        // Read file content
         const fileBuffer = await fs.readFile(path.join(process.cwd(), filePath));
+        const documentContent = fileBuffer.toString('utf-8');
 
-        // Extract text
-        const extraction = await extractText(fileBuffer, document.type || 'text/plain');
-        console.log(`✅ Extracted ${extraction.metadata.words} words from ${document.name}`);
+        console.log(`✅ Read ${document.name} (${fileBuffer.length} bytes)`);
 
-        // Split into chunks
-        const chunks = splitTextIntoChunks(extraction.text, 1000, 200);
-        console.log(`✅ Split into ${chunks.length} chunks`);
-
-        // Generate embeddings
-        const embeddingResult = await generateEmbeddings(chunks, {
+        // Send to n8n for processing
+        // n8n will: parse → chunk → generate embeddings (text-embedding-3-large) → store in pgvector
+        const n8nResult = await N8nService.trainBot({
           botId: bot.id,
+          botName: bot.name,
           documentId: document.id,
           documentName: document.name,
-          chunkIndex: 0,
-          totalChunks: chunks.length,
+          documentContent: documentContent,
+          documentType: document.type || 'text/plain',
+          action: 'train',
         });
 
-        if (embeddingResult.success) {
-          totalEmbeddings += embeddingResult.embeddingsCreated;
+        if (n8nResult.success) {
+          console.log(`✅ n8n processed ${document.name} successfully`);
           results.push({
             documentId: document.id,
             documentName: document.name,
             success: true,
-            chunksCreated: embeddingResult.embeddingsCreated,
           });
         } else {
+          console.error(`❌ n8n failed to process ${document.name}: ${n8nResult.message}`);
           results.push({
             documentId: document.id,
             documentName: document.name,
             success: false,
-            chunksCreated: 0,
-            error: embeddingResult.error,
+            error: n8nResult.message,
           });
         }
+
+        // Small delay between documents to avoid overwhelming n8n
+        await new Promise(resolve => setTimeout(resolve, 500));
+
       } catch (error) {
         console.error(`Error processing document ${document.name}:`, error);
         results.push({
           documentId: document.id,
           documentName: document.name,
           success: false,
-          chunksCreated: 0,
           error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }
 
-    // Update bot training status
+    // Update bot training status based on results
     const successfulDocs = results.filter(r => r.success).length;
     bot.trainingStatus = successfulDocs > 0 ? 'trained' : 'training_failed';
     bot.lastTrainedAt = new Date();
     bot.updatedAt = new Date();
+    bot.trainingLog = JSON.stringify({
+      timestamp: new Date().toISOString(),
+      totalDocuments: botDocuments.length,
+      successfulDocuments: successfulDocs,
+      failedDocuments: botDocuments.length - successfulDocs,
+      results: results,
+    });
     await botRepository.save(bot);
+
+    console.log(`\n🎯 Training completed: ${successfulDocs}/${botDocuments.length} documents successful`);
+    console.log(`📊 Bot status: ${bot.trainingStatus}`);
 
     return NextResponse.json({
       success: successfulDocs > 0,
       message: `Trained ${successfulDocs}/${botDocuments.length} documents successfully`,
       botId: bot.id,
+      botName: bot.name,
       documentsProcessed: botDocuments.length,
-      totalEmbeddings: totalEmbeddings,
+      successfulDocuments: successfulDocs,
+      failedDocuments: botDocuments.length - successfulDocs,
       trainingStatus: bot.trainingStatus,
+      lastTrainedAt: bot.lastTrainedAt,
       results: results,
     });
 
   } catch (error) {
     console.error('Error training bot:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
