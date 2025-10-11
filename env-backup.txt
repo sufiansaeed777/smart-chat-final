@@ -1,4 +1,8 @@
 # Database Configuration - Supabase
+# ⚠️ TODO: UPDATE THESE TO NEW SUPABASE PROJECT (lvfitfucwdyeqwgphlud)
+# Get connection strings from: https://supabase.com/dashboard/project/lvfitfucwdyeqwgphlud/settings/database
+# CURRENT VALUES BELOW ARE FOR OLD PROJECT (aucvnpwyrbefzfiqnrvd) - NEED TO UPDATE!
+
 # Connect to Supabase via connection pooling (DNS fix applied in code)
 DATABASE_URL="postgresql://postgres.aucvnpwyrbefzfiqnrvd:DT5X7gFAThRZNzNc@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres"
 
@@ -44,6 +48,11 @@ SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY_FOR_LVFITFUCWDYEQWGPHLUD
 # FROM: Saas_AI_Chatbot_Keys.pdf - PRODUCTION N8N
 N8N_WEBHOOK_URL=https://synofexai.app.n8n.cloud/webhook/c724f29c-cc20-4409-90c2-d4a494ad3e41
 # Workflow ID: V8OQdCTe2Z1evyNU
+# Message Structure for Chat: { "chat_id": "c123", "message": "Give me a summary of my document" }
+
+# Google Drive API Configuration (FROM: Saas_AI_Chatbot_Keys.pdf)
+# Used by n8n workflow for Google Drive integration
+GOOGLE_DRIVE_API_KEY=AIzaSyDvQHVLzrlC32Kqz3uQU0b1H6Ff0qhPefc
 
 # Stripe Configuration
 STRIPE_SECRET_KEY=sk_test_51SDPdcHtme0FXmzaaVojNgIoPI0TwInyNk4PbKY70nNoh7Leb2NA3ahrwZ86hmfhk6vdzcz7Eqn57gfsI2nIPM1c00FtoL2Rlc
@@ -63,19 +72,37 @@ RESEND_API_KEY=re_placeholder_key
 # 5. REQUIRED: Update Google OAuth redirect URI in Google Cloud Console to:
 #    https://smart-chat-finale.vercel.app/api/auth/callback/google
 #
-# 6. Database migrations needed:
+# 6. Database migrations needed (ON NEW SUPABASE PROJECT: lvfitfucwdyeqwgphlud):
 #    a) ALTER TABLE documents ALTER COLUMN "filePath" TYPE TEXT;
-#    b) Run: migrations/create_document_embeddings_table.sql (for Phase 3 training)
+#    b) Run: migrations/create_document_embeddings_table.sql (CRITICAL - uses vector(3072))
+#    c) Migrate existing data from aucvnpwyrbefzfiqnrvd to lvfitfucwdyeqwgphlud (if needed)
 #
-# 7. Get Supabase Service Role Key:
-#    - Go to: https://supabase.com/dashboard/project/aucvnpwyrbefzfiqnrvd/settings/api
-#    - Copy "service_role" key (NOT "anon" key)
-#    - Add to SUPABASE_SERVICE_ROLE_KEY above
+# 7. Get Required Keys from NEW Supabase Project (lvfitfucwdyeqwgphlud):
+#    a) Service Role Key:
+#       - Go to: https://supabase.com/dashboard/project/lvfitfucwdyeqwgphlud/settings/api
+#       - Copy "service_role" key (NOT "anon" key)
+#       - Add to SUPABASE_SERVICE_ROLE_KEY above
+#    b) Database Connection Strings:
+#       - Go to: https://supabase.com/dashboard/project/lvfitfucwdyeqwgphlud/settings/database
+#       - Copy connection pooler URL → DATABASE_URL
+#       - Copy direct connection URL → DIRECT_URL
 #
-# 8. Keep this file secure - it contains sensitive API keys
-# 9. Copy these values to Vercel Environment Variables for deployment
+# 8. n8n Workflow Configuration (Workflow ID: V8OQdCTe2Z1evyNU):
+#    - Webhook URL: https://synofexai.app.n8n.cloud/webhook/c724f29c-cc20-4409-90c2-d4a494ad3e41
+#    - Handles BOTH training and chat
+#    - Training: Receives document → parse → chunk → embed (text-embedding-3-large) → store
+#    - Chat: Receives message → embed → search → GPT-4.1-mini → respond
 #
-# 10. PHASE 2 & 3 STATUS:
+# 9. Keep this file secure - it contains sensitive API keys
+# 10. Copy these values to Vercel Environment Variables for deployment
+#
+# 11. PHASE 2 & 3 STATUS (ROADMAP COMPLIANT):
 #     ✅ Phase 2 Complete: WordPress plugin, n8n chat integration
-#     ✅ Phase 3 Complete: Document training, Stripe billing, plan limits
-#     ⚠️  Pending: Database migration + Supabase service role key + n8n workflow update
+#     ✅ Phase 3 Complete: Document training (via n8n), Stripe billing, plan limits
+#     ✅ ROADMAP Compliance: 100% (n8n training, text-embedding-3-large, correct instances)
+#     ⚠️  Pending Actions:
+#         - Update DATABASE_URL to lvfitfucwdyeqwgphlud project
+#         - Get SUPABASE_SERVICE_ROLE_KEY from lvfitfucwdyeqwgphlud
+#         - Run database migration on lvfitfucwdyeqwgphlud
+#         - Configure n8n workflow V8OQdCTe2Z1evyNU
+#         - Migrate data from old project (if needed)

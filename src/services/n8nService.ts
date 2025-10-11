@@ -66,6 +66,8 @@ export class N8nService {
 
   /**
    * Send chat message to trained bot
+   * Message structure per Keys PDF:
+   * { "chat_id": "c123", "message": "Give me a summary of my document" }
    */
   static async sendChatMessage(payload: ChatPayload): Promise<{ success: boolean; response?: string; message?: string }> {
     try {
@@ -74,21 +76,17 @@ export class N8nService {
         return { success: false, message: 'n8n not configured' };
       }
 
-      // Use the webhook endpoint from the n8n workflow
-      const chatWebhookUrl = this.n8nWebhookUrl.replace('/training', '/chat');
-
-      const response = await fetch(chatWebhookUrl, {
+      // Send to same webhook URL (no /chat or /training suffix)
+      // Message structure per Saas_AI_Chatbot_Keys.pdf
+      const response = await fetch(this.n8nWebhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          body: {
-            message: payload.message,
-            chat_id: payload.chatId,
-            bot_id: payload.botId,
-            user_id: payload.userId,
-          },
+          chat_id: payload.chatId,
+          message: payload.message,
+          bot_id: payload.botId, // Added for context retrieval
         }),
       });
 
