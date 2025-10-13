@@ -98,13 +98,8 @@ class SynofexChatbot {
     private function load_dependencies() {
         require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-api-client.php';
         require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-ajax-handler.php';
-
-        // TODO: Create these missing classes
-        // require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-widget.php';
-        // require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-admin.php';
-        // require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-token-auth.php';
-        // require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-cache.php';
-        // require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-settings.php';
+        require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-widget.php';
+        require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-admin.php';
     }
 
     /**
