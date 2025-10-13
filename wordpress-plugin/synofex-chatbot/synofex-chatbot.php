@@ -96,6 +96,7 @@ class SynofexChatbot {
      * Load dependencies
      */
     private function load_dependencies() {
+        require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-cache.php';
         require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-api-client.php';
         require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-ajax-handler.php';
         require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-widget.php';

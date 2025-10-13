@@ -72,11 +72,36 @@ export async function GET(
       }
     }
 
-    // Set appropriate headers
+    // Check file size limit (100MB)
+    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+    if (fileBuffer.length > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: 'File too large for download' }, { status: 413 });
+    }
+
+    // Sanitize filename to prevent path traversal and special character issues
+    const sanitizeFilename = (filename: string): string => {
+      // Remove path components and special characters
+      return filename
+        .replace(/[^a-zA-Z0-9._-]/g, '_')  // Replace special chars with underscore
+        .replace(/\.+/g, '.')                // Remove multiple dots
+        .replace(/^\./, '_')                 // Don't start with dot
+        .substring(0, 255);                  // Limit length
+    };
+
+    const safeFilename = sanitizeFilename(document.name);
+
+    // Set appropriate headers with security improvements
     const headers = new Headers();
     headers.set('Content-Type', document.mimeType || 'application/octet-stream');
-    headers.set('Content-Disposition', `attachment; filename="${document.name}"`);
+    headers.set('Content-Disposition', `attachment; filename="${safeFilename}"`);
     headers.set('Content-Length', fileBuffer.length.toString());
+
+    // Security headers
+    headers.set('X-Content-Type-Options', 'nosniff');
+    headers.set('X-Frame-Options', 'DENY');
+    headers.set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+    headers.set('Pragma', 'no-cache');
+    headers.set('Expires', '0');
 
     return new NextResponse(fileBuffer, {
       status: 200,
