@@ -4,8 +4,6 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
 import { Document } from '@/entities/Document';
 import { User } from '@/entities/User';
-import fs from 'fs/promises';
-import path from 'path';
 
 // GET /api/manager/documents/[id]/download - Download document
 export async function GET(
@@ -49,21 +47,36 @@ export async function GET(
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
 
-    // Check if file exists
-    try {
-      await fs.access(document.filePath);
-    } catch {
-      return NextResponse.json({ error: 'File not found on disk' }, { status: 404 });
+    // Check if document has data
+    if (!document.filePath) {
+      return NextResponse.json({ error: 'Document data not found' }, { status: 404 });
     }
 
-    // Read file
-    const fileBuffer = await fs.readFile(document.filePath);
+    let fileBuffer: Buffer;
+
+    // Determine if the filePath contains base64 data or plain text
+    const isTextFile = document.mimeType === 'text/plain' ||
+                      document.mimeType === 'text/csv' ||
+                      document.mimeType === 'application/json';
+
+    if (isTextFile) {
+      // For text files, filePath contains the actual text content
+      fileBuffer = Buffer.from(document.filePath, 'utf-8');
+    } else {
+      // For binary files (PDF, DOC), filePath contains base64-encoded data
+      try {
+        fileBuffer = Buffer.from(document.filePath, 'base64');
+      } catch (error) {
+        console.error('Error decoding base64 data:', error);
+        return NextResponse.json({ error: 'Invalid document data' }, { status: 500 });
+      }
+    }
 
     // Set appropriate headers
     const headers = new Headers();
     headers.set('Content-Type', document.mimeType || 'application/octet-stream');
     headers.set('Content-Disposition', `attachment; filename="${document.name}"`);
-    headers.set('Content-Length', document.size.toString());
+    headers.set('Content-Length', fileBuffer.length.toString());
 
     return new NextResponse(fileBuffer, {
       status: 200,
