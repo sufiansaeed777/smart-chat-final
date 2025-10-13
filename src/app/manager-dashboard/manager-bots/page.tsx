@@ -843,7 +843,8 @@ export default function BotsPage() {
     try {
       setTrainingBot(bot.id);
 
-      const response = await fetch('/api/n8n/train-bot', {
+      // Use direct OpenAI training endpoint (n8n is ONLY for RAG retrieval)
+      const response = await fetch('/api/manager/train-bot', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
