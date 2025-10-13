@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  CreditCard, 
-  Download, 
+import { useRouter } from 'next/navigation';
+import {
+  CreditCard,
+  Download,
   Calendar,
   TrendingUp,
   DollarSign,
@@ -14,10 +15,14 @@ import {
   AlertTriangle,
   Clock,
   FileText,
-  Plus
+  Plus,
+  Loader2
 } from 'lucide-react';
 
 const BillingPage: React.FC = () => {
+  const router = useRouter();
+  const [isExporting, setIsExporting] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState(false);
   const [currentPlan] = useState({
     name: 'Professional',
     price: 99,
@@ -81,6 +86,81 @@ const BillingPage: React.FC = () => {
     }
   };
 
+  // Handle export billing data
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+
+      const response = await fetch('/api/billing/export', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `billing-export-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        console.error('Failed to export billing data');
+        alert('Failed to export billing data. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error exporting:', error);
+      alert('An error occurred while exporting. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Handle upgrade plan
+  const handleUpgrade = async () => {
+    try {
+      setIsUpgrading(true);
+
+      const enterprisePlan = {
+        planType: 'enterprise',
+        amount: 299,
+        currency: 'USD',
+        description: 'Enterprise Plan - Unlimited Users & Bots',
+      };
+
+      const response = await fetch('/api/payment/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(enterprisePlan),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          console.error('No checkout URL received');
+          alert('Failed to create checkout session. Please try again.');
+        }
+      } else {
+        const error = await response.json();
+        console.error('Failed to create checkout session:', error);
+        alert('Failed to upgrade plan. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error upgrading plan:', error);
+      alert('An error occurred while upgrading. Please try again.');
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       {/* Header */}
@@ -90,13 +170,29 @@ const BillingPage: React.FC = () => {
           <p className="text-gray-600 mt-2">Manage your subscription and view usage statistics</p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
-            <Download className="w-5 h-5" />
-            <span>Export</span>
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isExporting ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Download className="w-5 h-5" />
+            )}
+            <span>{isExporting ? 'Exporting...' : 'Export'}</span>
           </button>
-          <button className="flex items-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors shadow-lg">
-            <Plus className="w-5 h-5" />
-            <span>Upgrade Plan</span>
+          <button
+            onClick={handleUpgrade}
+            disabled={isUpgrading}
+            className="flex items-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isUpgrading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Plus className="w-5 h-5" />
+            )}
+            <span>{isUpgrading ? 'Processing...' : 'Upgrade Plan'}</span>
           </button>
         </div>
       </div>
