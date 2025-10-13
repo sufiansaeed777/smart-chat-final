@@ -100,9 +100,18 @@ export async function POST(request: NextRequest) {
           documentContent = document.content;
           console.log(`✅ Retrieved ${document.name} from database (${documentContent.length} characters)`);
         } else if (isBinaryPlaceholder && document.filePath) {
-          // For binary files, use the base64-encoded content from filePath
-          documentContent = document.filePath;
-          console.log(`✅ Retrieved ${document.name} as base64 from filePath (${documentContent.length} characters)`);
+          // For binary files, extract text from base64-encoded content
+          try {
+            const { processDocument } = await import('@/utils/documentProcessor');
+            const buffer = Buffer.from(document.filePath, 'base64');
+            const processed = await processDocument(buffer, document.mimeType || 'application/pdf', document.name);
+            documentContent = processed.content;
+            console.log(`✅ Extracted text from ${document.name} (${documentContent.length} characters)`);
+          } catch (extractError) {
+            // Fallback: send base64 if extraction fails
+            documentContent = document.filePath;
+            console.warn(`⚠️ Failed to extract text from ${document.name}, sending base64`);
+          }
         } else if (document.url) {
           // Fallback: fetch from URL if available
           try {

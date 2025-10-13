@@ -161,18 +161,35 @@ export async function POST(request: NextRequest) {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
 
-      // Extract content for text-based files
+      // Process document to extract text
       let content = '';
       let fileData = '';
 
-      // For text files, store the actual content
-      if (file.type === 'text/plain' || file.type === 'text/csv' || file.type === 'application/json') {
-        content = buffer.toString('utf-8');
-        fileData = content; // Store text directly
-      } else {
-        // For binary files (PDF, DOC), store as base64
-        fileData = buffer.toString('base64');
-        content = `Binary file: ${file.name}`; // Placeholder content for search
+      try {
+        // Import document processor
+        const { processDocument } = await import('@/utils/documentProcessor');
+
+        // Process the document
+        const processed = await processDocument(buffer, file.type, file.name);
+        content = processed.content;
+
+        // For text files, store content directly
+        if (file.type === 'text/plain' || file.type === 'text/csv' || file.type === 'application/json') {
+          fileData = content; // Store text directly
+        } else {
+          // For binary files, still store as base64 for now (will migrate to S3 later)
+          fileData = buffer.toString('base64');
+        }
+      } catch (processError) {
+        console.warn('Failed to process document, storing raw data:', processError);
+        // Fallback to original behavior
+        if (file.type === 'text/plain' || file.type === 'text/csv' || file.type === 'application/json') {
+          content = buffer.toString('utf-8');
+          fileData = content;
+        } else {
+          fileData = buffer.toString('base64');
+          content = `Binary file: ${file.name}`;
+        }
       }
 
       // Create document record - store file data in database
