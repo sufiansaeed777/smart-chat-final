@@ -105,25 +105,22 @@ async function createEmbeddings(
 
       const embedding = response.data[0].embedding;
 
-      // Store in pgvector database
+      // Store in pgvector database (matching actual table schema)
       await embeddingRepository.query(
         `
         INSERT INTO document_embeddings
-        (id, bot_id, document_id, chunk_text, embedding, chunk_index, metadata, created_at)
+        (id, bot_id, document_id, document_name, chunk_text, chunk_index, total_chunks, embedding, created_at)
         VALUES
-        (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW())
+        (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW())
         `,
         [
           botId,
           documentId,
+          documentName,
           chunk,
-          JSON.stringify(embedding), // pgvector will handle conversion
           i,
-          JSON.stringify({
-            documentName,
-            chunkNumber: i + 1,
-            totalChunks: chunks.length,
-          }),
+          chunks.length,
+          JSON.stringify(embedding), // pgvector will handle conversion
         ]
       );
 
