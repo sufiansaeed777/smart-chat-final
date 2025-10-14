@@ -30,12 +30,12 @@ export async function GET(request: NextRequest) {
     const invoiceRepository = AppDataSource.getRepository("invoices");
 
     const subscriptions = await subscriptionRepository.find({
-      where: { userId: user.id },
+      where: { managerId: user.id },
       order: { createdAt: 'DESC' }
     });
 
     const invoices = await invoiceRepository.find({
-      where: { userId: user.id },
+      where: { managerId: user.id },
       order: { createdAt: 'DESC' }
     });
 

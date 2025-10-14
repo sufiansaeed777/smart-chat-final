@@ -47,9 +47,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create Stripe checkout session
+    // Create Stripe checkout session with proper payment method configuration
     const checkoutSession = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'klarna', 'afterpay_clearpay', 'alipay', 'wechat_pay', 'link'],
+      // Remove WeChat Pay from the payment methods as it requires special configuration
+      payment_method_types: ['card', 'klarna', 'afterpay_clearpay', 'alipay', 'link'],
       line_items: [
         {
           price_data: {
