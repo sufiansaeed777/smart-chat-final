@@ -90,6 +90,15 @@ async function createEmbeddings(
   }
 
   const embeddingRepository = AppDataSource.getRepository('document_embeddings');
+
+  // Delete existing embeddings for this bot+document to prevent duplicates
+  console.log(`🗑️  Removing old embeddings for document ${documentName}...`);
+  const deleteResult = await embeddingRepository.query(
+    `DELETE FROM document_embeddings WHERE bot_id = $1 AND document_id = $2`,
+    [botId, documentId]
+  );
+  console.log(`✅ Deleted ${deleteResult[1] || 0} old embeddings`);
+
   let embeddingsCreated = 0;
 
   for (let i = 0; i < chunks.length; i++) {
