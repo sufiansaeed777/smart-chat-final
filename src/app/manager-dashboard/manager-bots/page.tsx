@@ -126,6 +126,11 @@ export default function BotsPage() {
   const [selectedBotForKnowledge, setSelectedBotForKnowledge] = useState<{id: string; name: string} | null>(null);
   const [botKnowledgeIds, setBotKnowledgeIds] = useState<string[]>([]);
   const [trainingBot, setTrainingBot] = useState<string | null>(null); // Bot ID currently being trained
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    botId: string;
+    botName: string;
+  } | null>(null);
   const [botSettings, setBotSettings] = useState({
     id: "",
     name: "",
@@ -901,14 +906,25 @@ export default function BotsPage() {
     }
   };
 
-  const handleDeleteBot = async (bot: {id: string; name: string}) => {
+  const handleDeleteBot = (bot: {id: string; name: string}) => {
+    // Open confirmation dialog instead of directly deleting
+    setDeleteConfirm({
+      isOpen: true,
+      botId: bot.id,
+      botName: bot.name
+    });
+  };
+
+  const confirmDeleteBot = async () => {
+    if (!deleteConfirm) return;
+
     try {
       const response = await fetch(`/api/manager/delete-bot`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ botId: bot.id }),
+        body: JSON.stringify({ botId: deleteConfirm.botId }),
       });
 
       if (response.ok) {
@@ -918,12 +934,15 @@ export default function BotsPage() {
           const refreshData = await refreshResponse.json();
           setBots(refreshData.bots || []);
         }
+        alert(`✅ Bot "${deleteConfirm.botName}" deleted successfully`);
       } else {
         const error = await response.json();
-        console.error('Failed to delete bot:', error.message || 'Unknown error');
+        alert(`❌ Failed to delete bot: ${error.message || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error deleting bot:', error);
+      alert('❌ Network error. Please try again.');
+    } finally {
+      setDeleteConfirm(null);
     }
   };
 
@@ -1495,8 +1514,11 @@ export default function BotsPage() {
 
       {/* Edit Bot Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg mx-4 shadow-2xl">
+        <div
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={(e) => e.target === e.currentTarget && setShowEditModal(false)}
+        >
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Edit Bot</h2>
               <button
@@ -2065,7 +2087,7 @@ export default function BotsPage() {
 
       {/* User Assignment Modal */}
       {showAssignModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -2557,6 +2579,22 @@ export default function BotsPage() {
             </div>
           </div>
         </div>
+      )}
+    </div>
+  );
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm && (
+        <ConfirmDialog
+          isOpen={deleteConfirm.isOpen}
+          onClose={() => setDeleteConfirm(null)}
+          onConfirm={confirmDeleteBot}
+          title="Delete Bot?"
+          message={`Are you sure you want to delete "${deleteConfirm.botName}"? This action cannot be undone. All bot data, conversations, and assignments will be permanently deleted.`}
+          confirmText="Delete Bot"
+          cancelText="Cancel"
+          variant="danger"
+        />
       )}
     </div>
   );
