@@ -59,84 +59,46 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
   const [currentHistoryPage, setCurrentHistoryPage] = useState(1);
   const historyPerPage = 4;
 
-  // Mock data - would be fetched from API in production
-  const mockIssue: Issue = {
-    id: params.id,
-    type: 'technical',
-    userId: 'user2',
-    userEmail: 'mike.chen@company.com',
-    userName: 'Mike Chen',
-    message: 'The chatbot is extremely slow and taking 30+ seconds to respond to messages: I\'ve been experiencing severe performance issues with your chatbot service over the past week. Response times have been consistently slow, often taking 30 seconds or more to get a reply, which is completely unacceptable for our business needs.',
-    status: 'in_progress',
-    priority: 'urgent',
-    assignedTo: 'John Smith',
-    notes: 'Customer reported slow response times. Checking server performance and response handling.',
-    response: 'Hi Mike, I\'m investigating the slow response times you\'re experiencing. This is a high priority issue and I\'ll get back to you within 2 hours with an update.',
-    createdAt: '2024-01-14T14:20:00Z',
-    updatedAt: '2024-01-14T16:45:00Z'
-  };
-
-  const mockCustomerHistory: CustomerHistoryIssue[] = [
-    {
-      id: '101',
-      type: 'billing',
-      message: 'Need help with upgrading my subscription plan',
-      status: 'resolved',
-      priority: 'medium',
-      createdAt: '2024-01-10T09:00:00Z',
-      updatedAt: '2024-01-10T10:30:00Z'
-    },
-    {
-      id: '102',
-      type: 'technical',
-      message: 'Unable to connect chatbot to my website',
-      status: 'resolved',
-      priority: 'high',
-      createdAt: '2024-01-05T14:15:00Z',
-      updatedAt: '2024-01-05T18:45:00Z'
-    },
-    {
-      id: '103',
-      type: 'feature_request',
-      message: 'Can we customize the chatbot colors?',
-      status: 'resolved',
-      priority: 'low',
-      createdAt: '2023-12-28T11:30:00Z',
-      updatedAt: '2023-12-29T09:15:00Z'
-    },
-    {
-      id: '104',
-      type: 'technical',
-      message: 'Getting error when trying to view analytics',
-      status: 'resolved',
-      priority: 'medium',
-      createdAt: '2023-12-20T16:00:00Z',
-      updatedAt: '2023-12-21T10:30:00Z'
-    },
-    {
-      id: '105',
-      type: 'billing',
-      message: 'Question about invoice charges',
-      status: 'resolved',
-      priority: 'medium',
-      createdAt: '2023-12-15T10:00:00Z',
-      updatedAt: '2023-12-15T14:20:00Z'
-    }
-  ];
-
   useEffect(() => {
-    // Simulate API fetch
     const fetchIssueDetails = async () => {
       try {
         setLoading(true);
-        // In production, this would fetch from: /api/manager/issues/${params.id}
-        setTimeout(() => {
-          setIssue(mockIssue);
-          setResponseText(mockIssue.response || '');
-          setNotesText(mockIssue.notes || '');
-          setCustomerHistory(mockCustomerHistory);
-          setLoading(false);
-        }, 500);
+
+        // Fetch the specific issue
+        const issueResponse = await fetch(`/api/manager/issues/${params.id}`);
+        if (!issueResponse.ok) {
+          throw new Error('Failed to fetch issue');
+        }
+        const issueData = await issueResponse.json();
+
+        if (issueData.success && issueData.issue) {
+          setIssue(issueData.issue);
+          setResponseText(issueData.issue.response || '');
+          setNotesText(issueData.issue.notes || '');
+
+          // Fetch all issues to get customer history
+          const allIssuesResponse = await fetch('/api/manager/issues');
+          if (allIssuesResponse.ok) {
+            const allIssuesData = await allIssuesResponse.json();
+
+            // Filter issues by the same user email
+            if (allIssuesData.issues) {
+              const history = allIssuesData.issues
+                .filter((i: Issue) =>
+                  i.userEmail === issueData.issue.userEmail &&
+                  i.id !== issueData.issue.id
+                )
+                .sort((a: Issue, b: Issue) =>
+                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                );
+              setCustomerHistory(history);
+            }
+          }
+        } else {
+          throw new Error('Issue not found');
+        }
+
+        setLoading(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load issue');
         setLoading(false);
@@ -197,23 +159,49 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
   // Update issue status
   const updateIssueStatus = async (newStatus: string) => {
     try {
-      // In production: await fetch(`/api/manager/issues/${params.id}`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) })
-      if (issue) {
-        setIssue({ ...issue, status: newStatus as any });
+      const response = await fetch(`/api/manager/issues/${params.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update issue status');
+      }
+
+      const data = await response.json();
+      if (data.success && data.issue) {
+        setIssue(data.issue);
+        showToast('Status updated successfully!', 'success');
       }
     } catch (err) {
       console.error('Failed to update issue status:', err);
+      showToast('Failed to update status', 'error');
     }
   };
 
   // Update issue details
   const updateIssueDetails = async () => {
     try {
-      // In production: await fetch(`/api/manager/issues/${params.id}`, { method: 'PATCH', body: JSON.stringify({ response: responseText, notes: notesText }) })
-      if (issue) {
-        setIssue({ ...issue, response: responseText, notes: notesText });
+      const response = await fetch(`/api/manager/issues/${params.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ response: responseText, notes: notesText }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update issue details');
       }
-      showToast('Changes saved successfully!', 'success');
+
+      const data = await response.json();
+      if (data.success && data.issue) {
+        setIssue(data.issue);
+        showToast('Changes saved successfully!', 'success');
+      }
     } catch (err) {
       console.error('Failed to update issue details:', err);
       showToast('Failed to save changes', 'error');
@@ -225,10 +213,25 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
     if (!issue) return;
 
     try {
-      // In production: This would fetch the user who created the issue and assign them
       const assignee = issue.userName; // Auto-assign to the person whose issue it is
-      setIssue({ ...issue, assignedTo: assignee });
-      showToast(`Issue automatically assigned to ${assignee}`, 'success');
+
+      const response = await fetch(`/api/manager/issues/${params.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ assignedTo: assignee }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to assign agent');
+      }
+
+      const data = await response.json();
+      if (data.success && data.issue) {
+        setIssue(data.issue);
+        showToast(`Issue automatically assigned to ${assignee}`, 'success');
+      }
     } catch (err) {
       console.error('Failed to assign agent:', err);
       showToast('Failed to assign agent', 'error');
