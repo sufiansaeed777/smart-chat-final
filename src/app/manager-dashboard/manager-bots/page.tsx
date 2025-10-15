@@ -28,6 +28,7 @@ import {
   FileImage,
   Upload
 } from 'lucide-react';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
