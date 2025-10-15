@@ -21,6 +21,7 @@ import { Card, CardContent } from '../components/ui/card';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import TestimonialsSection from '@/components/TestimonialsSection';
+import SmartCTAButton from '@/components/SmartCTAButton';
 
 const LandingPage = () => {
 
@@ -124,10 +125,10 @@ const LandingPage = () => {
             
             {/* CTA buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-              <Link href="/signup" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-semibold hover:shadow-xl transition-all duration-200 group flex items-center">
-                Get Started Free
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Link>
+              <SmartCTAButton
+                text="Get Started Free"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-semibold hover:shadow-xl transition-all duration-200"
+              />
               <Link href="/product" className="border border-gray-300 text-gray-700 px-8 py-4 rounded-2xl font-semibold hover:bg-gray-50 transition-all duration-200">
                 Watch Demo
               </Link>
@@ -233,7 +234,7 @@ const LandingPage = () => {
                 </span>
               </h2>
               <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                The AI Chatbot SaaS built for real businesses. With our n8n workflows and deep integrations, you can launch a powerful, reliable chatbot in minutes.
+                The AI Chatbot SaaS built for real businesses. With our advanced AI workflows and deep integrations, you can launch a powerful, reliable chatbot in minutes.
               </p>
             </div>
 
@@ -280,10 +281,10 @@ const LandingPage = () => {
                   Start your free trial today and see the difference—no credit card required.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                  <Link href="/signup" className="bg-white text-blue-600 px-8 py-3 rounded-2xl font-semibold hover:bg-gray-50 transition-all duration-200 group flex items-center">
-                    Launch My Chatbot
-                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </Link>
+                  <SmartCTAButton
+                    text="Launch My Chatbot"
+                    className="bg-white text-blue-600 px-8 py-3 rounded-2xl font-semibold hover:bg-gray-50 transition-all duration-200"
+                  />
                   <div className="flex items-center gap-2 text-sm opacity-90">
                     <CheckCircle className="w-4 h-4" />
                     <span>14-day free trial included</span>

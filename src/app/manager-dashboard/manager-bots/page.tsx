@@ -824,7 +824,7 @@ export default function BotsPage() {
         setBotKnowledgeIds([]);
 
         // Prompt user to train the bot after knowledge assignment
-        const shouldTrain = confirm(`✅ Knowledge assigned successfully!\n\n${botKnowledgeIds.length} document(s) assigned to "${selectedBotForKnowledge.name}".\n\nWould you like to train the bot now with n8n?`);
+        const shouldTrain = confirm(`✅ Knowledge assigned successfully!\n\n${botKnowledgeIds.length} document(s) assigned to "${selectedBotForKnowledge.name}".\n\nWould you like to train the bot now?`);
         if (shouldTrain) {
           await handleTrainBot({ id: selectedBotForKnowledge.id, name: selectedBotForKnowledge.name });
         }
@@ -843,7 +843,7 @@ export default function BotsPage() {
     try {
       setTrainingBot(bot.id);
 
-      // Use direct OpenAI training endpoint (n8n is ONLY for RAG retrieval)
+      // Use direct OpenAI training endpoint for bot training
       const response = await fetch('/api/manager/train-bot', {
         method: 'POST',
         headers: {
@@ -2410,7 +2410,7 @@ export default function BotsPage() {
                 disabled={trainingBot === openDropdown}
               >
                 <Bot className="w-4 h-4 mr-2" />
-                {trainingBot === openDropdown ? 'Training...' : 'Train Bot (n8n)'}
+                {trainingBot === openDropdown ? 'Training...' : 'Train Bot'}
               </button>
               <button
                 onClick={() => {
