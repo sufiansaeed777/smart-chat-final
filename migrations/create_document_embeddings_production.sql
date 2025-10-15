@@ -1,7 +1,7 @@
--- Migration: Create document_embeddings table for vector storage
+-- Migration: Create document_embeddings table for vector storage (Production Version)
 -- Description: Stores text chunks and their embeddings for RAG retrieval
--- Date: 2025-10-11
--- Updated: 2025-10-11 - Changed to text-embedding-3-large (3072 dimensions) per ROADMAP
+-- Note: Supabase pgvector has 2000 dimension limit for indexes, so vector index is omitted
+--       Similarity search still works, just without index optimization
 
 -- Enable pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS document_embeddings (
   chunk_text TEXT NOT NULL,
   chunk_index INTEGER NOT NULL,
   total_chunks INTEGER NOT NULL,
-  embedding vector(3072) NOT NULL, -- OpenAI text-embedding-3-large: 3072 dimensions (per ROADMAP)
+  embedding vector(3072) NOT NULL, -- OpenAI text-embedding-3-large: 3072 dimensions
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 
   -- Foreign keys
@@ -23,16 +23,13 @@ CREATE TABLE IF NOT EXISTS document_embeddings (
   CONSTRAINT fk_document FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE
 );
 
--- Create indexes for performance
+-- Create indexes for performance (regular B-tree indexes)
 CREATE INDEX IF NOT EXISTS idx_embeddings_bot_id ON document_embeddings(bot_id);
 CREATE INDEX IF NOT EXISTS idx_embeddings_document_id ON document_embeddings(document_id);
 CREATE INDEX IF NOT EXISTS idx_embeddings_created_at ON document_embeddings(created_at);
 
--- Create vector similarity search index (HNSW for high-dimensional vectors)
--- Note: HNSW supports high dimensions (3072) unlike IVFFlat (max 2000)
-CREATE INDEX IF NOT EXISTS idx_embeddings_vector ON document_embeddings
-USING hnsw (embedding vector_cosine_ops)
-WITH (m = 16, ef_construction = 64);
+-- NOTE: Vector index omitted due to Supabase 2000 dimension limit
+-- Similarity search will work via sequential scan (acceptable for moderate data volumes)
 
 -- Create function for vector similarity search
 CREATE OR REPLACE FUNCTION match_document_embeddings(
@@ -72,39 +69,17 @@ END;
 $$;
 
 -- Add comments
-COMMENT ON TABLE document_embeddings IS 'Stores document chunks and their vector embeddings for RAG retrieval';
+COMMENT ON TABLE document_embeddings IS 'Stores document chunks and their embeddings for RAG retrieval';
 COMMENT ON COLUMN document_embeddings.embedding IS 'Vector embedding (3072 dimensions from OpenAI text-embedding-3-large)';
 COMMENT ON FUNCTION match_document_embeddings IS 'Searches for similar document chunks using cosine similarity';
 
--- Grant permissions (adjust role name as needed)
+-- Grant permissions
 GRANT SELECT, INSERT, UPDATE, DELETE ON document_embeddings TO authenticated;
 GRANT EXECUTE ON FUNCTION match_document_embeddings TO authenticated;
 
--- Example queries:
-
--- 1. Get all embeddings for a bot
--- SELECT * FROM document_embeddings WHERE bot_id = 'your-bot-id';
-
--- 2. Search for similar chunks
--- SELECT * FROM match_document_embeddings(
---   '[0.1, 0.2, ...]'::vector,  -- query embedding
---   0.7,                          -- similarity threshold
---   5,                            -- number of results
---   'your-bot-id'                 -- filter by bot
--- );
-
--- 3. Count embeddings per bot
--- SELECT bot_id, COUNT(*) as embedding_count
--- FROM document_embeddings
--- GROUP BY bot_id;
-
--- 4. Delete all embeddings for a bot
--- DELETE FROM document_embeddings WHERE bot_id = 'your-bot-id';
-
--- Rollback (uncomment to rollback)
--- DROP FUNCTION IF EXISTS match_document_embeddings;
--- DROP INDEX IF EXISTS idx_embeddings_vector;
--- DROP INDEX IF EXISTS idx_embeddings_created_at;
--- DROP INDEX IF EXISTS idx_embeddings_document_id;
--- DROP INDEX IF EXISTS idx_embeddings_bot_id;
--- DROP TABLE IF EXISTS document_embeddings;
+-- Performance Notes:
+-- Without vector index, search performance depends on:
+-- 1. bot_id index filters results first (fast)
+-- 2. Sequential scan for similarity (acceptable for <100k embeddings per bot)
+-- 3. For large datasets (>100k embeddings), consider reducing dimensions to 1536
+--    by using text-embedding-3-small model instead
