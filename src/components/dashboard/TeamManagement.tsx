@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Users, 
+import { useToast } from '@/components/ui/toast';
+import {
+  Users,
   UserPlus,
   Mail,
   Phone,
@@ -27,6 +28,7 @@ import { useSearchParams } from 'next/navigation';
 
 const TeamManagement = () => {
   const searchParams = useSearchParams();
+  const { showToast } = useToast();
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -291,11 +293,11 @@ const TeamManagement = () => {
       } else {
         const errorData = await response.json();
         console.error('Failed to send invitation:', errorData.error || 'Unknown error');
-        alert(errorData.error || 'Failed to send invitation');
+        showToast(errorData.error || 'Failed to send invitation', 'error');
       }
     } catch (error) {
       console.error('Error sending invitation:', error);
-      alert('Network error. Please try again.');
+      showToast('Network error. Please try again.', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -509,10 +511,10 @@ const TeamManagement = () => {
                               fetchTeamMembers();
                             } else {
                               const errorData = await response.json();
-                              alert(`Failed to toggle user status: ${errorData.error}`);
+                              showToast(`Failed to toggle user status: ${errorData.error}`, 'error');
                             }
                           } catch (error) {
-                            alert('Network error. Please try again.');
+                            showToast('Network error. Please try again.', 'error');
                           } finally {
                             setTogglingUser(null);
                           }
@@ -909,4 +911,14 @@ const TeamManagement = () => {
   );
 };
 
-export default TeamManagement;
+import { ToastProvider } from '@/components/ui/toast';
+
+const TeamManagementWithToast = () => {
+  return (
+    <ToastProvider>
+      <TeamManagement />
+    </ToastProvider>
+  );
+};
+
+export default TeamManagementWithToast;

@@ -117,6 +117,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
     if (pathname.includes('/conversations')) return 'conversations';
     if (pathname.includes('/human-handoff')) return 'human-handoff';
     if (pathname.includes('/analytics')) return 'analytics';
+    if (pathname.includes('/issues')) return 'issues';
     if (pathname.includes('/billing')) return 'billing';
     if (pathname.includes('/bots')) return 'bots';
     if (pathname.includes('/chatbot-analytics')) return 'chatbot-analytics';
@@ -138,6 +139,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
     if (pathname.includes('/human-handoff')) return 'Human Handoff';
     if (pathname.includes('/analytics')) return 'Analytics';
     if (pathname.includes('/chatbot-analytics')) return 'Chatbot Analytics';
+    if (pathname.includes('/issues')) return 'Issues';
     if (pathname.includes('/billing')) return 'Billing';
     if (pathname.includes('/bots')) return 'Bots';
     if (pathname.includes('/settings')) return 'Settings';

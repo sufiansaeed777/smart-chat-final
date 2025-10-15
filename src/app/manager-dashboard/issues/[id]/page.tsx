@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/toast';
 import {
   AlertTriangle,
   Clock,
@@ -48,6 +49,7 @@ interface CustomerHistoryIssue {
 
 const IssueDetailPage = ({ params }: { params: { id: string } }) => {
   const router = useRouter();
+  const { showToast } = useToast();
   const [issue, setIssue] = useState<Issue | null>(null);
   const [customerHistory, setCustomerHistory] = useState<CustomerHistoryIssue[]>([]);
   const [loading, setLoading] = useState(true);
@@ -211,10 +213,10 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
       if (issue) {
         setIssue({ ...issue, response: responseText, notes: notesText });
       }
-      alert('Changes saved successfully!');
+      showToast('Changes saved successfully!', 'success');
     } catch (err) {
       console.error('Failed to update issue details:', err);
-      alert('Failed to save changes');
+      showToast('Failed to save changes', 'error');
     }
   };
 
@@ -226,9 +228,10 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
       // In production: This would fetch the user who created the issue and assign them
       const assignee = issue.userName; // Auto-assign to the person whose issue it is
       setIssue({ ...issue, assignedTo: assignee });
-      alert(`Issue automatically assigned to ${assignee}`);
+      showToast(`Issue automatically assigned to ${assignee}`, 'success');
     } catch (err) {
       console.error('Failed to assign agent:', err);
+      showToast('Failed to assign agent', 'error');
     }
   };
 
@@ -508,10 +511,14 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
   );
 };
 
+import { ToastProvider } from '@/components/ui/toast';
+
 export default function IssueDetailPageWrapper({ params }: { params: { id: string } }) {
   return (
     <RoleGuard allowedRoles={['manager']}>
-      <IssueDetailPage params={params} />
+      <ToastProvider>
+        <IssueDetailPage params={params} />
+      </ToastProvider>
     </RoleGuard>
   );
 }
