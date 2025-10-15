@@ -2580,8 +2580,6 @@ export default function BotsPage() {
           </div>
         </div>
       )}
-    </div>
-  );
 
       {/* Delete Confirmation Dialog */}
       {deleteConfirm && (
