@@ -129,9 +129,18 @@ const LandingPage = () => {
                 text="Get Started Free"
                 className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-semibold hover:shadow-xl transition-all duration-200"
               />
-              <Link href="/product" className="border border-gray-300 text-gray-700 px-8 py-4 rounded-2xl font-semibold hover:bg-gray-50 transition-all duration-200">
+              <button
+                onClick={() => {
+                  // Trigger chat widget
+                  const widget = document.querySelector('[id*="chat"]') as HTMLElement;
+                  if (widget) {
+                    widget.click();
+                  }
+                }}
+                className="border border-gray-300 text-gray-700 px-8 py-4 rounded-2xl font-semibold hover:bg-gray-50 transition-all duration-200"
+              >
                 Watch Demo
-              </Link>
+              </button>
             </div>
             
             {/* Trust indicators */}
@@ -315,9 +324,9 @@ const LandingPage = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <button 
+              <button
                 className="group bg-white text-slate-900 px-8 py-4 rounded-2xl font-bold text-lg hover:bg-blue-50 transition-all duration-300 hover:scale-105 shadow-xl hover:shadow-2xl flex items-center gap-3"
-                onClick={() => window.location.href = '/contact'}
+                onClick={() => window.location.href = '/support'}
               >
                 <svg className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />

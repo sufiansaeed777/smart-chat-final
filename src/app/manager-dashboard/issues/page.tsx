@@ -1,27 +1,22 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  AlertTriangle, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  User, 
-  Mail, 
-  Calendar,
-  Filter,
-  Search,
-  MoreVertical,
+import {
+  AlertTriangle,
+  Clock,
+  CheckCircle,
+  XCircle,
+  User,
   MessageSquare,
   Eye,
-  Edit,
-  MessageCircle,
-  ArrowRight,
-  Send
+  Search,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import RoleGuard from '@/components/auth/RoleGuard';
+import { useRouter } from 'next/navigation';
 
 interface Issue {
   id: string;
@@ -40,6 +35,9 @@ interface Issue {
 }
 
 const ManagerIssuesPage = () => {
+  const router = useRouter();
+  const [currentPage, setCurrentPage] = useState(1);
+  const issuesPerPage = 10;
   const [issues, setIssues] = useState<Issue[]>([
     {
       id: '1',
@@ -47,7 +45,7 @@ const ManagerIssuesPage = () => {
       userId: 'user1',
       userEmail: 'sarah.johnson@university.edu',
       userName: 'Sarah Johnson',
-      message: 'Is there a student discount available for your chatbot service?: I\'m a university student working on my research project and I\'m very interested in using your chatbot service to help with data collection and user interactions. I\'ve been exploring your pricing page but I don\'t see any special pricing options for students or educational institutions. This would be incredibly helpful for staying within my research budget, as I\'m funding this project myself. I\'d love to know if you offer any educational discounts or if there\'s a way to get a reduced rate for academic use.',
+      message: 'Is there a student discount available for your chatbot service?: I\'m a university student working on my research project and I\'m very interested in using your chatbot service to help with data collection and user interactions.',
       status: 'pending',
       priority: 'medium',
       assignedTo: undefined,
@@ -62,12 +60,12 @@ const ManagerIssuesPage = () => {
       userId: 'user2',
       userEmail: 'mike.chen@company.com',
       userName: 'Mike Chen',
-      message: 'The chatbot is extremely slow and taking 30+ seconds to respond to messages: I\'ve been experiencing severe performance issues with your chatbot service over the past week. Response times have been consistently slow, often taking 30 seconds or more to get a reply, which is completely unacceptable for our business needs. I\'ve tried refreshing the page multiple times, clearing my browser cache, and even restarting my browser, but the problem persists across different devices and browsers. This is significantly impacting our team\'s productivity and customer satisfaction, and we\'re considering switching to a competitor if this isn\'t resolved quickly.',
+      message: 'The chatbot is extremely slow and taking 30+ seconds to respond to messages: I\'ve been experiencing severe performance issues with your chatbot service over the past week.',
       status: 'in_progress',
       priority: 'urgent',
       assignedTo: 'John Smith',
       notes: 'Customer reported slow response times. Checking server performance and response handling.',
-      response: 'Hi Mike, I\'m investigating the slow response times you\'re experiencing. This is a high priority issue and I\'ll get back to you within 2 hours with an update.',
+      response: 'Hi Mike, I\'m investigating the slow response times you\'re experiencing.',
       createdAt: '2024-01-14T14:20:00Z',
       updatedAt: '2024-01-14T16:45:00Z'
     },
@@ -77,7 +75,7 @@ const ManagerIssuesPage = () => {
       userId: 'user3',
       userEmail: 'emily.r@startup.io',
       userName: 'Emily Rodriguez',
-      message: 'Can you add meeting scheduling functionality to the chatbot?: I absolutely love using your chatbot for customer support, but it would be a game-changer if you could add the ability to schedule meetings directly through the bot. Currently, I have to switch between the chatbot and my calendar app constantly, which is very time-consuming and creates a fragmented user experience. This feature would save our team hours every week and make our workflow much more efficient. We could handle everything from initial inquiry to meeting scheduling in one seamless conversation, which would significantly improve our customer experience and reduce the chance of missed appointments.',
+      message: 'Can you add meeting scheduling functionality to the chatbot?: I absolutely love using your chatbot for customer support, but it would be a game-changer.',
       status: 'pending',
       priority: 'medium',
       assignedTo: undefined,
@@ -92,12 +90,12 @@ const ManagerIssuesPage = () => {
       userId: 'user4',
       userEmail: 'david.kim@techcorp.com',
       userName: 'David Kim',
-      message: 'Unable to log into my account through the chatbot despite correct credentials: I\'m having a persistent login issue with your chatbot service. Even though I can successfully log into my account through the web interface using the same credentials, the chatbot keeps returning "invalid credentials" errors. I\'ve already tried resetting my password twice, clearing my browser cache, and using different browsers, but the problem persists. This is preventing me from accessing my account settings, support history, and other important features through the chatbot. I need this resolved urgently as I rely on the chatbot for daily operations.',
+      message: 'Unable to log into my account through the chatbot despite correct credentials: I\'m having a persistent login issue with your chatbot service.',
       status: 'resolved',
       priority: 'high',
       assignedTo: 'Lisa Wang',
       notes: 'Reset user password and cleared session cache. Issue resolved.',
-      response: 'Hi David, I\'ve reset your password and cleared your session cache. You should now be able to log in through the chatbot. Please try again and let me know if you still have issues.',
+      response: 'Hi David, I\'ve reset your password and cleared your session cache.',
       createdAt: '2024-01-12T16:30:00Z',
       updatedAt: '2024-01-12T18:20:00Z'
     },
@@ -107,7 +105,7 @@ const ManagerIssuesPage = () => {
       userId: 'user5',
       userEmail: 'alex.t@business.com',
       userName: 'Alex Thompson',
-      message: 'Export feature is completely broken and downloading empty files: I urgently need to export my conversation history for compliance and audit purposes, but the export feature is completely non-functional. Every time I attempt to download the file, it either shows an error message or downloads an empty file with no data. I\'ve tried multiple browsers, different file formats (CSV, PDF, JSON), and various date ranges, but nothing works. This is extremely urgent as I have a compliance audit scheduled for next week and I need these conversation records to demonstrate our customer interactions. Without this data, we could face serious regulatory issues.',
+      message: 'Export feature is completely broken and downloading empty files: I urgently need to export my conversation history for compliance and audit purposes.',
       status: 'pending',
       priority: 'high',
       assignedTo: undefined,
@@ -122,7 +120,7 @@ const ManagerIssuesPage = () => {
       userId: 'user6',
       userEmail: 'jessica.m@enterprise.com',
       userName: 'Jessica Martinez',
-      message: 'I was double charged for my monthly subscription and need an immediate refund: I discovered that I was charged twice for my monthly subscription this month, which is completely unacceptable. I can clearly see two identical charges on my credit card statement for the same amount and date, but I only have one active subscription in my account. I\'ve already attached my bank statement showing both charges for your reference. This duplicate charge is affecting our monthly budget and cash flow, and I need this resolved immediately. Please process a full refund for the duplicate charge and ensure this billing error doesn\'t happen again.',
+      message: 'I was double charged for my monthly subscription and need an immediate refund: I discovered that I was charged twice for my monthly subscription this month.',
       status: 'pending',
       priority: 'urgent',
       assignedTo: undefined,
@@ -137,12 +135,12 @@ const ManagerIssuesPage = () => {
       userId: 'user7',
       userEmail: 'robert.w@agency.com',
       userName: 'Robert Wilson',
-      message: 'Mobile app has severe issues with message display and response delays: The chatbot is completely unusable on my mobile app due to multiple critical issues. Messages are getting cut off mid-sentence, responses are delayed by several minutes, and sometimes messages don\'t appear at all. I\'ve tried updating the app to the latest version, restarting my phone, and even reinstalling the app, but the problems persist across different devices and operating systems. This is extremely frustrating when I\'m traveling or working remotely and need quick support. The mobile experience is so poor that I\'m considering canceling my subscription if this isn\'t fixed soon.',
+      message: 'Mobile app has severe issues with message display and response delays: The chatbot is completely unusable on my mobile app due to multiple critical issues.',
       status: 'in_progress',
       priority: 'high',
       assignedTo: 'Sarah Lee',
       notes: 'Investigating mobile app integration issues. Testing on different devices and OS versions.',
-      response: 'Hi Robert, I\'m looking into the mobile app issues you\'re experiencing. This is a known issue we\'re working on and I\'ll update you soon with a fix.',
+      response: 'Hi Robert, I\'m looking into the mobile app issues you\'re experiencing.',
       createdAt: '2024-01-09T15:20:00Z',
       updatedAt: '2024-01-09T17:10:00Z'
     }
@@ -152,9 +150,6 @@ const ManagerIssuesPage = () => {
   const [filter, setFilter] = useState<'all' | 'pending' | 'in_progress' | 'resolved' | 'closed'>('all');
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'low' | 'medium' | 'high' | 'urgent'>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
-  const [responseText, setResponseText] = useState('');
-  const [notesText, setNotesText] = useState('');
 
   // Fetch issues from API
   useEffect(() => {
@@ -162,11 +157,11 @@ const ManagerIssuesPage = () => {
       try {
         setLoading(true);
         const response = await fetch('/api/manager/issues');
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch issues');
         }
-        
+
         const data = await response.json();
         setIssues(data.issues || []);
       } catch (err) {
@@ -183,33 +178,51 @@ const ManagerIssuesPage = () => {
   const filteredIssues = issues.filter(issue => {
     const matchesStatus = filter === 'all' || issue.status === filter;
     const matchesPriority = priorityFilter === 'all' || issue.priority === priorityFilter;
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       issue.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       issue.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
       issue.message.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     return matchesStatus && matchesPriority && matchesSearch;
   });
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredIssues.length / issuesPerPage);
+  const startIndex = (currentPage - 1) * issuesPerPage;
+  const endIndex = startIndex + issuesPerPage;
+  const paginatedIssues = filteredIssues.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, priorityFilter, searchTerm]);
+
+  // Calculate stats
+  const totalIssues = issues.length;
+  const pendingIssues = issues.filter(i => i.status === 'pending').length;
+  const activeIssues = issues.filter(i => i.status === 'in_progress').length;
+  const solvedIssues = issues.filter(i => i.status === 'resolved').length;
+  const unsolvedIssues = issues.filter(i => i.status !== 'resolved' && i.status !== 'closed').length;
 
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-amber-50 text-amber-700 border-amber-200 shadow-sm';
-      case 'in_progress': return 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm';
-      case 'resolved': return 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm';
-      case 'closed': return 'bg-slate-50 text-slate-700 border-slate-200 shadow-sm';
-      default: return 'bg-slate-50 text-slate-700 border-slate-200 shadow-sm';
+      case 'pending': return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'in_progress': return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'resolved': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'closed': return 'bg-slate-50 text-slate-700 border-slate-200';
+      default: return 'bg-slate-50 text-slate-700 border-slate-200';
     }
   };
 
   // Get priority color
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'urgent': return 'bg-red-50 text-red-700 border-red-200 shadow-sm';
-      case 'high': return 'bg-orange-50 text-orange-700 border-orange-200 shadow-sm';
-      case 'medium': return 'bg-yellow-50 text-yellow-700 border-yellow-200 shadow-sm';
-      case 'low': return 'bg-green-50 text-green-700 border-green-200 shadow-sm';
-      default: return 'bg-slate-50 text-slate-700 border-slate-200 shadow-sm';
+      case 'urgent': return 'bg-red-50 text-red-700 border-red-200';
+      case 'high': return 'bg-orange-50 text-orange-700 border-orange-200';
+      case 'medium': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case 'low': return 'bg-green-50 text-green-700 border-green-200';
+      default: return 'bg-slate-50 text-slate-700 border-slate-200';
     }
   };
 
@@ -223,83 +236,9 @@ const ManagerIssuesPage = () => {
     }
   };
 
-  // Get type label
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'human_request': return 'Human Request';
-      case 'issue_report': return 'Issue Report';
-      case 'end_chat': return 'End Chat';
-      default: return 'Unknown';
-    }
-  };
-
-  // Update issue status
-  const updateIssueStatus = async (issueId: string, newStatus: string) => {
-    try {
-      const response = await fetch(`/api/manager/issues/${issueId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update issue status');
-      }
-
-      // Update local state
-      setIssues(prevIssues =>
-        prevIssues.map(issue =>
-          issue.id === issueId ? { ...issue, status: newStatus as any } : issue
-        )
-      );
-
-      // Update selected issue if it's the same
-      if (selectedIssue && selectedIssue.id === issueId) {
-        setSelectedIssue({ ...selectedIssue, status: newStatus as any });
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update issue');
-    }
-  };
-
-  // Update issue with response and notes
-  const updateIssueDetails = async (issueId: string, response?: string, notes?: string) => {
-    try {
-      const response_data = await fetch(`/api/manager/issues/${issueId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ response, notes }),
-      });
-
-      if (!response_data.ok) {
-        throw new Error('Failed to update issue details');
-      }
-
-      // Update local state
-      setIssues(prevIssues =>
-        prevIssues.map(issue =>
-          issue.id === issueId ? { ...issue, response, notes } : issue
-        )
-      );
-
-      // Update selected issue if it's the same
-      if (selectedIssue && selectedIssue.id === issueId) {
-        setSelectedIssue({ ...selectedIssue, response, notes });
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update issue details');
-    }
-  };
-
-  // Handle issue selection
-  const handleSelectIssue = (issue: Issue) => {
-    setSelectedIssue(issue);
-    setResponseText(issue.response || '');
-    setNotesText(issue.notes || '');
+  // Handle issue click - navigate to detail page
+  const handleIssueClick = (issueId: string) => {
+    router.push(`/manager-dashboard/issues/${issueId}`);
   };
 
   if (loading) {
@@ -316,8 +255,8 @@ const ManagerIssuesPage = () => {
         <AlertTriangle className="mx-auto h-12 w-12 text-red-500 mb-4" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Issues</h3>
         <p className="text-gray-500">{error}</p>
-        <Button 
-          onClick={() => window.location.reload()} 
+        <Button
+          onClick={() => window.location.reload()}
           className="mt-4"
         >
           Try Again
@@ -327,93 +266,138 @@ const ManagerIssuesPage = () => {
   }
 
   return (
-    <div className="h-full flex bg-slate-100 p-6 gap-6">
-      {/* Left Sidebar - Issues List */}
-      <div className="w-1/3 bg-white rounded-xl shadow-lg flex flex-col">
-        {/* Header */}
-        <div className="p-6 border-b border-slate-200">
-          <div className="flex items-center space-x-3 mb-2">
-            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-slate-600" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">Active Issues</h1>
-              <p className="text-sm text-slate-600">Monitor and resolve customer issues</p>
-            </div>
-          </div>
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Issues Management</h1>
+        <p className="text-sm text-gray-600 mt-1">Monitor and resolve customer issues</p>
+      </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mt-4">
-            <div className="text-center bg-slate-50 rounded-lg p-3">
-              <div className="text-2xl font-bold text-slate-900">{issues.length}</div>
-              <div className="text-xs text-slate-600">Total</div>
-            </div>
-            <div className="text-center bg-slate-50 rounded-lg p-3">
-              <div className="text-2xl font-bold text-orange-600">
-                {issues.filter(i => i.status === 'pending').length}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-5 gap-4">
+        <Card className="bg-white rounded-xl shadow-sm border-0">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{totalIssues}</p>
               </div>
-              <div className="text-xs text-slate-600">Pending</div>
-            </div>
-            <div className="text-center bg-slate-50 rounded-lg p-3">
-              <div className="text-2xl font-bold text-green-600">
-                {issues.filter(i => i.status === 'in_progress').length}
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <MessageSquare className="w-6 h-6 text-blue-600" />
               </div>
-              <div className="text-xs text-slate-600">Active</div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Filters */}
-        <div className="p-6 border-b border-slate-200">
-          <div className="space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+        <Card className="bg-white rounded-xl shadow-sm border-0">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Pending</p>
+                <p className="text-3xl font-bold text-orange-600 mt-1">{pendingIssues}</p>
+              </div>
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <Clock className="w-6 h-6 text-orange-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white rounded-xl shadow-sm border-0">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Active</p>
+                <p className="text-3xl font-bold text-blue-600 mt-1">{activeIssues}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white rounded-xl shadow-sm border-0">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Solved</p>
+                <p className="text-3xl font-bold text-green-600 mt-1">{solvedIssues}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white rounded-xl shadow-sm border-0">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Unsolved</p>
+                <p className="text-3xl font-bold text-red-600 mt-1">{unsolvedIssues}</p>
+              </div>
+              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                <XCircle className="w-6 h-6 text-red-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card className="bg-white rounded-xl shadow-sm border-0">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search issues..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#5A5BD8] focus:border-[#5A5BD8] text-sm bg-white text-slate-900 placeholder-slate-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A5BD8] focus:border-[#5A5BD8] text-sm bg-white text-gray-900 placeholder-gray-500"
               />
             </div>
-            
-            <div className="flex gap-2">
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value as any)}
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#5A5BD8] focus:border-[#5A5BD8] text-sm bg-white text-slate-900"
-              >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="in_progress">In Progress</option>
-                <option value="resolved">Resolved</option>
-                <option value="closed">Closed</option>
-              </select>
 
-              <select
-                value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value as any)}
-                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#5A5BD8] focus:border-[#5A5BD8] text-sm bg-white text-slate-900"
-              >
-                <option value="all">All Priority</option>
-                <option value="urgent">Urgent</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-            </div>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value as any)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A5BD8] focus:border-[#5A5BD8] text-sm bg-white text-gray-900"
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="closed">Closed</option>
+            </select>
+
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value as any)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A5BD8] focus:border-[#5A5BD8] text-sm bg-white text-gray-900"
+            >
+              <option value="all">All Priority</option>
+              <option value="urgent">Urgent</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Issues List */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {filteredIssues.length === 0 ? (
-            <div className="p-8 text-center">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle className="w-8 h-8 text-slate-400" />
+      {/* Issues Table */}
+      <Card className="bg-white rounded-xl shadow-sm border-0">
+        <CardContent className="p-0">
+          {paginatedIssues.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-8 h-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">No issues found</h3>
-              <p className="text-slate-600 text-sm">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No issues found</h3>
+              <p className="text-gray-600 text-sm">
                 {searchTerm || filter !== 'all' || priorityFilter !== 'all'
                   ? 'No issues match your current filters.'
                   : 'No customer issues have been reported yet.'
@@ -421,215 +405,133 @@ const ManagerIssuesPage = () => {
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {filteredIssues.map((issue) => (
-                <div
-                  key={issue.id}
-                  className={`rounded-lg border transition-all duration-200 hover:shadow-md ${
-                    selectedIssue?.id === issue.id 
-                      ? 'bg-[#5A5BD8]/10 border-[#5A5BD8] shadow-md' 
-                      : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
-                  }`}
-                >
-                  {/* Header */}
-                  <div 
-                    className="p-3 cursor-pointer"
-                    onClick={() => handleSelectIssue(issue)}
-                  >
-                    <div className="flex items-center space-x-2 mb-2">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                        selectedIssue?.id === issue.id ? 'bg-[#5A5BD8] text-white' : 'bg-slate-100 text-slate-600'
-                      }`}>
-                        {getTypeIcon(issue.type)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold text-slate-900 truncate">
-                          {issue.userName}
-                        </h4>
-                        <p className="text-xs text-slate-500 truncate">
-                          {issue.userEmail}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="mb-2">
-                      <h5 className="text-sm font-semibold text-slate-900 line-clamp-2 leading-relaxed">
-                        {issue.message.split(':')[0] || issue.message}
-                      </h5>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(issue.priority)}`}>
-                        {issue.priority}
-                      </span>
-                      <span className="text-xs text-slate-500">
-                        {new Date(issue.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issue</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {paginatedIssues.map((issue) => (
+                      <tr
+                        key={issue.id}
+                        className="hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() => handleIssueClick(issue.id)}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-sm font-medium text-gray-600">
+                                {issue.userName.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="ml-3">
+                              <div className="text-sm font-medium text-gray-900">{issue.userName}</div>
+                              <div className="text-sm text-gray-500">{issue.userEmail}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900 max-w-xs truncate">
+                            {issue.message.split(':')[0] || issue.message}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge className={`text-xs font-medium ${getPriorityColor(issue.priority)}`}>
+                            {issue.priority}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge className={`text-xs font-medium ${getStatusColor(issue.status)}`}>
+                            {issue.status.replace('_', ' ')}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center text-sm text-gray-900">
+                            {getTypeIcon(issue.type)}
+                            <span className="ml-2">{issue.type.replace('_', ' ')}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(issue.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleIssueClick(issue.id);
+                            }}
+                            className="text-[#5A5BD8] hover:text-[#4A4BC8] hover:bg-[#5A5BD8]/10"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                  <div className="text-sm text-gray-700">
+                    Showing {startIndex + 1} to {Math.min(endIndex, filteredIssues.length)} of {filteredIssues.length} results
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="p-2"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
 
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-1 ${
+                          currentPage === page
+                            ? 'bg-[#5A5BD8] text-white hover:bg-[#4A4BC8]'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </Button>
+                    ))}
 
-      {/* Right Panel - Issue Details */}
-      <div className="flex-1 bg-white rounded-xl shadow-lg">
-        {selectedIssue ? (
-          <div className="h-full flex flex-col">
-            {/* Issue Header */}
-            <div className="p-6 border-b border-slate-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                    {getTypeIcon(selectedIssue.type)}
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-900">
-                      {selectedIssue.userName}
-                    </h2>
-                    <p className="text-sm text-slate-600">
-                      {selectedIssue.userEmail}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${getPriorityColor(selectedIssue.priority)}`}>
-                    {selectedIssue.priority} priority
-                  </span>
-                  <span className="px-3 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700">
-                    {getTypeLabel(selectedIssue.type)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-6 text-sm text-slate-600">
-                <span className="flex items-center space-x-2">
-                  <Clock className="w-4 h-4" />
-                  <span>Wait time: {Math.floor((Date.now() - new Date(selectedIssue.createdAt).getTime()) / (1000 * 60))} minutes</span>
-                </span>
-                <span className="flex items-center space-x-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>Issue: {selectedIssue.message.split(':')[0] || 'Issue Report'}</span>
-                </span>
-              </div>
-            </div>
-
-            {/* Actions Required */}
-            <div className="p-6 border-b border-slate-200">
-              <h3 className="text-sm font-bold text-slate-900 mb-2">Actions Required</h3>
-              <p className="text-sm text-slate-600 mb-4">Assign an agent to handle this issue.</p>
-              <div className="flex items-center space-x-3">
-                <button className="px-4 py-2 bg-[#5A5BD8] text-white rounded-lg hover:bg-[#4A4BC8] transition-colors text-sm font-medium flex items-center space-x-2">
-                  <User className="w-4 h-4" />
-                  <span>Assign to Agent</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Customer Issue Display */}
-            <div className="p-6 border-b border-slate-200">
-              <h3 className="text-lg font-bold text-slate-900 mb-3">Customer Issue</h3>
-              <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                <h4 className="text-base font-semibold text-slate-900 mb-3">
-                  {selectedIssue.message.split(':')[0] || selectedIssue.message}
-                </h4>
-                <p className="text-sm text-slate-700 leading-relaxed">
-                  {selectedIssue.message.includes(':') ? selectedIssue.message.split(':').slice(1).join(':').trim() : selectedIssue.message}
-                </p>
-              </div>
-            </div>
-
-            {/* Issue Content */}
-            <div className="flex-1 p-6 space-y-6 overflow-y-auto">
-              {/* Reply to Customer Section */}
-              <div className="bg-white border border-slate-200 rounded-lg p-4">
-                <h3 className="text-sm font-bold text-slate-900 mb-2">Reply to Customer</h3>
-                <p className="text-sm text-slate-600 mb-4">Send a response to the customer about their issue.</p>
-                <textarea
-                  value={responseText}
-                  onChange={(e) => setResponseText(e.target.value)}
-                  placeholder="Type your reply to the customer..."
-                  className="w-full h-32 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#5A5BD8] focus:border-[#5A5BD8] resize-none text-slate-900 placeholder-slate-500"
-                />
-                <div className="flex justify-end mt-3">
-                  <button
-                    onClick={() => updateIssueDetails(selectedIssue.id, responseText, notesText)}
-                    className="px-4 py-2 bg-[#5A5BD8] hover:bg-[#4A4BC8] text-white text-sm font-medium rounded-lg transition-colors duration-200"
-                  >
-                    Send Reply
-                  </button>
-                </div>
-              </div>
-
-              {/* Internal Notes Section */}
-              <div className="bg-white border border-slate-200 rounded-lg p-4">
-                <h3 className="text-sm font-bold text-slate-900 mb-2">Internal Notes</h3>
-                <p className="text-sm text-slate-600 mb-4">Add private notes about this issue (not visible to customer).</p>
-                <textarea
-                  value={notesText}
-                  onChange={(e) => setNotesText(e.target.value)}
-                  placeholder="Add internal notes about this issue..."
-                  className="w-full h-24 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#5A5BD8] focus:border-[#5A5BD8] resize-none text-slate-900 placeholder-slate-500"
-                />
-              </div>
-
-              {/* Previous Response */}
-              {selectedIssue.response && (
-                <div className="bg-white border border-slate-200 rounded-lg p-4">
-                  <h3 className="text-sm font-bold text-slate-900 mb-2">Previous Response</h3>
-                  <div className="bg-[#5A5BD8]/5 rounded-lg p-4 border border-[#5A5BD8]/20">
-                    <p className="text-sm text-slate-800 leading-relaxed">{selectedIssue.response}</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className="p-2"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Actions */}
-            <div className="bg-slate-50 border-t border-slate-200 p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <label className="text-sm font-semibold text-slate-700">Status:</label>
-                    <select
-                      value={selectedIssue.status}
-                      onChange={(e) => updateIssueStatus(selectedIssue.id, e.target.value)}
-                      className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#5A5BD8] focus:border-[#5A5BD8] text-sm text-slate-900"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="resolved">Resolved</option>
-                      <option value="closed">Closed</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <Button
-                    onClick={() => updateIssueDetails(selectedIssue.id, responseText, notesText)}
-                    className="bg-[#5A5BD8] hover:bg-[#4A4BC8] text-white px-6 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 font-semibold"
-                  >
-                    <Send className="w-4 h-4 mr-2" />
-                    Save Changes
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <MessageSquare className="w-10 h-10 text-slate-400" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Select an Issue</h3>
-              <p className="text-slate-600 max-w-md">Choose an issue from the list to view details and manage it. You can filter by status, priority, or search for specific issues.</p>
-            </div>
-          </div>
-        )}
-      </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

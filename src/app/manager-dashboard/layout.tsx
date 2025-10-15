@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import {
   LayoutDashboard,
   Bot,
@@ -198,12 +199,12 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeSection === item.id;
-              
+
               return (
-                <button
+                <Link
                   key={item.id}
-                  onClick={() => handleNavigation(item.path)}
-                  className={`w-full flex items-center ${
+                  href={item.path}
+                  className={`w-full flex items-center cursor-pointer ${
                     sidebarCollapsed ? 'justify-center px-2' : 'px-3'
                   } py-2 text-xs font-medium rounded-lg transition-colors ${
                     isActive
@@ -215,7 +216,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
                   <div className={`overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
                     <span className="ml-3 whitespace-nowrap">{item.label}</span>
                   </div>
-                </button>
+                </Link>
               );
             })}
           </div>
@@ -242,9 +243,9 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
         {isManager && (
           <nav className="mt-6 px-3">
             <div className="space-y-1">
-              <button
-                onClick={() => handleNavigation('/')}
-                className={`w-full flex items-center ${
+              <Link
+                href="/"
+                className={`w-full flex items-center cursor-pointer ${
                   sidebarCollapsed ? 'justify-center px-2' : 'px-3'
                 } py-2 text-xs font-medium rounded-lg transition-colors text-gray-700 hover:bg-gray-50`}
               >
@@ -252,10 +253,10 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
                 <div className={`overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
                   <span className="ml-3 whitespace-nowrap">Home</span>
                 </div>
-              </button>
+              </Link>
               <button
                 onClick={handleSignOut}
-                className={`w-full flex items-center ${
+                className={`w-full flex items-center cursor-pointer ${
                   sidebarCollapsed ? 'justify-center px-2' : 'px-3'
                 } py-2 text-xs font-medium rounded-lg transition-colors text-gray-700 hover:bg-gray-50`}
               >
@@ -272,7 +273,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
           <button
             onClick={toggleSidebar}
-            className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors"
+            className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
           >
             {sidebarCollapsed ? (
               <PanelLeftOpen className="w-4 h-4 text-gray-600" />
@@ -289,16 +290,16 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
           <div className="flex items-center justify-between h-full px-6">
             <h1 className="text-lg font-bold text-gray-900">{getPageTitle()}</h1>
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => handleNavigation('/')}
-                className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors"
+              <Link
+                href="/"
+                className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
               >
                 <Home className="w-4 h-4" />
                 <span>Home</span>
-              </button>
+              </Link>
               <button
                 onClick={handleSignOut}
-                className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors"
+                className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Logout</span>
@@ -331,12 +332,13 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = activeSection === item.id;
-                  
+
                   return (
-                    <button
+                    <Link
                       key={item.id}
-                      onClick={() => handleNavigation(item.path)}
-                      className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      href={item.path}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`w-full flex items-center cursor-pointer px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                         isActive
                           ? 'bg-[#6566F1]/10 text-[#6566F1]'
                           : 'text-gray-700 hover:bg-gray-50'
@@ -344,7 +346,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
                     >
                       <Icon className={`w-5 h-5 ${isActive ? 'text-[#6566F1]' : 'text-[#7F82F3]'} flex-shrink-0`} />
                       <span className="ml-3">{item.label}</span>
-                    </button>
+                    </Link>
                   );
                 })}
               </div>

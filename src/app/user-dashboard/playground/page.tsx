@@ -43,6 +43,21 @@ const PlaygroundPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Hide chat widget on playground page
+  useEffect(() => {
+    const widget = document.querySelector('[id*="chat"]') as HTMLElement;
+    if (widget) {
+      widget.style.display = 'none';
+    }
+
+    return () => {
+      // Restore chat widget when leaving playground
+      if (widget) {
+        widget.style.display = 'block';
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const fetchAssignedBots = async () => {
       try {

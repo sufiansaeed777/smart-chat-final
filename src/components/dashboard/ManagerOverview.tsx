@@ -303,10 +303,29 @@ const ManagerOverview = () => {
             }
           };
 
+          // Define navigation path for each metric
+          const getMetricPath = (title: string) => {
+            if (title.includes('Total Users')) {
+              return '/manager-dashboard/team-management';
+            } else if (title.includes('Active Chats')) {
+              return '/manager-dashboard/conversations';
+            } else if (title.includes('Pending Users')) {
+              return '/manager-dashboard/team-management';
+            } else if (title.includes('Resolved Today')) {
+              return '/manager-dashboard/issues';
+            }
+            return null;
+          };
+
           const colors = getMetricColors(metric.title, index);
+          const path = getMetricPath(metric.title);
 
           return (
-            <Card key={index} className={`${colors.bg} border border-gray-200 rounded-xl shadow-sm hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02] transition-all duration-300 overflow-hidden cursor-pointer group`}>
+            <Card
+              key={index}
+              onClick={() => path && router.push(path)}
+              className={`${colors.bg} border border-gray-200 rounded-xl shadow-sm hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02] transition-all duration-300 overflow-hidden cursor-pointer group`}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
                   <div className={`w-10 h-10 ${colors.iconBg} rounded-lg flex items-center justify-center shadow-sm flex-shrink-0 group-hover:scale-110 group-hover:shadow-md transition-all duration-300`}>

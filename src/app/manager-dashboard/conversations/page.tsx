@@ -441,9 +441,9 @@ const ManagerConversationsPage = () => {
                 <SortButton field="lastMessage">Last Message</SortButton>
               </div>
               <div className="col-span-1">Status</div>
-              <div className="col-span-1">Messages</div>
-              <div className="col-span-1">Duration</div>
-              <div className="col-span-1">Rating</div>
+              <div className="col-span-1 text-center">Messages</div>
+              <div className="col-span-1 text-center">Duration</div>
+              <div className="col-span-1 text-center">Rating</div>
               <div className="col-span-1">Actions</div>
             </div>
           </div>
@@ -501,18 +501,18 @@ const ManagerConversationsPage = () => {
                     </div>
 
                     {/* Messages */}
-                    <div className="col-span-1">
+                    <div className="col-span-1 text-center">
                       <span className="text-xs text-gray-900">{conversation.messageCount}</span>
                     </div>
 
                     {/* Duration */}
-                    <div className="col-span-1">
+                    <div className="col-span-1 text-center">
                       <span className="text-xs text-gray-900">{conversation.duration}</span>
                     </div>
 
                     {/* Rating */}
-                    <div className="col-span-1">
-                      <div className="flex items-center space-x-1">
+                    <div className="col-span-1 text-center">
+                      <div className="flex items-center justify-center space-x-1">
                         <span className="text-yellow-400 text-xs">★</span>
                         <span className="text-xs text-gray-900">{conversation.satisfaction}</span>
                       </div>

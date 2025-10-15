@@ -30,6 +30,7 @@ const TeamManagement = () => {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<{id: string; name: string} | null>(null);
   const [newMember, setNewMember] = useState({
     firstName: '',
@@ -59,6 +60,8 @@ const TeamManagement = () => {
     onlineStatus: 'online' | 'offline';
     specialties: string[];
     currentStatus: string;
+    issuesHandled?: number;
+    botsAssigned?: number;
   }>>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
 
@@ -160,7 +163,9 @@ const TeamManagement = () => {
             totalChats: Math.floor(Math.random() * 50) + 10, // Random total chats
             onlineStatus: onlineStatus,
             specialties: ['Customer Service'], // Default specialty
-            currentStatus: user.status === 'accepted' ? 'Available' : (user.status === 'pending' && user.lastLoginAt ? 'Deactivated' : 'Pending invitation')
+            currentStatus: user.status === 'accepted' ? 'Available' : (user.status === 'pending' && user.lastLoginAt ? 'Deactivated' : 'Pending invitation'),
+            issuesHandled: user.status === 'accepted' ? Math.floor(Math.random() * 30) + 5 : 0, // Random issues handled for accepted users
+            botsAssigned: user.status === 'accepted' ? Math.floor(Math.random() * 5) + 1 : 0, // Random bots assigned for accepted users
           };
           
           console.log('Final member data:', {
@@ -363,314 +368,190 @@ const TeamManagement = () => {
         <p className="text-sm text-gray-600 mt-1">Manage your agents, assignments, and team structure.</p>
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Panel - Team Members */}
-        <Card className="bg-white rounded-2xl shadow-sm border-0">
-          <CardHeader className="p-6 pb-4">
-            <div className="flex items-center space-x-2">
-              <Users className="w-5 h-5 text-gray-600" />
-              <CardTitle className="text-lg font-bold text-gray-900">
-                Team Members ({teamMembers.length})
-              </CardTitle>
+      {/* Main Content - Full Width Team Members */}
+      <Card className="bg-white rounded-2xl shadow-sm border-0">
+        <CardHeader className="p-6 pb-4">
+          <div className="flex items-center space-x-2">
+            <Users className="w-5 h-5 text-gray-600" />
+            <CardTitle className="text-lg font-bold text-gray-900">
+              Team Members ({teamMembers.length})
+            </CardTitle>
+          </div>
+          <p className="text-sm text-gray-600">Manage your support team and their assignments.</p>
+        </CardHeader>
+        <CardContent className="p-6 pt-0">
+          {loadingMembers ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto mb-2"></div>
+              <p className="text-sm text-gray-500">Loading team members...</p>
             </div>
-            <p className="text-sm text-gray-600">Manage your support team and their assignments.</p>
-          </CardHeader>
-          <CardContent className="p-6 pt-0">
-            {loadingMembers ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto mb-2"></div>
-                <p className="text-sm text-gray-500">Loading team members...</p>
-              </div>
-            ) : teamMembers.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-sm">No team members yet</p>
-                <p className="text-xs text-gray-400">Invite users to get started</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {teamMembers.map((member) => (
-                  <div 
-                    key={member.id}
-                    className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer hover:shadow-md ${
-                      selectedAgent === member.id 
-                        ? 'border-[#6566F1] bg-[#6566F1]/10' 
-                        : 'border-gray-200 bg-white hover:border-[#5A5BD8]'
-                    }`}
-                    onClick={() => setSelectedAgent(member.id)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        {/* Avatar */}
-                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-600">
-                            {member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                          </span>
-                        </div>
-                        
-                        {/* Member Info */}
-                        <div className="space-y-1">
-                          <h3 className="text-sm font-semibold text-gray-900">{member.name}</h3>
-                          <p className="text-xs text-gray-600">{member.email}</p>
-                          <div className="flex items-center space-x-2">
-                            <Badge className={`text-xs font-medium px-2 py-1 transition-colors duration-200 shadow-sm ${
-                              member.onlineStatus === 'online' 
-                                ? 'bg-green-500 text-white border-green-600 hover:bg-green-600 hover:border-green-700'
-                                : 'bg-gray-400 text-white border-gray-500 hover:bg-gray-500 hover:border-gray-600'
-                            }`}>
-                              {member.onlineStatus}
-                            </Badge>
-                          </div>
-                        </div>
+          ) : teamMembers.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p className="text-sm">No team members yet</p>
+              <p className="text-xs text-gray-400">Invite users to get started</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {teamMembers.map((member) => (
+                <div
+                  key={member.id}
+                  className="p-4 rounded-xl border border-gray-200 bg-white hover:border-[#5A5BD8] hover:shadow-md transition-all duration-200"
+                >
+                  <div className="flex items-center justify-between">
+                    <div
+                      className="flex items-center space-x-4 flex-1 cursor-pointer"
+                      onClick={() => {
+                        setSelectedAgent(member.id);
+                        setIsDetailModalOpen(true);
+                      }}
+                    >
+                      {/* Avatar */}
+                      <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-medium text-gray-600">
+                          {member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                        </span>
                       </div>
 
-                      <div className="flex items-center space-x-4">
-                        {/* Performance Stats */}
-                        <div className="text-right">
-                          {member.status === 'accepted' ? (
-                            <>
-                          <div className="flex items-center space-x-1">
-                                <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                                <span className="text-sm font-bold text-gray-900">{typeof member.rating === 'number' ? member.rating.toFixed(1) : member.rating}</span>
-                              </div>
-                              <p className="text-xs text-gray-600 mt-1">{member.totalChats || 0} total chats</p>
-                            </>
-                          ) : (
-                            <div className="text-xs text-gray-500 italic">
-                              {member.status === 'pending' 
-                                ? 'Pending invitation' 
-                                : 'Unknown status'}
-                          </div>
-                          )}
-                        </div>
-
-                        {/* Actions */}
+                      {/* Member Info */}
+                      <div className="space-y-1 flex-1">
+                        <h3 className="text-sm font-semibold text-gray-900">{member.name}</h3>
+                        <p className="text-xs text-gray-600">{member.email}</p>
                         <div className="flex items-center space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          disabled={togglingUser === member.id}
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            console.log('Toggling user:', member.id, 'Current status:', member.status);
-                            setTogglingUser(member.id);
-                            try {
-                              const response = await fetch('/api/manager/toggle-user-status', {
-                                method: 'POST',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                  userId: member.id,
-                                  currentStatus: member.status
-                                }),
-                              });
-                              
-                              if (response.ok) {
-                                const data = await response.json();
-                                console.log('Success:', data.message);
-                                console.log('New status:', data.newStatus);
-                                
-                                // Update the local state immediately for better UX
-                                setTeamMembers(prevMembers => 
-                                  prevMembers.map(prevMember => 
-                                    prevMember.id === member.id 
-                                      ? { ...prevMember, status: data.newStatus }
-                                      : prevMember
-                                  )
-                                );
-                                
-                                // Also refresh team members list to ensure consistency
-                                fetchTeamMembers();
-                              } else {
-                                const errorData = await response.json();
-                                console.error('Failed to toggle user status:', errorData.error);
-                                alert(`Failed to toggle user status: ${errorData.error}`);
-                              }
-                            } catch (error) {
-                              console.error('Error toggling user status:', error);
-                              alert('Network error. Please try again.');
-                            } finally {
-                              setTogglingUser(null);
-                            }
-                          }}
-                          className={`p-2 rounded-lg transition-colors duration-200 ${
-                            togglingUser === member.id 
-                              ? 'bg-red-50 text-red-600 border-red-300' 
-                              : member.status === 'accepted' 
-                                ? 'hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300' 
-                                : 'hover:bg-green-50 hover:text-green-600 hover:border-green-300'
-                          }`}
-                        >
-                          {togglingUser === member.id ? (
-                            <Loader2 className="w-4 h-4 text-red-600 animate-spin" />
-                          ) : member.status === 'accepted' ? (
-                            <UserX className="w-4 h-4 text-orange-600" />
-                          ) : (
-                            <UserCheck2 className="w-4 h-4 text-green-600" />
-                          )}
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDeleteModal({ id: member.id, name: member.name });
-                          }}
-                          className="p-2 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors duration-200"
-                        >
-                          <Trash2 className="w-4 h-4 text-gray-600" />
-                        </Button>
+                          <Badge className={`text-xs font-medium px-2 py-1 transition-colors duration-200 shadow-sm ${
+                            member.onlineStatus === 'online'
+                              ? 'bg-green-500 text-white border-green-600'
+                              : 'bg-gray-400 text-white border-gray-500'
+                          }`}>
+                            {member.onlineStatus}
+                          </Badge>
+                        </div>
                       </div>
+
+                      {/* Performance Stats */}
+                      <div className="text-center px-4 border-l border-gray-200">
+                        {member.status === 'accepted' ? (
+                          <>
+                            <div className="flex items-center space-x-1 justify-center">
+                              <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                              <span className="text-sm font-bold text-gray-900">{typeof member.rating === 'number' ? member.rating.toFixed(1) : member.rating}</span>
+                            </div>
+                            <p className="text-xs text-gray-600 mt-1">{member.totalChats || 0} chats</p>
+                          </>
+                        ) : (
+                          <div className="text-xs text-gray-500 italic">
+                            Pending
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Issues Handled */}
+                      <div className="text-center px-4 border-l border-gray-200">
+                        <div className="flex items-center space-x-1 justify-center">
+                          <AlertCircle className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-bold text-gray-900">{member.issuesHandled || 0}</span>
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1">Issues</p>
+                      </div>
+
+                      {/* Bots Assigned */}
+                      <div className="text-center px-4 border-l border-gray-200">
+                        <div className="flex items-center space-x-1 justify-center">
+                          <Bot className="w-4 h-4 text-purple-600" />
+                          <span className="text-sm font-bold text-gray-900">{member.botsAssigned || 0}</span>
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1">Bots</p>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center space-x-2 ml-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedAgent(member.id);
+                          setIsDetailModalOpen(true);
+                        }}
+                        className="p-2 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 rounded-lg transition-colors duration-200"
+                      >
+                        <Edit className="w-4 h-4 text-gray-600" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={togglingUser === member.id}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          setTogglingUser(member.id);
+                          try {
+                            const response = await fetch('/api/manager/toggle-user-status', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({
+                                userId: member.id,
+                                currentStatus: member.status
+                              }),
+                            });
+
+                            if (response.ok) {
+                              const data = await response.json();
+                              setTeamMembers(prevMembers =>
+                                prevMembers.map(prevMember =>
+                                  prevMember.id === member.id
+                                    ? { ...prevMember, status: data.newStatus }
+                                    : prevMember
+                                )
+                              );
+                              fetchTeamMembers();
+                            } else {
+                              const errorData = await response.json();
+                              alert(`Failed to toggle user status: ${errorData.error}`);
+                            }
+                          } catch (error) {
+                            alert('Network error. Please try again.');
+                          } finally {
+                            setTogglingUser(null);
+                          }
+                        }}
+                        className={`p-2 rounded-lg transition-colors duration-200 ${
+                          togglingUser === member.id
+                            ? 'bg-red-50 text-red-600 border-red-300'
+                            : member.status === 'accepted'
+                              ? 'hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300'
+                              : 'hover:bg-green-50 hover:text-green-600 hover:border-green-300'
+                        }`}
+                      >
+                        {togglingUser === member.id ? (
+                          <Loader2 className="w-4 h-4 text-red-600 animate-spin" />
+                        ) : member.status === 'accepted' ? (
+                          <UserX className="w-4 h-4 text-orange-600" />
+                        ) : (
+                          <UserCheck2 className="w-4 h-4 text-green-600" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDeleteModal({ id: member.id, name: member.name });
+                        }}
+                        className="p-2 hover:bg-red-50 hover:text-red-600 hover:border-red-300 rounded-lg transition-colors duration-200"
+                      >
+                        <Trash2 className="w-4 h-4 text-gray-600" />
+                      </Button>
                     </div>
                   </div>
                 </div>
               ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Right Panel - Member Details */}
-        <div className="space-y-6">
-          {/* Member Profile */}
-          <Card className="bg-white rounded-2xl shadow-sm border-0 hover:border-[#5A5BD8] hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300">
-            <CardHeader className="p-6 pb-4">
-              <div className="flex items-center space-x-2">
-                <Users className="w-5 h-5 text-gray-600" />
-                <CardTitle className="text-lg font-bold text-gray-900">
-                  {selectedAgentData ? selectedAgentData.name : 'Select a member'}
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6 pt-0 space-y-4">
-              {selectedAgentData ? (
-                <>
-                  {/* Status */}
-                  <div className="flex items-center space-x-2">
-                    {getOnlineStatusIcon(selectedAgentData.onlineStatus)}
-                    <Badge className={`text-xs font-medium px-2 py-1 transition-colors duration-200 shadow-sm ${
-                      selectedAgentData.onlineStatus === 'online' 
-                        ? 'bg-green-500 text-white border-green-600 hover:bg-green-600 hover:border-green-700'
-                        : 'bg-gray-400 text-white border-gray-500 hover:bg-gray-500 hover:border-gray-600'
-                    }`}>
-                      {selectedAgentData.onlineStatus}
-                    </Badge>
-                  </div>
-
-                  {/* Role */}
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Role</p>
-                    <p className="text-gray-900 capitalize">{selectedAgentData.role}</p>
-                  </div>
-
-                  {/* Contact Info */}
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <Mail className="w-4 h-4 text-gray-500" />
-                      <span className="text-gray-900">{selectedAgentData.email}</span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <Calendar className="w-4 h-4 text-gray-500" />
-                      <span className="text-gray-900">
-                        {selectedAgentData.status === 'accepted' ? 'Joined' : 'Invited'} {new Date(selectedAgentData.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Performance */}
-                  {selectedAgentData.status === 'accepted' ? (
-                    <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200 hover:border-yellow-300 hover:shadow-md transition-all duration-300">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <div className="flex items-center space-x-1">
-                          <Star className="w-5 h-5 text-yellow-500 fill-current" />
-                          <span className="text-lg font-bold text-yellow-700">{typeof selectedAgentData.rating === 'number' ? selectedAgentData.rating.toFixed(1) : selectedAgentData.rating}</span>
-                          <span className="text-sm text-yellow-600">rating</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-4 text-sm text-gray-600">
-                        <span className="flex items-center space-x-1">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span>{selectedAgentData.totalChats} total chats</span>
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                        <span className="text-sm text-gray-600">Performance metrics will be available after invitation is accepted</span>
-                      </div>
-                  </div>
-                  )}
-
-                  {/* Specialties */}
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 mb-2">Specialties</p>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedAgentData.specialties.map((specialty, index) => (
-                        <Badge key={index} className="text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors duration-200">
-                          {specialty}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Current Status */}
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Current Status</p>
-                    <p className="text-gray-900">{selectedAgentData.currentStatus}</p>
-                  </div>
-
-                  {/* Status-specific information */}
-                  {selectedAgentData.status === 'pending' && (
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 hover:border-orange-300 hover:shadow-md transition-all duration-300">
-                      <div className="flex items-center space-x-2">
-                        <AlertCircle className="w-5 h-5 text-orange-600" />
-                        <p className="text-sm font-medium text-orange-800">Pending Invitation</p>
-                      </div>
-                      <p className="text-xs text-orange-700 mt-1">
-                        This user has been invited but hasn&apos;t accepted the invitation yet. They will appear as &ldquo;Active&rdquo; once they set up their password.
-                      </p>
-                    </div>
-                  )}
-
-                  {selectedAgentData.status === 'pending' && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 hover:border-red-300 hover:shadow-md transition-all duration-300">
-                      <div className="flex items-center space-x-2">
-                        <UserX className="w-5 h-5 text-red-600" />
-                        <p className="text-sm font-medium text-red-800">Account Deactivated</p>
-                      </div>
-                      <p className="text-xs text-red-700 mt-1">
-                        This user&apos;s account has been deactivated by the manager. They cannot log in until reactivated.
-                      </p>
-                    </div>
-                  )}
-
-                  {selectedAgentData.status === 'accepted' && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 hover:border-green-300 hover:shadow-md transition-all duration-300">
-                      <div className="flex items-center space-x-2">
-                        <UserCheck className="w-5 h-5 text-green-600" />
-                        <p className="text-sm font-medium text-green-800">Active Member</p>
-                      </div>
-                      <p className="text-xs text-green-700 mt-1">
-                        This user has accepted their invitation and can now access the system.
-                      </p>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p className="text-sm">Select a team member to view details</p>
-                </div>
-              )}
-
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Add New Member Modal */}
       {isAddModalOpen && (
@@ -793,6 +674,171 @@ const TeamManagement = () => {
                 className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white px-4 py-2 disabled:opacity-50"
               >
                 {isLoading ? 'Sending...' : 'Add Member'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Member Detail Modal */}
+      {isDetailModalOpen && selectedAgentData && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900">{selectedAgentData.name}</h2>
+              <button
+                onClick={() => {
+                  setIsDetailModalOpen(false);
+                  setSelectedAgent(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Avatar and Basic Info */}
+              <div className="flex items-center space-x-4 pb-4 border-b border-gray-200">
+                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
+                  <span className="text-lg font-medium text-gray-600">
+                    {selectedAgentData.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900">{selectedAgentData.name}</h3>
+                  <p className="text-sm text-gray-600">{selectedAgentData.email}</p>
+                  <div className="flex items-center space-x-2 mt-2">
+                    {getOnlineStatusIcon(selectedAgentData.onlineStatus)}
+                    <Badge className={`text-xs font-medium px-2 py-1 ${
+                      selectedAgentData.onlineStatus === 'online'
+                        ? 'bg-green-500 text-white border-green-600'
+                        : 'bg-gray-400 text-white border-gray-500'
+                    }`}>
+                      {selectedAgentData.onlineStatus}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <AlertCircle className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-900">Issues Handled</span>
+                  </div>
+                  <p className="text-2xl font-bold text-blue-900">{selectedAgentData.issuesHandled || 0}</p>
+                </div>
+                <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Bot className="w-5 h-5 text-purple-600" />
+                    <span className="text-sm font-medium text-purple-900">Bots Assigned</span>
+                  </div>
+                  <p className="text-2xl font-bold text-purple-900">{selectedAgentData.botsAssigned || 0}</p>
+                </div>
+              </div>
+
+              {/* Role */}
+              <div>
+                <p className="text-sm font-medium text-gray-600">Role</p>
+                <p className="text-gray-900 capitalize">{selectedAgentData.role}</p>
+              </div>
+
+              {/* Contact Info */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <Mail className="w-4 h-4 text-gray-500" />
+                  <span className="text-gray-900">{selectedAgentData.email}</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Calendar className="w-4 h-4 text-gray-500" />
+                  <span className="text-gray-900">
+                    {selectedAgentData.status === 'accepted' ? 'Joined' : 'Invited'} {new Date(selectedAgentData.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+
+              {/* Performance */}
+              {selectedAgentData.status === 'accepted' ? (
+                <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="flex items-center space-x-1">
+                      <Star className="w-5 h-5 text-yellow-500 fill-current" />
+                      <span className="text-lg font-bold text-yellow-700">{typeof selectedAgentData.rating === 'number' ? selectedAgentData.rating.toFixed(1) : selectedAgentData.rating}</span>
+                      <span className="text-sm text-yellow-600">rating</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4 text-sm text-gray-600">
+                    <span className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span>{selectedAgentData.totalChats} total chats</span>
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-sm text-gray-600">Performance metrics will be available after invitation is accepted</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Specialties */}
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-2">Specialties</p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedAgentData.specialties.map((specialty, index) => (
+                    <Badge key={index} className="text-xs bg-gray-100 text-gray-600">
+                      {specialty}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Current Status */}
+              <div>
+                <p className="text-sm font-medium text-gray-600">Current Status</p>
+                <p className="text-gray-900">{selectedAgentData.currentStatus}</p>
+              </div>
+
+              {/* Status-specific information */}
+              {selectedAgentData.status === 'pending' && !selectedAgentData.onlineStatus && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="w-5 h-5 text-orange-600" />
+                    <p className="text-sm font-medium text-orange-800">Pending Invitation</p>
+                  </div>
+                  <p className="text-xs text-orange-700 mt-1">
+                    This user has been invited but hasn&apos;t accepted the invitation yet.
+                  </p>
+                </div>
+              )}
+
+              {selectedAgentData.status === 'accepted' && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-2">
+                    <UserCheck className="w-5 h-5 text-green-600" />
+                    <p className="text-sm font-medium text-green-800">Active Member</p>
+                  </div>
+                  <p className="text-xs text-green-700 mt-1">
+                    This user has accepted their invitation and can now access the system.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsDetailModalOpen(false);
+                  setSelectedAgent(null);
+                }}
+                className="px-4 py-2 text-gray-700 border-gray-300 hover:bg-gray-50"
+              >
+                Close
               </Button>
             </div>
           </div>

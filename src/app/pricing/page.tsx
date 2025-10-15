@@ -4,8 +4,12 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Check, ArrowRight, Calculator, Phone, ChevronUp, ChevronDown } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import SmartCTAButton from '@/components/SmartCTAButton';
 
 const PricingPage = () => {
+  // Billing period state
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+
   // Pricing Calculator State
   const [calculatorInputs, setCalculatorInputs] = useState({
     bots: 0,
@@ -278,9 +282,31 @@ const PricingPage = () => {
                   Pricing
                 </span>
               </h1>
-               <p className="text-xl md:text-2xl text-slate-600 max-w-3xl mx-auto leading-relaxed mb-24">
+              <p className="text-xl md:text-2xl text-slate-600 max-w-3xl mx-auto leading-relaxed mb-8">
                 Choose the plan that fits your needs. All paid plans include a 14-day free trial.
               </p>
+
+              {/* Billing Period Toggle */}
+              <div className="flex items-center justify-center gap-4 mb-12">
+                <span className={`text-lg font-medium transition-colors ${billingPeriod === 'monthly' ? 'text-slate-900' : 'text-slate-500'}`}>
+                  Monthly
+                </span>
+                <button
+                  onClick={() => setBillingPeriod(prev => prev === 'monthly' ? 'yearly' : 'monthly')}
+                  className="relative w-16 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full transition-all duration-300 hover:shadow-lg"
+                  aria-label="Toggle billing period"
+                >
+                  <span
+                    className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 shadow-md ${
+                      billingPeriod === 'monthly' ? 'left-1' : 'left-9'
+                    }`}
+                  />
+                </button>
+                <span className={`text-lg font-medium transition-colors ${billingPeriod === 'yearly' ? 'text-slate-900' : 'text-slate-500'}`}>
+                  Yearly
+                  <span className="ml-2 text-sm text-green-600 font-semibold">(Save 17%)</span>
+                </span>
+              </div>
             </div>
 
             {/* Pricing cards */}
@@ -319,33 +345,20 @@ const PricingPage = () => {
                     </p>
                     <div className="flex items-baseline justify-center mb-6">
                       <span className={`text-5xl font-bold ${
-                        plan.popular 
-                          ? "text-blue-800" 
+                        plan.popular
+                          ? "text-blue-800"
                           : "text-slate-900"
                       }`}>
-                        {plan.price}
+                        {billingPeriod === 'yearly' && plan.yearlyPrice ? plan.yearlyPrice : plan.price}
                       </span>
                       <span className={`ml-2 text-lg ${
-                        plan.popular 
-                          ? "text-blue-600 font-medium" 
+                        plan.popular
+                          ? "text-blue-600 font-medium"
                           : "text-slate-600"
                       }`}>
-                        {plan.period}
+                        {billingPeriod === 'yearly' && plan.yearlyPeriod ? plan.yearlyPeriod : plan.period}
                       </span>
                     </div>
-                    {plan.yearlyPrice && (
-                      <div className="text-center mb-4">
-                        <span className="text-2xl font-semibold text-slate-700">
-                          {plan.yearlyPrice}
-                        </span>
-                        <span className="text-slate-600 ml-1">
-                          {plan.yearlyPeriod}
-                        </span>
-                        <div className="text-sm text-green-600 font-medium mt-1">
-                          Save 17% with yearly billing
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   <ul className="space-y-4 mb-8 flex-grow">
@@ -357,16 +370,15 @@ const PricingPage = () => {
                     ))}
                   </ul>
 
-                  <button
-                    className={`w-full group mt-auto py-2.5 px-6 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${
-                      plan.popular 
-                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:opacity-90" 
+                  <SmartCTAButton
+                    text={plan.cta}
+                    className={`w-full mt-auto py-2.5 px-6 rounded-lg font-medium transition-all duration-300 justify-center ${
+                      plan.popular
+                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:opacity-90"
                         : "border-2 border-slate-200 text-slate-900 hover:border-blue-600 hover:text-blue-600"
                     }`}
-                  >
-                    {plan.cta}
-                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </button>
+                    showIcon={true}
+                  />
                 </div>
               ))}
             </div>
@@ -727,10 +739,11 @@ const PricingPage = () => {
                   </div>
 
                   <div className="space-y-4">
-                    <button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5">
-                      <Calculator className="w-5 h-5" />
-                      Get Custom Quote
-                    </button>
+                    <SmartCTAButton
+                      text="Get Custom Quote"
+                      className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 gap-3 shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5"
+                      showIcon={false}
+                    />
                     <button className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-6 rounded-xl border-2 border-white/30 hover:border-white/50 transition-all duration-300 flex items-center justify-center gap-3 shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 backdrop-blur-sm">
                       <Phone className="w-5 h-5" />
                       Discuss Pricing
