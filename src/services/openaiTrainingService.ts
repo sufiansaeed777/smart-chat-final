@@ -145,19 +145,59 @@ async function createEmbeddings(
 
 /**
  * Split text into chunks for embedding
+ * OpenAI embedding API limit: 8192 tokens
+ * Approximation: 1 token ≈ 4 characters, so 8192 tokens ≈ 32,000 characters
+ * Using 6000 characters as safe limit (≈1500 tokens) with overlap
  */
-function splitIntoChunks(text: string, maxChunkSize: number = 1000): string[] {
+function splitIntoChunks(text: string, maxChunkSize: number = 6000): string[] {
   const chunks: string[] = [];
+
+  // If text is shorter than max, return as single chunk
+  if (text.length <= maxChunkSize) {
+    return [text];
+  }
+
+  // Split by sentences
   const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
 
   let currentChunk = '';
 
   for (const sentence of sentences) {
-    if ((currentChunk + sentence).length > maxChunkSize && currentChunk) {
+    const trimmedSentence = sentence.trim();
+
+    // If a single sentence is too large, split it by words
+    if (trimmedSentence.length > maxChunkSize) {
+      // Save current chunk if exists
+      if (currentChunk) {
+        chunks.push(currentChunk.trim());
+        currentChunk = '';
+      }
+
+      // Split large sentence by words
+      const words = trimmedSentence.split(/\s+/);
+      let wordChunk = '';
+
+      for (const word of words) {
+        if ((wordChunk + ' ' + word).length > maxChunkSize && wordChunk) {
+          chunks.push(wordChunk.trim());
+          wordChunk = word;
+        } else {
+          wordChunk += (wordChunk ? ' ' : '') + word;
+        }
+      }
+
+      if (wordChunk) {
+        currentChunk = wordChunk;
+      }
+      continue;
+    }
+
+    // Normal sentence processing
+    if ((currentChunk + ' ' + trimmedSentence).length > maxChunkSize && currentChunk) {
       chunks.push(currentChunk.trim());
-      currentChunk = sentence;
+      currentChunk = trimmedSentence;
     } else {
-      currentChunk += ' ' + sentence;
+      currentChunk += (currentChunk ? ' ' : '') + trimmedSentence;
     }
   }
 
