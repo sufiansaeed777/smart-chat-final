@@ -6,6 +6,7 @@
 
 import OpenAI from 'openai';
 import { AppDataSource } from '@/config/database';
+import { Bot } from '@/entities/Bot';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -86,14 +87,17 @@ async function createEmbeddings(
   chunks: string[]
 ): Promise<number> {
   if (!AppDataSource.isInitialized) {
-    await AppDataSource.initialize();
+    try {
+      await AppDataSource.initialize();
+    } catch (error) {
+      console.error('Database initialization failed:', error);
+      throw new Error('Database connection failed');
+    }
   }
-
-  const embeddingRepository = AppDataSource.getRepository('document_embeddings');
 
   // Delete existing embeddings for this bot+document to prevent duplicates
   console.log(`🗑️  Removing old embeddings for document ${documentName}...`);
-  const deleteResult = await embeddingRepository.query(
+  const deleteResult = await AppDataSource.query(
     `DELETE FROM document_embeddings WHERE bot_id = $1 AND document_id = $2`,
     [botId, documentId]
   );
@@ -115,7 +119,7 @@ async function createEmbeddings(
       const embedding = response.data[0].embedding;
 
       // Store in pgvector database (matching actual table schema)
-      await embeddingRepository.query(
+      await AppDataSource.query(
         `
         INSERT INTO document_embeddings
         (id, bot_id, document_id, document_name, chunk_text, chunk_index, total_chunks, embedding, created_at)
@@ -257,10 +261,15 @@ export async function updateBotTrainingStatus(
   log?: string
 ): Promise<void> {
   if (!AppDataSource.isInitialized) {
-    await AppDataSource.initialize();
+    try {
+      await AppDataSource.initialize();
+    } catch (error) {
+      console.error('Database initialization failed:', error);
+      throw new Error('Database connection failed');
+    }
   }
 
-  const botRepository = AppDataSource.getRepository('bots');
+  const botRepository = AppDataSource.getRepository(Bot);
 
   await botRepository.update(
     { id: botId },

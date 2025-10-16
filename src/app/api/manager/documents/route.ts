@@ -17,11 +17,19 @@ export async function GET(request: NextRequest) {
 
     // Initialize database connection
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          { error: 'Database connection failed' },
+          { status: 500 }
+        );
+      }
     }
 
-    const userRepository = AppDataSource.getRepository("users");
-    const documentRepository = AppDataSource.getRepository("documents");
+    const userRepository = AppDataSource.getRepository(User);
+    const documentRepository = AppDataSource.getRepository(Document);
 
     // Get the current user
     const user = await userRepository.findOne({
@@ -122,11 +130,19 @@ export async function POST(request: NextRequest) {
 
     // Initialize database connection
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          { error: 'Database connection failed' },
+          { status: 500 }
+        );
+      }
     }
 
-    const userRepository = AppDataSource.getRepository("users");
-    const documentRepository = AppDataSource.getRepository("documents");
+    const userRepository = AppDataSource.getRepository(User);
+    const documentRepository = AppDataSource.getRepository(Document);
 
     // Get the current user
     const user = await userRepository.findOne({

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
+import { User } from '@/entities/User';
+import { Bot } from '@/entities/Bot';
+import { BotDocument } from '@/entities/BotDocument';
 import { trainBotWithDocuments, updateBotTrainingStatus } from '@/services/openaiTrainingService';
 
 /**
@@ -19,11 +22,19 @@ export async function POST(request: NextRequest) {
 
     // Initialize database
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          { error: 'Database connection failed' },
+          { status: 500 }
+        );
+      }
     }
 
     // Get user
-    const userRepository = AppDataSource.getRepository('users');
+    const userRepository = AppDataSource.getRepository(User);
     const user = await userRepository.findOne({
       where: { email: session.user.email },
     });
@@ -39,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get bot
-    const botRepository = AppDataSource.getRepository('bots');
+    const botRepository = AppDataSource.getRepository(Bot);
     const bot = await botRepository.findOne({
       where: { id: botId, createdBy: user.id },
     });
@@ -49,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get bot's assigned documents
-    const botDocumentRepository = AppDataSource.getRepository('bot_documents');
+    const botDocumentRepository = AppDataSource.getRepository(BotDocument);
     const botDocuments = await botDocumentRepository
       .createQueryBuilder('bd')
       .leftJoinAndSelect('bd.document', 'document')
