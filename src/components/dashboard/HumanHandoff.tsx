@@ -38,6 +38,7 @@ const HumanHandoff = () => {
   const [completedConversations, setCompletedConversations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pauseAutoRefresh, setPauseAutoRefresh] = useState(false);
 
   // Fetch conversations from API
   const fetchConversations = async (showRefreshIndicator = false) => {
@@ -90,14 +91,16 @@ const HumanHandoff = () => {
     fetchCompletedConversations();
   }, []);
 
-  // Auto-refresh every 5 seconds
+  // Auto-refresh every 5 seconds (but pause if manual action is in progress)
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchConversations(false); // Silent refresh
+      if (!pauseAutoRefresh) {
+        fetchConversations(false); // Silent refresh
+      }
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [pauseAutoRefresh]);
 
   const selectedConversation = conversations.find(conv => conv.id === selectedConversationId);
 
@@ -139,6 +142,9 @@ const HumanHandoff = () => {
   const handleTakeOver = async () => {
     if (selectedConversation) {
       try {
+        // Pause auto-refresh during manual action
+        setPauseAutoRefresh(true);
+
         const response = await fetch(`/api/conversations/${selectedConversation.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -159,9 +165,17 @@ const HumanHandoff = () => {
                 : conv
             )
           );
+
+          // Resume auto-refresh after 3 seconds to ensure DB update has propagated
+          setTimeout(() => {
+            setPauseAutoRefresh(false);
+          }, 3000);
+        } else {
+          setPauseAutoRefresh(false);
         }
       } catch (error) {
         console.error('Error taking over conversation:', error);
+        setPauseAutoRefresh(false);
       }
     }
   };
@@ -169,6 +183,9 @@ const HumanHandoff = () => {
   const handleReturnToAI = async () => {
     if (selectedConversation) {
       try {
+        // Pause auto-refresh during manual action
+        setPauseAutoRefresh(true);
+
         const response = await fetch(`/api/conversations/${selectedConversation.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -189,9 +206,17 @@ const HumanHandoff = () => {
                 : conv
             )
           );
+
+          // Resume auto-refresh after 3 seconds to ensure DB update has propagated
+          setTimeout(() => {
+            setPauseAutoRefresh(false);
+          }, 3000);
+        } else {
+          setPauseAutoRefresh(false);
         }
       } catch (error) {
         console.error('Error returning to AI:', error);
+        setPauseAutoRefresh(false);
       }
     }
   };

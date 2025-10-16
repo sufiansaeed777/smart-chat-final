@@ -341,7 +341,7 @@ const BillingPage: React.FC = () => {
           
           <div className="bg-gray-50 p-4 rounded-xl">
             <h4 className="font-semibold text-gray-900 mb-3">Plan Details</h4>
-            <div className="space-y-2 text-sm">
+            <div className="space-y-2 text-sm mb-4">
               <div className="flex justify-between">
                 <span className="text-gray-600">Billing Cycle:</span>
                 <span className="font-medium">Monthly</span>
@@ -355,6 +355,9 @@ const BillingPage: React.FC = () => {
                 <span className="font-medium">**** 4242</span>
               </div>
             </div>
+            <button className="w-full px-4 py-2 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 text-[#6566F1] hover:text-[#5A5BD9] font-medium transition-colors">
+              Update Payment Method
+            </button>
           </div>
         </div>
       </div>
@@ -606,28 +609,6 @@ const BillingPage: React.FC = () => {
         )}
       </div>
 
-      {/* Payment Method */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border-0">
-        <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-          <CreditCard className="w-6 h-6 mr-2 text-[#6566F1]" />
-          Payment Method
-        </h3>
-
-        <div className="p-4 bg-gray-50 rounded-xl">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="w-12 h-8 bg-blue-600 rounded flex items-center justify-center">
-              <CreditCard className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">Visa ending in 4242</p>
-              <p className="text-sm text-gray-600">Expires 12/25</p>
-            </div>
-          </div>
-          <button className="w-full mt-2 px-4 py-2 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 text-[#6566F1] hover:text-[#5A5BD9] font-medium transition-colors">
-            Update Payment Method
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

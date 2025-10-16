@@ -440,11 +440,11 @@ const ManagerConversationsPage = () => {
               <div className="col-span-2">
                 <SortButton field="lastMessage">Last Message</SortButton>
               </div>
-              <div className="col-span-1">Status</div>
+              <div className="col-span-1 text-center">Status</div>
               <div className="col-span-1 text-center">Messages</div>
               <div className="col-span-1 text-center">Duration</div>
               <div className="col-span-1 text-center">Rating</div>
-              <div className="col-span-1">Actions</div>
+              <div className="col-span-1 text-center">Actions</div>
             </div>
           </div>
 
@@ -494,7 +494,7 @@ const ManagerConversationsPage = () => {
                     </div>
 
                     {/* Status */}
-                    <div className="col-span-1">
+                    <div className="col-span-1 flex justify-center">
                       <Badge className={`text-xs px-2 py-0.5 ${getStatusColor(conversation.status)}`}>
                         {conversation.status}
                       </Badge>
@@ -519,7 +519,7 @@ const ManagerConversationsPage = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="col-span-1">
+                    <div className="col-span-1 flex justify-center">
                       <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" size="sm" className="h-6 w-6 p-0 border-gray-200 text-gray-600 hover:bg-gray-50">
