@@ -222,8 +222,15 @@ const KnowledgeBasePage: React.FC = () => {
     }
   };
 
-  const handleDeleteDocument = useCallback(async (id: string) => {
+  const handleDeleteDocument = useCallback((doc: Document) => {
+    // Show confirmation modal for single document deletion
+    setDocumentsToDelete([doc]);
+    setShowDeleteConfirm(true);
+  }, []);
+
+  const confirmSingleDelete = useCallback(async (id: string) => {
     try {
+      setIsDeleting(true);
       const response = await fetch(`/api/manager/documents/${id}`, {
         method: 'DELETE',
       });
@@ -231,14 +238,22 @@ const KnowledgeBasePage: React.FC = () => {
       if (response.ok) {
         setDocuments(prev => prev.filter(doc => doc.id !== id));
         setSelectedDocuments(prev => prev.filter(docId => docId !== id));
+        setShowDeleteConfirm(false);
+        setDocumentsToDelete([]);
+        setModalMessage('Document deleted successfully');
+        setShowSuccessModal(true);
       } else {
         const errorData = await response.json();
         console.error('Delete failed:', errorData.error);
-        alert('Delete failed: ' + errorData.error);
+        setModalMessage('Delete failed: ' + errorData.error);
+        setShowErrorModal(true);
       }
     } catch (error) {
       console.error('Delete error:', error);
-      alert('Delete failed: ' + error);
+      setModalMessage('Delete failed: ' + error);
+      setShowErrorModal(true);
+    } finally {
+      setIsDeleting(false);
     }
   }, []);
 
@@ -707,7 +722,7 @@ const KnowledgeBasePage: React.FC = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteDocument(doc.id);
+                            handleDeleteDocument(doc);
                           }}
                           className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                         >
@@ -818,7 +833,7 @@ const KnowledgeBasePage: React.FC = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteDocument(doc.id);
+                          handleDeleteDocument(doc);
                         }}
                         className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                       >
@@ -870,13 +885,25 @@ const KnowledgeBasePage: React.FC = () => {
               
               <div className="flex justify-end space-x-3">
                 <button
-                  onClick={() => setShowDeleteConfirm(false)}
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setDocumentsToDelete([]);
+                  }}
                   className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={confirmBulkDelete}
+                  onClick={() => {
+                    // Check if single or bulk deletion
+                    if (documentsToDelete.length === 1 && selectedDocuments.length === 0) {
+                      // Single document deletion
+                      confirmSingleDelete(documentsToDelete[0].id);
+                    } else {
+                      // Bulk deletion
+                      confirmBulkDelete();
+                    }
+                  }}
                   disabled={isDeleting}
                   className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2"
                 >
@@ -888,7 +915,7 @@ const KnowledgeBasePage: React.FC = () => {
                   ) : (
                     <>
                       <Trash2 className="w-4 h-4" />
-                      Delete Documents
+                      {documentsToDelete.length === 1 ? 'Delete Document' : 'Delete Documents'}
                     </>
                   )}
                 </button>
@@ -1041,6 +1068,72 @@ const KnowledgeBasePage: React.FC = () => {
                   className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 font-medium disabled:opacity-50"
                 >
                   Choose Files
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Success Modal */}
+        {showSuccessModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900">Success</h3>
+                </div>
+                <button
+                  onClick={() => setShowSuccessModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <p className="text-gray-700 mb-6">{modalMessage}</p>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowSuccessModal(false)}
+                  className="px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors"
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error Modal */}
+        {showErrorModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <AlertCircle className="w-6 h-6 text-red-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900">Error</h3>
+                </div>
+                <button
+                  onClick={() => setShowErrorModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <p className="text-gray-700 mb-6">{modalMessage}</p>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowErrorModal(false)}
+                  className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors"
+                >
+                  OK
                 </button>
               </div>
             </div>
