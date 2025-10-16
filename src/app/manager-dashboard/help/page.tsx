@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import DashboardLayoutWithAuth from '@/components/dashboard/DashboardLayoutWithAuth';
+import RoleGuard from '@/components/auth/RoleGuard';
 
 const HelpPage = () => {
   const router = useRouter();
@@ -105,8 +105,8 @@ const HelpPage = () => {
   };
 
   return (
-    <DashboardLayoutWithAuth activeSection="help">
-      <div className="space-y-6">
+    <RoleGuard allowedRoles={['manager']}>
+      <div className="p-6 space-y-6">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Help Center</h1>
@@ -238,10 +238,10 @@ const HelpPage = () => {
                 <div className="p-4 border border-gray-200 rounded-lg">
                   <h3 className="font-medium mb-2">Email Support</h3>
                   <p className="text-sm text-gray-600 mb-3">Send us an email and we&apos;ll get back to you within 24 hours</p>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="border-gray-300 hover:bg-gray-50 text-gray-700"
-                    onClick={() => handleNavigation('/dashboard/settings')}
+                    onClick={() => handleNavigation('/manager-dashboard/settings')}
                   >
                     Send Email
                   </Button>
@@ -249,12 +249,12 @@ const HelpPage = () => {
                 <div className="p-4 border border-gray-200 rounded-lg">
                   <h3 className="font-medium mb-2">Live Chat</h3>
                   <p className="text-sm text-gray-600 mb-3">Chat with our support team in real-time</p>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="border-gray-300 hover:bg-gray-50 text-gray-700"
-                    onClick={() => handleNavigation('/dashboard/analytics')}
+                    onClick={() => handleNavigation('/manager-dashboard/issues')}
                   >
-                    Start Chat
+                    Report Issue
                   </Button>
                 </div>
               </div>
@@ -266,7 +266,7 @@ const HelpPage = () => {
           </Card>
         )}
       </div>
-    </DashboardLayoutWithAuth>
+    </RoleGuard>
   );
 };
 

@@ -81,6 +81,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: `${basePath}/analytics` },
         { id: 'issues', label: 'Issues', icon: AlertTriangle, path: `${basePath}/issues` },
         { id: 'billing', label: 'Billing', icon: CreditCard, path: `${basePath}/billing` },
+        { id: 'help', label: 'Help', icon: HelpCircle, path: `${basePath}/help` },
       ];
     } else if (isAdmin) {
       return [
