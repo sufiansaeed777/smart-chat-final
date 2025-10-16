@@ -272,7 +272,13 @@ if (typeof jQuery === 'undefined') {
         clearChat: function() {
             if (confirm('Are you sure you want to clear the chat history?')) {
                 $('#synofex-messages').empty();
-                localStorage.removeItem('synofex_chat_history');
+                if (this.isLocalStorageAvailable()) {
+                    try {
+                        localStorage.removeItem('synofex_chat_history');
+                    } catch(e) {
+                        console.warn('Synofex Chat: Could not clear chat history from localStorage', e);
+                    }
+                }
                 this.addMessage(this.config.welcomeMessage || 'Hello! How can I help you today?', 'bot');
             }
         },
@@ -296,9 +302,26 @@ if (typeof jQuery === 'undefined') {
             });
         },
 
+        // Check if localStorage is available
+        isLocalStorageAvailable: function() {
+            try {
+                const test = '__localStorage_test__';
+                localStorage.setItem(test, test);
+                localStorage.removeItem(test);
+                return true;
+            } catch(e) {
+                return false;
+            }
+        },
+
         // Session management
         getSessionId: function() {
-            let sessionId = localStorage.getItem('synofex_session_id');
+            let sessionId = null;
+
+            if (this.isLocalStorageAvailable()) {
+                sessionId = localStorage.getItem('synofex_session_id');
+            }
+
             if (!sessionId) {
                 sessionId = 'wp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                 this.saveSessionId(sessionId);
@@ -307,22 +330,43 @@ if (typeof jQuery === 'undefined') {
         },
 
         saveSessionId: function(sessionId) {
-            localStorage.setItem('synofex_session_id', sessionId);
+            if (this.isLocalStorageAvailable()) {
+                try {
+                    localStorage.setItem('synofex_session_id', sessionId);
+                } catch(e) {
+                    console.warn('Synofex Chat: Could not save session ID to localStorage', e);
+                }
+            }
         },
 
         // Chat history management
         saveChatHistory: function() {
-            const messages = [];
-            $('#synofex-messages .synofex-message').each(function() {
-                const sender = $(this).hasClass('synofex-user-message') ? 'user' : 'bot';
-                const content = $(this).find('.synofex-message-bubble').text();
-                messages.push({ sender, content });
-            });
-            localStorage.setItem('synofex_chat_history', JSON.stringify(messages));
+            if (!this.isLocalStorageAvailable()) return;
+
+            try {
+                const messages = [];
+                $('#synofex-messages .synofex-message').each(function() {
+                    const sender = $(this).hasClass('synofex-user-message') ? 'user' : 'bot';
+                    const content = $(this).find('.synofex-message-bubble').text();
+                    messages.push({ sender, content });
+                });
+                localStorage.setItem('synofex_chat_history', JSON.stringify(messages));
+            } catch(e) {
+                console.warn('Synofex Chat: Could not save chat history', e);
+            }
         },
 
         loadChatHistory: function() {
-            const history = localStorage.getItem('synofex_chat_history');
+            let history = null;
+
+            if (this.isLocalStorageAvailable()) {
+                try {
+                    history = localStorage.getItem('synofex_chat_history');
+                } catch(e) {
+                    console.warn('Synofex Chat: Could not load chat history', e);
+                }
+            }
+
             if (history) {
                 try {
                     const messages = JSON.parse(history);
@@ -330,7 +374,9 @@ if (typeof jQuery === 'undefined') {
                         this.addMessage(msg.content, msg.sender);
                     });
                 } catch (e) {
-                    console.error('Failed to load chat history:', e);
+                    console.error('Failed to parse chat history:', e);
+                    // Show welcome message as fallback
+                    this.addMessage(this.config.welcomeMessage || 'Hello! How can I help you today?', 'bot');
                 }
             } else {
                 // Show welcome message

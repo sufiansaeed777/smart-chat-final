@@ -344,6 +344,11 @@ class SynofexChatbot {
             wp_die('Unauthorized');
         }
 
+        if (!isset($_POST['token'])) {
+            wp_send_json_error('Token is required');
+            return;
+        }
+
         $token = sanitize_text_field($_POST['token']);
 
         $api_client = new Synofex_API_Client($token);
@@ -369,14 +374,19 @@ class SynofexChatbot {
     public function ajax_send_message() {
         check_ajax_referer('synofex_ajax_nonce', 'nonce');
 
+        if (!isset($_POST['message']) || !isset($_POST['bot_id'])) {
+            wp_send_json_error('Message and bot_id are required');
+            return;
+        }
+
         $message = sanitize_text_field($_POST['message']);
         $bot_id = sanitize_text_field($_POST['bot_id']);
 
         $api_client = new Synofex_API_Client($this->auth_token);
         $response = $api_client->send_message($bot_id, $message, [
-            'user_ip' => $_SERVER['REMOTE_ADDR'],
-            'user_agent' => $_SERVER['HTTP_USER_AGENT'],
-            'page_url' => sanitize_text_field($_POST['page_url']),
+            'user_ip' => isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '',
+            'user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '',
+            'page_url' => isset($_POST['page_url']) ? sanitize_text_field($_POST['page_url']) : '',
         ]);
 
         if ($response && isset($response['response'])) {

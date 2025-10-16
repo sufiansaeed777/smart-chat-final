@@ -33,7 +33,17 @@ class Synofex_API_Client {
         // For local development, change this in WordPress admin settings
         $this->api_url = get_option('synofex_api_url', 'https://smart-chat-finale.vercel.app');
         $this->auth_token = $auth_token;
-        $this->cache = new Synofex_Cache();
+
+        // Initialize cache only if class exists
+        if (class_exists('Synofex_Cache')) {
+            $this->cache = new Synofex_Cache();
+        } else {
+            // Fallback: create a simple cache object
+            $this->cache = new class {
+                public function get($key) { return false; }
+                public function set($key, $value, $expiration = 3600) { return false; }
+            };
+        }
     }
 
     /**
