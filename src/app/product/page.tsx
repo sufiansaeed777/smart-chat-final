@@ -6,8 +6,10 @@ import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import SmartCTAButton from '@/components/SmartCTAButton';
+import { useChatBot } from '@/contexts/ChatBotContext';
 
 const ProductPage = () => {
+  const { triggerChat } = useChatBot();
 
   const features = [
     {
@@ -66,13 +68,7 @@ const ProductPage = () => {
                 className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-2xl font-medium text-lg hover:opacity-90 transition-opacity text-center"
               />
               <button
-                onClick={() => {
-                  // Trigger chat widget
-                  const widget = document.querySelector('[id*="chat"]') as HTMLElement;
-                  if (widget) {
-                    widget.click();
-                  }
-                }}
+                onClick={triggerChat}
                 className="border border-gray-300 text-gray-700 px-8 py-3 rounded-2xl font-medium text-lg hover:bg-gray-50 transition-colors text-center"
               >
                 Watch Demo

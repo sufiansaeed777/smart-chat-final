@@ -2,13 +2,13 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { 
-  ArrowRight, 
-  Check, 
-  MessageSquare, 
-  Users, 
-  Zap, 
-  BarChart3, 
+import {
+  ArrowRight,
+  Check,
+  MessageSquare,
+  Users,
+  Zap,
+  BarChart3,
   Puzzle,
   Upload,
   Settings,
@@ -22,8 +22,10 @@ import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import SmartCTAButton from '@/components/SmartCTAButton';
+import { useChatBot } from '@/contexts/ChatBotContext';
 
 const LandingPage = () => {
+  const { triggerChat } = useChatBot();
 
 
 
@@ -130,13 +132,7 @@ const LandingPage = () => {
                 className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-semibold hover:shadow-xl transition-all duration-200"
               />
               <button
-                onClick={() => {
-                  // Trigger chat widget
-                  const widget = document.querySelector('[id*="chat"]') as HTMLElement;
-                  if (widget) {
-                    widget.click();
-                  }
-                }}
+                onClick={triggerChat}
                 className="border border-gray-300 text-gray-700 px-8 py-4 rounded-2xl font-semibold hover:bg-gray-50 transition-all duration-200"
               >
                 Watch Demo
