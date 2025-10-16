@@ -30,7 +30,15 @@ export async function POST(
     }
 
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          { success: false, error: 'Database connection failed' },
+          { status: 500 }
+        );
+      }
     }
 
     const conversationRepository = AppDataSource.getRepository(Conversation);
@@ -49,7 +57,7 @@ export async function POST(
     // Add message to conversation
     const messages = conversation.messages || [];
     const newMessage = {
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       sender: sender as 'visitor' | 'agent' | 'bot',
       text: message,
       timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })

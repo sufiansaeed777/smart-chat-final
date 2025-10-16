@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     // Store the agent request data
     const agentRequestData = {
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       type: 'human_agent_request',
       description: description || 'User requested human agent assistance',
       timestamp,

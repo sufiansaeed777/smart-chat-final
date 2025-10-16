@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     // Store the issue report data
     const issueReportData = {
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       type: 'issue_report',
       issueType,
       description,

@@ -14,7 +14,15 @@ export async function GET(
     const { id } = params;
 
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          { success: false, error: 'Database connection failed' },
+          { status: 500 }
+        );
+      }
     }
 
     const conversationRepository = AppDataSource.getRepository(Conversation);
@@ -45,7 +53,9 @@ export async function GET(
         assignedAgent: conversation.assignedAgent
           ? {
               id: conversation.assignedAgent.id,
-              name: conversation.assignedAgent.name,
+              name: conversation.assignedAgent.firstName && conversation.assignedAgent.lastName
+                ? `${conversation.assignedAgent.firstName} ${conversation.assignedAgent.lastName}`
+                : conversation.assignedAgent.email?.split('@')[0] || 'Agent',
               email: conversation.assignedAgent.email
             }
           : null,
@@ -78,7 +88,15 @@ export async function PATCH(
     const { mode, status, assignedAgentId, assignedAgentName, message } = body;
 
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          { success: false, error: 'Database connection failed' },
+          { status: 500 }
+        );
+      }
     }
 
     const conversationRepository = AppDataSource.getRepository(Conversation);
@@ -102,7 +120,7 @@ export async function PATCH(
       if (message) {
         const messages = conversation.messages || [];
         messages.push({
-          id: Date.now().toString(),
+          id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
           sender: mode === 'Human' ? 'agent' : 'bot',
           text: message,
           timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })

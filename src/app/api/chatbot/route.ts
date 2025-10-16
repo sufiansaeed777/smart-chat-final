@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     // Store the conversation data for admin dashboard
     const conversationData = {
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       message,
       response,
       timestamp,

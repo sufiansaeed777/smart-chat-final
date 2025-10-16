@@ -20,7 +20,18 @@ export async function GET(request: NextRequest) {
 
     // Initialize database
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Database connection failed'
+          },
+          { status: 500 }
+        );
+      }
     }
 
     const conversationRepository = AppDataSource.getRepository(Conversation);
@@ -75,7 +86,9 @@ export async function GET(request: NextRequest) {
       assignedAgent: conv.assignedAgent
         ? {
             id: conv.assignedAgent.id,
-            name: conv.assignedAgent.name || conv.assignedAgentName,
+            name: conv.assignedAgent.firstName && conv.assignedAgent.lastName
+              ? `${conv.assignedAgent.firstName} ${conv.assignedAgent.lastName}`
+              : conv.assignedAgentName || conv.assignedAgent.email?.split('@')[0] || 'Agent',
             email: conv.assignedAgent.email
           }
         : null,

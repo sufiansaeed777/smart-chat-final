@@ -10,7 +10,15 @@ export async function POST(request: NextRequest) {
   try {
     // Initialize database
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          { error: 'Database connection failed' },
+          { status: 500 }
+        );
+      }
     }
 
     // Get session
@@ -22,21 +30,21 @@ export async function POST(request: NextRequest) {
     const { botId, message, sender, isTestMessage = false, metadata } = await request.json();
 
     if (!botId || !message || !sender) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: botId, message, sender' 
+      return NextResponse.json({
+        error: 'Missing required fields: botId, message, sender'
       }, { status: 400 });
     }
 
     if (!['user', 'bot'].includes(sender)) {
-      return NextResponse.json({ 
-        error: 'Invalid sender. Must be "user" or "bot"' 
+      return NextResponse.json({
+        error: 'Invalid sender. Must be "user" or "bot"'
       }, { status: 400 });
     }
 
     // Get user and bot
-    const userRepository = AppDataSource.getRepository("users");
-    const botRepository = AppDataSource.getRepository("bots");
-    const conversationRepository = AppDataSource.getRepository("conversations");
+    const userRepository = AppDataSource.getRepository(User);
+    const botRepository = AppDataSource.getRepository(Bot);
+    const conversationRepository = AppDataSource.getRepository(Conversation);
 
     const user = await userRepository.findOne({ 
       where: { email: session.user.email } 
@@ -61,7 +69,7 @@ export async function POST(request: NextRequest) {
     conversation.message = message;
     conversation.sender = sender;
     conversation.isTestMessage = isTestMessage;
-    conversation.metadata = metadata ? JSON.stringify(metadata) : undefined;
+    conversation.metadata = metadata || undefined;
 
     await conversationRepository.save(conversation);
 
