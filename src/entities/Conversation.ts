@@ -15,21 +15,81 @@ export class Conversation {
   @Index()
   userId!: string;
 
-  @Column({ type: 'text' })
-  message!: string;
-
-  @Column({ 
-    type: 'enum', 
-    enum: ['user', 'bot'], 
-    default: 'user' 
-  })
-  sender!: 'user' | 'bot';
-
+  // OLD SCHEMA: Single message per row (for backward compatibility)
   @Column({ type: 'text', nullable: true })
-  metadata?: string; // For storing additional data like N8N response data
+  message?: string;
+
+  @Column({
+    type: 'enum',
+    enum: ['user', 'bot'],
+    nullable: true
+  })
+  sender?: 'user' | 'bot';
+
+  // NEW SCHEMA: Session identifier for grouping messages (Human Handoff)
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Index()
+  sessionId?: string;
+
+  // Guest/Visitor information
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  guestName?: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  guestId?: string;
+
+  // Handoff fields
+  @Column({
+    type: 'enum',
+    enum: ['AI', 'Human'],
+    default: 'AI'
+  })
+  mode!: 'AI' | 'Human';
+
+  @Column({
+    type: 'enum',
+    enum: ['active', 'waiting', 'idle', 'completed'],
+    default: 'active'
+  })
+  @Index()
+  status!: 'active' | 'waiting' | 'idle' | 'completed';
+
+  // Agent assignment
+  @Column({ type: 'uuid', nullable: true })
+  @Index()
+  assignedAgentId?: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  assignedAgentName?: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  assignedAt?: Date;
+
+  // Messages stored as JSON array
+  @Column({ type: 'jsonb', default: '[]' })
+  messages!: Array<{
+    id: string;
+    sender: 'visitor' | 'agent' | 'bot';
+    text: string;
+    timestamp: string;
+  }>;
+
+  // Timestamps
+  @Column({ type: 'timestamp', nullable: true })
+  startedAt?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastMessageAt?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  completedAt?: Date;
+
+  // Additional metadata
+  @Column({ type: 'jsonb', nullable: true })
+  metadata?: Record<string, any>;
 
   @Column({ type: 'boolean', default: false })
-  isTestMessage!: boolean; // Flag to identify test messages
+  isTestMessage!: boolean;
 
   @CreateDateColumn()
   createdAt!: Date;
@@ -45,4 +105,8 @@ export class Conversation {
   @ManyToOne('Bot', 'conversations')
   @JoinColumn({ name: 'botId' })
   bot?: Bot;
+
+  @ManyToOne('User')
+  @JoinColumn({ name: 'assignedAgentId' })
+  assignedAgent?: User;
 }

@@ -126,23 +126,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create or get conversation
-    const conversationRepository = AppDataSource.getRepository("conversations");
+    // Create or get conversation session
+    const conversationRepository = AppDataSource.getRepository(Conversation);
+    const actualSessionId = sessionId || `wp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     let conversation = await conversationRepository.findOne({
       where: {
         botId: botId,
-        sessionId: sessionId || `wp_${Date.now()}`
+        sessionId: actualSessionId
       }
     });
 
     if (!conversation) {
+      // Generate guest ID and name for new conversations
+      const guestNumber = Math.floor(1000 + Math.random() * 9000);
+      const guestIdSuffix = actualSessionId.slice(-4);
+
       conversation = conversationRepository.create({
         botId: botId,
         userId: userId,
-        sessionId: sessionId || `wp_${Date.now()}`,
+        sessionId: actualSessionId,
+        guestName: `Guest #${guestNumber}`,
+        guestId: `LC-${guestIdSuffix}`,
+        mode: 'AI', // Start in AI mode
+        status: 'active',
+        messages: [],
         startedAt: new Date(),
-        metadata: metadata || {},
-        messages: []
+        lastMessageAt: new Date(),
+        metadata: {
+          ...metadata,
+          source: 'wordpress',
+          userIp: metadata?.userIp,
+          userAgent: metadata?.userAgent,
+          pageUrl: metadata?.pageUrl
+        }
       });
       await conversationRepository.save(conversation);
     }
@@ -167,15 +184,16 @@ export async function POST(request: NextRequest) {
           const messages = conversation.messages || [];
           messages.push(
             {
-              role: 'user',
-              content: message,
-              timestamp: new Date().toISOString()
+              id: `${Date.now()}-visitor`,
+              sender: 'visitor',
+              text: message,
+              timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
             },
             {
-              role: 'assistant',
-              content: aiResponse,
-              timestamp: new Date().toISOString(),
-              source: 'n8n_trained'
+              id: `${Date.now()}-bot`,
+              sender: 'bot',
+              text: aiResponse,
+              timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
             }
           );
 
@@ -281,14 +299,16 @@ export async function POST(request: NextRequest) {
     const messages = conversation.messages || [];
     messages.push(
       {
-        role: 'user',
-        content: message,
-        timestamp: new Date().toISOString()
+        id: `${Date.now()}-visitor`,
+        sender: 'visitor',
+        text: message,
+        timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
       },
       {
-        role: 'assistant',
-        content: aiResponse,
-        timestamp: new Date().toISOString()
+        id: `${Date.now()}-bot`,
+        sender: 'bot',
+        text: aiResponse,
+        timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
       }
     );
 
