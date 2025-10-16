@@ -192,7 +192,7 @@ class SynofexChatbot {
         wp_localize_script('synofex-chatbot', 'synofex_config', [
             'ajax_url' => admin_url('admin-ajax.php'),
             'api_url' => SYNOFEX_API_BASE_URL,
-            'nonce' => wp_create_nonce('synofex_nonce'),
+            'nonce' => wp_create_nonce('synofex_ajax_nonce'),
             'token' => $this->auth_token,
             'bot_config' => get_option('synofex_bot_config', []),
             'strings' => [
@@ -367,7 +367,7 @@ class SynofexChatbot {
      * AJAX: Send message
      */
     public function ajax_send_message() {
-        check_ajax_referer('synofex_nonce', 'nonce');
+        check_ajax_referer('synofex_ajax_nonce', 'nonce');
 
         $message = sanitize_text_field($_POST['message']);
         $bot_id = sanitize_text_field($_POST['bot_id']);
@@ -390,7 +390,7 @@ class SynofexChatbot {
      * AJAX: Heartbeat
      */
     public function ajax_heartbeat() {
-        check_ajax_referer('synofex_nonce', 'nonce');
+        check_ajax_referer('synofex_ajax_nonce', 'nonce');
 
         $api_client = new Synofex_API_Client($this->auth_token);
         $status = $api_client->heartbeat();

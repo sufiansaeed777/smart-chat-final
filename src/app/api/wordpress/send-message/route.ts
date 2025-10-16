@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get bot configuration
-    const botRepository = AppDataSource.getRepository("bots");
+    const botRepository = AppDataSource.getRepository(Bot);
     const bot = await botRepository.findOne({
       where: {
         id: botId,
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check user's message quota
-    const userRepository = AppDataSource.getRepository("users");
+    const userRepository = AppDataSource.getRepository(User);
     const botOwner = await userRepository.findOne({
       where: { id: userId },
     });

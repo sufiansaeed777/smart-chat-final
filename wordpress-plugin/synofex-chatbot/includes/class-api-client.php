@@ -295,15 +295,35 @@ class Synofex_API_Client {
      * Get session ID
      */
     private function get_session_id() {
-        if (!session_id()) {
+        // Try to start session only if headers not sent
+        if (!session_id() && !headers_sent()) {
             session_start();
         }
 
-        if (!isset($_SESSION['synofex_session_id'])) {
-            $_SESSION['synofex_session_id'] = wp_generate_uuid4();
+        // If session is available, use it
+        if (session_id() && isset($_SESSION['synofex_session_id'])) {
+            return $_SESSION['synofex_session_id'];
         }
 
-        return $_SESSION['synofex_session_id'];
+        // Fallback to cookie-based session if session unavailable
+        if (isset($_COOKIE['synofex_session'])) {
+            return sanitize_text_field($_COOKIE['synofex_session']);
+        }
+
+        // Generate new session ID
+        $sessionId = wp_generate_uuid4();
+
+        // Store in session if available
+        if (session_id()) {
+            $_SESSION['synofex_session_id'] = $sessionId;
+        }
+
+        // Always set cookie as fallback (won't error if headers sent)
+        if (!headers_sent()) {
+            setcookie('synofex_session', $sessionId, time() + (86400 * 30), COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
+        }
+
+        return $sessionId;
     }
 
     /**
