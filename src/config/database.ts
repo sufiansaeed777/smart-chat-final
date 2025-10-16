@@ -72,7 +72,7 @@ export const AppDataSource = new DataSource({
   synchronize: config.synchronize,
   logging: config.logging,
   entities: [User, Bot, BotAssignment, Conversation, Subscription, BillingPlan, Invoice, ChatbotIssue, Document, BotDocument],
-  migrations: [],
+  migrations: ["src/migrations/**/*.ts"],
   subscribers: [],
   ssl: process.env.NODE_ENV === 'production' ? {
     rejectUnauthorized: false // Required for managed databases like Supabase
