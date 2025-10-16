@@ -25,8 +25,8 @@ define('SYNOFEX_CHATBOT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SYNOFEX_CHATBOT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('SYNOFEX_CHATBOT_PLUGIN_BASENAME', plugin_basename(__FILE__));
 
-// API Configuration
-define('SYNOFEX_API_BASE_URL', get_option('synofex_api_url', 'https://smart-chat-finale.vercel.app'));
+// API Configuration - Use default, can't use get_option() here (too early in WP load)
+define('SYNOFEX_API_BASE_URL', 'https://smart-chat-finale.vercel.app');
 define('SYNOFEX_API_VERSION', 'v1');
 
 /**
@@ -150,17 +150,56 @@ class SynofexChatbot {
 
     /**
      * Validate token and domain binding
+     * Cached for 1 hour to avoid hitting API on every page load
      */
     private function validate_token_and_domain() {
+        // Check if we validated recently (within last hour)
+        $last_validated = get_transient('synofex_token_last_validated');
+        if ($last_validated && get_option('synofex_token_valid', false)) {
+            return; // Skip validation if recently validated and still valid
+        }
+
         $api_client = new Synofex_API_Client($this->auth_token);
         $validation = $api_client->validate_token(get_site_url());
 
         if ($validation && isset($validation['valid']) && $validation['valid']) {
             update_option('synofex_token_valid', true);
-            update_option('synofex_bot_config', $validation['config']);
+            // Sanitize and save config
+            if (isset($validation['config']) && is_array($validation['config'])) {
+                update_option('synofex_bot_config', $this->sanitize_bot_config($validation['config']));
+            }
+            // Mark as validated for 1 hour
+            set_transient('synofex_token_last_validated', time(), HOUR_IN_SECONDS);
         } else {
             update_option('synofex_token_valid', false);
+            delete_transient('synofex_token_last_validated');
         }
+    }
+
+    /**
+     * Sanitize bot configuration array
+     */
+    private function sanitize_bot_config($config) {
+        $sanitized = [];
+        $allowed_keys = ['id', 'name', 'avatar', 'welcomeMessage', 'placeholder', 'tone',
+                        'language', 'primaryColor', 'position', 'model', 'systemPrompt',
+                        'temperature', 'maxTokens', 'features'];
+
+        foreach ($config as $key => $value) {
+            if (in_array($key, $allowed_keys)) {
+                if (is_string($value)) {
+                    $sanitized[$key] = sanitize_text_field($value);
+                } elseif (is_array($value)) {
+                    $sanitized[$key] = array_map('sanitize_text_field', $value);
+                } elseif (is_numeric($value)) {
+                    $sanitized[$key] = $value;
+                } elseif (is_bool($value)) {
+                    $sanitized[$key] = $value;
+                }
+            }
+        }
+
+        return $sanitized;
     }
 
     /**
@@ -189,12 +228,15 @@ class SynofexChatbot {
         );
 
         // Localize script with configuration
+        // NOTE: Do NOT expose auth_token to JavaScript - it's a security risk
+        // Token should only be used server-side in AJAX handlers
+        $bot_config = get_option('synofex_bot_config', []);
         wp_localize_script('synofex-chatbot', 'synofex_config', [
             'ajax_url' => admin_url('admin-ajax.php'),
-            'api_url' => SYNOFEX_API_BASE_URL,
             'nonce' => wp_create_nonce('synofex_ajax_nonce'),
-            'token' => $this->auth_token,
-            'bot_config' => get_option('synofex_bot_config', []),
+            'bot_id' => isset($bot_config['id']) ? $bot_config['id'] : 'default',
+            'bot_name' => isset($bot_config['name']) ? $bot_config['name'] : 'AI Assistant',
+            'welcome_message' => isset($bot_config['welcomeMessage']) ? $bot_config['welcomeMessage'] : 'Hello! How can I help you today?',
             'strings' => [
                 'typing' => __('Typing...', 'synofex-chatbot'),
                 'send' => __('Send', 'synofex-chatbot'),
@@ -376,6 +418,12 @@ class SynofexChatbot {
 
         if (!isset($_POST['message']) || !isset($_POST['bot_id'])) {
             wp_send_json_error('Message and bot_id are required');
+            return;
+        }
+
+        // Check if auth token is configured
+        if (empty($this->auth_token)) {
+            wp_send_json_error('Chatbot not configured. Please add your authentication token in settings.');
             return;
         }
 

@@ -25,11 +25,11 @@ if (typeof jQuery === 'undefined') {
 
     // Chat widget controller
     const SynofexChat = {
-        // Configuration
-        config: window.synofexConfig || {},
-        apiUrl: window.synofexConfig?.apiUrl || 'https://smart-chat-finale.vercel.app',
-        token: window.synofexConfig?.token || '',
-        botId: window.synofexConfig?.botId || 'default',
+        // Configuration (from WordPress localized script)
+        config: window.synofex_config || {},
+        botId: (window.synofex_config && window.synofex_config.bot_id) || 'default',
+        botName: (window.synofex_config && window.synofex_config.bot_name) || 'AI Assistant',
+        welcomeMessage: (window.synofex_config && window.synofex_config.welcome_message) || 'Hello! How can I help you today?',
         sessionId: null,
         isOpen: false,
         isTyping: false,
@@ -201,10 +201,11 @@ if (typeof jQuery === 'undefined') {
             // Save to local storage
             this.saveChatHistory();
 
-            // Play sound if enabled
-            if (this.config.soundEnabled && sender === 'bot') {
-                this.playNotificationSound();
-            }
+            // Play sound if enabled (future feature)
+            // Note: Sound notifications disabled for now
+            // if (this.config.soundEnabled && sender === 'bot') {
+            //     this.playNotificationSound();
+            // }
         },
 
         // Show typing indicator
@@ -279,7 +280,7 @@ if (typeof jQuery === 'undefined') {
                         console.warn('Synofex Chat: Could not clear chat history from localStorage', e);
                     }
                 }
-                this.addMessage(this.config.welcomeMessage || 'Hello! How can I help you today?', 'bot');
+                this.addMessage(this.welcomeMessage, 'bot');
             }
         },
 
@@ -376,11 +377,11 @@ if (typeof jQuery === 'undefined') {
                 } catch (e) {
                     console.error('Failed to parse chat history:', e);
                     // Show welcome message as fallback
-                    this.addMessage(this.config.welcomeMessage || 'Hello! How can I help you today?', 'bot');
+                    this.addMessage(this.welcomeMessage, 'bot');
                 }
             } else {
                 // Show welcome message
-                this.addMessage(this.config.welcomeMessage || 'Hello! How can I help you today?', 'bot');
+                this.addMessage(this.welcomeMessage, 'bot');
             }
         },
 
