@@ -2,24 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Bot, 
-  MessageSquare, 
-  BarChart3, 
-  Clock, 
-  TrendingUp, 
-  Users, 
-  Loader2, 
-  ArrowRight, 
-  Activity, 
-  Zap, 
-  Shield, 
+import {
+  Bot,
+  MessageSquare,
+  BarChart3,
+  Clock,
+  Activity,
+  Zap,
   Star,
   PlayCircle,
-  Settings,
   HelpCircle,
-  ChevronRight,
-  Sparkles
+  ArrowRight,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,11 +53,11 @@ export default function UserOverviewPage() {
     const fetchUserData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch user analytics
         const analyticsResponse = await fetch('/api/user/analytics');
         const analyticsData = await analyticsResponse.json();
-        
+
         if (analyticsData.stats) {
           setStats({
             assignedBots: analyticsData.stats.assignedBots,
@@ -94,7 +89,7 @@ export default function UserOverviewPage() {
     const now = new Date();
     const time = new Date(timestamp);
     const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
     if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)} hour ago`;
@@ -109,286 +104,249 @@ export default function UserOverviewPage() {
     );
   }
 
+  const metrics = [
+    {
+      title: "Assigned Bots",
+      value: stats.assignedBots.toString(),
+      change: "Active bots",
+      icon: Bot,
+      bgColor: "bg-purple-50",
+      iconBg: "bg-purple-500",
+      textColor: "text-purple-600"
+    },
+    {
+      title: "Total Conversations",
+      value: stats.totalConversations.toString(),
+      change: "All time interactions",
+      icon: MessageSquare,
+      bgColor: "bg-green-50",
+      iconBg: "bg-green-500",
+      textColor: "text-green-600"
+    },
+    {
+      title: "Active Now",
+      value: stats.activeConversations.toString(),
+      change: "Currently ongoing",
+      icon: Activity,
+      bgColor: "bg-blue-50",
+      iconBg: "bg-blue-500",
+      textColor: "text-blue-600"
+    },
+    {
+      title: "Avg Response",
+      value: stats.responseTime,
+      change: "Response time",
+      icon: Clock,
+      bgColor: "bg-gray-50",
+      iconBg: "bg-gray-500",
+      textColor: "text-gray-600"
+    }
+  ];
+
   return (
     <RoleGuard allowedRoles={['user']}>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        {/* Hero Section */}
-        <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900"></div>
-          <div 
-            className="absolute inset-0 opacity-40"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-              backgroundRepeat: 'repeat'
-            }}
-          ></div>
-          
-          <div className="relative px-6 py-16 md:px-8 md:py-20">
-            <div className="max-w-7xl mx-auto">
-              <div className="text-center mb-12">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-2xl mb-6">
-                  <Sparkles className="w-8 h-8 text-white" />
+      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+        {/* Top Row - Metric Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {metrics.map((metric, index) => (
+            <Card
+              key={index}
+              className={`${metric.bgColor} border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer group`}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-10 h-10 ${metric.iconBg} rounded-lg flex items-center justify-center shadow-sm flex-shrink-0 group-hover:scale-110 transition-all duration-300`}>
+                    <metric.icon className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-gray-900 truncate">{metric.title}</p>
+                    <p className={`text-xl font-bold ${metric.textColor}`}>{metric.value}</p>
+                    <p className="text-xs text-gray-600">{metric.change}</p>
+                  </div>
                 </div>
-                <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                  Welcome back!
-                </h1>
-                <p className="text-xl text-blue-100 max-w-2xl mx-auto">
-                  Here&apos;s what&apos;s happening with your assigned bots today. 
-                  Monitor performance, track conversations, and optimize your AI experience.
-                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Activity */}
+          <Card className="bg-white rounded-2xl shadow-sm border-0 hover:shadow-lg transition-all duration-300">
+            <CardHeader className="p-6 pb-4">
+              <div className="flex items-center space-x-2">
+                <Clock className="w-6 h-6 text-gray-600" />
+                <CardTitle className="text-xl font-bold text-gray-900">Recent Activity</CardTitle>
+              </div>
+              <p className="text-sm text-gray-600">Latest activities and bot assignments</p>
+            </CardHeader>
+            <CardContent className="p-6 pt-0">
+              <div className="space-y-4">
+                {recentActivity.length > 0 ? (
+                  recentActivity.map((activity) => (
+                    <div key={activity.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-300 cursor-pointer">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                          {activity.type === 'conversation' ? (
+                            <MessageSquare className="w-4 h-4 text-gray-600" />
+                          ) : (
+                            <Bot className="w-4 h-4 text-gray-600" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {activity.type === 'conversation' ? 'New conversation' : 'Bot assigned'}: {activity.bot}
+                          </p>
+                          <p className="text-sm text-gray-600">{activity.time}</p>
+                        </div>
+                      </div>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        activity.status === 'active' ? 'bg-green-100 text-green-600' :
+                        activity.status === 'completed' ? 'bg-blue-100 text-blue-600' :
+                        'bg-purple-100 text-purple-600'
+                      }`}>
+                        {activity.status}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12">
+                    <Activity className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500">No recent activity</p>
+                    <p className="text-sm text-gray-400 mt-2">Your activity will appear here</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions */}
+          <Card className="bg-white rounded-2xl shadow-sm border-0 hover:shadow-lg transition-all duration-300">
+            <CardHeader className="p-6 pb-4">
+              <div className="flex items-center space-x-2">
+                <Zap className="w-6 h-6 text-gray-600" />
+                <CardTitle className="text-xl font-bold text-gray-900">Quick Actions</CardTitle>
+              </div>
+              <p className="text-sm text-gray-600">Frequently used features</p>
+            </CardHeader>
+            <CardContent className="p-6 pt-0">
+              <div className="space-y-3">
+                <Button
+                  onClick={() => router.push('/user-dashboard/playground')}
+                  className="w-full justify-start h-12 bg-[#5A5BD8] hover:bg-[#5A5BD8]/90 text-white rounded-lg font-medium transition-all duration-300"
+                >
+                  <PlayCircle className="w-5 h-5 mr-3" />
+                  Test My Bots
+                  <ArrowRight className="w-4 h-4 ml-auto" />
+                </Button>
+                <Button
+                  onClick={() => router.push('/user-dashboard/conversations')}
+                  variant="outline"
+                  className="w-full justify-start h-12 border-gray-200 hover:bg-gray-50 rounded-lg font-medium transition-all duration-300"
+                >
+                  <MessageSquare className="w-5 h-5 mr-3" />
+                  View Conversations
+                  <ArrowRight className="w-4 h-4 ml-auto" />
+                </Button>
+                <Button
+                  onClick={() => router.push('/user-dashboard/analytics')}
+                  variant="outline"
+                  className="w-full justify-start h-12 border-gray-200 hover:bg-gray-50 rounded-lg font-medium transition-all duration-300"
+                >
+                  <BarChart3 className="w-5 h-5 mr-3" />
+                  Analytics
+                  <ArrowRight className="w-4 h-4 ml-auto" />
+                </Button>
+                <Button
+                  onClick={() => router.push('/user-dashboard/bots')}
+                  variant="outline"
+                  className="w-full justify-start h-12 border-gray-200 hover:bg-gray-50 rounded-lg font-medium transition-all duration-300"
+                >
+                  <Bot className="w-5 h-5 mr-3" />
+                  My Bots
+                  <ArrowRight className="w-4 h-4 ml-auto" />
+                </Button>
+                <Button
+                  onClick={triggerChat}
+                  variant="outline"
+                  className="w-full justify-start h-12 border-gray-200 hover:bg-gray-50 rounded-lg font-medium transition-all duration-300"
+                >
+                  <HelpCircle className="w-5 h-5 mr-3" />
+                  Get Support
+                  <ArrowRight className="w-4 h-4 ml-auto" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Performance Metrics */}
+        <Card className="bg-white rounded-2xl shadow-sm border-0 hover:shadow-lg transition-all duration-300">
+          <CardHeader className="p-6 pb-4">
+            <div className="flex items-center space-x-2">
+              <Star className="w-6 h-6 text-gray-600" />
+              <CardTitle className="text-xl font-bold text-gray-900">Performance Metrics</CardTitle>
+            </div>
+            <p className="text-sm text-gray-600">Bot performance and system health</p>
+          </CardHeader>
+          <CardContent className="p-6 pt-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Bot Uptime */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  </div>
+                  <div>
+                    <span className="text-sm font-semibold text-gray-700">Bot Uptime</span>
+                    <p className="text-xs text-gray-500">System availability</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-2xl font-bold text-green-600">99.9%</span>
+                  <p className="text-xs text-green-500 font-medium">+0.1%</p>
+                </div>
               </div>
 
-              {/* Key Metrics Row */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                      <Bot className="w-6 h-6 text-blue-300" />
-                    </div>
-                    <span className="text-2xl font-bold text-white">{stats.assignedBots}</span>
+              {/* User Satisfaction */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Star className="w-4 h-4 text-blue-500" />
                   </div>
-                  <h3 className="text-sm font-medium text-blue-100 mb-1">Assigned Bots</h3>
-                  <p className="text-xs text-blue-200">Active bots in your care</p>
+                  <div>
+                    <span className="text-sm font-semibold text-gray-700">User Satisfaction</span>
+                    <p className="text-xs text-gray-500">Customer rating</p>
+                  </div>
                 </div>
-
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
-                      <MessageSquare className="w-6 h-6 text-green-300" />
-                    </div>
-                    <span className="text-2xl font-bold text-white">{stats.totalConversations}</span>
+                <div className="text-right">
+                  <div className="flex items-center space-x-1">
+                    <span className="text-2xl font-bold text-blue-600">4.8</span>
+                    <Star className="w-5 h-5 text-yellow-400 fill-current" />
                   </div>
-                  <h3 className="text-sm font-medium text-blue-100 mb-1">Total Conversations</h3>
-                  <p className="text-xs text-blue-200">All time interactions</p>
+                  <p className="text-xs text-blue-500 font-medium">+0.2</p>
                 </div>
+              </div>
 
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                      <Activity className="w-6 h-6 text-purple-300" />
-                    </div>
-                    <span className="text-2xl font-bold text-white">{stats.activeConversations}</span>
+              {/* Response Quality */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-purple-500" />
                   </div>
-                  <h3 className="text-sm font-medium text-blue-100 mb-1">Active Now</h3>
-                  <p className="text-xs text-blue-200">Currently ongoing</p>
+                  <div>
+                    <span className="text-sm font-semibold text-gray-700">Response Quality</span>
+                    <p className="text-xs text-gray-500">AI accuracy</p>
+                  </div>
                 </div>
-
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center">
-                      <Clock className="w-6 h-6 text-orange-300" />
-                    </div>
-                    <span className="text-2xl font-bold text-white">{stats.responseTime}</span>
-                  </div>
-                  <h3 className="text-sm font-medium text-blue-100 mb-1">Avg Response</h3>
-                  <p className="text-xs text-blue-200">Response time</p>
+                <div className="text-right">
+                  <span className="text-xl font-bold text-purple-600">Excellent</span>
+                  <p className="text-xs text-purple-500 font-medium">98%</p>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="px-6 py-12 md:px-8">
-          <div className="max-w-7xl mx-auto">
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Recent Activity - Takes up 7 columns */}
-              <div className="lg:col-span-7">
-                <Card className="bg-white rounded-2xl shadow-lg border-0 h-full">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
-                          <Activity className="w-4 h-4 text-white" />
-                        </div>
-                        Recent Activity
-                      </CardTitle>
-                      <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
-                        View All
-                        <ChevronRight className="w-4 h-4 ml-1" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {recentActivity.length > 0 ? (
-                        recentActivity.map((activity) => (
-                          <div key={activity.id} className="group flex items-center space-x-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                              {activity.type === 'conversation' ? (
-                                <MessageSquare className="w-5 h-5 text-white" />
-                              ) : (
-                                <Bot className="w-5 h-5 text-white" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-gray-900 truncate">
-                                {activity.type === 'conversation' ? 'New conversation' : 'Bot assigned'}: {activity.bot}
-                              </p>
-                              <p className="text-xs text-gray-500">{activity.time}</p>
-                            </div>
-                            <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                              activity.status === 'active' ? 'bg-green-100 text-green-800' :
-                              activity.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                              'bg-purple-100 text-purple-800'
-                            }`}>
-                              {activity.status}
-                            </span>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-12">
-                          <Activity className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                          <p className="text-gray-500 text-lg">No recent activity</p>
-                          <p className="text-gray-400 text-sm mt-2">Your activity will appear here</p>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Right Side - Takes up 5 columns */}
-              <div className="lg:col-span-5 space-y-6">
-                {/* Quick Actions */}
-                <Card className="bg-white rounded-2xl shadow-lg border-0">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
-                      <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mr-3">
-                        <Zap className="w-4 h-4 text-white" />
-                      </div>
-                      Quick Actions
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <Button 
-                        onClick={() => router.push('/user-dashboard/playground')}
-                        className="w-full justify-start h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300"
-                      >
-                        <PlayCircle className="w-5 h-5 mr-3" />
-                        Test My Bots
-                        <ArrowRight className="w-4 h-4 ml-auto" />
-                      </Button>
-                      <Button 
-                        onClick={() => router.push('/user-dashboard/conversations')}
-                        variant="outline" 
-                        className="w-full justify-start h-12 border-gray-200 hover:bg-gray-50 rounded-xl font-medium transition-all duration-300"
-                      >
-                        <MessageSquare className="w-5 h-5 mr-3" />
-                        View Conversations
-                        <ArrowRight className="w-4 h-4 ml-auto" />
-                      </Button>
-                      <Button 
-                        onClick={() => router.push('/user-dashboard/analytics')}
-                        variant="outline" 
-                        className="w-full justify-start h-12 border-gray-200 hover:bg-gray-50 rounded-xl font-medium transition-all duration-300"
-                      >
-                        <BarChart3 className="w-5 h-5 mr-3" />
-                        Analytics
-                        <ArrowRight className="w-4 h-4 ml-auto" />
-                      </Button>
-                      <Button 
-                        onClick={() => router.push('/user-dashboard/bots')}
-                        variant="outline" 
-                        className="w-full justify-start h-12 border-gray-200 hover:bg-gray-50 rounded-xl font-medium transition-all duration-300"
-                      >
-                        <Bot className="w-5 h-5 mr-3" />
-                        My Bots
-                        <ArrowRight className="w-4 h-4 ml-auto" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Performance Summary */}
-                <Card className="group bg-white rounded-2xl shadow-lg border-0 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                  <CardHeader className="pb-6">
-                    <CardTitle className="text-xl font-bold text-gray-900 flex items-center group-hover:scale-105 transition-transform duration-300">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 rounded-xl flex items-center justify-center mr-3 shadow-lg group-hover:shadow-purple-200 group-hover:scale-110 transition-all duration-300">
-                        <Star className="w-5 h-5 text-white" />
-                      </div>
-                      Performance Metrics
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      {/* Bot Uptime */}
-                      <div className="group/metric flex items-center justify-between p-4 bg-white/60 rounded-xl hover:bg-white/80 transition-all duration-300 border border-white/50">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center">
-                            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                          </div>
-                          <div>
-                            <span className="text-sm font-semibold text-gray-700">Bot Uptime</span>
-                            <p className="text-xs text-gray-500">System availability</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-2xl font-bold text-green-600 group-hover/metric:scale-110 transition-transform duration-300">99.9%</span>
-                          <p className="text-xs text-green-500 font-medium">+0.1% this week</p>
-                        </div>
-                      </div>
-
-                      {/* User Satisfaction */}
-                      <div className="group/metric flex items-center justify-between p-4 bg-white/60 rounded-xl hover:bg-white/80 transition-all duration-300 border border-white/50">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
-                            <Star className="w-4 h-4 text-blue-500" />
-                          </div>
-                          <div>
-                            <span className="text-sm font-semibold text-gray-700">User Satisfaction</span>
-                            <p className="text-xs text-gray-500">Customer rating</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="flex items-center space-x-1">
-                            <span className="text-2xl font-bold text-blue-600 group-hover/metric:scale-110 transition-transform duration-300">4.8</span>
-                            <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                          </div>
-                          <p className="text-xs text-blue-500 font-medium">+0.2 this month</p>
-                        </div>
-                      </div>
-
-                      {/* Response Quality */}
-                      <div className="group/metric flex items-center justify-between p-4 bg-white/60 rounded-xl hover:bg-white/80 transition-all duration-300 border border-white/50">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg flex items-center justify-center">
-                            <Zap className="w-4 h-4 text-purple-500" />
-                          </div>
-                          <div>
-                            <span className="text-sm font-semibold text-gray-700">Response Quality</span>
-                            <p className="text-xs text-gray-500">AI accuracy</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-2xl font-bold text-purple-600 group-hover/metric:scale-110 transition-transform duration-300">Excellent</span>
-                          <p className="text-xs text-purple-500 font-medium">98% accuracy</p>
-                        </div>
-                      </div>
-
-                      {/* Support Button */}
-                      <div className="pt-4 border-t border-gray-200/60">
-                        <Button 
-                          variant="ghost" 
-                          className="w-full text-blue-600 hover:text-blue-700 hover:bg-blue-50/80 rounded-xl font-medium transition-all duration-300 group/btn"
-                          onClick={triggerChat}
-                        >
-                          <div className="flex items-center justify-center space-x-2">
-                            <HelpCircle className="w-4 h-4 group-hover/btn:scale-110 transition-transform duration-300" />
-                            <span>Get Support</span>
-                            <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform duration-300" />
-                          </div>
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </RoleGuard>
   );
