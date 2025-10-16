@@ -47,11 +47,19 @@ body {
 }
 
 /* Make all buttons show hand cursor */
-button,
-[role="button"],
+button:not(:disabled),
+[role="button"]:not(:disabled),
 .cursor-pointer,
 a[href] {
   cursor: pointer !important;
+}
+
+/* Ensure disabled buttons show not-allowed cursor */
+button:disabled,
+[role="button"]:disabled,
+button[disabled],
+[role="button"][disabled] {
+  cursor: not-allowed !important;
 }
 
 /* Restore normal cursor behavior */
