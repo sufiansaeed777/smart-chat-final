@@ -106,9 +106,14 @@ class Synofex_Cache {
         // Clear all transients with our prefix
         global $wpdb;
 
-        $sql = "DELETE FROM {$wpdb->options}
-                WHERE option_name LIKE '_transient_{$this->prefix}%'
-                OR option_name LIKE '_transient_timeout_{$this->prefix}%'";
+        // Use wpdb->prepare() to safely escape LIKE patterns
+        $sql = $wpdb->prepare(
+            "DELETE FROM {$wpdb->options}
+             WHERE option_name LIKE %s
+             OR option_name LIKE %s",
+            $wpdb->esc_like('_transient_' . $this->prefix) . '%',
+            $wpdb->esc_like('_transient_timeout_' . $this->prefix) . '%'
+        );
 
         return $wpdb->query($sql) !== false;
     }

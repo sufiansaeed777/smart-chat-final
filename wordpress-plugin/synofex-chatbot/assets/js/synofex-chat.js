@@ -10,8 +10,18 @@
  * - Example: window.synofexChat.init({ token: 'xxx', position: 'bottom-right' })
  */
 
-(function($) {
-    'use strict';
+// Check if jQuery is loaded before initializing
+if (typeof jQuery === 'undefined') {
+    console.error('Synofex Chat Error: jQuery is required but not loaded. Please ensure jQuery is enqueued before this script.');
+    // Create empty stub to prevent further errors
+    window.SynofexChat = {
+        init: function() {
+            console.error('Synofex Chat: Cannot initialize without jQuery');
+        }
+    };
+} else {
+    (function($) {
+        'use strict';
 
     // Chat widget controller
     const SynofexChat = {
@@ -357,7 +367,8 @@
     // Expose to global scope for debugging
     window.SynofexChat = SynofexChat;
 
-})(jQuery);
+    })(jQuery);
+}
 
 /**
  * TODO: Non-WordPress Widget Implementation

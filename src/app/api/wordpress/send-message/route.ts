@@ -53,16 +53,24 @@ export async function POST(request: NextRequest) {
     // Parse token
     const [userId, botId, secretToken] = token.split(':');
 
-    if (!userId || !botId) {
+    if (!userId || !botId || !secretToken) {
       return NextResponse.json(
-        { error: 'Invalid token format' },
+        { error: 'Invalid token format - all parts required (userId:botId:secret)' },
         { status: 401, headers: corsHeaders }
       );
     }
 
-    // Initialize database
+    // Initialize database with error handling
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          { error: 'Database connection failed' },
+          { status: 500, headers: corsHeaders }
+        );
+      }
     }
 
     // Get bot configuration
