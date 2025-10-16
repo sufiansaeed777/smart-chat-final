@@ -31,9 +31,17 @@ export async function POST(request: NextRequest) {
     }
 
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          { error: 'Database connection failed' },
+          { status: 500 }
+        );
+      }
     }
-    const userRepository = AppDataSource.getRepository("users");
+    const userRepository = AppDataSource.getRepository(User);
 
     // Get user details
     const user = await userRepository.findOne({
@@ -46,6 +54,9 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    // Generate idempotency key to prevent duplicate charges
+    const idempotencyKey = `checkout_${user.id}_${planType}_${Date.now()}`;
 
     // Create Stripe checkout session with proper payment method configuration
     const checkoutSession = await stripe.checkout.sessions.create({
@@ -78,9 +89,7 @@ export async function POST(request: NextRequest) {
       },
       // Enable international payments
       billing_address_collection: 'required',
-      shipping_address_collection: {
-        allowed_countries: ['US', 'GB', 'CA', 'AU', 'DE', 'FR', 'IT', 'ES', 'NL', 'SE', 'NO', 'DK', 'FI', 'AT', 'BE', 'CH', 'IE', 'PT', 'LU', 'MT', 'CY', 'EE', 'LV', 'LT', 'SI', 'SK', 'CZ', 'HU', 'PL', 'RO', 'BG', 'HR', 'GR', 'JP', 'SG', 'HK', 'MY', 'TH', 'PH', 'ID', 'VN', 'KR', 'TW', 'NZ', 'BR', 'MX', 'AR', 'CL', 'CO', 'PE', 'UY', 'ZA'],
-      },
+      // Removed shipping_address_collection - not needed for digital products
       // Automatic tax calculation for supported countries
       automatic_tax: {
         enabled: true,
@@ -94,6 +103,8 @@ export async function POST(request: NextRequest) {
           botDescription: botDescription || '',
         },
       },
+    }, {
+      idempotencyKey: idempotencyKey
     });
 
     return NextResponse.json({ 

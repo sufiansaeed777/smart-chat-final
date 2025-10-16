@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AppDataSource } from '@/config/database';
+import { User } from '@/entities/User';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -29,12 +30,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Initialize database
+    // Initialize database with error handling
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          { error: 'Database connection failed' },
+          { status: 500 }
+        );
+      }
     }
 
-    const userRepository = AppDataSource.getRepository('users');
+    const userRepository = AppDataSource.getRepository(User);
 
     // Handle different event types
     switch (event.type) {

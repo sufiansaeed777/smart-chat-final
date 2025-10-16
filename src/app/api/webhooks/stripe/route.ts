@@ -52,20 +52,37 @@ export async function POST(request: NextRequest) {
 
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
   console.log('Checkout session completed:', session.id);
-  
+
   if (!AppDataSource.isInitialized) {
-    await AppDataSource.initialize();
+    try {
+      await AppDataSource.initialize();
+    } catch (error) {
+      console.error('Database initialization failed:', error);
+      return;
+    }
   }
 
-  const botRepository = AppDataSource.getRepository("bots");
-  const userRepository = AppDataSource.getRepository("users");
+  const botRepository = AppDataSource.getRepository(Bot);
+  const userRepository = AppDataSource.getRepository(User);
 
   const userId = session.metadata?.userId;
   const planType = session.metadata?.planType;
   const botName = session.metadata?.botName;
 
+  // Validate required metadata
   if (!userId || !botName) {
     console.error('Missing required metadata in checkout session');
+    return;
+  }
+
+  // Validate metadata format
+  if (!/^[a-f0-9-]{36}$/i.test(userId)) {
+    console.error('Invalid userId format in metadata');
+    return;
+  }
+
+  if (botName.length > 100) {
+    console.error('Bot name too long in metadata');
     return;
   }
 
@@ -112,13 +129,23 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   console.log('Bot created successfully:', bot.id);
 
   // Handle signup plan refund
+  // CRITICAL: setTimeout is unreliable in serverless environments (will be lost on restart)
   if (planType === 'signup' && session.payment_intent) {
     try {
-      // Schedule refund for 24 hours later
-      // In production, you might want to use a job queue like Bull or Agenda
-      setTimeout(async () => {
-        await handleSignupPlanRefund(session.payment_intent as string, bot.id);
-      }, 24 * 60 * 60 * 1000); // 24 hours
+      // Store refund request in bot record for processing by a cron job
+      bot.scheduledRefundAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      bot.refundPaymentIntentId = session.payment_intent as string;
+      await botRepository.save(bot);
+
+      console.log(`📅 Scheduled refund for bot ${bot.id} at ${bot.scheduledRefundAt.toISOString()}`);
+      console.log(`💡 IMPORTANT: Create a cron job to process scheduledRefundAt refunds`);
+
+      // TODO: Implement proper refund scheduling with one of these options:
+      // 1. Create a cron job that checks bot.scheduledRefundAt every hour
+      // 2. Use a job queue like Bull or Agenda
+      // 3. Use Vercel Cron Jobs (if deployed on Vercel)
+      // 4. Use a ScheduledRefund entity with a separate cron job
+
     } catch (error) {
       console.error('Error scheduling refund:', error);
     }
@@ -127,13 +154,18 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
 async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
   console.log('Payment intent succeeded:', paymentIntent.id);
-  
+
   // Update bot payment status if needed
   if (!AppDataSource.isInitialized) {
-    await AppDataSource.initialize();
+    try {
+      await AppDataSource.initialize();
+    } catch (error) {
+      console.error('Database initialization failed:', error);
+      return;
+    }
   }
 
-  const botRepository = AppDataSource.getRepository("bots");
+  const botRepository = AppDataSource.getRepository(Bot);
   
   const bot = await botRepository.findOne({
     where: { paymentSessionId: paymentIntent.metadata?.sessionId }
@@ -148,13 +180,18 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
 
 async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
   console.log('Payment intent failed:', paymentIntent.id);
-  
+
   // Update bot payment status
   if (!AppDataSource.isInitialized) {
-    await AppDataSource.initialize();
+    try {
+      await AppDataSource.initialize();
+    } catch (error) {
+      console.error('Database initialization failed:', error);
+      return;
+    }
   }
 
-  const botRepository = AppDataSource.getRepository("bots");
+  const botRepository = AppDataSource.getRepository(Bot);
   
   const bot = await botRepository.findOne({
     where: { paymentSessionId: paymentIntent.metadata?.sessionId }
@@ -171,8 +208,11 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
 async function handleSignupPlanRefund(paymentIntentId: string, botId: string) {
   try {
     console.log('Processing signup plan refund for bot:', botId);
-    
-    // Create refund
+
+    // Generate idempotency key to prevent duplicate refunds
+    const idempotencyKey = `refund_${paymentIntentId}_${botId}`;
+
+    // Create refund with idempotency key
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntentId,
       reason: 'requested_by_customer',
@@ -181,16 +221,23 @@ async function handleSignupPlanRefund(paymentIntentId: string, botId: string) {
         reason: 'signup_plan_refund',
         refunded_at: new Date().toISOString(),
       }
+    }, {
+      idempotencyKey: idempotencyKey
     });
 
     console.log('Refund created:', refund.id);
 
     // Update bot with refund information
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return;
+      }
     }
 
-    const botRepository = AppDataSource.getRepository("bots");
+    const botRepository = AppDataSource.getRepository(Bot);
     const bot = await botRepository.findOne({ where: { id: botId } });
 
     if (bot) {

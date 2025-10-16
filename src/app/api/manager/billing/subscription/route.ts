@@ -19,10 +19,18 @@ export async function GET(request: NextRequest) {
     }
 
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          { error: 'Database connection failed' },
+          { status: 500 }
+        );
+      }
     }
-    const subscriptionRepository = AppDataSource.getRepository("subscriptions");
-    const userRepository = AppDataSource.getRepository("users");
+    const subscriptionRepository = AppDataSource.getRepository(Subscription);
+    const userRepository = AppDataSource.getRepository(User);
 
     // Get current user
     const currentUser = await userRepository.findOne({
@@ -46,9 +54,9 @@ export async function GET(request: NextRequest) {
     // Get usage statistics
     const { BotAssignment } = await import('@/entities/BotAssignment');
     const { Bot } = await import('@/entities/Bot');
-    
-    const assignmentRepository = AppDataSource.getRepository("bot_assignments");
-    const botRepository = AppDataSource.getRepository("bots");
+
+    const assignmentRepository = AppDataSource.getRepository(BotAssignment);
+    const botRepository = AppDataSource.getRepository(Bot);
 
     // Count assigned users
     const assignedUsers = await assignmentRepository
