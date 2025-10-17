@@ -109,12 +109,15 @@ export async function POST(request: NextRequest) {
       bot = botResult.rows[0];
     }
 
-    // TODO: Validate domain binding
-    // For now, we'll allow any domain in development
+    // Domain validation - Allow if:
+    // 1. Development mode
+    // 2. Bot has no domain set (domain is optional for now)
+    // 3. Bot domain includes the requesting domain
     const isDomainValid = process.env.NODE_ENV === 'development' ||
-                          (bot.domain && bot.domain.includes(domain));
+                          !bot.domain ||
+                          bot.domain.includes(domain);
 
-    if (!isDomainValid && process.env.NODE_ENV !== 'development') {
+    if (!isDomainValid) {
       return NextResponse.json(
         { valid: false, error: 'Domain not authorized for this bot' },
         { status: 403, headers: corsHeaders }
