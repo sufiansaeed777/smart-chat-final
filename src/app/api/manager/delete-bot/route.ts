@@ -5,6 +5,7 @@ import { AppDataSource } from '@/config/database';
 import { User } from '@/entities/User';
 import { Bot } from '@/entities/Bot';
 import { BotAssignment } from '@/entities/BotAssignment';
+import { Conversation } from '@/entities/Conversation';
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -16,7 +17,15 @@ export async function DELETE(request: NextRequest) {
 
     // Initialize database connection
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          { error: 'Database connection failed' },
+          { status: 500 }
+        );
+      }
     }
 
     // Get user from database
@@ -58,11 +67,17 @@ export async function DELETE(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Delete all bot assignments first
+    // Delete all related data before deleting the bot
+
+    // 1. Delete bot assignments
     const assignmentRepository = AppDataSource.getRepository("bot_assignments");
     await assignmentRepository.delete({ botId: botId });
 
-    // Delete the bot
+    // 2. Delete conversations associated with this bot
+    const conversationRepository = AppDataSource.getRepository("conversations");
+    await conversationRepository.delete({ botId: botId });
+
+    // 3. Delete the bot (bot_documents will auto-delete due to CASCADE)
     await botRepository.delete({ id: botId });
 
     return NextResponse.json({
