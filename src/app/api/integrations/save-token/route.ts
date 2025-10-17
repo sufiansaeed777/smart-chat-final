@@ -40,6 +40,22 @@ export async function POST(request: Request) {
       )
     `);
 
+    // Check token limit (maximum 5 active tokens per bot)
+    const tokenCountResult = await pool.query(
+      `SELECT COUNT(*) as count
+       FROM wordpress_tokens
+       WHERE bot_id = $1 AND user_id = $2 AND is_active = true`,
+      [botId, session.user.id]
+    );
+
+    const activeTokenCount = parseInt(tokenCountResult.rows[0].count);
+    if (activeTokenCount >= 5) {
+      return NextResponse.json(
+        { error: 'Maximum 5 active tokens allowed per bot. Please deactivate an old token first.' },
+        { status: 400 }
+      );
+    }
+
     // Save the token to database
     const result = await pool.query(
       `INSERT INTO wordpress_tokens (bot_id, user_id, token)
