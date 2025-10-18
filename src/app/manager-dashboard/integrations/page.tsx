@@ -345,6 +345,24 @@ export default function IntegrationsPage() {
                         )}
                       </div>
 
+                      {/* Download WordPress Plugin Button - Always Visible */}
+                      {!showInstructions && (
+                        <div className="mb-4">
+                          <button
+                            onClick={downloadPlugin}
+                            className="w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg font-semibold text-base flex items-center justify-center gap-2"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            Download WordPress Plugin (synofex-chatbot.zip)
+                          </button>
+                          <p className="text-xs text-center text-gray-600 mt-2">
+                            Download the latest version of the WordPress plugin with all fixes
+                          </p>
+                        </div>
+                      )}
+
                       {/* Generate Token Button */}
                       {!showInstructions && (
                         <div className="space-y-3">
@@ -364,6 +382,7 @@ export default function IntegrationsPage() {
                                   <li>• Each token can be used for a different website</li>
                                   <li>• All existing tokens are displayed above with their usage status</li>
                                   <li>• Deactivate old tokens to generate new ones if limit reached</li>
+                                  <li>• Use existing tokens or generate a new one for different websites</li>
                                 </ul>
                               </div>
                             </div>
