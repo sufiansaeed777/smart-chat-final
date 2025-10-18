@@ -15,11 +15,11 @@
 
     // Chat widget controller
     const SynofexChat = {
-        // Configuration
-        config: window.synofexConfig || {},
-        apiUrl: window.synofexConfig?.apiUrl || 'https://smart-chat-finale.vercel.app',
-        token: window.synofexConfig?.token || '',
-        botId: window.synofexConfig?.botId || 'default',
+        // Configuration (FIX: Changed from synofexConfig to synofex_config to match PHP wp_localize_script)
+        config: window.synofex_config || {},
+        apiUrl: window.synofex_config?.apiUrl || 'https://smart-chat-finale.vercel.app',
+        token: window.synofex_config?.token || '',
+        botId: window.synofex_config?.bot_id || 'default',
         sessionId: null,
         isOpen: false,
         isTyping: false,
@@ -133,11 +133,11 @@
 
             // Send to backend via AJAX
             $.ajax({
-                url: synofex_ajax.ajax_url, // WordPress AJAX URL
+                url: synofex_config.ajax_url, // WordPress AJAX URL (FIX: Changed from synofex_ajax to synofex_config)
                 type: 'POST',
                 data: {
                     action: 'synofex_send_message',
-                    nonce: synofex_ajax.nonce,
+                    nonce: synofex_config.nonce, // FIX: Changed from synofex_ajax to synofex_config
                     message: message,
                     bot_id: this.botId,
                     session_id: this.sessionId
@@ -270,11 +270,11 @@
         // Check connection status
         checkConnection: function() {
             $.ajax({
-                url: synofex_ajax.ajax_url,
+                url: synofex_config.ajax_url, // FIX: Changed from synofex_ajax to synofex_config
                 type: 'POST',
                 data: {
                     action: 'synofex_check_connection',
-                    nonce: synofex_ajax.nonce
+                    nonce: synofex_config.nonce // FIX: Changed from synofex_ajax to synofex_config
                 },
                 success: (response) => {
                     if (response.success) {
@@ -349,7 +349,12 @@
 
     // Initialize when DOM is ready
     $(document).ready(function() {
-        if ($('#synofex-chatbot-container').length) {
+        // FIX: Changed from #synofex-chatbot-container to #synofex-chatbot-widget to match actual HTML ID
+        if ($('#synofex-chatbot-widget').length) {
+            // Show the widget container (it starts hidden in HTML)
+            $('#synofex-chatbot-widget').fadeIn(300);
+
+            // Initialize chat functionality
             SynofexChat.init();
         }
     });
