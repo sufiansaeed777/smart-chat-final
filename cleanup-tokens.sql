@@ -1,8 +1,21 @@
--- Clean up wordpress_tokens table
--- Keep only the 5 most recent active tokens per bot
--- Delete all older tokens
+-- CLEANUP: Delete oldest 5 tokens from EVERY bot
+-- Run this once to clean up excess tokens
 
--- Step 1: Deactivate old tokens (keep only 5 newest per bot)
+-- Step 1: See current token counts per bot (BEFORE cleanup)
+SELECT
+  bot_id,
+  COUNT(*) as total_active_tokens,
+  MIN(created_at) as oldest_token_date,
+  MAX(created_at) as newest_token_date
+FROM wordpress_tokens
+WHERE is_active = true
+GROUP BY bot_id
+ORDER BY total_active_tokens DESC;
+
+-- Step 2: Deactivate all tokens EXCEPT the 5 newest per bot
+-- If bot has 10 tokens, this deactivates the oldest 5
+-- If bot has 6 tokens, this deactivates the oldest 1
+-- If bot has 5 or less, nothing is deactivated
 UPDATE wordpress_tokens
 SET is_active = false
 WHERE id NOT IN (
@@ -13,20 +26,31 @@ WHERE id NOT IN (
     FROM wordpress_tokens
     WHERE is_active = true
   ) ranked
-  WHERE row_num <= 5
-);
+  WHERE row_num <= 5  -- Keep the 5 NEWEST tokens
+)
+AND is_active = true;
 
--- Step 2: Delete all inactive tokens (optional - keeps history)
--- Uncomment the line below if you want to permanently delete inactive tokens
--- DELETE FROM wordpress_tokens WHERE is_active = false;
-
--- Step 3: Show token counts per bot
+-- Step 3: See token counts AFTER cleanup
 SELECT
   bot_id,
-  COUNT(*) as active_tokens,
-  MIN(created_at) as oldest_token,
-  MAX(created_at) as newest_token
+  COUNT(*) as total_active_tokens,
+  MIN(created_at) as oldest_token_date,
+  MAX(created_at) as newest_token_date
 FROM wordpress_tokens
 WHERE is_active = true
 GROUP BY bot_id
-ORDER BY active_tokens DESC;
+ORDER BY total_active_tokens DESC;
+
+-- Step 4: (OPTIONAL) Permanently delete deactivated tokens
+-- Uncomment if you want to remove them from database entirely
+-- DELETE FROM wordpress_tokens WHERE is_active = false;
+
+-- Step 5: Verify - should show max 5 tokens per bot
+SELECT
+  bot_id,
+  COUNT(*) as active_tokens
+FROM wordpress_tokens
+WHERE is_active = true
+GROUP BY bot_id
+HAVING COUNT(*) > 5;
+-- Should return 0 rows if cleanup worked
