@@ -347,8 +347,8 @@
         }
     };
 
-    // Initialize when DOM is ready
-    $(document).ready(function() {
+    // Initialize when DOM is ready - with retry for widget HTML
+    function initWidget() {
         // FIX: Changed from #synofex-chatbot-container to #synofex-chatbot-widget to match actual HTML ID
         if ($('#synofex-chatbot-widget').length) {
             // Show the widget container (it starts hidden in HTML)
@@ -356,7 +356,15 @@
 
             // Initialize chat functionality
             SynofexChat.init();
+        } else {
+            // Widget not in DOM yet, retry after a short delay
+            setTimeout(initWidget, 100);
         }
+    }
+
+    // Start initialization when jQuery is ready
+    $(document).ready(function() {
+        initWidget();
     });
 
     // Expose to global scope for debugging
