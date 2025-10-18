@@ -132,8 +132,8 @@ export async function POST(request: NextRequest) {
     const bot = await botRepository.findOne({
       where: {
         id: botId,
-        userId: userId,
-        isActive: true
+        createdBy: userId,
+        status: 'active'
       }
     });
 
