@@ -5,6 +5,7 @@ import { Conversation } from '@/entities/Conversation';
 import { User } from '@/entities/User';
 import { N8nService } from '@/services/n8nService';
 import { getUserPlanLimits, checkLimit } from '@/middleware/planLimits';
+import pool from '@/utils/db';
 
 /**
  * WordPress Plugin Message Handler
@@ -73,6 +74,59 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Validate token against wordpress_tokens table
+    try {
+      const tokenCheck = await pool.query(
+        `SELECT id, bot_id, user_id FROM wordpress_tokens
+         WHERE token = $1 AND is_active = true`,
+        [token]
+      );
+
+      if (tokenCheck.rows.length === 0) {
+        console.error('Token validation failed: Token not found or inactive');
+        return NextResponse.json(
+          { error: 'Invalid or inactive token' },
+          { status: 401, headers: corsHeaders }
+        );
+      }
+
+      // Verify token parts match database
+      const tokenData = tokenCheck.rows[0];
+      if (tokenData.bot_id !== botId || tokenData.user_id !== userId) {
+        console.error('Token validation failed: Token data mismatch');
+        return NextResponse.json(
+          { error: 'Token validation failed' },
+          { status: 401, headers: corsHeaders }
+        );
+      }
+
+      // Update last_used timestamp
+      await pool.query(
+        `UPDATE wordpress_tokens SET last_used = CURRENT_TIMESTAMP WHERE token = $1`,
+        [token]
+      );
+
+    } catch (tokenError) {
+      console.error('Token validation error:', tokenError);
+      // If wordpress_tokens table doesn't exist yet, create it and continue
+      try {
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS wordpress_tokens (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            bot_id UUID NOT NULL REFERENCES bots(id) ON DELETE CASCADE,
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            token TEXT NOT NULL UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_used TIMESTAMP,
+            is_active BOOLEAN DEFAULT TRUE
+          )
+        `);
+        console.log('wordpress_tokens table created, token validation skipped for this request');
+      } catch (createError) {
+        console.error('Failed to create wordpress_tokens table:', createError);
+      }
+    }
+
     // Get bot configuration
     const botRepository = AppDataSource.getRepository(Bot);
     const bot = await botRepository.findOne({
@@ -136,7 +190,7 @@ export async function POST(request: NextRequest) {
 
     // Create or get conversation session
     const conversationRepository = AppDataSource.getRepository(Conversation);
-    const actualSessionId = sessionId || `wp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const actualSessionId = sessionId || `wp_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
     let conversation = await conversationRepository.findOne({
       where: {

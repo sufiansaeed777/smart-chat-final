@@ -40,6 +40,24 @@ export async function POST(request: Request) {
       )
     `);
 
+    // Auto-cleanup: Deactivate old tokens if more than 5 exist
+    // This ensures we never exceed the limit even if old data exists
+    await pool.query(
+      `UPDATE wordpress_tokens
+       SET is_active = false
+       WHERE bot_id = $1 AND user_id = $2 AND is_active = true
+         AND id NOT IN (
+           SELECT id FROM (
+             SELECT id,
+                    ROW_NUMBER() OVER (ORDER BY created_at DESC) as row_num
+             FROM wordpress_tokens
+             WHERE bot_id = $1 AND user_id = $2 AND is_active = true
+           ) ranked
+           WHERE row_num <= 4
+         )`,
+      [botId, session.user.id]
+    );
+
     // Check token limit (maximum 5 active tokens per bot)
     const tokenCountResult = await pool.query(
       `SELECT COUNT(*) as count
