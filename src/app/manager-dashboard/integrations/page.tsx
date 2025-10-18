@@ -17,6 +17,8 @@ export default function IntegrationsPage() {
   const [showInstructions, setShowInstructions] = useState(false);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [existingTokens, setExistingTokens] = useState([]);
+  const [loadingTokens, setLoadingTokens] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -50,7 +52,28 @@ export default function IntegrationsPage() {
     }
   };
 
+  const fetchExistingTokens = async (botId) => {
+    setLoadingTokens(true);
+    try {
+      const response = await fetch(`/api/integrations/save-token?botId=${botId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setExistingTokens(data.tokens || []);
+      }
+    } catch (error) {
+      console.error('Error fetching tokens:', error);
+    } finally {
+      setLoadingTokens(false);
+    }
+  };
+
   const generateWordPressToken = async (botId) => {
+    // Check token limit (max 5 active tokens per bot)
+    if (existingTokens.length >= 5) {
+      alert('Maximum 5 active tokens allowed per bot. Please deactivate an old token first.');
+      return;
+    }
+
     // Generate a secure random token
     const secretKey = 'wp_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const token = `${session.user.id}:${botId}:${secretKey}`;
@@ -68,12 +91,42 @@ export default function IntegrationsPage() {
       if (response.ok) {
         setWpToken(token);
         setShowInstructions(true);
+        // Refresh token list
+        fetchExistingTokens(botId);
       } else {
-        console.error('Failed to save token');
-        alert('Failed to generate token. Please try again.');
+        const data = await response.json();
+        console.error('Failed to save token:', data);
+        alert(data.error || 'Failed to generate token. Please try again.');
       }
     } catch (error) {
       console.error('Error saving token:', error);
+      alert('An error occurred. Please try again.');
+    }
+  };
+
+  const deactivateToken = async (token) => {
+    if (!confirm('Are you sure you want to deactivate this token? Sites using this token will stop working.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/integrations/save-token', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      if (response.ok) {
+        alert('Token deactivated successfully');
+        // Refresh token list
+        fetchExistingTokens(selectedBot.id);
+      } else {
+        alert('Failed to deactivate token');
+      }
+    } catch (error) {
+      console.error('Error deactivating token:', error);
       alert('An error occurred. Please try again.');
     }
   };
@@ -173,6 +226,11 @@ export default function IntegrationsPage() {
                         setSelectedBot(bot);
                         setShowInstructions(false);
                         setWpToken('');
+                        setExistingTokens([]);
+                        // Fetch existing tokens for this bot
+                        if (bot) {
+                          fetchExistingTokens(bot.id);
+                        }
                       }}
                       value={selectedBot?.id || ''}
                     >
@@ -214,34 +272,115 @@ export default function IntegrationsPage() {
                         </dl>
                       </div>
 
+                      {/* Existing Tokens */}
+                      <div className="border-2 border-blue-200 rounded-lg p-5 bg-blue-50/30">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-gray-900">Active Integration Tokens</h3>
+                          <span className="text-sm font-bold px-3 py-1 bg-blue-100 text-blue-800 rounded-full border border-blue-300">
+                            {existingTokens.length}/5 Tokens
+                          </span>
+                        </div>
+
+                        {loadingTokens ? (
+                          <div className="text-center py-6 text-sm text-gray-600">
+                            <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-2"></div>
+                            <div>Loading tokens...</div>
+                          </div>
+                        ) : existingTokens.length === 0 ? (
+                          <div className="text-center py-8 text-sm">
+                            <div className="text-gray-400 mb-2">
+                              <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                              </svg>
+                            </div>
+                            <p className="text-gray-600 font-medium">No tokens generated yet</p>
+                            <p className="text-gray-500 text-xs mt-1">Click the button below to generate your first integration token</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {existingTokens.map((tokenData, index) => (
+                              <div key={index} className="bg-white border border-gray-300 rounded-lg p-4 space-y-3 shadow-sm">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-sm font-semibold text-gray-900">
+                                      Token #{index + 1}
+                                    </span>
+                                    {tokenData.last_used ? (
+                                      <Badge className="bg-green-100 text-green-800 border-green-300">
+                                        ✓ Used
+                                      </Badge>
+                                    ) : (
+                                      <Badge className="bg-gray-100 text-gray-600 border-gray-300">
+                                        Not Used
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => copyToClipboard(tokenData.token)}
+                                      className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-medium"
+                                    >
+                                      Copy
+                                    </button>
+                                    <button
+                                      onClick={() => deactivateToken(tokenData.token)}
+                                      className="text-xs px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition font-medium"
+                                    >
+                                      Deactivate
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="flex gap-4 text-xs text-gray-600">
+                                  <span className="font-medium">Created: {new Date(tokenData.created_at).toLocaleDateString()}</span>
+                                  {tokenData.last_used && (
+                                    <span className="font-medium">Last used: {new Date(tokenData.last_used).toLocaleDateString()}</span>
+                                  )}
+                                </div>
+                                <div className="text-xs font-mono bg-gray-50 px-3 py-2 rounded border border-gray-200 break-all">
+                                  {tokenData.token}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
                       {/* Generate Token Button */}
                       {!showInstructions && (
                         <div className="space-y-3">
-                          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                          <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded">
                             <div className="flex">
                               <div className="flex-shrink-0">
-                                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                                 </svg>
                               </div>
                               <div className="ml-3">
-                                <p className="text-sm font-medium text-yellow-800">
-                                  Important: Save Your Token Securely
+                                <p className="text-sm font-semibold text-amber-900 mb-1">
+                                  📋 Token Management
                                 </p>
-                                <p className="mt-1 text-sm text-yellow-700">
-                                  The authentication token will be shown only once. Make sure to copy and save it in a secure location.
-                                  Generating a new token will invalidate the previous one.
-                                </p>
+                                <ul className="text-sm text-amber-800 space-y-1">
+                                  <li>• Maximum 5 active tokens per bot</li>
+                                  <li>• Each token can be used for a different website</li>
+                                  <li>• All existing tokens are displayed above with their usage status</li>
+                                  <li>• Deactivate old tokens to generate new ones if limit reached</li>
+                                </ul>
                               </div>
                             </div>
                           </div>
                           <Button
                             onClick={() => generateWordPressToken(selectedBot.id)}
-                            className="w-full"
+                            className="w-full py-6 text-base font-semibold"
                             variant="default"
+                            disabled={existingTokens.length >= 5}
                           >
-                            Generate WordPress Integration Token
+                            {existingTokens.length >= 5 ? '⚠️ Token Limit Reached (5/5)' : '+ Generate New Token'}
                           </Button>
+                          {existingTokens.length >= 5 && (
+                            <p className="text-xs text-center text-red-600 font-medium">
+                              Deactivate an existing token above to generate a new one
+                            </p>
+                          )}
                         </div>
                       )}
 
