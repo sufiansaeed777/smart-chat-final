@@ -148,11 +148,11 @@ class Synofex_API_Client {
      * Request human handoff
      */
     public function request_human_handoff($bot_id, $conversation_id, $reason = '') {
-        return $this->make_request('POST', '/api/human-handoff', [
-            'bot_id' => $bot_id,
-            'conversation_id' => $conversation_id,
-            'reason' => $reason,
-            'priority' => 'normal',
+        // Update conversation to set mode to 'Human' and status to 'waiting'
+        return $this->make_request('PATCH', "/api/conversations/{$conversation_id}", [
+            'mode' => 'Human',
+            'status' => 'waiting',
+            'message' => 'A visitor has requested human assistance: ' . $reason,
         ]);
     }
 

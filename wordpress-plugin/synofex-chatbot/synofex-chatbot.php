@@ -3,7 +3,7 @@
  * Plugin Name: Synofex AI Chatbot
  * Plugin URI: https://synofex.com/
  * Description: AI-powered chatbot for WordPress with advanced features including document training, multi-language support, and human handoff.
- * Version: 1.0.0
+ * Version: 1.0.2
  * Requires at least: 6.0
  * Requires PHP: 8.1
  * Author: Synofex (SMC-Private) Limited
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('SYNOFEX_CHATBOT_VERSION', '1.0.0');
+define('SYNOFEX_CHATBOT_VERSION', '1.0.2');
 define('SYNOFEX_CHATBOT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SYNOFEX_CHATBOT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('SYNOFEX_CHATBOT_PLUGIN_BASENAME', plugin_basename(__FILE__));

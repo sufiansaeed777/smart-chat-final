@@ -267,6 +267,7 @@ export async function POST(request: NextRequest) {
             success: true,
             response: aiResponse,
             sessionId: conversation.sessionId,
+            conversationId: conversation.id,
             source: 'n8n_rag'
           }, { headers: corsHeaders });
         }
@@ -387,6 +388,7 @@ export async function POST(request: NextRequest) {
       success: true,
       response: aiResponse,
       sessionId: conversation.sessionId,
+      conversationId: conversation.id,
       source: bot.trainingStatus === 'trained' ? 'openai_fallback' : 'openai_direct',
       // TODO: Add for real-time features
       // typing: false,
