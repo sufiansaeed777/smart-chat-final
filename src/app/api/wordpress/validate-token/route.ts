@@ -111,10 +111,12 @@ export async function POST(request: NextRequest) {
 
     // Domain validation - Allow if:
     // 1. Development mode
-    // 2. Bot has no domain set (domain is optional for now)
+    // 2. Bot has no domain set (NULL, empty string, or '*' for all domains)
     // 3. Bot domain includes the requesting domain
     const isDomainValid = process.env.NODE_ENV === 'development' ||
                           !bot.domain ||
+                          bot.domain === '' ||
+                          bot.domain === '*' ||
                           bot.domain.includes(domain);
 
     if (!isDomainValid) {
