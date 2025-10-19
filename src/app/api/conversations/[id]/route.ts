@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { AppDataSource } from '@/config/database';
 import { Conversation } from '@/entities/Conversation';
 
+// CORS headers for WordPress widget
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, PATCH, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 /**
  * GET /api/conversations/[id]
  * Fetch a single conversation by ID
@@ -63,13 +74,13 @@ export async function GET(
         createdAt: conversation.createdAt,
         lastMessageAt: conversation.lastMessageAt
       }
-    });
+    }, { headers: corsHeaders });
 
   } catch (error) {
     console.error('Error fetching conversation:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch conversation' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -151,13 +162,13 @@ export async function PATCH(
         assignedAgentId: conversation.assignedAgentId,
         messages: conversation.messages
       }
-    });
+    }, { headers: corsHeaders });
 
   } catch (error) {
     console.error('Error updating conversation:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to update conversation' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
