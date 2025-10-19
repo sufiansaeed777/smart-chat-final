@@ -10,6 +10,7 @@ import { User } from '@/entities/User';
  *   - status: 'active' | 'waiting' | 'idle' | 'completed' (optional)
  *   - mode: 'AI' | 'Human' (optional)
  *   - assignedTo: userId (optional)
+ *   - botId: botId (optional) - filter conversations by specific bot
  */
 export async function GET(request: NextRequest) {
   try {
@@ -17,6 +18,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const mode = searchParams.get('mode');
     const assignedTo = searchParams.get('assignedTo');
+    const botId = searchParams.get('botId');
 
     // Initialize database
     if (!AppDataSource.isInitialized) {
@@ -56,6 +58,10 @@ export async function GET(request: NextRequest) {
 
     if (assignedTo) {
       queryBuilder.andWhere('conversation.assignedAgentId = :assignedTo', { assignedTo });
+    }
+
+    if (botId) {
+      queryBuilder.andWhere('conversation.botId = :botId', { botId });
     }
 
     // Exclude completed/closed conversations by default unless specifically requested

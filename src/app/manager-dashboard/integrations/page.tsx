@@ -41,7 +41,15 @@ export default function IntegrationsPage() {
       if (response.ok) {
         const data = await response.json();
         console.log('Fetched bots data:', data);
-        setBots(data.bots || []);
+        const fetchedBots = data.bots || [];
+        setBots(fetchedBots);
+
+        // Auto-select first bot (1 bot = 1 site model)
+        if (fetchedBots.length > 0) {
+          const firstBot = fetchedBots[0];
+          setSelectedBot(firstBot);
+          fetchExistingTokens(firstBot.id);
+        }
       } else {
         console.error('Failed to fetch bots:', response.status, response.statusText);
       }
@@ -214,34 +222,7 @@ export default function IntegrationsPage() {
                 </div>
               ) : (
                 <>
-                  {/* Bot Selection */}
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select a Bot to Integrate
-                    </label>
-                    <select
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      onChange={(e) => {
-                        const bot = bots.find(b => b.id === e.target.value);
-                        setSelectedBot(bot);
-                        setShowInstructions(false);
-                        setWpToken('');
-                        setExistingTokens([]);
-                        // Fetch existing tokens for this bot
-                        if (bot) {
-                          fetchExistingTokens(bot.id);
-                        }
-                      }}
-                      value={selectedBot?.id || ''}
-                    >
-                      <option value="">-- Select a bot --</option>
-                      {bots.map((bot) => (
-                        <option key={bot.id} value={bot.id}>
-                          {bot.name} ({bot.status})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Bot Selection - Hidden for 1 bot = 1 site model, auto-selected on load */}
 
                   {selectedBot && (
                     <div className="space-y-4">

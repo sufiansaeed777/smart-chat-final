@@ -39,13 +39,35 @@ const HumanHandoff = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pauseAutoRefresh, setPauseAutoRefresh] = useState(false);
+  const [userBotId, setUserBotId] = useState<string | null>(null);
+
+  // Fetch user's bot (1 bot = 1 site model)
+  const fetchUserBot = async () => {
+    try {
+      const response = await fetch('/api/manager/bots');
+      if (response.ok) {
+        const data = await response.json();
+        const bots = data.bots || [];
+        if (bots.length > 0) {
+          setUserBotId(bots[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user bot:', error);
+    }
+  };
 
   // Fetch conversations from API
   const fetchConversations = async (showRefreshIndicator = false) => {
     try {
       if (showRefreshIndicator) setIsRefreshing(true);
 
-      const response = await fetch('/api/conversations');
+      // Build URL with botId filter if available
+      const url = userBotId
+        ? `/api/conversations?botId=${userBotId}`
+        : '/api/conversations';
+
+      const response = await fetch(url);
       const data = await response.json();
 
       if (data.success) {
@@ -72,7 +94,12 @@ const HumanHandoff = () => {
   // Fetch completed conversations
   const fetchCompletedConversations = async () => {
     try {
-      const response = await fetch('/api/conversations?status=completed');
+      // Build URL with botId filter if available
+      const url = userBotId
+        ? `/api/conversations?status=completed&botId=${userBotId}`
+        : '/api/conversations?status=completed';
+
+      const response = await fetch(url);
       const data = await response.json();
 
       if (data.success) {
@@ -90,14 +117,23 @@ const HumanHandoff = () => {
     }
   };
 
-  // Initial load
+  // Initial load - fetch bot first, then conversations
   useEffect(() => {
-    fetchConversations();
-    fetchCompletedConversations();
+    fetchUserBot();
   }, []);
+
+  // When bot is loaded, fetch conversations
+  useEffect(() => {
+    if (userBotId) {
+      fetchConversations();
+      fetchCompletedConversations();
+    }
+  }, [userBotId]);
 
   // Auto-refresh every 5 seconds (but pause if manual action is in progress)
   useEffect(() => {
+    if (!userBotId) return; // Don't start interval until bot is loaded
+
     const interval = setInterval(() => {
       if (!pauseAutoRefresh) {
         fetchConversations(false); // Silent refresh
@@ -105,7 +141,7 @@ const HumanHandoff = () => {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [pauseAutoRefresh]);
+  }, [pauseAutoRefresh, userBotId]);
 
   const selectedConversation = conversations.find(conv => conv.id === selectedConversationId);
 
