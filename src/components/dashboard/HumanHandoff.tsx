@@ -51,10 +51,12 @@ const HumanHandoff = () => {
       if (data.success) {
         setConversations(data.conversations);
 
-        // Auto-select first conversation if none selected (only on initial load)
+        // Auto-select first conversation with messages if none selected (only on initial load)
         setSelectedConversationId(prevId => {
           if (!prevId && data.conversations.length > 0) {
-            return data.conversations[0].id;
+            // Find first conversation with messages
+            const firstActiveConv = data.conversations.find(conv => conv.messages && conv.messages.length > 0);
+            return firstActiveConv ? firstActiveConv.id : null;
           }
           return prevId;
         });
@@ -106,6 +108,9 @@ const HumanHandoff = () => {
   }, [pauseAutoRefresh]);
 
   const selectedConversation = conversations.find(conv => conv.id === selectedConversationId);
+
+  // Filter out conversations with no messages (old test data)
+  const activeConversations = conversations.filter(conv => conv.messages && conv.messages.length > 0);
 
   const handleSendMessage = async () => {
     if (messageInput.trim() && selectedConversation) {
@@ -253,7 +258,7 @@ const HumanHandoff = () => {
           <div className="p-4">
             <div className="mb-4">
               <h3 className="text-sm font-semibold text-gray-900 mb-1">Live Chats</h3>
-              <p className="text-xs text-gray-500">Active sessions ({conversations.length})</p>
+              <p className="text-xs text-gray-500">Active sessions ({activeConversations.length})</p>
             </div>
 
             {isLoading ? (
@@ -261,7 +266,7 @@ const HumanHandoff = () => {
                 <div className="w-8 h-8 border-4 border-[#6566F1] border-t-transparent rounded-full animate-spin"></div>
                 <p className="text-sm text-gray-500">Loading conversations...</p>
               </div>
-            ) : conversations.length === 0 ? (
+            ) : activeConversations.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <MessageCircle className="w-12 h-12 text-gray-300 mb-3" />
                 <p className="text-sm font-medium text-gray-900">No active chats</p>
@@ -269,7 +274,7 @@ const HumanHandoff = () => {
               </div>
             ) : (
               <div className="space-y-2">
-                {conversations.map((conversation) => (
+                {activeConversations.map((conversation) => (
                 <div
                   key={conversation.id}
                   onClick={() => setSelectedConversationId(conversation.id)}
