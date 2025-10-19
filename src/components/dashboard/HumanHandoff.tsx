@@ -51,10 +51,13 @@ const HumanHandoff = () => {
       if (data.success) {
         setConversations(data.conversations);
 
-        // Auto-select first conversation if none selected
-        if (!selectedConversationId && data.conversations.length > 0) {
-          setSelectedConversationId(data.conversations[0].id);
-        }
+        // Auto-select first conversation if none selected (only on initial load)
+        setSelectedConversationId(prevId => {
+          if (!prevId && data.conversations.length > 0) {
+            return data.conversations[0].id;
+          }
+          return prevId;
+        });
       }
     } catch (error) {
       console.error('Error fetching conversations:', error);
