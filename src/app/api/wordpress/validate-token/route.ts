@@ -126,33 +126,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Return bot configuration
+    // Return bot configuration (using 'config' key for WordPress plugin compatibility)
+    const botConfig = {
+      id: bot.id,
+      name: bot.name,
+      avatar: bot.avatar,
+      welcomeMessage: bot.welcomeMessage || bot["welcomeMessage"] || 'Hello! How can I help you today?',
+      placeholder: bot.placeholder || 'Type your message...',
+      tone: bot.tone || 'professional',
+      language: bot.language || 'en',
+      primaryColor: bot.primaryColor || '#0066FF',
+      position: bot.widgetPosition || 'bottom-right',
+      // Model settings
+      model: bot.model || 'gpt-3.5-turbo',
+      systemPrompt: bot.systemPrompt || bot["systemPrompt"],
+      temperature: bot.temperature || 0.7,
+      maxTokens: bot.maxTokens || bot["maxTokens"] || 500,
+      // Features
+      features: {
+        fileUpload: bot.enableFileUpload || false,
+        voiceInput: bot.enableVoiceInput || false,
+        emailCapture: bot.requireEmail || false,
+        typing: true,
+        soundNotifications: true
+      }
+    };
+
     return NextResponse.json({
       valid: true,
-      bot: {
-        id: bot.id,
-        name: bot.name,
-        avatar: bot.avatar,
-        welcomeMessage: bot.welcomeMessage || bot["welcomeMessage"] || 'Hello! How can I help you today?',
-        placeholder: bot.placeholder || 'Type your message...',
-        tone: bot.tone || 'professional',
-        language: bot.language || 'en',
-        primaryColor: bot.primaryColor || '#0066FF',
-        position: bot.widgetPosition || 'bottom-right',
-        // Model settings
-        model: bot.model || 'gpt-3.5-turbo',
-        systemPrompt: bot.systemPrompt || bot["systemPrompt"],
-        temperature: bot.temperature || 0.7,
-        maxTokens: bot.maxTokens || bot["maxTokens"] || 500,
-        // Features
-        features: {
-          fileUpload: bot.enableFileUpload || false,
-          voiceInput: bot.enableVoiceInput || false,
-          emailCapture: bot.requireEmail || false,
-          typing: true,
-          soundNotifications: true
-        }
-      },
+      config: botConfig, // WordPress plugin expects this key
+      bot: botConfig, // Keep for backwards compatibility
       user: {
         plan: 'pro', // TODO: Get from user subscription
         messagesRemaining: 1000, // TODO: Calculate from subscription
