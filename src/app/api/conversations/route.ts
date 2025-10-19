@@ -68,35 +68,38 @@ export async function GET(request: NextRequest) {
     const conversations = await queryBuilder.getMany();
 
     // Transform to frontend format
-    const formattedConversations = conversations.map(conv => ({
-      id: conv.id,
-      sessionId: conv.sessionId,
-      guestName: conv.guestName || `Guest #${conv.sessionId?.slice(-4)}`,
-      guestId: conv.guestId || `LC-${conv.sessionId?.slice(-4)}`,
-      mode: conv.mode,
-      status: conv.status,
-      messages: conv.messages || [],
-      lastMessage: conv.messages?.length > 0
-        ? conv.messages[conv.messages.length - 1].text
-        : 'No messages yet',
-      timestamp: conv.lastMessageAt
-        ? getRelativeTime(new Date(conv.lastMessageAt))
-        : 'Just now',
-      botName: conv.bot?.name,
-      assignedAgent: conv.assignedAgent
-        ? {
-            id: conv.assignedAgent.id,
-            name: conv.assignedAgent.firstName && conv.assignedAgent.lastName
-              ? `${conv.assignedAgent.firstName} ${conv.assignedAgent.lastName}`
-              : conv.assignedAgentName || conv.assignedAgent.email?.split('@')[0] || 'Agent',
-            email: conv.assignedAgent.email
-          }
-        : null,
-      assignedAt: conv.assignedAt,
-      createdAt: conv.createdAt,
-      lastMessageAt: conv.lastMessageAt,
-      metadata: conv.metadata
-    }));
+    const formattedConversations = conversations.map(conv => {
+      const fallbackId = conv.sessionId?.slice(-4) || conv.id.slice(-4);
+      return {
+        id: conv.id,
+        sessionId: conv.sessionId,
+        guestName: conv.guestName || `Guest #${fallbackId}`,
+        guestId: conv.guestId || `LC-${fallbackId}`,
+        mode: conv.mode,
+        status: conv.status,
+        messages: conv.messages || [],
+        lastMessage: conv.messages?.length > 0
+          ? conv.messages[conv.messages.length - 1].text
+          : 'No messages yet',
+        timestamp: conv.lastMessageAt
+          ? getRelativeTime(new Date(conv.lastMessageAt))
+          : 'Just now',
+        botName: conv.bot?.name,
+        assignedAgent: conv.assignedAgent
+          ? {
+              id: conv.assignedAgent.id,
+              name: conv.assignedAgent.firstName && conv.assignedAgent.lastName
+                ? `${conv.assignedAgent.firstName} ${conv.assignedAgent.lastName}`
+                : conv.assignedAgentName || conv.assignedAgent.email?.split('@')[0] || 'Agent',
+              email: conv.assignedAgent.email
+            }
+          : null,
+        assignedAt: conv.assignedAt,
+        createdAt: conv.createdAt,
+        lastMessageAt: conv.lastMessageAt,
+        metadata: conv.metadata
+      };
+    });
 
     return NextResponse.json({
       success: true,
