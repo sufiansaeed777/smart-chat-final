@@ -409,26 +409,28 @@ const HumanHandoff = () => {
               )}
             </div>
 
-            {/* Message Input */}
-            <div className="p-4 border-t border-gray-200">
-              <div className="flex items-center space-x-3">
-                <input
-                  type="text"
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder="Reply as Human agent..."
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!messageInput.trim()}
-                  className="bg-[#2D3748] hover:bg-[#1A202C] text-white px-6 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Send className="w-5 h-5" />
-                </Button>
+            {/* Message Input - Only show when in Human mode */}
+            {selectedConversation.mode === 'Human' && (
+              <div className="p-4 border-t border-gray-200">
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="text"
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    placeholder="Reply as Human agent..."
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
+                  />
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!messageInput.trim()}
+                    className="bg-[#2D3748] hover:bg-[#1A202C] text-white px-6 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Send className="w-5 h-5" />
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-400">
