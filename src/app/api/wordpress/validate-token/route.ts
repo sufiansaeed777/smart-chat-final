@@ -129,13 +129,16 @@ export async function POST(request: NextRequest) {
     // Return bot configuration (using 'config' key for WordPress plugin compatibility)
     const botConfig = {
       id: bot.id,
+      bot_id: bot.id, // WordPress plugin expects snake_case
       name: bot.name,
       avatar: bot.avatar,
       welcomeMessage: bot.welcomeMessage || bot["welcomeMessage"] || 'Hello! How can I help you today?',
+      welcome_message: bot.welcomeMessage || bot["welcomeMessage"] || 'Hello! How can I help you today?', // WordPress expects snake_case
       placeholder: bot.placeholder || 'Type your message...',
       tone: bot.tone || 'professional',
       language: bot.language || 'en',
       primaryColor: bot.primaryColor || '#0066FF',
+      primary_color: bot.primaryColor || '#0066FF', // WordPress expects snake_case
       position: bot.widgetPosition || 'bottom-right',
       // Model settings
       model: bot.model || 'gpt-3.5-turbo',
