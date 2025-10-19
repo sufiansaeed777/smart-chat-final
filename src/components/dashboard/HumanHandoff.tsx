@@ -39,21 +39,24 @@ const HumanHandoff = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pauseAutoRefresh, setPauseAutoRefresh] = useState(false);
-  const [userBotId, setUserBotId] = useState<string | null>(null);
+  const [userBots, setUserBots] = useState<any[]>([]);
+  const [selectedBotId, setSelectedBotId] = useState<string | null>(null);
 
-  // Fetch user's bot (1 bot = 1 site model)
-  const fetchUserBot = async () => {
+  // Fetch user's bots (manager can have multiple bots, 1 per site)
+  const fetchUserBots = async () => {
     try {
       const response = await fetch('/api/manager/bots');
       if (response.ok) {
         const data = await response.json();
         const bots = data.bots || [];
-        if (bots.length > 0) {
-          setUserBotId(bots[0].id);
+        setUserBots(bots);
+        // Auto-select first bot if available
+        if (bots.length > 0 && !selectedBotId) {
+          setSelectedBotId(bots[0].id);
         }
       }
     } catch (error) {
-      console.error('Error fetching user bot:', error);
+      console.error('Error fetching user bots:', error);
     }
   };
 
@@ -63,8 +66,8 @@ const HumanHandoff = () => {
       if (showRefreshIndicator) setIsRefreshing(true);
 
       // Build URL with botId filter if available
-      const url = userBotId
-        ? `/api/conversations?botId=${userBotId}`
+      const url = selectedBotId
+        ? `/api/conversations?botId=${selectedBotId}`
         : '/api/conversations';
 
       const response = await fetch(url);
@@ -95,8 +98,8 @@ const HumanHandoff = () => {
   const fetchCompletedConversations = async () => {
     try {
       // Build URL with botId filter if available
-      const url = userBotId
-        ? `/api/conversations?status=completed&botId=${userBotId}`
+      const url = selectedBotId
+        ? `/api/conversations?status=completed&botId=${selectedBotId}`
         : '/api/conversations?status=completed';
 
       const response = await fetch(url);
@@ -117,22 +120,22 @@ const HumanHandoff = () => {
     }
   };
 
-  // Initial load - fetch bot first, then conversations
+  // Initial load - fetch bots first
   useEffect(() => {
-    fetchUserBot();
+    fetchUserBots();
   }, []);
 
-  // When bot is loaded, fetch conversations
+  // When bot is selected, fetch conversations
   useEffect(() => {
-    if (userBotId) {
+    if (selectedBotId) {
       fetchConversations();
       fetchCompletedConversations();
     }
-  }, [userBotId]);
+  }, [selectedBotId]);
 
   // Auto-refresh every 5 seconds (but pause if manual action is in progress)
   useEffect(() => {
-    if (!userBotId) return; // Don't start interval until bot is loaded
+    if (!selectedBotId) return; // Don't start interval until bot is selected
 
     const interval = setInterval(() => {
       if (!pauseAutoRefresh) {
@@ -141,7 +144,7 @@ const HumanHandoff = () => {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [pauseAutoRefresh, userBotId]);
+  }, [pauseAutoRefresh, selectedBotId]);
 
   const selectedConversation = conversations.find(conv => conv.id === selectedConversationId);
 
@@ -271,7 +274,7 @@ const HumanHandoff = () => {
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold text-gray-900">Agent Console</h2>
             <div className="flex items-center space-x-2">
               <button
@@ -287,6 +290,26 @@ const HumanHandoff = () => {
               </Badge>
             </div>
           </div>
+
+          {/* Bot Selector */}
+          {userBots.length > 0 && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Select Bot
+              </label>
+              <select
+                value={selectedBotId || ''}
+                onChange={(e) => setSelectedBotId(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
+              >
+                {userBots.map((bot) => (
+                  <option key={bot.id} value={bot.id}>
+                    {bot.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Live Chats Section */}
