@@ -128,6 +128,10 @@ const HumanHandoff = () => {
   // When bot is selected, fetch conversations
   useEffect(() => {
     if (selectedBotId) {
+      // Clear selected conversation when switching bots
+      setSelectedConversationId(null);
+      setMessageInput('');
+
       fetchConversations();
       fetchCompletedConversations();
     }
