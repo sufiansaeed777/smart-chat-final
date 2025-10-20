@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { botId, token } = await request.json();
+    const { botId, token, deactivateOld } = await request.json();
 
     if (!botId || !token) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -40,20 +40,14 @@ export async function POST(request: Request) {
       )
     `);
 
-    // Check token limit (maximum 5 active tokens per bot)
-    // NO AUTO-CLEANUP - User must manually deactivate tokens
-    const tokenCountResult = await pool.query(
-      `SELECT COUNT(*) as count
-       FROM wordpress_tokens
-       WHERE bot_id = $1 AND user_id = $2 AND is_active = true`,
-      [botId, session.user.id]
-    );
-
-    const activeTokenCount = parseInt(tokenCountResult.rows[0].count);
-    if (activeTokenCount >= 5) {
-      return NextResponse.json(
-        { error: 'Maximum 5 active tokens allowed per bot. Please deactivate an old token first.' },
-        { status: 400 }
+    // 1 bot = 1 site = 1 token model
+    // Deactivate all existing tokens for this bot if requested
+    if (deactivateOld) {
+      await pool.query(
+        `UPDATE wordpress_tokens
+         SET is_active = false
+         WHERE bot_id = $1 AND user_id = $2 AND is_active = true`,
+        [botId, session.user.id]
       );
     }
 
@@ -80,7 +74,7 @@ export async function POST(request: Request) {
   }
 }
 
-// Get tokens for a bot
+// Get token for a bot (1 bot = 1 site = 1 token)
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -95,17 +89,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Bot ID required' }, { status: 400 });
     }
 
-    // Get all active tokens for this bot
+    // Get the single active token for this bot (latest one)
     const result = await pool.query(
       `SELECT token, created_at, last_used
        FROM wordpress_tokens
        WHERE bot_id = $1 AND user_id = $2 AND is_active = true
-       ORDER BY created_at DESC`,
+       ORDER BY created_at DESC
+       LIMIT 1`,
       [botId, session.user.id]
     );
 
     return NextResponse.json({
-      tokens: result.rows
+      tokens: result.rows // Returns array with 0 or 1 token
     });
 
   } catch (error) {

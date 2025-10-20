@@ -68,30 +68,27 @@ export default function IntegrationsPage() {
   };
 
   const generateWordPressToken = async (botId) => {
-    // Check token limit (max 5 active tokens per bot)
-    if (existingTokens.length >= 5) {
-      alert('Maximum 5 active tokens allowed per bot. Please deactivate an old token first.');
-      return;
-    }
+    // 1 bot = 1 site = 1 token model
+    // Deactivate all existing tokens for this bot before creating new one
 
     // Generate a secure random token
     const secretKey = 'wp_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const token = `${session.user.id}:${botId}:${secretKey}`;
 
-    // Save this token to database for validation
+    // Save this token to database (will auto-deactivate old tokens via API)
     try {
       const response = await fetch('/api/integrations/save-token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ botId, token }),
+        body: JSON.stringify({ botId, token, deactivateOld: true }),
       });
 
       if (response.ok) {
         setWpToken(token);
         setShowInstructions(true);
-        // Refresh token list
+        // Refresh to show new single token
         fetchExistingTokens(botId);
       } else {
         const data = await response.json();
@@ -104,32 +101,8 @@ export default function IntegrationsPage() {
     }
   };
 
-  const deactivateToken = async (token) => {
-    if (!confirm('Are you sure you want to deactivate this token? Sites using this token will stop working.')) {
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/integrations/save-token', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token }),
-      });
-
-      if (response.ok) {
-        alert('Token deactivated successfully');
-        // Refresh token list
-        fetchExistingTokens(selectedBot.id);
-      } else {
-        alert('Failed to deactivate token');
-      }
-    } catch (error) {
-      console.error('Error deactivating token:', error);
-      alert('An error occurred. Please try again.');
-    }
-  };
+  // Removed deactivateToken - 1 bot = 1 site = 1 token model
+  // Old tokens are auto-deactivated when generating new token
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
@@ -272,19 +245,21 @@ export default function IntegrationsPage() {
                         </dl>
                       </div>
 
-                      {/* Existing Tokens */}
+                      {/* Active Token - 1 Bot = 1 Site = 1 Token */}
                       <div className="border-2 border-blue-200 rounded-lg p-5 bg-blue-50/30">
                         <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-semibold text-gray-900">Active Integration Tokens</h3>
-                          <span className="text-sm font-bold px-3 py-1 bg-blue-100 text-blue-800 rounded-full border border-blue-300">
-                            {existingTokens.length}/5 Tokens
-                          </span>
+                          <h3 className="text-lg font-semibold text-gray-900">Active Integration Token</h3>
+                          {existingTokens.length > 0 && (
+                            <Badge className="bg-green-100 text-green-800 border-green-300">
+                              ✓ Active
+                            </Badge>
+                          )}
                         </div>
 
                         {loadingTokens ? (
                           <div className="text-center py-6 text-sm text-gray-600">
                             <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-2"></div>
-                            <div>Loading tokens...</div>
+                            <div>Loading token...</div>
                           </div>
                         ) : existingTokens.length === 0 ? (
                           <div className="text-center py-8 text-sm">
@@ -293,54 +268,42 @@ export default function IntegrationsPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                               </svg>
                             </div>
-                            <p className="text-gray-600 font-medium">No tokens generated yet</p>
-                            <p className="text-gray-500 text-xs mt-1">Click the button below to generate your first integration token</p>
+                            <p className="text-gray-600 font-medium">No token generated yet</p>
+                            <p className="text-gray-500 text-xs mt-1">Click the button below to generate your integration token</p>
                           </div>
                         ) : (
-                          <div className="space-y-3">
-                            {existingTokens.map((tokenData, index) => (
-                              <div key={index} className="bg-white border border-gray-300 rounded-lg p-4 space-y-3 shadow-sm">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <span className="text-sm font-semibold text-gray-900">
-                                      Token #{index + 1}
-                                    </span>
-                                    {tokenData.last_used ? (
-                                      <Badge className="bg-green-100 text-green-800 border-green-300">
-                                        ✓ Used
-                                      </Badge>
-                                    ) : (
-                                      <Badge className="bg-gray-100 text-gray-600 border-gray-300">
-                                        Not Used
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <button
-                                      onClick={() => copyToClipboard(tokenData.token)}
-                                      className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-medium"
-                                    >
-                                      Copy
-                                    </button>
-                                    <button
-                                      onClick={() => deactivateToken(tokenData.token)}
-                                      className="text-xs px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition font-medium"
-                                    >
-                                      Deactivate
-                                    </button>
-                                  </div>
-                                </div>
-                                <div className="flex gap-4 text-xs text-gray-600">
-                                  <span className="font-medium">Created: {new Date(tokenData.created_at).toLocaleDateString()}</span>
-                                  {tokenData.last_used && (
-                                    <span className="font-medium">Last used: {new Date(tokenData.last_used).toLocaleDateString()}</span>
-                                  )}
-                                </div>
-                                <div className="text-xs font-mono bg-gray-50 px-3 py-2 rounded border border-gray-200 break-all">
-                                  {tokenData.token}
-                                </div>
+                          <div className="bg-white border border-gray-300 rounded-lg p-4 space-y-3 shadow-sm">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span className="text-sm font-semibold text-gray-900">
+                                  Integration Token
+                                </span>
+                                {existingTokens[0].last_used ? (
+                                  <Badge className="bg-green-100 text-green-800 border-green-300">
+                                    ✓ In Use
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-gray-100 text-gray-600 border-gray-300">
+                                    Not Used Yet
+                                  </Badge>
+                                )}
                               </div>
-                            ))}
+                              <button
+                                onClick={() => copyToClipboard(existingTokens[0].token)}
+                                className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-medium"
+                              >
+                                Copy Token
+                              </button>
+                            </div>
+                            <div className="flex gap-4 text-xs text-gray-600">
+                              <span className="font-medium">Created: {new Date(existingTokens[0].created_at).toLocaleDateString()}</span>
+                              {existingTokens[0].last_used && (
+                                <span className="font-medium">Last used: {new Date(existingTokens[0].last_used).toLocaleDateString()}</span>
+                              )}
+                            </div>
+                            <div className="text-xs font-mono bg-gray-50 px-3 py-2 rounded border border-gray-200 break-all">
+                              {existingTokens[0].token}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -375,14 +338,13 @@ export default function IntegrationsPage() {
                               </div>
                               <div className="ml-3">
                                 <p className="text-sm font-semibold text-amber-900 mb-1">
-                                  📋 Token Management
+                                  📋 1 Bot = 1 Site = 1 Token
                                 </p>
                                 <ul className="text-sm text-amber-800 space-y-1">
-                                  <li>• Maximum 5 active tokens per bot</li>
-                                  <li>• Each token can be used for a different website</li>
-                                  <li>• All existing tokens are displayed above with their usage status</li>
-                                  <li>• Deactivate old tokens to generate new ones if limit reached</li>
-                                  <li>• Use existing tokens or generate a new one for different websites</li>
+                                  <li>• Each bot can have only one active token</li>
+                                  <li>• This token is used for the dedicated website</li>
+                                  <li>• Generating a new token will deactivate the old one</li>
+                                  <li>• {existingTokens.length > 0 ? 'Use the existing token above or generate a new one' : 'Generate your first token below'}</li>
                                 </ul>
                               </div>
                             </div>
@@ -391,15 +353,9 @@ export default function IntegrationsPage() {
                             onClick={() => generateWordPressToken(selectedBot.id)}
                             className="w-full py-6 text-base font-semibold"
                             variant="default"
-                            disabled={existingTokens.length >= 5}
                           >
-                            {existingTokens.length >= 5 ? '⚠️ Token Limit Reached (5/5)' : '+ Generate New Token'}
+                            {existingTokens.length > 0 ? '🔄 Regenerate Token (Old will be deactivated)' : '+ Generate Token'}
                           </Button>
-                          {existingTokens.length >= 5 && (
-                            <p className="text-xs text-center text-red-600 font-medium">
-                              Deactivate an existing token above to generate a new one
-                            </p>
-                          )}
                         </div>
                       )}
 
