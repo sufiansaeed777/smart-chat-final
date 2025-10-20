@@ -41,12 +41,11 @@ export async function POST(request: Request) {
     `);
 
     // 1 bot = 1 site = 1 token model
-    // Deactivate all existing tokens for this bot if requested
+    // DELETE all existing tokens for this bot if requested
     if (deactivateOld) {
       await pool.query(
-        `UPDATE wordpress_tokens
-         SET is_active = false
-         WHERE bot_id = $1 AND user_id = $2 AND is_active = true`,
+        `DELETE FROM wordpress_tokens
+         WHERE bot_id = $1 AND user_id = $2`,
         [botId, session.user.id]
       );
     }
