@@ -27,6 +27,8 @@
         isTyping: false,
         messageQueue: [],
         modePollInterval: null, // NEW: Interval for polling mode changes
+        displayedMessageIds: new Set(), // NEW: Track displayed message IDs to prevent duplicates
+        isCheckingMode: false, // NEW: Prevent concurrent mode check requests
 
         // Initialize chat widget
         init: function() {
@@ -141,7 +143,9 @@
             // Clear input immediately
             input.val('').focus();
 
-            // Add user message to chat
+            // Add user message to chat (track message ID to prevent duplicates)
+            const userMessageId = `user-${Date.now()}-${message.substring(0, 20)}`;
+            this.displayedMessageIds.add(userMessageId);
             this.addMessage(message, 'user');
 
             // Show typing indicator
@@ -162,7 +166,9 @@
                     this.hideTypingIndicator();
 
                     if (response.success && response.data) {
-                        // Add bot response to chat
+                        // Add bot response to chat (track message ID to prevent duplicates)
+                        const botMessageId = `bot-${Date.now()}-${response.data.response.substring(0, 20)}`;
+                        this.displayedMessageIds.add(botMessageId);
                         this.addMessage(response.data.response, 'bot');
 
                         // Update session ID if provided
@@ -177,12 +183,16 @@
                             localStorage.setItem('synofex_conversation_id', this.conversationId);
                         }
                     } else {
+                        const errorMessageId = `bot-error-${Date.now()}`;
+                        this.displayedMessageIds.add(errorMessageId);
                         this.addMessage('Sorry, I encountered an error. Please try again.', 'bot');
                     }
                 },
                 error: (xhr, status, error) => {
                     console.error('Synofex Chat Error:', error);
                     this.hideTypingIndicator();
+                    const errorMessageId = `bot-error-${Date.now()}`;
+                    this.displayedMessageIds.add(errorMessageId);
                     this.addMessage('Sorry, I\'m having trouble connecting. Please try again later.', 'bot');
                 }
             });
@@ -194,10 +204,20 @@
             const messagesContainer = $('#synofex-chat-messages');
             const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+            // Determine avatar based on sender type
+            let avatar;
+            if (sender === 'bot') {
+                avatar = this.getBotAvatar();
+            } else if (sender === 'agent') {
+                avatar = this.getAgentAvatar(); // Human agent
+            } else {
+                avatar = this.getUserAvatar(); // Visitor
+            }
+
             const messageHtml = `
                 <div class="synofex-message synofex-${sender}-message">
                     <div class="synofex-message-avatar">
-                        ${sender === 'bot' ? this.getBotAvatar() : this.getUserAvatar()}
+                        ${avatar}
                     </div>
                     <div class="synofex-message-content">
                         <div class="synofex-message-bubble">
@@ -214,8 +234,8 @@
             // Save to local storage
             this.saveChatHistory();
 
-            // Play sound if enabled
-            if (this.config.soundEnabled && sender === 'bot') {
+            // Play sound if enabled (for both bot and agent messages)
+            if (this.config.soundEnabled && (sender === 'bot' || sender === 'agent')) {
                 this.playNotificationSound();
             }
         },
@@ -258,6 +278,11 @@
             return '<div class="synofex-avatar-placeholder">👤</div>';
         },
 
+        // Get human agent avatar HTML
+        getAgentAvatar: function() {
+            return '<div class="synofex-avatar-placeholder">👨‍💼</div>';
+        },
+
         // Scroll chat to bottom
         scrollToBottom: function() {
             // FIX: Changed from #synofex-messages to #synofex-chat-messages
@@ -292,6 +317,13 @@
                 // FIX: Changed from #synofex-messages to #synofex-chat-messages
                 $('#synofex-chat-messages').empty();
                 localStorage.removeItem('synofex_chat_history');
+
+                // Clear displayed message IDs to allow fresh start
+                this.displayedMessageIds.clear();
+
+                // Add welcome message
+                const welcomeId = `bot-welcome-${Date.now()}`;
+                this.displayedMessageIds.add(welcomeId);
                 this.addMessage(this.config.welcomeMessage || 'Hello! How can I help you today?', 'bot');
             }
         },
@@ -333,10 +365,18 @@
         saveChatHistory: function() {
             const messages = [];
             // FIX: Changed from #synofex-messages to #synofex-chat-messages
+            // Save with message IDs to prevent duplicates on reload
             $('#synofex-chat-messages .synofex-message').each(function() {
-                const sender = $(this).hasClass('synofex-user-message') ? 'user' : 'bot';
+                let sender = 'user';
+                if ($(this).hasClass('synofex-bot-message')) {
+                    sender = 'bot';
+                } else if ($(this).hasClass('synofex-agent-message')) {
+                    sender = 'agent';
+                }
                 const content = $(this).find('.synofex-message-bubble').text();
-                messages.push({ sender, content });
+                const timestamp = $(this).find('.synofex-message-time').text();
+                const messageId = `${sender}-${timestamp}-${content.substring(0, 20)}`;
+                messages.push({ sender, content, messageId, timestamp });
             });
             localStorage.setItem('synofex_chat_history', JSON.stringify(messages));
         },
@@ -347,13 +387,26 @@
                 try {
                     const messages = JSON.parse(history);
                     messages.forEach(msg => {
-                        this.addMessage(msg.content, msg.sender);
+                        // Track message ID to prevent duplicates
+                        const messageId = msg.messageId || `${msg.sender}-${Date.now()}-${msg.content.substring(0, 20)}`;
+                        if (!this.displayedMessageIds.has(messageId)) {
+                            this.displayedMessageIds.add(messageId);
+                            this.addMessage(msg.content, msg.sender);
+                        }
                     });
                 } catch (e) {
                     console.error('Failed to load chat history:', e);
+                    // Clear corrupted history
+                    localStorage.removeItem('synofex_chat_history');
+                    // Show welcome message
+                    const welcomeId = `bot-welcome-${Date.now()}`;
+                    this.displayedMessageIds.add(welcomeId);
+                    this.addMessage(this.config.welcomeMessage || 'Hello! How can I help you today?', 'bot');
                 }
             } else {
                 // Show welcome message
+                const welcomeId = `bot-welcome-${Date.now()}`;
+                this.displayedMessageIds.add(welcomeId);
                 this.addMessage(this.config.welcomeMessage || 'Hello! How can I help you today?', 'bot');
             }
         },
@@ -396,6 +449,9 @@
 
         // Check if conversation mode has changed (AI vs Human)
         checkConversationMode: function() {
+            // FIX: Prevent concurrent requests to avoid glitching
+            if (this.isCheckingMode) return;
+
             // Only check if we have a conversation ID
             if (!this.conversationId) {
                 // Try to retrieve from localStorage
@@ -403,11 +459,16 @@
                 if (!this.conversationId) return;
             }
 
+            // Set flag to prevent concurrent requests
+            this.isCheckingMode = true;
+
             // Call API to check conversation status
             $.ajax({
                 url: this.apiUrl + '/api/conversations/' + this.conversationId,
                 type: 'GET',
                 success: (response) => {
+                    this.isCheckingMode = false;
+
                     if (response.success && response.conversation) {
                         const newMode = response.conversation.mode;
 
@@ -420,13 +481,15 @@
                             this.handleModeChange(oldMode, newMode);
                         }
 
-                        // Check for new messages from agent
-                        if (newMode === 'Human' && response.conversation.messages) {
+                        // FIX: Only sync messages if in Human mode (prevents unnecessary syncing)
+                        if (newMode === 'Human' && response.conversation.messages && response.conversation.messages.length > 0) {
                             this.syncMessages(response.conversation.messages);
                         }
                     }
                 },
                 error: (xhr) => {
+                    this.isCheckingMode = false;
+
                     // Conversation might not exist yet, silently continue
                     if (xhr.status !== 404) {
                         console.error('Failed to check conversation mode:', xhr);
@@ -489,20 +552,26 @@
 
         // Sync messages from server (for Human mode)
         syncMessages: function(serverMessages) {
-            // Get current messages
-            const currentMessages = [];
-            $('#synofex-chat-messages .synofex-message').each(function() {
-                const text = $(this).find('.synofex-message-bubble').text();
-                currentMessages.push(text);
-            });
+            // FIX: Use message IDs instead of text comparison to prevent glitching
+            // Only add messages that haven't been displayed yet
+            let newMessagesAdded = false;
 
-            // Check for new messages from agent
             serverMessages.forEach(msg => {
-                // Only add agent messages that we don't have
-                if (msg.sender === 'agent' && !currentMessages.includes(msg.text)) {
+                // Generate a unique message ID if not present
+                const messageId = msg.id || `${msg.sender}-${msg.timestamp}-${msg.text.substring(0, 20)}`;
+
+                // Only add agent messages that we haven't displayed yet
+                if (msg.sender === 'agent' && !this.displayedMessageIds.has(messageId)) {
+                    this.displayedMessageIds.add(messageId);
                     this.addMessage(msg.text, 'agent');
+                    newMessagesAdded = true;
                 }
             });
+
+            // Only save history if new messages were added
+            if (newMessagesAdded) {
+                this.saveChatHistory();
+            }
         },
 
         // Stop polling (cleanup)
