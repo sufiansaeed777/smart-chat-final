@@ -146,9 +146,30 @@ export class N8nService {
 
       console.log('✅ n8n chat response:', result);
 
+      // FIX: n8n can return either an array or an object
+      // Array format: [{"Response": "..."}]
+      // Object format: {"response": "..."}
+      let responseText;
+
+      if (Array.isArray(result) && result.length > 0) {
+        // Handle array format - take first item
+        responseText = result[0].Response || result[0].response || result[0].output || result[0].text;
+      } else {
+        // Handle object format
+        responseText = result.Response || result.response || result.output || result.text;
+      }
+
+      if (!responseText) {
+        console.error('❌ n8n response missing expected fields:', JSON.stringify(result, null, 2));
+        return {
+          success: false,
+          message: 'No response field found in n8n output'
+        };
+      }
+
       return {
         success: true,
-        response: result.Response || result.response || 'No response from bot'
+        response: responseText
       };
     } catch (error) {
       console.error('❌ Error sending chat to n8n:', error);
