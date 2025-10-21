@@ -263,7 +263,10 @@ export async function POST(request: NextRequest) {
     let aiResponse = 'I apologize, but I am currently unable to process your request.';
 
     // Priority 1: Use n8n trained bot (RAG with vector embeddings)
+    console.log(`📊 [ROUTING CHECK] Bot training status: "${bot.trainingStatus}" | N8N_WEBHOOK_URL exists: ${!!process.env.N8N_WEBHOOK_URL}`);
+
     if (bot.trainingStatus === 'trained' && process.env.N8N_WEBHOOK_URL) {
+      console.log(`🎯 [n8n] Calling n8n workflow for trained bot...`);
       try {
         const n8nResult = await N8nService.sendChatMessage({
           botId: bot.id,
@@ -305,12 +308,21 @@ export async function POST(request: NextRequest) {
           }, { headers: corsHeaders });
         }
       } catch (error) {
-        console.error('n8n trained bot error:', error);
+        console.error('❌ n8n trained bot error:', error);
         // Fall through to OpenAI fallback
+      }
+    } else {
+      // Log why n8n was skipped
+      if (bot.trainingStatus !== 'trained') {
+        console.log(`⏭️  [SKIP n8n] Bot not trained (status: "${bot.trainingStatus}")`);
+      } else if (!process.env.N8N_WEBHOOK_URL) {
+        console.log(`⏭️  [SKIP n8n] N8N_WEBHOOK_URL not configured in environment variables`);
       }
     }
 
-    // Priority 2: Use OpenAI directly (if bot not trained)
+    // Priority 2: Use OpenAI directly (if bot not trained or n8n failed)
+    console.log(`🔄 [OpenAI Fallback] Using direct OpenAI API...`);
+
     const systemPrompt = `You are ${bot.name}, a helpful AI assistant.
     Your personality is ${bot.tone || 'professional'}.
     ${bot.customInstructions || ''}
