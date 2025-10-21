@@ -210,10 +210,15 @@
         },
 
         // Add message to chat window
-        addMessage: function(message, sender) {
+        addMessage: function(message, sender, messageId) {
             // FIX: Changed from #synofex-messages to #synofex-chat-messages
             const messagesContainer = $('#synofex-chat-messages');
             const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            // Generate message ID if not provided (for user messages and old code compatibility)
+            if (!messageId) {
+                messageId = `${sender}-${Date.now()}-${message.substring(0, 20)}`;
+            }
 
             // Determine avatar based on sender type
             let avatar;
@@ -225,8 +230,9 @@
                 avatar = this.getUserAvatar(); // Visitor
             }
 
+            // FIX: Store message ID in data attribute to preserve it across save/load
             const messageHtml = `
-                <div class="synofex-message synofex-${sender}-message">
+                <div class="synofex-message synofex-${sender}-message" data-message-id="${this.escapeHtml(messageId)}">
                     <div class="synofex-message-avatar">
                         ${avatar}
                     </div>
@@ -376,7 +382,7 @@
         saveChatHistory: function() {
             const messages = [];
             // FIX: Changed from #synofex-messages to #synofex-chat-messages
-            // Save with message IDs to prevent duplicates on reload
+            // FIX: Read actual message IDs from DOM data attributes to prevent duplicates
             $('#synofex-chat-messages .synofex-message').each(function() {
                 let sender = 'user';
                 if ($(this).hasClass('synofex-bot-message')) {
@@ -386,7 +392,8 @@
                 }
                 const content = $(this).find('.synofex-message-bubble').text();
                 const timestamp = $(this).find('.synofex-message-time').text();
-                const messageId = `${sender}-${timestamp}-${content.substring(0, 20)}`;
+                // FIX: Read the actual message ID from data attribute (preserves server's ID)
+                const messageId = $(this).data('message-id') || `${sender}-${timestamp}-${content.substring(0, 20)}`;
                 messages.push({ sender, content, messageId, timestamp });
             });
             localStorage.setItem('synofex_chat_history', JSON.stringify(messages));
@@ -398,11 +405,12 @@
                 try {
                     const messages = JSON.parse(history);
                     messages.forEach(msg => {
-                        // Track message ID to prevent duplicates
+                        // FIX: Use the saved message ID to prevent duplicates
                         const messageId = msg.messageId || `${msg.sender}-${Date.now()}-${msg.content.substring(0, 20)}`;
                         if (!this.displayedMessageIds.has(messageId)) {
                             this.displayedMessageIds.add(messageId);
-                            this.addMessage(msg.content, msg.sender);
+                            // FIX: Pass messageId to addMessage to preserve it
+                            this.addMessage(msg.content, msg.sender, messageId);
                         }
                     });
                 } catch (e) {
@@ -412,13 +420,13 @@
                     // Show welcome message
                     const welcomeId = `bot-welcome-${Date.now()}`;
                     this.displayedMessageIds.add(welcomeId);
-                    this.addMessage(this.config.welcomeMessage || 'Hello! How can I help you today?', 'bot');
+                    this.addMessage(this.config.welcomeMessage || 'Hello! How can I help you today?', 'bot', welcomeId);
                 }
             } else {
                 // Show welcome message
                 const welcomeId = `bot-welcome-${Date.now()}`;
                 this.displayedMessageIds.add(welcomeId);
-                this.addMessage(this.config.welcomeMessage || 'Hello! How can I help you today?', 'bot');
+                this.addMessage(this.config.welcomeMessage || 'Hello! How can I help you today?', 'bot', welcomeId);
             }
         },
 
@@ -568,18 +576,19 @@
             let newMessagesAdded = false;
 
             serverMessages.forEach(msg => {
-                // Generate a unique message ID if not present
+                // Use server's message ID (critical for preventing duplicates!)
                 const messageId = msg.id || `${msg.sender}-${msg.timestamp}-${msg.text.substring(0, 20)}`;
 
                 // Only add agent messages that we haven't displayed yet
                 if (msg.sender === 'agent' && !this.displayedMessageIds.has(messageId)) {
                     this.displayedMessageIds.add(messageId);
-                    this.addMessage(msg.text, 'agent');
+                    // FIX: Pass messageId to addMessage - this preserves server's ID!
+                    this.addMessage(msg.text, 'agent', messageId);
                     newMessagesAdded = true;
                 }
             });
 
-            // Only save history if new messages were added
+            // Only save history if new messages were added (addMessage already saves, but being explicit)
             if (newMessagesAdded) {
                 this.saveChatHistory();
             }

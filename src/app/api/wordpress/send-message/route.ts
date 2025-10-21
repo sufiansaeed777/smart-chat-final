@@ -226,6 +226,39 @@ export async function POST(request: NextRequest) {
       await conversationRepository.save(conversation);
     }
 
+    // FIX: Check if conversation is in Human mode - if yes, skip AI processing
+    console.log(`🔍 [MODE CHECK] Conversation ${conversation.id} | Mode: "${conversation.mode}" | Status: "${conversation.status}"`);
+
+    if (conversation.mode === 'Human') {
+      console.log(`✅ [HUMAN MODE] Skipping AI - agent will handle this conversation`);
+
+      // Save visitor message and return immediately (don't call AI/n8n)
+      const messages = conversation.messages || [];
+      messages.push({
+        id: `${Date.now()}-visitor`,
+        sender: 'visitor',
+        text: message,
+        timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      });
+
+      conversation.messages = messages;
+      conversation.lastMessageAt = new Date();
+      await conversationRepository.save(conversation);
+
+      console.log(`📨 [HUMAN MODE] Saved visitor message, waiting for agent response`);
+
+      return NextResponse.json({
+        success: true,
+        response: 'Your message has been received. A human agent will respond shortly.',
+        sessionId: conversation.sessionId,
+        conversationId: conversation.id,
+        mode: 'Human',
+        waitingForAgent: true
+      }, { headers: corsHeaders });
+    }
+
+    console.log(`🤖 [AI MODE] Processing with AI/n8n - mode is "${conversation.mode}"`);
+
     // Check if bot is trained with n8n (preferred method)
     let aiResponse = 'I apologize, but I am currently unable to process your request.';
 
