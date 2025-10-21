@@ -166,11 +166,6 @@
                     this.hideTypingIndicator();
 
                     if (response.success && response.data) {
-                        // Add bot response to chat (track message ID to prevent duplicates)
-                        const botMessageId = `bot-${Date.now()}-${response.data.response.substring(0, 20)}`;
-                        this.displayedMessageIds.add(botMessageId);
-                        this.addMessage(response.data.response, 'bot');
-
                         // Update session ID if provided
                         if (response.data.sessionId) {
                             this.sessionId = response.data.sessionId;
@@ -181,6 +176,22 @@
                         if (response.data.conversationId) {
                             this.conversationId = response.data.conversationId;
                             localStorage.setItem('synofex_conversation_id', this.conversationId);
+                        }
+
+                        // FIX: Check if conversation is in Human mode
+                        if (response.data.mode === 'Human' && response.data.waitingForAgent) {
+                            // Don't show bot response in Human mode - agent will respond
+                            // Just update mode if not already set
+                            if (this.conversationMode !== 'Human') {
+                                this.conversationMode = 'Human';
+                                this.updateModeIndicator('Human', 'Agent is here to help');
+                            }
+                            // Message already added to chat (visitor message), just wait for agent response
+                        } else {
+                            // Add bot response to chat (track message ID to prevent duplicates)
+                            const botMessageId = `bot-${Date.now()}-${response.data.response.substring(0, 20)}`;
+                            this.displayedMessageIds.add(botMessageId);
+                            this.addMessage(response.data.response, 'bot');
                         }
                     } else {
                         const errorMessageId = `bot-error-${Date.now()}`;
