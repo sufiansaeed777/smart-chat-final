@@ -192,6 +192,8 @@ export async function POST(request: NextRequest) {
     const conversationRepository = AppDataSource.getRepository(Conversation);
     const actualSessionId = sessionId || `wp_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
+    console.log(`🔎 [SESSION] Looking for conversation with sessionId: "${actualSessionId}" and botId: "${botId}"`);
+
     let conversation = await conversationRepository.findOne({
       where: {
         botId: botId,
@@ -200,6 +202,8 @@ export async function POST(request: NextRequest) {
     });
 
     if (!conversation) {
+      console.log(`🆕 [NEW CONVERSATION] Creating new conversation for sessionId: "${actualSessionId}"`);
+
       // Generate guest ID and name for new conversations
       const guestNumber = Math.floor(1000 + Math.random() * 9000);
       const guestIdSuffix = actualSessionId.slice(-4);
@@ -224,13 +228,18 @@ export async function POST(request: NextRequest) {
         }
       });
       await conversationRepository.save(conversation);
+
+      console.log(`✅ [CREATED] New conversation: ${conversation.id} | Guest: ${conversation.guestName} | Mode: ${conversation.mode}`);
+    } else {
+      console.log(`♻️  [EXISTING] Found conversation: ${conversation.id} | Mode: "${conversation.mode}" | Messages: ${conversation.messages?.length || 0}`);
     }
 
-    // FIX: Check if conversation is in Human mode - if yes, skip AI processing
-    console.log(`🔍 [MODE CHECK] Conversation ${conversation.id} | Mode: "${conversation.mode}" | Status: "${conversation.status}"`);
+    // CRITICAL FIX: Check if conversation is in Human mode - if yes, skip ALL AI processing
+    console.log(`🔍 [MODE CHECK] Conversation ${conversation.id} | SessionID: "${conversation.sessionId}" | Mode: "${conversation.mode}" | Status: "${conversation.status}"`);
 
     if (conversation.mode === 'Human') {
-      console.log(`✅ [HUMAN MODE] Skipping AI - agent will handle this conversation`);
+      console.log(`🚨 [HUMAN MODE ACTIVE] Conversation is in Human mode - BLOCKING ALL AI/n8n calls`);
+      console.log(`📋 [HUMAN MODE] Visitor: "${message}"`);
 
       // Save visitor message and return immediately (don't call AI/n8n)
       const messages = conversation.messages || [];
@@ -243,16 +252,19 @@ export async function POST(request: NextRequest) {
 
       conversation.messages = messages;
       conversation.lastMessageAt = new Date();
+
+      // CRITICAL: Do NOT change mode - keep it as 'Human'
       await conversationRepository.save(conversation);
 
-      console.log(`📨 [HUMAN MODE] Saved visitor message, waiting for agent response`);
+      console.log(`✅ [HUMAN MODE] Saved visitor message successfully - waiting for human agent`);
+      console.log(`🔒 [HUMAN MODE] Mode remains: "${conversation.mode}" (NOT changing to AI)`);
 
       return NextResponse.json({
         success: true,
         response: 'Your message has been received. A human agent will respond shortly.',
         sessionId: conversation.sessionId,
         conversationId: conversation.id,
-        mode: 'Human',
+        mode: 'Human', // CRITICAL: Return Human mode so widget knows
         waitingForAgent: true
       }, { headers: corsHeaders });
     }
