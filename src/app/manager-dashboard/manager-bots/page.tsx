@@ -788,7 +788,17 @@ export default function BotsPage() {
       if (response.ok) {
         const data = await response.json();
         const docIds = (data.documents || []).map((doc: any) => doc.documentId);
-        setBotKnowledgeIds(docIds);
+
+        // FIX: Only include document IDs that actually exist in current knowledgeBase
+        // This prevents showing "X documents selected" when documents were deleted
+        const validDocIds = docIds.filter((id: string) =>
+          knowledgeBase.some(doc => doc.id === id)
+        );
+
+        console.log(`[Assign Knowledge] Bot has ${docIds.length} assigned documents in DB`);
+        console.log(`[Assign Knowledge] ${validDocIds.length} of those still exist in knowledge base`);
+
+        setBotKnowledgeIds(validDocIds);
       } else {
         setBotKnowledgeIds([]);
       }
