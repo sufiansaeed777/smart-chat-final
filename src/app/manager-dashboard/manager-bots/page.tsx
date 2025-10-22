@@ -1559,13 +1559,15 @@ export default function BotsPage() {
                 <Label htmlFor="edit-bot-domain" className="text-sm font-medium text-gray-700 mb-2 block">
                   Domain
                 </Label>
+                <p className="text-xs text-gray-500 mb-1">Must be a full https:// URL (e.g., https://yoursite.com)</p>
                 <Input
                   id="edit-bot-domain"
-                  type="text"
+                  type="url"
+                  pattern="https://.*"
                   value={editBot.domain}
                   onChange={(e) => setEditBot({ ...editBot, domain: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] text-gray-900"
-                  placeholder="Enter domain (e.g., Real Estate)"
+                  placeholder="e.g., https://support.yoursite.com"
                   required
                 />
               </div>
