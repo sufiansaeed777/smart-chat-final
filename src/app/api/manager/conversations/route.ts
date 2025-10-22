@@ -18,11 +18,19 @@ export async function GET(request: NextRequest) {
 
     // Initialize database connection
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          { error: 'Database connection failed' },
+          { status: 500 }
+        );
+      }
     }
 
     // Get manager from database
-    const userRepository = AppDataSource.getRepository("users");
+    const userRepository = AppDataSource.getRepository(User);
     const manager = await userRepository.findOne({ 
       where: { email: session.user.email } 
     });
@@ -63,7 +71,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get bot assignments for these users
-    const assignmentRepository = AppDataSource.getRepository("bot_assignments");
+    const assignmentRepository = AppDataSource.getRepository(BotAssignment);
     const assignments = await assignmentRepository.find({
       where: { 
         userId: In(relevantUserIds),
@@ -73,7 +81,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Also get bots created by the manager (for manager's own conversations)
-    const botRepository = AppDataSource.getRepository("bots");
+    const botRepository = AppDataSource.getRepository(Bot);
     const managerBots = await botRepository.find({
       where: { createdBy: manager.id }
     });
@@ -103,12 +111,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query for conversations
-    let query = AppDataSource.getRepository("conversations")
+    // FIX: Include WordPress conversations (they have guestId instead of registered userId)
+    // WordPress conversations have userId = bot owner, but they're guests with guestId
+    let query = AppDataSource.getRepository(Conversation)
       .createQueryBuilder('conversation')
       .leftJoinAndSelect('conversation.bot', 'bot')
       .leftJoinAndSelect('conversation.user', 'user')
       .where('conversation.botId IN (:...allBotIds)', { allBotIds })
-      .andWhere('conversation.userId IN (:...relevantUserIds)', { relevantUserIds });
+      .andWhere(
+        '(conversation.userId IN (:...relevantUserIds) OR conversation.guestId IS NOT NULL)',
+        { relevantUserIds }
+      );
 
     // Apply filters
     if (botId !== 'all') {

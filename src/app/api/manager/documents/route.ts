@@ -170,6 +170,20 @@ export async function POST(request: NextRequest) {
         continue; // Skip invalid files
       }
 
+      // FIX: Check for duplicate document name
+      const existingDocument = await documentRepository.findOne({
+        where: {
+          name: file.name,
+          userId: user.id,
+          status: 'active'
+        }
+      });
+
+      if (existingDocument) {
+        console.warn(`Skipping duplicate document: ${file.name}`);
+        continue; // Skip documents with duplicate names
+      }
+
       // Generate unique filename
       const fileExtension = path.extname(file.name);
 
