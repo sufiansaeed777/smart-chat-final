@@ -415,11 +415,14 @@ const BotsPage = () => {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">Domain</label>
+                <p className="text-xs text-gray-500 mb-1">Must be a full https:// URL (e.g., https://yoursite.com)</p>
                 <Input
                   value={newBot.domain}
                   onChange={(e) => setNewBot({...newBot, domain: e.target.value})}
-                  placeholder="e.g., support.yoursite.com"
+                  placeholder="e.g., https://support.yoursite.com"
                   className="mt-1"
+                  type="url"
+                  pattern="https://.*"
                 />
               </div>
               <div>

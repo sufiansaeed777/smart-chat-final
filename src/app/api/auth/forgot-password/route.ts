@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AppDataSource } from '@/config/database';
+import { User } from '@/entities/User';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository('users');
+    const userRepository = AppDataSource.getRepository(User);
 
     // Find user by email
     const user = await userRepository.findOne({ where: { email } });
