@@ -380,8 +380,17 @@ export async function POST(request: NextRequest) {
             });
 
             if (n8nResponse.ok) {
-              const n8nData = await n8nResponse.json();
-              aiResponse = n8nData.response || aiResponse;
+              try {
+                const responseText = await n8nResponse.text();
+                if (responseText && responseText.trim()) {
+                  const n8nData = JSON.parse(responseText);
+                  aiResponse = n8nData.response || aiResponse;
+                } else {
+                  console.error('n8n returned empty response');
+                }
+              } catch (jsonError) {
+                console.error('n8n JSON parse error:', jsonError);
+              }
             }
           }
         }
@@ -406,8 +415,17 @@ export async function POST(request: NextRequest) {
           });
 
           if (n8nResponse.ok) {
-            const n8nData = await n8nResponse.json();
-            aiResponse = n8nData.response || aiResponse;
+            try {
+              const responseText = await n8nResponse.text();
+              if (responseText && responseText.trim()) {
+                const n8nData = JSON.parse(responseText);
+                aiResponse = n8nData.response || aiResponse;
+              } else {
+                console.error('n8n returned empty response');
+              }
+            } catch (jsonError) {
+              console.error('n8n JSON parse error:', jsonError);
+            }
           }
         } catch (error) {
           console.error('n8n webhook error:', error);
