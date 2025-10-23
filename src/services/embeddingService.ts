@@ -51,8 +51,9 @@ export async function generateEmbeddings(
       try {
         // Generate embedding using OpenAI
         const embeddingResponse = await openai.embeddings.create({
-          model: 'text-embedding-ada-002',
+          model: 'text-embedding-3-small',
           input: chunk,
+          dimensions: 1536,
         });
 
         const embedding = embeddingResponse.data[0].embedding;

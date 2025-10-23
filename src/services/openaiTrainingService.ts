@@ -37,6 +37,7 @@ export async function trainBotWithDocuments(
 
   console.log(`🚀 Starting DIRECT OpenAI training for bot ${botId}`);
   console.log(`📄 Processing ${documents.length} documents`);
+  console.log(`🔧 Using text-embedding-3-small (1536 dimensions)`);
 
   for (const doc of documents) {
     try {
@@ -111,9 +112,9 @@ async function createEmbeddings(
     try {
       // Generate embedding using OpenAI
       const response = await openai.embeddings.create({
-        model: 'text-embedding-3-large',
+        model: 'text-embedding-3-small',
         input: chunk,
-        dimensions: 3072, // Match pgvector dimension
+        dimensions: 1536, // Match pgvector dimension and n8n configuration
       });
 
       const embedding = response.data[0].embedding;

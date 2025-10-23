@@ -185,7 +185,32 @@ const ChatBot: React.FC<ChatBotProps> = ({ apiKey, externalTrigger, onTriggered 
       // Get the description from the textarea
       const descriptionElement = document.querySelector('textarea[placeholder*="Describe your issue"]') as HTMLTextAreaElement;
       const description = descriptionElement?.value || 'User requested human agent assistance';
-      
+
+      // Create a conversation record for human handoff
+      const handoffResponse = await fetch('/api/conversations/create-handoff', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          botId: 'general-assistant', // Use the same bot ID as the chat
+          guestName: 'Guest Visitor',
+          guestEmail: undefined, // Could collect email in the modal
+          initialMessage: description,
+          metadata: {
+            requestedAt: new Date().toISOString(),
+            source: 'chat_widget',
+            userAgent: navigator.userAgent
+          }
+        }),
+      });
+
+      if (handoffResponse.ok) {
+        const handoffData = await handoffResponse.json();
+        console.log('✅ Human handoff conversation created:', handoffData.conversation?.id);
+      }
+
+      // Also log to chatbot issues for tracking
       await fetch('/api/chatbot/issues', {
         method: 'POST',
         headers: {
@@ -200,6 +225,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ apiKey, externalTrigger, onTriggered 
           priority: 'high'
         }),
       });
+
       setAgentRequestSent(true);
       setTimeout(() => {
         setShowRequestHuman(false);

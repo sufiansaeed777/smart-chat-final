@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
+import { User } from '@/entities/User';
+import { Bot } from '@/entities/Bot';
+import { Conversation } from '@/entities/Conversation';
 
 export async function GET(
   request: NextRequest,
@@ -16,11 +19,19 @@ export async function GET(
 
     // Initialize database connection
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          { error: 'Database connection failed' },
+          { status: 500 }
+        );
+      }
     }
 
-    const userRepository = AppDataSource.getRepository("users");
-    const conversationRepository = AppDataSource.getRepository("conversations");
+    const userRepository = AppDataSource.getRepository(User);
+    const conversationRepository = AppDataSource.getRepository(Conversation);
 
     // Get current user
     const currentUser = await userRepository.findOne({
@@ -52,7 +63,7 @@ export async function GET(
     }
 
     // Get bot and user details for the export
-    const botRepository = AppDataSource.getRepository("bots");
+    const botRepository = AppDataSource.getRepository(Bot);
 
     const firstConv = conversations[0];
     const bot = await botRepository.findOne({ where: { id: firstConv.botId } });
@@ -67,7 +78,7 @@ export async function GET(
       },
       user: {
         id: user?.id,
-        name: user?.name,
+        name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email?.split('@')[0] || 'Unknown User' : 'Unknown User',
         email: user?.email
       },
       exportedAt: new Date().toISOString(),

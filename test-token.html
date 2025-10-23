@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test WordPress Token Validation</title>
+</head>
+<body>
+    <h1>Test WordPress Token</h1>
+
+    <div>
+        <label>API URL:</label>
+        <input type="text" id="apiUrl" value="https://smart-chat-finale.vercel.app/api/wordpress/send-message" style="width: 500px">
+    </div>
+
+    <div>
+        <label>Token:</label>
+        <input type="text" id="token" value="8a1ea0cc-651e-45da-8f14-5440f63c9b99:c6a8dbe3-6d62-4089-9b75-4a8fd19d5a35:wp_562i64jjn9418jsiorr2gf" style="width: 500px">
+    </div>
+
+    <div>
+        <label>Message:</label>
+        <input type="text" id="message" value="Test message" style="width: 500px">
+    </div>
+
+    <button onclick="testToken()">Test Token</button>
+
+    <h2>Response:</h2>
+    <pre id="response" style="background: #f5f5f5; padding: 10px; border: 1px solid #ccc;"></pre>
+
+    <script>
+        async function testToken() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const token = document.getElementById('token').value;
+            const message = document.getElementById('message').value;
+
+            document.getElementById('response').textContent = 'Sending request...';
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        token: token,
+                        message: message,
+                        sessionId: 'test_' + Date.now()
+                    })
+                });
+
+                const data = await response.json();
+
+                document.getElementById('response').textContent =
+                    'Status: ' + response.status + '\n\n' +
+                    JSON.stringify(data, null, 2);
+
+            } catch (error) {
+                document.getElementById('response').textContent =
+                    'ERROR: ' + error.message + '\n\n' +
+                    'Check browser console for details';
+            }
+        }
+    </script>
+</body>
+</html>

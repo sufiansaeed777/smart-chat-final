@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
+import { User } from '@/entities/User';
+import { Conversation } from '@/entities/Conversation';
 
 export async function GET(
   request: NextRequest,
@@ -16,11 +18,19 @@ export async function GET(
 
     // Initialize database connection
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          { error: 'Database connection failed' },
+          { status: 500 }
+        );
+      }
     }
 
-    const userRepository = AppDataSource.getRepository("users");
-    const conversationRepository = AppDataSource.getRepository("conversations");
+    const userRepository = AppDataSource.getRepository(User);
+    const conversationRepository = AppDataSource.getRepository(Conversation);
 
     // Get current user
     const currentUser = await userRepository.findOne({
@@ -88,11 +98,19 @@ export async function DELETE(
 
     // Initialize database connection
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          { error: 'Database connection failed' },
+          { status: 500 }
+        );
+      }
     }
 
-    const userRepository = AppDataSource.getRepository("users");
-    const conversationRepository = AppDataSource.getRepository("conversations");
+    const userRepository = AppDataSource.getRepository(User);
+    const conversationRepository = AppDataSource.getRepository(Conversation);
 
     // Get current user
     const currentUser = await userRepository.findOne({
