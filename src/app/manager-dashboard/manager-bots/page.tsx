@@ -1604,9 +1604,20 @@ export default function BotsPage() {
               </div>
 
               <div>
-                <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Assign Knowledge Base (Optional)
-                </Label>
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Assign Knowledge Base (Optional)
+                  </Label>
+                  {editBotKnowledge.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setEditBotKnowledge([])}
+                      className="text-xs text-red-600 hover:text-red-700 font-medium"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                </div>
                 <div className="border border-gray-300 rounded-xl max-h-40 overflow-y-auto">
                   {knowledgeBase.length === 0 ? (
                     <div className="p-3 text-sm text-gray-500 text-center">
@@ -1634,9 +1645,13 @@ export default function BotsPage() {
                     </div>
                   )}
                 </div>
-                {editBotKnowledge.length > 0 && (
+                {editBotKnowledge.length > 0 ? (
+                  <p className="text-xs text-green-600 font-medium mt-1">
+                    ✓ {editBotKnowledge.length} document{editBotKnowledge.length > 1 ? 's' : ''} assigned (uncheck to remove)
+                  </p>
+                ) : (
                   <p className="text-xs text-gray-500 mt-1">
-                    {editBotKnowledge.length} document{editBotKnowledge.length > 1 ? 's' : ''} selected
+                    No documents assigned
                   </p>
                 )}
               </div>
