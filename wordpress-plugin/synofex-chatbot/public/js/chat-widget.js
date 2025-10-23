@@ -364,9 +364,11 @@
             });
         },
 
-        // Session management
+        // Session management - FIXED: Include bot token in key to prevent cross-bot session mixing
         getSessionId: function() {
-            let sessionId = localStorage.getItem('synofex_session_id');
+            const token = window.synofexChatConfig?.token || 'default';
+            const storageKey = 'synofex_session_id_' + token.substring(0, 8); // Use first 8 chars of token
+            let sessionId = localStorage.getItem(storageKey);
             if (!sessionId) {
                 sessionId = 'wp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                 this.saveSessionId(sessionId);
@@ -375,10 +377,12 @@
         },
 
         saveSessionId: function(sessionId) {
-            localStorage.setItem('synofex_session_id', sessionId);
+            const token = window.synofexChatConfig?.token || 'default';
+            const storageKey = 'synofex_session_id_' + token.substring(0, 8);
+            localStorage.setItem(storageKey, sessionId);
         },
 
-        // Chat history management
+        // Chat history management - FIXED: Bot-specific storage
         saveChatHistory: function() {
             const messages = [];
             // FIX: Changed from #synofex-messages to #synofex-chat-messages
@@ -396,11 +400,15 @@
                 const messageId = $(this).data('message-id') || `${sender}-${timestamp}-${content.substring(0, 20)}`;
                 messages.push({ sender, content, messageId, timestamp });
             });
-            localStorage.setItem('synofex_chat_history', JSON.stringify(messages));
+            const token = window.synofexChatConfig?.token || 'default';
+            const storageKey = 'synofex_chat_history_' + token.substring(0, 8);
+            localStorage.setItem(storageKey, JSON.stringify(messages));
         },
 
         loadChatHistory: function() {
-            const history = localStorage.getItem('synofex_chat_history');
+            const token = window.synofexChatConfig?.token || 'default';
+            const storageKey = 'synofex_chat_history_' + token.substring(0, 8);
+            const history = localStorage.getItem(storageKey);
             if (history) {
                 try {
                     const messages = JSON.parse(history);
