@@ -10,7 +10,7 @@ import { BotDocument } from '@/entities/BotDocument';
 /**
  * API endpoint to train a bot via n8n (per ROADMAP Phase 3)
  * Sends documents to n8n for processing: parse → chunk → generate embeddings → store
- * n8n uses text-embedding-3-large (3072 dimensions) and stores in pgvector
+ * n8n uses text-embedding-3-small (1536 dimensions) and stores in pgvector
  */
 export async function POST(request: NextRequest) {
   try {
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Send to n8n for processing
-        // n8n will: parse → chunk → generate embeddings (text-embedding-3-large) → store in pgvector
+        // n8n will: parse → chunk → generate embeddings (text-embedding-3-small) → store in pgvector
         const n8nResult = await N8nService.trainBot({
           botId: bot.id,
           botName: bot.name,

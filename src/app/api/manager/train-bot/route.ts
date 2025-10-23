@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`\n🚀 Starting DIRECT OpenAI training for bot: ${bot.name} (${bot.id})`);
     console.log(`📦 Documents to process: ${botDocuments.length}`);
-    console.log('🔧 Using OpenAI text-embedding-3-large (NOT n8n)');
+    console.log('🔧 Using OpenAI text-embedding-3-small (1536 dimensions)');
 
     // Prepare documents for training
     const documentsToTrain = [];

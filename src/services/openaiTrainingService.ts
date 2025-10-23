@@ -79,7 +79,7 @@ export async function trainBotWithDocuments(
 }
 
 /**
- * Create embeddings using OpenAI text-embedding-3-large
+ * Create embeddings using OpenAI text-embedding-3-small
  */
 async function createEmbeddings(
   botId: string,
@@ -225,9 +225,9 @@ export async function searchSimilarChunks(
   try {
     // Generate embedding for the query
     const response = await openai.embeddings.create({
-      model: 'text-embedding-3-large',
+      model: 'text-embedding-3-small',
       input: query,
-      dimensions: 3072,
+      dimensions: 1536,
     });
 
     const queryEmbedding = response.data[0].embedding;
