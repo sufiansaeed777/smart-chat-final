@@ -109,7 +109,8 @@ export class N8nService {
         body: JSON.stringify({
           chat_id: payload.chatId,
           message: payload.message,
-          bot_id: payload.botId, // Added for context retrieval
+          bot_id: payload.botId, // For n8n workflow routing
+          filter_bot_id: payload.botId, // For Supabase Vector Store function parameter
         }),
       });
 

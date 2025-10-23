@@ -372,7 +372,8 @@ export async function POST(request: NextRequest) {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                bot_id: botId, // Use snake_case to match n8n Vector Store metadata filter
+                bot_id: botId, // For n8n workflow routing
+                filter_bot_id: botId, // For Supabase Vector Store function parameter
                 message,
                 sessionId,
                 metadata
@@ -407,7 +408,8 @@ export async function POST(request: NextRequest) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              bot_id: botId, // Use snake_case to match n8n Vector Store metadata filter
+              bot_id: botId, // For n8n workflow routing
+              filter_bot_id: botId, // For Supabase Vector Store function parameter
               message,
               sessionId,
               metadata
