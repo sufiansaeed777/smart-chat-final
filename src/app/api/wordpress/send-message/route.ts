@@ -356,8 +356,8 @@ export async function POST(request: NextRequest) {
               // TODO: Include conversation history for context
               { role: 'user', content: message }
             ],
-            max_tokens: bot.maxTokens || 500,
-            temperature: bot.temperature || 0.7,
+            max_tokens: Number(bot.maxTokens) || 500,
+            temperature: Number(bot.temperature) || 0.7,
           })
         });
 

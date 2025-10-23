@@ -222,8 +222,8 @@ export async function POST(request: NextRequest) {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message }
         ],
-        temperature: bot.temperature || 0.7,
-        max_tokens: bot.maxTokens || 500,
+        temperature: Number(bot.temperature) || 0.7,
+        max_tokens: Number(bot.maxTokens) || 500,
       });
 
       const botResponse = completion.choices[0]?.message?.content || 'I apologize, but I was unable to generate a response.';

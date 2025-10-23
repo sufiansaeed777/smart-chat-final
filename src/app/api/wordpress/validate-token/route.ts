@@ -143,8 +143,8 @@ export async function POST(request: NextRequest) {
       // Model settings
       model: bot.model || 'gpt-3.5-turbo',
       systemPrompt: bot.systemPrompt || bot["systemPrompt"],
-      temperature: bot.temperature || 0.7,
-      maxTokens: bot.maxTokens || bot["maxTokens"] || 500,
+      temperature: Number(bot.temperature) || 0.7,
+      maxTokens: Number(bot.maxTokens) || Number(bot["maxTokens"]) || 500,
       // Features
       features: {
         fileUpload: bot.enableFileUpload || false,
