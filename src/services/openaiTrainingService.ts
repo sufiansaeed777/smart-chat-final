@@ -87,6 +87,15 @@ async function createEmbeddings(
   documentName: string,
   chunks: string[]
 ): Promise<number> {
+  // Detect if this is a prompt/instruction document
+  const isPromptDocument =
+    documentName.toLowerCase().includes('prompt') ||
+    documentName.toLowerCase().includes('instruction') ||
+    documentName.toLowerCase().includes('personality') ||
+    documentName.toLowerCase().includes('system') ||
+    documentName.toLowerCase().includes('behavior');
+
+  console.log(`📝 Document type for ${documentName}: ${isPromptDocument ? 'PROMPT' : 'CONTENT'}`);
   if (!AppDataSource.isInitialized) {
     try {
       await AppDataSource.initialize();
@@ -123,9 +132,9 @@ async function createEmbeddings(
       await AppDataSource.query(
         `
         INSERT INTO document_embeddings
-        (id, bot_id, document_id, document_name, chunk_text, chunk_index, total_chunks, embedding, created_at)
+        (id, bot_id, document_id, document_name, chunk_text, chunk_index, total_chunks, embedding, is_prompt, priority_order, created_at)
         VALUES
-        (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW())
+        (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
         `,
         [
           botId,
@@ -135,6 +144,8 @@ async function createEmbeddings(
           i,
           chunks.length,
           JSON.stringify(embedding), // pgvector will handle conversion
+          isPromptDocument, // Mark as prompt document
+          isPromptDocument ? 1 : 100, // Prompts get priority 1, content gets 100
         ]
       );
 

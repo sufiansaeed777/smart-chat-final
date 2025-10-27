@@ -44,8 +44,8 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhY
 
 # N8N Webhook Configuration (FOR BOTH TRAINING AND CHAT - per ROADMAP)
 # FROM: Saas_AI_Chatbot_Keys.pdf - PRODUCTION N8N
-N8N_WEBHOOK_URL=https://synofexai.app.n8n.cloud/webhook/c724f29c-cc20-4409-90c2-d4a494ad3e41
-# Workflow ID: V8OQdCTe2Z1evyNU
+N8N_WEBHOOK_URL=https://synofexai.app.n8n.cloud/webhook/fde2d74a-6ddd-4ed2-b54a-83edbc619b31
+# Workflow ID: New Simple RAG Workflow
 # Message Structure for Chat: { "chat_id": "c123", "message": "Give me a summary of my document" }
 
 # Google Drive API Configuration (FROM: Saas_AI_Chatbot_Keys.pdf)
