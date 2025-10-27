@@ -79,6 +79,63 @@ export async function trainBotWithDocuments(
 }
 
 /**
+ * Analyze document content to determine if it's a prompt/instruction document
+ */
+function analyzeIfPromptDocument(chunks: string[]): boolean {
+  // Combine first few chunks to analyze (or all if document is small)
+  const sampleText = chunks.slice(0, Math.min(3, chunks.length)).join(' ').toLowerCase();
+
+  // Patterns that indicate this is a system prompt/instruction document
+  const promptIndicators = [
+    // Direct instructions to the AI
+    'you are', 'you must', 'you should', 'you will',
+    'your role', 'your personality', 'your behavior',
+    'act as', 'behave as', 'respond as', 'pretend to be',
+    'your name is', 'you are called',
+
+    // System/instruction keywords
+    'system prompt', 'system instruction', 'personality',
+    'follow these rules', 'follow these instructions',
+    'always remember', 'never forget',
+    'your responses should', 'when responding',
+
+    // Behavioral instructions
+    'be helpful', 'be friendly', 'be professional',
+    'use emoji', 'speak formally', 'speak casually',
+    'tone should be', 'style should be',
+
+    // Role definitions
+    'assistant', 'helper', 'expert', 'specialist',
+    'your expertise', 'your knowledge',
+
+    // Constraint instructions
+    'do not', 'never', 'always', 'must not',
+    'avoid', 'refrain from', 'stick to'
+  ];
+
+  // Count how many indicators are present
+  let indicatorCount = 0;
+  for (const indicator of promptIndicators) {
+    if (sampleText.includes(indicator)) {
+      indicatorCount++;
+    }
+  }
+
+  // Also check for second-person language frequency (you, your)
+  const secondPersonCount = (sampleText.match(/\b(you|your)\b/g) || []).length;
+
+  // Decision logic:
+  // - If 3+ prompt indicators found, it's likely a prompt document
+  // - If heavy use of second-person (you/your), it's likely instructions
+  // - Otherwise, it's content
+  const isPrompt = indicatorCount >= 3 || secondPersonCount >= 10;
+
+  console.log(`📊 Content analysis: ${indicatorCount} prompt indicators, ${secondPersonCount} second-person references`);
+
+  return isPrompt;
+}
+
+/**
  * Create embeddings using OpenAI text-embedding-3-small
  */
 async function createEmbeddings(
@@ -87,15 +144,10 @@ async function createEmbeddings(
   documentName: string,
   chunks: string[]
 ): Promise<number> {
-  // Detect if this is a prompt/instruction document
-  const isPromptDocument =
-    documentName.toLowerCase().includes('prompt') ||
-    documentName.toLowerCase().includes('instruction') ||
-    documentName.toLowerCase().includes('personality') ||
-    documentName.toLowerCase().includes('system') ||
-    documentName.toLowerCase().includes('behavior');
+  // Analyze document content to determine if it's a prompt/instruction document
+  const isPromptDocument = analyzeIfPromptDocument(chunks);
 
-  console.log(`📝 Document type for ${documentName}: ${isPromptDocument ? 'PROMPT' : 'CONTENT'}`);
+  console.log(`📝 Document type for ${documentName}: ${isPromptDocument ? 'PROMPT' : 'CONTENT'} (based on content analysis)`);
   if (!AppDataSource.isInitialized) {
     try {
       await AppDataSource.initialize();
