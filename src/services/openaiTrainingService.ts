@@ -377,8 +377,15 @@ export async function embedSystemPrompt(
 
     console.log(`🎯 Embedding system prompt for bot: ${botName} (${botId})`);
 
-    // Special document ID for system prompt
-    const systemPromptDocId = `system-prompt-${botId}`;
+    // Create a deterministic UUID for the system prompt based on botId
+    // Format: Take first 8 chars of botId + add -sys- + rest of botId (truncated to fit UUID)
+    // This ensures same bot always gets same system prompt document ID
+    const crypto = require('crypto');
+    const hash = crypto.createHash('md5').update(`system-prompt-${botId}`).digest('hex');
+
+    // Convert hash to UUID format (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    const systemPromptDocId = `${hash.substr(0, 8)}-${hash.substr(8, 4)}-${hash.substr(12, 4)}-${hash.substr(16, 4)}-${hash.substr(20, 12)}`;
+
     const systemPromptDocName = '🎯 System Prompt (Auto-generated)';
 
     // Train with the system prompt as a high-priority document
