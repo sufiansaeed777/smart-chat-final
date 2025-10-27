@@ -405,12 +405,16 @@ const BotsPage = () => {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">Description</label>
-                <Input
+                <label className="text-sm font-medium text-gray-700 block mb-1">System Prompt / Bot Instructions</label>
+                <p className="text-xs text-gray-500 mb-2">
+                  Define your bot's personality, behavior, and response style. This will guide how the bot interacts with users.
+                </p>
+                <textarea
                   value={newBot.description}
                   onChange={(e) => setNewBot({...newBot, description: e.target.value})}
-                  placeholder="Enter bot description"
-                  className="mt-1"
+                  placeholder="Example: You are a friendly and professional customer support assistant. Your role is to help users with their questions about our products and services. You should always be polite, concise, and helpful."
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  rows={5}
                 />
               </div>
               <div>

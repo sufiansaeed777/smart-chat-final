@@ -1296,15 +1296,18 @@ export default function BotsPage() {
               </div>
               
               <div>
-                <Label htmlFor="bot-description" className="text-sm font-semibold text-gray-700 block mb-2">
-                  Description *
+                <Label htmlFor="bot-description" className="text-sm font-semibold text-gray-700 block mb-1">
+                  System Prompt / Bot Instructions *
                 </Label>
+                <p className="text-xs text-gray-500 mb-2">
+                  Define your bot's personality, behavior, and response style. This will guide how the bot interacts with users.
+                </p>
                 <textarea
                   id="bot-description"
                   value={newBot.description}
                   onChange={(e) => setNewBot({...newBot, description: e.target.value})}
-                  placeholder="Describe what this bot does and how it helps users"
-                  rows={3}
+                  placeholder="Example: You are a friendly and professional customer support assistant. Your role is to help users with their questions about our products and services. You should always be polite, concise, and helpful."
+                  rows={5}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-2 focus:ring-[#6566F1]/20 text-gray-900 placeholder-gray-500 resize-none"
                 />
               </div>
@@ -1573,16 +1576,19 @@ export default function BotsPage() {
               </div>
               
               <div>
-                <Label htmlFor="edit-bot-description" className="text-sm font-medium text-gray-700 mb-2 block">
-                  Description
+                <Label htmlFor="edit-bot-description" className="text-sm font-medium text-gray-700 mb-1 block">
+                  System Prompt / Bot Instructions
                 </Label>
+                <p className="text-xs text-gray-500 mb-2">
+                  Define your bot's personality, behavior, and response style. This will guide how the bot interacts with users.
+                </p>
                 <textarea
                   id="edit-bot-description"
                   value={editBot.description}
                   onChange={(e) => setEditBot({ ...editBot, description: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] text-gray-900 resize-none"
-                  placeholder="Enter bot description"
-                  rows={3}
+                  placeholder="Example: You are a friendly and professional customer support assistant. Your role is to help users with their questions about our products and services. You should always be polite, concise, and helpful."
+                  rows={5}
                   required
                 />
               </div>
