@@ -144,10 +144,17 @@ async function createEmbeddings(
   documentName: string,
   chunks: string[]
 ): Promise<number> {
-  // Analyze document content to determine if it's a prompt/instruction document
-  const isPromptDocument = analyzeIfPromptDocument(chunks);
+  // Check if this is the auto-generated system prompt
+  const isSystemPrompt = documentName.includes('System Prompt (Auto-generated)');
 
-  console.log(`📝 Document type for ${documentName}: ${isPromptDocument ? 'PROMPT' : 'CONTENT'} (based on content analysis)`);
+  // Analyze document content to determine if it's a prompt/instruction document
+  const isPromptDocument = isSystemPrompt || analyzeIfPromptDocument(chunks);
+
+  if (isSystemPrompt) {
+    console.log(`🎯 Document type for ${documentName}: SYSTEM PROMPT (highest priority)`);
+  } else {
+    console.log(`📝 Document type for ${documentName}: ${isPromptDocument ? 'PROMPT' : 'CONTENT'} (based on content analysis)`);
+  }
   if (!AppDataSource.isInitialized) {
     try {
       await AppDataSource.initialize();
@@ -180,6 +187,14 @@ async function createEmbeddings(
 
       const embedding = response.data[0].embedding;
 
+      // Determine priority: System Prompt = 0 (highest), Uploaded Prompts = 1, Content = 100
+      let priorityOrder = 100; // Default: content
+      if (isSystemPrompt) {
+        priorityOrder = 0; // Highest: auto-generated system prompt
+      } else if (isPromptDocument) {
+        priorityOrder = 1; // High: uploaded prompt documents
+      }
+
       // Store in pgvector database (matching actual table schema)
       await AppDataSource.query(
         `
@@ -197,7 +212,7 @@ async function createEmbeddings(
           chunks.length,
           JSON.stringify(embedding), // pgvector will handle conversion
           isPromptDocument, // Mark as prompt document
-          isPromptDocument ? 1 : 100, // Prompts get priority 1, content gets 100
+          priorityOrder, // Priority: 0 = system prompt, 1 = uploaded prompts, 100 = content
         ]
       );
 
@@ -343,4 +358,56 @@ export async function updateBotTrainingStatus(
       trainingLog: log,
     }
   );
+}
+
+/**
+ * Embed system prompt (description field) automatically
+ * This ensures the bot's personality/instructions are always available in RAG
+ */
+export async function embedSystemPrompt(
+  botId: string,
+  botName: string,
+  systemPrompt: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    if (!systemPrompt || systemPrompt.trim().length === 0) {
+      console.log(`⏭️  No system prompt provided for bot ${botId}, skipping embedding`);
+      return { success: true, message: 'No system prompt to embed' };
+    }
+
+    console.log(`🎯 Embedding system prompt for bot: ${botName} (${botId})`);
+
+    // Special document ID for system prompt
+    const systemPromptDocId = `system-prompt-${botId}`;
+    const systemPromptDocName = '🎯 System Prompt (Auto-generated)';
+
+    // Train with the system prompt as a high-priority document
+    const results = await trainBotWithDocuments(botId, [
+      {
+        id: systemPromptDocId,
+        name: systemPromptDocName,
+        content: systemPrompt,
+      }
+    ]);
+
+    if (results[0]?.success) {
+      console.log(`✅ System prompt embedded successfully: ${results[0].embeddingsCreated} embeddings created`);
+      return {
+        success: true,
+        message: `System prompt embedded with ${results[0].embeddingsCreated} chunks`
+      };
+    } else {
+      console.error(`❌ Failed to embed system prompt: ${results[0]?.error}`);
+      return {
+        success: false,
+        message: results[0]?.error || 'Unknown error'
+      };
+    }
+  } catch (error: any) {
+    console.error('❌ Error embedding system prompt:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to embed system prompt'
+    };
+  }
 }

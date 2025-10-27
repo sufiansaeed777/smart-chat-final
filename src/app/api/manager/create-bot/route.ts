@@ -6,6 +6,7 @@ import { User } from '@/entities/User';
 import { Bot } from '@/entities/Bot';
 import { BotDocument } from '@/entities/BotDocument';
 import { Document } from '@/entities/Document';
+import { embedSystemPrompt } from '@/services/openaiTrainingService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -119,6 +120,21 @@ export async function POST(request: NextRequest) {
           type: savedDocument.type
         });
       }
+    }
+
+    // Auto-embed system prompt (description) for RAG
+    console.log('🎯 Auto-embedding system prompt for bot:', savedBot.id);
+    try {
+      const embedResult = await embedSystemPrompt(savedBot.id, name, description);
+      if (embedResult.success) {
+        console.log('✅ System prompt embedded:', embedResult.message);
+      } else {
+        console.warn('⚠️  System prompt embedding failed:', embedResult.message);
+        // Don't fail bot creation if embedding fails
+      }
+    } catch (embedError) {
+      console.error('❌ Error embedding system prompt:', embedError);
+      // Don't fail bot creation if embedding fails
     }
 
     // Create n8n workflow for the bot

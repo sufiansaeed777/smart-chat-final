@@ -5,6 +5,7 @@ import { AppDataSource } from '@/config/database';
 import { User } from '@/entities/User';
 import { Bot } from '@/entities/Bot';
 import { BotDocument } from '@/entities/BotDocument';
+import { embedSystemPrompt } from '@/services/openaiTrainingService';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -59,6 +60,9 @@ export async function PUT(request: NextRequest) {
       }, { status: 404 });
     }
 
+    // Track if description changed to re-embed it
+    const descriptionChanged = description !== undefined && description !== bot.description;
+
     // Update the bot fields if provided
     if (name !== undefined) bot.name = name;
     if (description !== undefined) bot.description = description;
@@ -67,6 +71,23 @@ export async function PUT(request: NextRequest) {
     bot.updatedAt = new Date();
 
     await botRepository.save(bot);
+
+    // Re-embed system prompt if description changed
+    if (descriptionChanged) {
+      console.log('🎯 Description changed, re-embedding system prompt for bot:', bot.id);
+      try {
+        const embedResult = await embedSystemPrompt(bot.id, bot.name, bot.description);
+        if (embedResult.success) {
+          console.log('✅ System prompt re-embedded:', embedResult.message);
+        } else {
+          console.warn('⚠️  System prompt re-embedding failed:', embedResult.message);
+          // Don't fail bot update if embedding fails
+        }
+      } catch (embedError) {
+        console.error('❌ Error re-embedding system prompt:', embedError);
+        // Don't fail bot update if embedding fails
+      }
+    }
 
     // Handle knowledge base assignment if provided
     if (knowledgeIds !== undefined && Array.isArray(knowledgeIds)) {
