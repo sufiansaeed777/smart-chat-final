@@ -66,25 +66,35 @@ export async function POST(request: NextRequest) {
     const associatedDocuments = [];
 
     // Associate existing documents
+    // FIX: Remove duplicates from documentIds array
     if (documentIds && documentIds.length > 0) {
-      for (const documentId of documentIds) {
+      const uniqueDocumentIds = [...new Set(documentIds)];
+
+      for (const documentId of uniqueDocumentIds) {
         // Verify the document belongs to the manager
         const document = await documentRepository.findOne({
           where: { id: documentId, userId: user.id, status: 'active' }
         });
 
         if (document) {
-          const botDocument = botDocumentRepository.create({
-            botId: savedBot.id,
-            documentId: documentId,
-            status: 'active'
+          // FIX: Check if this document is already assigned to this bot
+          const existingAssignment = await botDocumentRepository.findOne({
+            where: { botId: savedBot.id, documentId: documentId }
           });
-          await botDocumentRepository.save(botDocument);
-          associatedDocuments.push({
-            id: document.id,
-            name: document.name,
-            type: document.type
-          });
+
+          if (!existingAssignment) {
+            const botDocument = botDocumentRepository.create({
+              botId: savedBot.id,
+              documentId: documentId,
+              status: 'active'
+            });
+            await botDocumentRepository.save(botDocument);
+            associatedDocuments.push({
+              id: document.id,
+              name: document.name,
+              type: document.type
+            });
+          }
         }
       }
     }

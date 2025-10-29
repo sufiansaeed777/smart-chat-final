@@ -1,0 +1,1166 @@
+openapi: 3.0.3
+info:
+  title: Smart Chat RAG Chatbot API
+  description: |
+    RESTful API for Smart Chat - an AI-powered RAG (Retrieval-Augmented Generation) chatbot platform
+    with WordPress integration, multi-bot management, and human handoff capabilities.
+
+    ## Features
+    - Multi-tenant bot management
+    - RAG-based responses using vector embeddings
+    - WordPress plugin integration
+    - Human agent handoff
+    - Stripe billing integration
+    - Rate limiting & abuse detection
+    - Streaming responses (SSE)
+
+    ## Authentication
+    Most endpoints require authentication via NextAuth session cookies or API tokens.
+    WordPress endpoints use custom token format: `userId:botId:secret`
+
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@smartchat.com
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://api.smartchat.com/api
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: WordPress
+    description: Public endpoints for WordPress plugin integration
+  - name: Manager
+    description: Bot owner/manager endpoints
+  - name: Admin
+    description: System administrator endpoints
+  - name: User
+    description: Regular user endpoints
+  - name: Conversations
+    description: Chat conversation management
+  - name: Billing
+    description: Stripe payment and subscription management
+  - name: Analytics
+    description: Usage analytics and reporting
+  - name: Health
+    description: System health monitoring
+
+security:
+  - sessionAuth: []
+  - tokenAuth: []
+
+paths:
+  # ==========================================
+  # WORDPRESS / PUBLIC ENDPOINTS
+  # ==========================================
+  /wordpress/send-message:
+    post:
+      tags:
+        - WordPress
+      summary: Send chat message from WordPress
+      description: |
+        Main endpoint for WordPress plugin to send user messages and receive AI responses.
+        Supports both standard JSON responses and Server-Sent Events (SSE) streaming.
+
+        **Rate Limits:** 50 messages per minute per client
+        **Abuse Detection:** Automatic blocking for SQL injection, XSS, spam patterns
+      security:
+        - tokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - message
+              properties:
+                token:
+                  type: string
+                  description: WordPress token format (userId:botId:secret)
+                  example: "123e4567-e89b-12d3-a456-426614174000:abc-123:secret123"
+                message:
+                  type: string
+                  description: User's message text
+                  example: "What are your business hours?"
+                sessionId:
+                  type: string
+                  description: Optional session ID for conversation continuity
+                  example: "wp_1234567890_abc123"
+                metadata:
+                  type: object
+                  description: Additional context metadata
+                  properties:
+                    enableStreaming:
+                      type: boolean
+                      description: Enable SSE streaming responses
+                      default: false
+                    language:
+                      type: string
+                      description: User's language code
+                      example: "en"
+                    userIp:
+                      type: string
+                      example: "192.168.1.1"
+                    userAgent:
+                      type: string
+                      example: "Mozilla/5.0..."
+                    pageUrl:
+                      type: string
+                      example: "https://example.com/contact"
+      responses:
+        '200':
+          description: Successful response (non-streaming)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  response:
+                    type: string
+                    description: Bot's reply message
+                    example: "We're open Monday-Friday, 9am-5pm EST"
+                  sessionId:
+                    type: string
+                    example: "wp_1234567890_abc123"
+                  conversationId:
+                    type: string
+                    format: uuid
+                    example: "123e4567-e89b-12d3-a456-426614174000"
+                  mode:
+                    type: string
+                    enum: [AI, Human]
+                    example: "AI"
+                  source:
+                    type: string
+                    enum: [n8n_rag, openai_direct, openai_fallback]
+                    example: "n8n_rag"
+                  waitingForAgent:
+                    type: boolean
+                    description: True if conversation is in human mode
+                    example: false
+        '200 (streaming)':
+          description: SSE streaming response
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: Server-Sent Events stream
+                example: |
+                  data: {"content":"We're","done":false}
+
+                  data: {"content":" open","done":false}
+
+                  data: {"content":"","done":true,"sessionId":"wp_123","conversationId":"abc-123"}
+        '400':
+          description: Bad request - missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden - abuse detected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Request blocked"
+                  message:
+                    type: string
+                    example: "Your request was blocked due to suspicious activity."
+        '429':
+          description: Rate limit exceeded or quota exceeded
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: 50
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: 0
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: 1640995200
+            Retry-After:
+              schema:
+                type: integer
+                example: 45
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Rate limit exceeded"
+                  message:
+                    type: string
+                    example: "Too many requests. Please try again in 45 seconds."
+                  retryAfter:
+                    type: integer
+                    example: 45
+                  upgradeUrl:
+                    type: string
+                    description: Present if quota exceeded
+                    example: "https://app.smartchat.com/manager-dashboard/settings?tab=billing"
+
+  /wordpress/validate-token:
+    post:
+      tags:
+        - WordPress
+      summary: Validate WordPress integration token
+      description: Verify if a WordPress token is valid and active
+      security:
+        - tokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  example: "123e4567:abc-123:secret"
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    example: true
+                  botId:
+                    type: string
+                    format: uuid
+                  userId:
+                    type: string
+                    format: uuid
+        '401':
+          description: Token is invalid or inactive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ==========================================
+  # AUTHENTICATION ENDPOINTS
+  # ==========================================
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Register new user account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - firstName
+                - lastName
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: "SecurePass123!"
+                firstName:
+                  type: string
+                  example: "John"
+                lastName:
+                  type: string
+                  example: "Doe"
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Account created successfully"
+                  userId:
+                    type: string
+                    format: uuid
+        '400':
+          description: Validation error or email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and create session
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/forgot-password:
+    post:
+      tags:
+        - Authentication
+      summary: Request password reset
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Reset email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Password reset email sent"
+
+  /auth/reset-password:
+    post:
+      tags:
+        - Authentication
+      summary: Reset password with token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - newPassword
+              properties:
+                token:
+                  type: string
+                  description: Reset token from email
+                newPassword:
+                  type: string
+                  format: password
+                  minLength: 8
+      responses:
+        '200':
+          description: Password reset successful
+        '400':
+          description: Invalid or expired token
+
+  # ==========================================
+  # MANAGER ENDPOINTS
+  # ==========================================
+  /manager/bots:
+    get:
+      tags:
+        - Manager
+      summary: List all bots owned by current user
+      responses:
+        '200':
+          description: List of bots
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bots:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Bot'
+    post:
+      tags:
+        - Manager
+      summary: Create new chatbot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: "Customer Support Bot"
+                description:
+                  type: string
+                  example: "Handles customer inquiries"
+                tone:
+                  type: string
+                  enum: [professional, friendly, casual, formal]
+                  example: "friendly"
+                aiModel:
+                  type: string
+                  example: "gpt-3.5-turbo"
+                temperature:
+                  type: number
+                  minimum: 0
+                  maximum: 2
+                  example: 0.7
+                maxTokens:
+                  type: integer
+                  example: 500
+                customInstructions:
+                  type: string
+                  example: "Always be polite and helpful"
+      responses:
+        '201':
+          description: Bot created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  bot:
+                    $ref: '#/components/schemas/Bot'
+
+  /manager/bot/{botId}:
+    get:
+      tags:
+        - Manager
+      summary: Get bot details
+      parameters:
+        - name: botId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Bot details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bot'
+    put:
+      tags:
+        - Manager
+      summary: Update bot configuration
+      parameters:
+        - name: botId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BotUpdate'
+      responses:
+        '200':
+          description: Bot updated successfully
+    delete:
+      tags:
+        - Manager
+      summary: Delete bot
+      parameters:
+        - name: botId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Bot deleted successfully
+
+  /manager/train-bot:
+    post:
+      tags:
+        - Manager
+      summary: Train bot with documents
+      description: |
+        Upload documents to train bot using RAG (Retrieval-Augmented Generation).
+        Processes documents and creates vector embeddings via n8n workflow.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - botId
+                - files
+              properties:
+                botId:
+                  type: string
+                  format: uuid
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: PDF, TXT, DOCX files
+      responses:
+        '200':
+          description: Training started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Training started"
+                  jobId:
+                    type: string
+
+  /manager/conversations:
+    get:
+      tags:
+        - Manager
+      summary: List all conversations for manager's bots
+      parameters:
+        - name: botId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by specific bot
+        - name: mode
+          in: query
+          schema:
+            type: string
+            enum: [AI, Human]
+          description: Filter by conversation mode
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, resolved, archived]
+      responses:
+        '200':
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Conversation'
+
+  /manager/conversations/{id}:
+    get:
+      tags:
+        - Manager
+      summary: Get conversation details with full message history
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Conversation details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+    put:
+      tags:
+        - Manager
+      summary: Update conversation (switch mode, add messages)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mode:
+                  type: string
+                  enum: [AI, Human]
+                  description: Switch between AI and human agent mode
+                status:
+                  type: string
+                  enum: [active, resolved, archived]
+                messages:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      sender:
+                        type: string
+                        enum: [visitor, bot, agent]
+                      text:
+                        type: string
+      responses:
+        '200':
+          description: Conversation updated
+
+  /manager/analytics:
+    get:
+      tags:
+        - Analytics
+      summary: Get manager analytics
+      description: |
+        Retrieve various analytics for manager's bots.
+
+        **Available Types:**
+        - `languages` - Distribution of user languages
+        - `topQuestions` - Most frequently asked questions
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [languages, topQuestions]
+          description: Type of analytics to retrieve
+      responses:
+        '200':
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/LanguageAnalytics'
+                  - $ref: '#/components/schemas/TopQuestionsAnalytics'
+
+  /manager/overview:
+    get:
+      tags:
+        - Analytics
+      summary: Get dashboard overview statistics
+      responses:
+        '200':
+          description: Overview statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalUsers:
+                    type: integer
+                    description: Total users who messaged
+                    example: 1250
+                  totalConversations:
+                    type: integer
+                    description: Total conversations
+                    example: 3842
+                  messagesUsed:
+                    type: integer
+                    description: Messages used this month
+                    example: 8500
+                  messagesLimit:
+                    type: integer
+                    description: Monthly message limit
+                    example: 10000
+                  activeBots:
+                    type: integer
+                    example: 5
+
+  /manager/bot-analytics:
+    get:
+      tags:
+        - Analytics
+      summary: Get per-bot analytics
+      description: Analytics broken down by individual bot
+      responses:
+        '200':
+          description: Bot-wise analytics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  botAnalytics:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        botId:
+                          type: string
+                          format: uuid
+                        botName:
+                          type: string
+                        conversationCount:
+                          type: integer
+                        messageCount:
+                          type: integer
+                        uniqueUsers:
+                          type: integer
+
+  # ==========================================
+  # BILLING / PAYMENTS
+  # ==========================================
+  /payment/create-checkout-session:
+    post:
+      tags:
+        - Billing
+      summary: Create Stripe checkout session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - priceId
+              properties:
+                priceId:
+                  type: string
+                  description: Stripe price ID
+                  example: "price_1234567890"
+      responses:
+        '200':
+          description: Checkout session created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessionId:
+                    type: string
+                  url:
+                    type: string
+                    description: Stripe checkout URL
+
+  /stripe/create-portal-session:
+    post:
+      tags:
+        - Billing
+      summary: Create Stripe customer portal session
+      description: Generate URL for customer to manage their subscription
+      responses:
+        '200':
+          description: Portal session created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    description: Customer portal URL
+
+  /webhooks/stripe:
+    post:
+      tags:
+        - Billing
+      summary: Stripe webhook handler
+      description: |
+        Handles Stripe webhook events for subscription management.
+        Validates webhook signatures using HMAC.
+
+        **Events Handled:**
+        - checkout.session.completed
+        - customer.subscription.created
+        - customer.subscription.updated
+        - customer.subscription.deleted
+        - invoice.payment_succeeded
+        - invoice.payment_failed
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Stripe webhook event
+      responses:
+        '200':
+          description: Webhook processed
+        '400':
+          description: Invalid signature
+
+  # ==========================================
+  # ADMIN ENDPOINTS
+  # ==========================================
+  /admin/users:
+    get:
+      tags:
+        - Admin
+      summary: List all users (admin only)
+      responses:
+        '200':
+          description: List of all users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  /admin/invite-user:
+    post:
+      tags:
+        - Admin
+      summary: Invite new user to platform
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - role
+              properties:
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: [admin, manager, user]
+      responses:
+        '200':
+          description: Invitation sent
+
+  # ==========================================
+  # HEALTH / MONITORING
+  # ==========================================
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check endpoint
+      security: []
+      responses:
+        '200':
+          description: System is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  services:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        enum: [up, down]
+                      redis:
+                        type: string
+                        enum: [up, down]
+                      n8n:
+                        type: string
+                        enum: [up, down]
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+      description: NextAuth session cookie
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: WordPress integration token (userId:botId:secret)
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Error message"
+        message:
+          type: string
+          example: "Detailed error description"
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum: [admin, manager, user]
+        subscriptionPlan:
+          type: string
+          enum: [free, starter, professional, enterprise]
+        subscriptionStatus:
+          type: string
+          enum: [active, past_due, cancelled, suspended]
+        messagesUsedThisMonth:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    Bot:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Customer Support Bot"
+        description:
+          type: string
+        tone:
+          type: string
+          enum: [professional, friendly, casual, formal]
+        aiModel:
+          type: string
+          example: "gpt-3.5-turbo"
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 2
+        maxTokens:
+          type: integer
+        customInstructions:
+          type: string
+        trainingStatus:
+          type: string
+          enum: [not_trained, training, trained, failed]
+        status:
+          type: string
+          enum: [active, inactive]
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+
+    BotUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        tone:
+          type: string
+          enum: [professional, friendly, casual, formal]
+        aiModel:
+          type: string
+        temperature:
+          type: number
+        maxTokens:
+          type: integer
+        customInstructions:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        botId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        sessionId:
+          type: string
+        guestName:
+          type: string
+          example: "Guest #1234"
+        guestId:
+          type: string
+          example: "LC-5678"
+        mode:
+          type: string
+          enum: [AI, Human]
+        status:
+          type: string
+          enum: [active, resolved, archived]
+        messages:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              sender:
+                type: string
+                enum: [visitor, bot, agent]
+              text:
+                type: string
+              timestamp:
+                type: string
+        startedAt:
+          type: string
+          format: date-time
+        lastMessageAt:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          properties:
+            source:
+              type: string
+              example: "wordpress"
+            language:
+              type: string
+              example: "en"
+            userIp:
+              type: string
+            pageUrl:
+              type: string
+
+    LanguageAnalytics:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        type:
+          type: string
+          example: "languages"
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              language:
+                type: string
+                example: "en"
+              count:
+                type: integer
+                example: 450
+
+    TopQuestionsAnalytics:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        type:
+          type: string
+          example: "topQuestions"
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              question:
+                type: string
+                example: "What are your business hours?"
+              count:
+                type: integer
+                example: 87

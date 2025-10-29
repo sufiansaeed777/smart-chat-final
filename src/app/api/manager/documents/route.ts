@@ -170,22 +170,32 @@ export async function POST(request: NextRequest) {
         continue; // Skip invalid files
       }
 
-      // FIX: Check for duplicate document name
-      const existingDocument = await documentRepository.findOne({
+      // FIX: Check for duplicate document name and auto-rename if exists
+      let fileName = file.name;
+      const fileExtension = path.extname(fileName);
+      const fileBaseName = fileName.substring(0, fileName.length - fileExtension.length);
+
+      let existingDocument = await documentRepository.findOne({
         where: {
-          name: file.name,
+          name: fileName,
           userId: user.id,
           status: 'active'
         }
       });
 
-      if (existingDocument) {
-        console.warn(`Skipping duplicate document: ${file.name}`);
-        continue; // Skip documents with duplicate names
+      // Auto-rename with incremental number if duplicate exists
+      let counter = 1;
+      while (existingDocument) {
+        fileName = `${fileBaseName} (${counter})${fileExtension}`;
+        existingDocument = await documentRepository.findOne({
+          where: {
+            name: fileName,
+            userId: user.id,
+            status: 'active'
+          }
+        });
+        counter++;
       }
-
-      // Generate unique filename
-      const fileExtension = path.extname(file.name);
 
       // Read file content
       const bytes = await file.arrayBuffer();
@@ -223,8 +233,9 @@ export async function POST(request: NextRequest) {
       }
 
       // Create document record - store file data in database
+      // FIX: Use the renamed fileName instead of original file.name
       const document = documentRepository.create({
-        name: file.name,
+        name: fileName,
         type: fileExtension.substring(1).toLowerCase(),
         size: file.size,
         filePath: fileData, // Store the actual file data

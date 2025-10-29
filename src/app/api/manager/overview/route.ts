@@ -59,18 +59,20 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get conversations from last 24 hours
+    // Get conversations data
     const conversationRepository = AppDataSource.getRepository("conversations");
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    
+
     let recentConversations: Conversation[] = [];
     let yesterdayConversations: Conversation[] = [];
-    
+    let totalConversationsCount = 0;
+    let usersWhoMessaged = 0;
+
     if (invitedUserIds.length > 0) {
       recentConversations = await conversationRepository
         .createQueryBuilder('conversation')
-        .where('conversation.userId IN (:...userIds)', { 
-          userIds: invitedUserIds 
+        .where('conversation.userId IN (:...userIds)', {
+          userIds: invitedUserIds
         })
         .andWhere('conversation.createdAt >= :twentyFourHoursAgo', { twentyFourHoursAgo })
         .orderBy('conversation.createdAt', 'DESC')
@@ -80,15 +82,29 @@ export async function GET(request: NextRequest) {
       // Get conversations from yesterday for comparison
       const yesterdayStart = new Date(Date.now() - 48 * 60 * 60 * 1000);
       const yesterdayEnd = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      
+
       yesterdayConversations = await conversationRepository
         .createQueryBuilder('conversation')
-        .where('conversation.userId IN (:...userIds)', { 
-          userIds: invitedUserIds 
+        .where('conversation.userId IN (:...userIds)', {
+          userIds: invitedUserIds
         })
         .andWhere('conversation.createdAt >= :yesterdayStart', { yesterdayStart })
         .andWhere('conversation.createdAt < :yesterdayEnd', { yesterdayEnd })
         .getMany();
+
+      // FIX: Get total conversations count (all-time)
+      totalConversationsCount = await conversationRepository
+        .createQueryBuilder('conversation')
+        .where('conversation.userId IN (:...userIds)', { userIds: invitedUserIds })
+        .getCount();
+
+      // FIX: Get count of unique users who have sent messages
+      const usersWithMessages = await conversationRepository
+        .createQueryBuilder('conversation')
+        .select('DISTINCT conversation.userId')
+        .where('conversation.userId IN (:...userIds)', { userIds: invitedUserIds })
+        .getRawMany();
+      usersWhoMessaged = usersWithMessages.length;
     }
 
     // Calculate metrics
@@ -211,13 +227,17 @@ export async function GET(request: NextRequest) {
 
     const overviewData = {
       metrics: {
-        totalUsers: totalUsers,
+        // FIX: Changed totalUsers to usersWhoMessaged (users who have sent messages)
+        totalUsers: usersWhoMessaged,
         activeChats: totalRecentChats,
+        // FIX: Added totalConversations (all-time conversation count)
+        totalConversations: totalConversationsCount,
         pendingHandoffs: pendingUsers,
         resolvedToday: totalRecentChats
       },
       connectedMetrics: {
-        totalUsers: totalUsers,
+        totalUsers: totalUsers, // Keep original invited users count here
+        totalUsersWhoMessaged: usersWhoMessaged, // New metric
         totalBots: totalBots,
         availableAgents: onlineUsers
       },
@@ -225,7 +245,8 @@ export async function GET(request: NextRequest) {
       recentActivity: recentActivity,
       teamPerformance: teamPerformance,
       stats: {
-        totalUsers,
+        totalUsers, // Original count (invited users)
+        totalUsersWhoMessaged: usersWhoMessaged, // FIX: New metric
         onlineUsers,
         busyUsers,
         offlineUsers: totalUsers - onlineUsers - busyUsers,
@@ -234,6 +255,7 @@ export async function GET(request: NextRequest) {
         totalBots,
         activeBots,
         totalRecentChats,
+        totalConversations: totalConversationsCount, // FIX: New metric
         chatChange: chatChange
       }
     };

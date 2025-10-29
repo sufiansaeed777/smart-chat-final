@@ -6,6 +6,9 @@ import { User } from '@/entities/User';
 import { N8nService } from '@/services/n8nService';
 import { getUserPlanLimits, checkLimit } from '@/middleware/planLimits';
 import pool from '@/utils/db';
+import rateLimiter, { getClientIdentifier, RATE_LIMITS } from '@/middleware/rateLimit';
+import abuseDetector from '@/middleware/abuseDetection';
+import { botConfigCache } from '@/utils/cache';
 
 /**
  * WordPress Plugin Message Handler
@@ -41,6 +44,34 @@ export async function OPTIONS() {
 
 export async function POST(request: NextRequest) {
   try {
+    // PHASE 4: Rate limiting
+    const clientId = getClientIdentifier(request);
+    const rateLimit = await rateLimiter.check(
+      `chat:${clientId}`,
+      RATE_LIMITS.CHAT_MESSAGE.limit,
+      RATE_LIMITS.CHAT_MESSAGE.windowMs
+    );
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Rate limit exceeded',
+          message: `Too many requests. Please try again in ${rateLimit.retryAfter} seconds.`,
+          retryAfter: rateLimit.retryAfter
+        },
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            'X-RateLimit-Limit': String(RATE_LIMITS.CHAT_MESSAGE.limit),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(Math.floor(rateLimit.resetTime / 1000)),
+            'Retry-After': String(rateLimit.retryAfter)
+          }
+        }
+      );
+    }
+
     const body = await request.json();
     const { token, message, sessionId, metadata } = body;
 
@@ -48,6 +79,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Token and message are required' },
         { status: 400, headers: corsHeaders }
+      );
+    }
+
+    // PHASE 4: Abuse detection
+    const abuseCheck = await abuseDetector.checkMessage(clientId, message);
+    if (!abuseCheck.allowed) {
+      console.warn(`[ABUSE BLOCKED] Client ${clientId} blocked - Score: ${abuseCheck.score}`);
+      return NextResponse.json(
+        {
+          error: 'Request blocked',
+          message: abuseCheck.reason || 'Your request was blocked due to suspicious activity.'
+        },
+        { status: 403, headers: corsHeaders }
       );
     }
 
@@ -127,15 +171,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Get bot configuration
-    const botRepository = AppDataSource.getRepository(Bot);
-    const bot = await botRepository.findOne({
-      where: {
-        id: botId,
-        createdBy: userId,
-        status: 'active'
+    // PHASE 4: Get bot configuration with caching
+    const bot = await botConfigCache.getOrSet<Bot | null>(
+      `bot:${botId}:${userId}`,
+      async () => {
+        const botRepository = AppDataSource.getRepository(Bot);
+        return await botRepository.findOne({
+          where: {
+            id: botId,
+            createdBy: userId,
+            status: 'active'
+          }
+        });
       }
-    });
+    );
 
     if (!bot) {
       return NextResponse.json(
@@ -224,7 +273,9 @@ export async function POST(request: NextRequest) {
           source: 'wordpress',
           userIp: metadata?.userIp,
           userAgent: metadata?.userAgent,
-          pageUrl: metadata?.pageUrl
+          pageUrl: metadata?.pageUrl,
+          // PHASE 4: Track language for analytics
+          language: metadata?.language || 'en' // Default to English
         }
       });
       await conversationRepository.save(conversation);
@@ -341,8 +392,121 @@ export async function POST(request: NextRequest) {
     ${bot.trainingContext || ''}
     Always be helpful, accurate, and concise.`;
 
+    // Check if client wants streaming (from metadata)
+    const enableStreaming = metadata?.enableStreaming === true;
+
     if (OPENAI_API_KEY) {
       try {
+        // PHASE 4: Streaming responses
+        if (enableStreaming) {
+          console.log(`🌊 [STREAMING] Enabled for conversation ${conversation.id}`);
+
+          const openAIResponse = await fetch(OPENAI_API_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: bot.aiModel || 'gpt-3.5-turbo',
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: message }
+              ],
+              max_tokens: Number(bot.maxTokens) || 500,
+              temperature: Number(bot.temperature) || 0.7,
+              stream: true
+            })
+          });
+
+          if (openAIResponse.ok && openAIResponse.body) {
+            // Save visitor message first
+            const messages = conversation.messages || [];
+            messages.push({
+              id: `${Date.now()}-visitor`,
+              sender: 'visitor',
+              text: message,
+              timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+            });
+
+            let fullResponse = '';
+            const reader = openAIResponse.body.getReader();
+            const decoder = new TextDecoder();
+
+            // Create a ReadableStream for SSE
+            const stream = new ReadableStream({
+              async start(controller) {
+                try {
+                  while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+                    for (const line of lines) {
+                      if (line.startsWith('data: ')) {
+                        const data = line.slice(6);
+                        if (data === '[DONE]') continue;
+
+                        try {
+                          const parsed = JSON.parse(data);
+                          const content = parsed.choices[0]?.delta?.content || '';
+                          if (content) {
+                            fullResponse += content;
+                            // Send SSE event
+                            controller.enqueue(`data: ${JSON.stringify({ content, done: false })}\n\n`);
+                          }
+                        } catch (e) {
+                          console.error('Parse error:', e);
+                        }
+                      }
+                    }
+                  }
+
+                  // Save bot response to conversation
+                  messages.push({
+                    id: `${Date.now()}-bot`,
+                    sender: 'bot',
+                    text: fullResponse,
+                    timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                  });
+
+                  conversation.messages = messages;
+                  conversation.lastMessageAt = new Date();
+                  await conversationRepository.save(conversation);
+
+                  // Increment message usage counter
+                  botOwner.messagesUsedThisMonth = (botOwner.messagesUsedThisMonth || 0) + 1;
+                  await userRepository.save(botOwner);
+
+                  // Send final event
+                  controller.enqueue(`data: ${JSON.stringify({
+                    content: '',
+                    done: true,
+                    sessionId: conversation.sessionId,
+                    conversationId: conversation.id
+                  })}\n\n`);
+                  controller.close();
+                } catch (error) {
+                  console.error('Streaming error:', error);
+                  controller.error(error);
+                }
+              }
+            });
+
+            return new Response(stream, {
+              headers: {
+                ...corsHeaders,
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+              }
+            });
+          }
+        }
+
+        // Non-streaming fallback (original implementation)
         const openAIResponse = await fetch(OPENAI_API_URL, {
           method: 'POST',
           headers: {

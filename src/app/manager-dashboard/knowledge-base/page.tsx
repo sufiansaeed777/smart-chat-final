@@ -219,6 +219,8 @@ const KnowledgeBasePage: React.FC = () => {
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       handleFileUpload(e.target.files);
+      // FIX: Clear file input after upload to prevent double-upload bug
+      e.target.value = '';
     }
   };
 

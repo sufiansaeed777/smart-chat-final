@@ -53,6 +53,42 @@ export class User {
   @Column({ type: "uuid", nullable: true })
   invitedBy!: string | null;
 
+  // PHASE 4: Subscription & Billing Fields
+  @Column({
+    type: "enum",
+    enum: ['free', 'starter', 'professional', 'enterprise'],
+    default: 'free'
+  })
+  subscriptionPlan!: 'free' | 'starter' | 'professional' | 'enterprise';
+
+  @Column({
+    type: "enum",
+    enum: ['active', 'past_due', 'cancelled', 'suspended', 'trialing'],
+    nullable: true
+  })
+  subscriptionStatus?: 'active' | 'past_due' | 'cancelled' | 'suspended' | 'trialing' | null;
+
+  @Column({ type: "varchar", nullable: true })
+  stripeCustomerId?: string | null;
+
+  @Column({ type: "varchar", nullable: true })
+  stripeSubscriptionId?: string | null;
+
+  @Column({ type: "int", default: 0 })
+  messagesUsedThisMonth!: number;
+
+  @Column({ type: "timestamp", nullable: true })
+  billingCycleStart?: Date | null;
+
+  @Column({ type: "timestamp", nullable: true })
+  billingCycleEnd?: Date | null;
+
+  @Column({ type: "timestamp", nullable: true })
+  subscriptionStartedAt?: Date | null;
+
+  @Column({ type: "timestamp", nullable: true })
+  subscriptionEndedAt?: Date | null;
+
   @CreateDateColumn({ type: "timestamp" })
   createdAt!: Date;
 

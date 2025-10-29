@@ -52,62 +52,27 @@ export async function POST(request: NextRequest) {
       console.log('WordPress tokens table not found, using token parsing fallback');
     }
 
-    let userId, botId;
-    let bot, user;
-
-    if (tokenCheck.rows.length > 0) {
-      // Token found in database
-      const tokenData = tokenCheck.rows[0];
-      userId = tokenData.user_id;
-      botId = tokenData.bot_id;
-      bot = tokenData;
-      user = { email: tokenData.email, isActive: tokenData.user_active };
-
-      // Update last_used timestamp
-      await pool.query(
-        'UPDATE wordpress_tokens SET last_used = CURRENT_TIMESTAMP WHERE token = $1',
-        [token]
+    // FIX: Only accept tokens that exist in database and are active
+    // This ensures old/deleted tokens are immediately invalidated
+    if (tokenCheck.rows.length === 0) {
+      return NextResponse.json(
+        { valid: false, error: 'Invalid or expired token' },
+        { status: 401, headers: corsHeaders }
       );
-    } else {
-      // Fall back to parsing token format: "user_id:bot_id:secret_token"
-      const parts = token.split(':');
-      if (parts.length !== 3) {
-        return NextResponse.json(
-          { valid: false, error: 'Invalid token format' },
-          { status: 401, headers: corsHeaders }
-        );
-      }
-
-      [userId, botId] = parts;
-
-      // Verify user and bot
-      const userResult = await pool.query(
-        'SELECT email, "isActive" FROM users WHERE id = $1',
-        [userId]
-      );
-
-      if (userResult.rows.length === 0 || !userResult.rows[0].isActive) {
-        return NextResponse.json(
-          { valid: false, error: 'Invalid user or inactive account' },
-          { status: 401, headers: corsHeaders }
-        );
-      }
-      user = userResult.rows[0];
-
-      // Get bot details
-      const botResult = await pool.query(
-        'SELECT * FROM bots WHERE id = $1 AND "createdBy" = $2 AND status = $3',
-        [botId, userId, 'active']
-      );
-
-      if (botResult.rows.length === 0) {
-        return NextResponse.json(
-          { valid: false, error: 'Bot not found or inactive' },
-          { status: 404, headers: corsHeaders }
-        );
-      }
-      bot = botResult.rows[0];
     }
+
+    // Token found in database
+    const tokenData = tokenCheck.rows[0];
+    const userId = tokenData.user_id;
+    const botId = tokenData.bot_id;
+    const bot = tokenData;
+    const user = { email: tokenData.email, isActive: tokenData.user_active };
+
+    // Update last_used timestamp
+    await pool.query(
+      'UPDATE wordpress_tokens SET last_used = CURRENT_TIMESTAMP WHERE token = $1',
+      [token]
+    );
 
     // Domain validation - Allow if:
     // 1. Development mode
