@@ -3,10 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Bell,
   Shield,
-  Globe,
-  Palette,
   Save,
   Camera,
   Key,
@@ -19,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import DashboardLayoutWithAuth from '@/components/dashboard/DashboardLayoutWithAuth';
 
 const SettingsPage = () => {
@@ -31,16 +27,12 @@ const SettingsPage = () => {
   const [profileData, setProfileData] = useState({
     firstName: '',
     lastName: '',
-    email: '',
-    company: '',
-    bio: ''
+    email: ''
   });
   const [originalData, setOriginalData] = useState({
     firstName: '',
     lastName: '',
-    email: '',
-    company: '',
-    bio: ''
+    email: ''
   });
 
   // Password change state
@@ -56,10 +48,7 @@ const SettingsPage = () => {
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'security', label: 'Security', icon: Shield },
-    { id: 'integrations', label: 'Integrations', icon: Globe },
-    { id: 'preferences', label: 'Preferences', icon: Palette }
+    { id: 'security', label: 'Security', icon: Shield }
   ];
 
   useEffect(() => {
@@ -76,9 +65,7 @@ const SettingsPage = () => {
         const profile = {
           firstName: data.profile.firstName || '',
           lastName: data.profile.lastName || '',
-          email: data.profile.email || '',
-          company: '',
-          bio: ''
+          email: data.profile.email || ''
         };
         setProfileData(profile);
         setOriginalData(profile);
@@ -289,32 +276,6 @@ const SettingsPage = () => {
                     title="Email cannot be changed"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Company <span className="text-xs text-gray-500">(Coming Soon)</span>
-                  </label>
-                  <Input
-                    value={profileData.company}
-                    disabled={true}
-                    placeholder="Company field not yet available"
-                    className="border-gray-300 focus:border-purple-600 focus:ring-purple-600 bg-gray-100"
-                    title="Company field will be available in a future update"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Bio <span className="text-xs text-gray-500">(Coming Soon)</span>
-                </label>
-                <Textarea
-                  value={profileData.bio}
-                  disabled={true}
-                  placeholder="Bio field not yet available. You'll be able to add a personal bio in a future update."
-                  rows={4}
-                  className="border-gray-300 focus:border-purple-600 focus:ring-purple-600 bg-gray-100"
-                  title="Bio field will be available in a future update"
-                />
               </div>
 
               {/* Action Buttons */}
@@ -350,36 +311,6 @@ const SettingsPage = () => {
               </div>
               </>
               )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Notifications Tab Content */}
-        {activeTab === 'notifications' && (
-          <Card className="border border-gray-200 bg-white">
-            <CardHeader>
-              <CardTitle className="text-lg">Notification Settings</CardTitle>
-              <CardDescription>
-                Configure how you receive notifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div>
-                    <h3 className="font-medium">Email Notifications</h3>
-                    <p className="text-sm text-gray-600">Receive updates via email</p>
-                  </div>
-                  <Badge variant="outline">Enabled</Badge>
-                </div>
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div>
-                    <h3 className="font-medium">Push Notifications</h3>
-                    <p className="text-sm text-gray-600">Receive push notifications</p>
-                  </div>
-                  <Badge variant="outline">Disabled</Badge>
-                </div>
-              </div>
             </CardContent>
           </Card>
         )}
@@ -484,127 +415,6 @@ const SettingsPage = () => {
                     <Key className="w-4 h-4 mr-2" />
                     {changingPassword ? 'Changing Password...' : 'Change Password'}
                   </Button>
-                </div>
-              </div>
-
-              {/* Two-Factor Authentication Section */}
-              <div>
-                <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center">
-                  <Shield className="w-4 h-4 mr-2 text-purple-600" />
-                  Two-Factor Authentication
-                </h3>
-                <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="font-medium text-gray-900">2FA Status</p>
-                      <p className="text-sm text-gray-600">Add an extra layer of security to your account</p>
-                    </div>
-                    <Badge variant="outline" className="text-gray-600">Coming Soon</Badge>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Two-factor authentication will be available in a future update
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Integrations Tab Content */}
-        {activeTab === 'integrations' && (
-          <Card className="border border-gray-200 bg-white">
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <Globe className="w-5 h-5 text-purple-600" />
-                <div>
-                  <CardTitle className="text-lg">Integrations</CardTitle>
-                  <CardDescription>
-                    Connect your bots with external services and platforms
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <h3 className="font-medium mb-2">Slack</h3>
-                  <p className="text-sm text-gray-600 mb-3">Send bot notifications to your Slack channels</p>
-                  <Badge variant="outline" className="mb-3">Not Connected</Badge>
-                  <Button 
-                    size="sm" 
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
-                    onClick={() => handleNavigation('/dashboard/bots')}
-                  >
-                    Connect
-                  </Button>
-                </div>
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <h3 className="font-medium mb-2">Discord</h3>
-                  <p className="text-sm text-gray-600 mb-3">Add bot capabilities to your Discord server</p>
-                  <Badge variant="outline" className="mb-3">Not Connected</Badge>
-                  <Button 
-                    size="sm" 
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
-                    onClick={() => handleNavigation('/dashboard/bots')}
-                  >
-                    Connect
-                  </Button>
-                </div>
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <h3 className="font-medium mb-2">Zapier</h3>
-                  <p className="text-sm text-gray-600 mb-3">Automate workflows with 5000+ apps</p>
-                  <Badge variant="outline" className="mb-3">Connected</Badge>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="border-gray-300 hover:bg-gray-50 text-gray-700"
-                    onClick={() => handleNavigation('/dashboard/analytics')}
-                  >
-                    Configure
-                  </Button>
-                </div>
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <h3 className="font-medium mb-2">WhatsApp</h3>
-                  <p className="text-sm text-gray-600 mb-3">Deploy bots on WhatsApp Business</p>
-                  <Badge variant="outline" className="mb-3">Connected</Badge>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="border-gray-300 hover:bg-gray-50 text-gray-700"
-                    onClick={() => handleNavigation('/dashboard/analytics')}
-                  >
-                    Configure
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Preferences Tab Content */}
-        {activeTab === 'preferences' && (
-          <Card className="border border-gray-200 bg-white">
-            <CardHeader>
-              <CardTitle className="text-lg">Preferences</CardTitle>
-              <CardDescription>
-                Customize your experience
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div>
-                    <h3 className="font-medium">Dark Mode</h3>
-                    <p className="text-sm text-gray-600">Switch to dark theme</p>
-                  </div>
-                  <Badge variant="outline">Light</Badge>
-                </div>
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div>
-                    <h3 className="font-medium">Language</h3>
-                    <p className="text-sm text-gray-600">Choose your preferred language</p>
-                  </div>
-                  <Badge variant="outline">English</Badge>
                 </div>
               </div>
             </CardContent>
