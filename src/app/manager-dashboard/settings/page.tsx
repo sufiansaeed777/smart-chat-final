@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
 
@@ -25,12 +25,21 @@ const SettingsPage = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [profileData, setProfileData] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john@example.com',
-    company: 'Acme Corp',
-    bio: 'Tell us about yourself...'
+    firstName: '',
+    lastName: '',
+    email: '',
+    company: '',
+    bio: ''
+  });
+  const [originalData, setOriginalData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    company: '',
+    bio: ''
   });
 
   const tabs = [
@@ -41,14 +50,68 @@ const SettingsPage = () => {
     { id: 'preferences', label: 'Preferences', icon: Palette }
   ];
 
-  const handleSave = () => {
-    setIsEditing(false);
-    // Save logic here
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/manager/profile');
+
+      if (response.ok) {
+        const data = await response.json();
+        const profile = {
+          firstName: data.profile.firstName || '',
+          lastName: data.profile.lastName || '',
+          email: data.profile.email || '',
+          company: '',
+          bio: ''
+        };
+        setProfileData(profile);
+        setOriginalData(profile);
+      } else {
+        console.error('Failed to load profile');
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      const response = await fetch('/api/manager/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: profileData.firstName,
+          lastName: profileData.lastName
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setOriginalData(profileData);
+        setIsEditing(false);
+        alert('Profile updated successfully!');
+      } else {
+        const error = await response.json();
+        alert(`Failed to update profile: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      alert('Failed to save profile. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
+    setProfileData(originalData);
     setIsEditing(false);
-    // Reset to original data
   };
 
   const handleNavigation = (path: string) => {
@@ -104,6 +167,12 @@ const SettingsPage = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                </div>
+              ) : (
+                <>
               {/* Avatar Section */}
               <div className="flex items-start space-x-4">
                 <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
@@ -150,9 +219,9 @@ const SettingsPage = () => {
                   </label>
                   <Input
                     value={profileData.email}
-                    onChange={(e) => setProfileData({...profileData, email: e.target.value})}
-                    disabled={!isEditing}
-                    className="border-gray-300 focus:border-purple-600 focus:ring-purple-600"
+                    disabled={true}
+                    className="border-gray-300 focus:border-purple-600 focus:ring-purple-600 bg-gray-100"
+                    title="Email cannot be changed"
                   />
                 </div>
                 <div>
@@ -193,23 +262,27 @@ const SettingsPage = () => {
                   </Button>
                 ) : (
                   <>
-                    <Button 
+                    <Button
                       onClick={handleSave}
-                      className="bg-purple-600 hover:bg-purple-700 text-white"
+                      disabled={saving}
+                      className="bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Save className="w-4 h-4 mr-2" />
-                      Save Changes
+                      {saving ? 'Saving...' : 'Save Changes'}
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={handleCancel}
-                      className="border-gray-300 hover:bg-gray-50 text-gray-700"
+                      disabled={saving}
+                      className="border-gray-300 hover:bg-gray-50 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Cancel
                     </Button>
                   </>
                 )}
               </div>
+              </>
+              )}
             </CardContent>
           </Card>
         )}
