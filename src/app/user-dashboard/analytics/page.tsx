@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BarChart3,
   TrendingUp,
@@ -10,7 +10,8 @@ import {
   Download,
   Calendar,
   Globe,
-  MessageCircle
+  MessageCircle,
+  Bot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -22,60 +23,49 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend
-} from 'recharts';
 
-
-// Mock analytics data matching the image exactly
-const conversationData = [
-  { date: "Jan 01", conversations: 40, messages: 210 },
-  { date: "Jan 02", conversations: 45, messages: 280 },
-  { date: "Jan 03", conversations: 40, messages: 230 },
-  { date: "Jan 04", conversations: 55, messages: 320 },
-  { date: "Jan 05", conversations: 50, messages: 280 },
-  { date: "Jan 06", conversations: 67, messages: 378 },
-  { date: "Jan 07", conversations: 45, messages: 300 },
-];
-
-const satisfactionData = [
-  { rating: "5 Stars", count: 45, percentage: 35 },
-  { rating: "4 Stars", count: 38, percentage: 30 },
-  { rating: "3 Stars", count: 25, percentage: 20 },
-  { rating: "2 Stars", count: 12, percentage: 10 },
-  { rating: "1 Star", count: 5, percentage: 5 },
-];
-
-const languageData = [
-  { name: "English", value: 68, color: "#6566F1" },
-  { name: "Spanish", value: 18, color: "#8b5cf6" },
-  { name: "French", value: 8, color: "#0891b2" },
-  { name: "German", value: 4, color: "#f59e0b" },
-  { name: "Other", value: 2, color: "#fbbf24" },
-];
-
-const topQuestions = [
-  { question: "What are your business hours?", count: 145 },
-  { question: "How do I return a product?", count: 132 },
-  { question: "What payment methods do you accept?", count: 98 },
-  { question: "How can I track my order?", count: 87 },
-  { question: "Do you offer international shipping?", count: 76 },
-];
+interface AnalyticsData {
+  stats: {
+    assignedBots: number;
+    totalConversations: number;
+    recentConversations: number;
+    activeConversations: number;
+    avgResponseTime: string;
+  };
+  recentActivity: Array<{
+    id: string;
+    type: string;
+    bot: string;
+    time: string;
+    status: string;
+  }>;
+}
 
 const AnalyticsPage = () => {
   const [timeRange, setTimeRange] = useState("7d");
+  const [loading, setLoading] = useState(true);
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+
+  useEffect(() => {
+    loadAnalytics();
+  }, []);
+
+  const loadAnalytics = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/user/analytics');
+      if (response.ok) {
+        const data = await response.json();
+        setAnalyticsData(data);
+      } else {
+        console.error('Failed to load analytics:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error loading analytics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -107,268 +97,145 @@ const AnalyticsPage = () => {
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border border-gray-200 bg-white rounded-2xl">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2">
-                <MessageSquare className="w-5 h-5 text-[#6566F1]" />
-                <div>
-                  <p className="text-2xl font-bold">1,247</p>
-                  <p className="text-sm text-gray-600">Total Conversations</p>
-                  <div className="flex items-center mt-1">
-                    <TrendingUp className="w-3 h-3 text-green-500 mr-1" />
-                    <span className="text-xs text-green-500">+15.3%</span>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="border border-gray-200 bg-white rounded-2xl">
+                <CardContent className="p-6">
+                  <div className="animate-pulse">
+                    <div className="h-8 bg-gray-200 rounded w-20 mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-32"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="border border-gray-200 bg-white rounded-2xl">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-2">
+                  <Bot className="w-5 h-5 text-[#6566F1]" />
+                  <div>
+                    <p className="text-2xl font-bold">{analyticsData?.stats.assignedBots || 0}</p>
+                    <p className="text-sm text-gray-600">Assigned Bots</p>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border border-gray-200 bg-white rounded-2xl">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2">
-                <Users className="w-5 h-5 text-blue-500" />
-                <div>
-                  <p className="text-2xl font-bold">934</p>
-                  <p className="text-sm text-gray-600">Unique Visitors</p>
-                  <div className="flex items-center mt-1">
-                    <TrendingUp className="w-3 h-3 text-green-500 mr-1" />
-                    <span className="text-xs text-green-500">+8.7%</span>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-gray-200 bg-white rounded-2xl">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-2">
+                  <MessageSquare className="w-5 h-5 text-blue-500" />
+                  <div>
+                    <p className="text-2xl font-bold">{analyticsData?.stats.totalConversations || 0}</p>
+                    <p className="text-sm text-gray-600">Total Conversations</p>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border border-gray-200 bg-white rounded-2xl">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2">
-                <Clock className="w-5 h-5 text-yellow-500" />
-                <div>
-                  <p className="text-2xl font-bold">2.3s</p>
-                  <p className="text-sm text-gray-600">Avg Response Time</p>
-                  <div className="flex items-center mt-1">
-                    <TrendingUp className="w-3 h-3 text-red-500 mr-1 rotate-180" />
-                    <span className="text-xs text-red-500">+0.2s</span>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-gray-200 bg-white rounded-2xl">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-2">
+                  <Calendar className="w-5 h-5 text-green-500" />
+                  <div>
+                    <p className="text-2xl font-bold">{analyticsData?.stats.recentConversations || 0}</p>
+                    <p className="text-sm text-gray-600">Last 7 Days</p>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border border-gray-200 bg-white rounded-2xl">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2">
-                <span className="text-yellow-400 text-lg">★</span>
-                <div>
-                  <p className="text-2xl font-bold">4.6</p>
-                  <p className="text-sm text-gray-600">Satisfaction Score</p>
-                  <div className="flex items-center mt-1">
-                    <TrendingUp className="w-3 h-3 text-green-500 mr-1" />
-                    <span className="text-xs text-green-500">+0.3</span>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-gray-200 bg-white rounded-2xl">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-5 h-5 text-yellow-500" />
+                  <div>
+                    <p className="text-2xl font-bold">{analyticsData?.stats.avgResponseTime || '0 min'}</p>
+                    <p className="text-sm text-gray-600">Avg Response Time</p>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Conversations Over Time */}
-          <Card className="border border-gray-200 bg-white rounded-2xl">
-            <CardHeader>
-              <CardTitle>Conversations Over Time</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={conversationData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                  <XAxis 
-                    dataKey="date" 
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                  />
-                  <YAxis 
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="conversations" 
-                    stroke="#c084fc" 
-                    strokeWidth={2}
-                    name="Conversations"
-                    dot={{ fill: 'white', stroke: '#c084fc', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, stroke: '#c084fc', strokeWidth: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="messages" 
-                    stroke="#8b5cf6" 
-                    strokeWidth={2}
-                    name="Messages"
-                    dot={{ fill: 'white', stroke: '#8b5cf6', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, stroke: '#8b5cf6', strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
 
-          {/* Satisfaction Ratings */}
-          <Card className="border border-gray-200 bg-white rounded-2xl">
-            <CardHeader>
-              <CardTitle>Customer Satisfaction</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={satisfactionData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                  <XAxis 
-                    dataKey="rating" 
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                  />
-                  <YAxis 
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
-                  <Bar 
-                    dataKey="count" 
-                    fill="#6566F1"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Language Distribution */}
-        <Card className="border border-gray-200 bg-white rounded-2xl">
-          <CardHeader>
-            <CardTitle>Language Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <ResponsiveContainer width="60%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={languageData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={120}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {languageData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="space-y-3">
-                {languageData.map((item, index) => (
-                  <div key={index} className="flex items-center space-x-3">
-                    <div 
-                      className="w-4 h-4 rounded-full" 
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-sm font-medium text-gray-900">{item.name}</span>
-                    <span className="text-sm text-gray-600">{item.value}%</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Top Questions */}
-        <Card className="border border-gray-200 bg-white rounded-2xl">
-          <CardHeader>
-            <CardTitle>Most Asked Questions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {topQuestions.map((item, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-6 h-6 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center text-xs font-medium">
-                      {index + 1}
-                    </div>
-                    <span className="text-sm text-gray-700">{item.question}</span>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">{item.count}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Real-time Stats */}
+        {/* Recent Activity */}
         <Card className="border border-gray-200 bg-white rounded-2xl">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Calendar className="w-5 h-5" />
-              <span>Real-time Activity</span>
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <span>Recent Activity</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <MessageCircle className="w-6 h-6 text-green-600 mr-2" />
-                  <p className="text-3xl font-bold text-green-600">12</p>
-                </div>
-                <p className="text-sm text-gray-600">Active Conversations</p>
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="animate-pulse flex items-center space-x-3">
+                    <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <Globe className="w-6 h-6 text-blue-600 mr-2" />
-                  <p className="text-3xl font-bold text-blue-600">47</p>
-                </div>
-                <p className="text-sm text-gray-600">Visitors Online</p>
+            ) : analyticsData?.recentActivity && analyticsData.recentActivity.length > 0 ? (
+              <div className="space-y-4">
+                {analyticsData.recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-center justify-between border-b border-gray-100 pb-3 last:border-0">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-[#6566F1]/10 rounded-full flex items-center justify-center">
+                        <MessageCircle className="w-5 h-5 text-[#6566F1]" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{activity.bot}</p>
+                        <p className="text-xs text-gray-500">{activity.type}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant={activity.status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                        {activity.status}
+                      </Badge>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(activity.time).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <Clock className="w-6 h-6 text-[#6566F1] mr-2" />
-                  <p className="text-3xl font-bold text-[#6566F1]">1.8s</p>
-                </div>
-                <p className="text-sm text-gray-600">Current Response Time</p>
+            ) : (
+              <div className="text-center py-8">
+                <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">No recent activity</p>
               </div>
-            </div>
+            )}
+
+            {/* Active Conversations Stats */}
+            {!loading && analyticsData && (
+              <div className="mt-6 pt-6 border-t border-gray-100">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center mb-2">
+                      <MessageCircle className="w-5 h-5 text-green-600 mr-2" />
+                      <p className="text-2xl font-bold text-green-600">{analyticsData.stats.activeConversations}</p>
+                    </div>
+                    <p className="text-sm text-gray-600">Active (24h)</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center mb-2">
+                      <Clock className="w-5 h-5 text-[#6566F1] mr-2" />
+                      <p className="text-2xl font-bold text-[#6566F1]">{analyticsData.stats.avgResponseTime}</p>
+                    </div>
+                    <p className="text-sm text-gray-600">Response Time</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
     </div>

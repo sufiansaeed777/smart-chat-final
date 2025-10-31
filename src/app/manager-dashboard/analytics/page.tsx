@@ -1,17 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-
   TrendingUp,
   Users,
   MessageSquare,
   Clock,
   Download,
-  Calendar,
   Globe,
-  MessageCircle,
-  ArrowLeft
+  MessageCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,72 +20,71 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
-  Legend
+  ResponsiveContainer
 } from 'recharts';
 
+interface LanguageData {
+  language: string;
+  code: string;
+  count: number;
+  percentage: string;
+}
 
-// Mock analytics data matching the image exactly
-const conversationData = [
-  { date: "Jan 01", conversations: 40, messages: 210 },
-  { date: "Jan 02", conversations: 45, messages: 280 },
-  { date: "Jan 03", conversations: 40, messages: 230 },
-  { date: "Jan 04", conversations: 55, messages: 320 },
-  { date: "Jan 05", conversations: 50, messages: 280 },
-  { date: "Jan 06", conversations: 67, messages: 378 },
-  { date: "Jan 07", conversations: 45, messages: 300 },
-];
+interface QuestionData {
+  question: string;
+  count: number;
+  percentage: string;
+}
 
-const satisfactionData = [
-  { rating: "5 Stars", count: 45, percentage: 35 },
-  { rating: "4 Stars", count: 38, percentage: 30 },
-  { rating: "3 Stars", count: 25, percentage: 20 },
-  { rating: "2 Stars", count: 12, percentage: 10 },
-  { rating: "1 Star", count: 5, percentage: 5 },
-];
-
-const languageData = [
-  { name: "English", value: 68, color: "#6566F1" },
-  { name: "Spanish", value: 18, color: "#8b5cf6" },
-  { name: "French", value: 8, color: "#0891b2" },
-  { name: "German", value: 4, color: "#f59e0b" },
-  { name: "Other", value: 2, color: "#fbbf24" },
-];
-
-const topQuestions = [
-  { question: "What are your business hours?", count: 145 },
-  { question: "How do I return a product?", count: 132 },
-  { question: "What payment methods do you accept?", count: 98 },
-  { question: "How can I track my order?", count: 87 },
-  { question: "Do you offer international shipping?", count: 76 },
-];
+const COLORS = ['#6566F1', '#8b5cf6', '#0891b2', '#f59e0b', '#fbbf24', '#ef4444', '#10b981', '#ec4899'];
 
 const AnalyticsPage = () => {
   const [timeRange, setTimeRange] = useState("7d");
+  const [loading, setLoading] = useState(true);
+  const [languagesData, setLanguagesData] = useState<{ total: number; data: LanguageData[] }>({ total: 0, data: [] });
+  const [questionsData, setQuestionsData] = useState<{ total: number; data: QuestionData[] }>({ total: 0, data: [] });
+
+  useEffect(() => {
+    loadAnalytics();
+  }, []);
+
+  const loadAnalytics = async () => {
+    setLoading(true);
+    try {
+      // Load languages data
+      const languagesResponse = await fetch('/api/manager/analytics?type=languages');
+      if (languagesResponse.ok) {
+        const languagesResult = await languagesResponse.json();
+        setLanguagesData(languagesResult);
+      }
+
+      // Load top questions data
+      const questionsResponse = await fetch('/api/manager/analytics?type=topQuestions');
+      if (questionsResponse.ok) {
+        const questionsResult = await questionsResponse.json();
+        setQuestionsData(questionsResult);
+      }
+    } catch (error) {
+      console.error('Error loading analytics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Prepare pie chart data
+  const pieChartData = languagesData.data.map((lang, index) => ({
+    name: lang.language,
+    value: lang.count,
+    percentage: lang.percentage,
+    color: COLORS[index % COLORS.length]
+  }));
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Dashboard</span>
-            </button>
-          </div>
-        </div>
-
         {/* Page Title */}
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
@@ -115,164 +111,58 @@ const AnalyticsPage = () => {
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border border-gray-200 bg-white rounded-2xl">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2">
-                <MessageSquare className="w-5 h-5 text-[#6566F1]" />
-                <div>
-                  <p className="text-2xl font-bold">1,247</p>
-                  <p className="text-sm text-gray-600">Total Conversations</p>
-                  <div className="flex items-center mt-1">
-                    <TrendingUp className="w-3 h-3 text-green-500 mr-1" />
-                    <span className="text-xs text-green-500">+15.3%</span>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="border border-gray-200 bg-white rounded-2xl">
+                <CardContent className="p-6">
+                  <div className="animate-pulse">
+                    <div className="h-8 bg-gray-200 rounded w-20 mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-32"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border border-gray-200 bg-white rounded-2xl">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-2">
+                  <MessageSquare className="w-5 h-5 text-[#6566F1]" />
+                  <div>
+                    <p className="text-2xl font-bold">{languagesData.total}</p>
+                    <p className="text-sm text-gray-600">Total Conversations</p>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border border-gray-200 bg-white rounded-2xl">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2">
-                <Users className="w-5 h-5 text-blue-500" />
-                <div>
-                  <p className="text-2xl font-bold">934</p>
-                  <p className="text-sm text-gray-600">Unique Visitors</p>
-                  <div className="flex items-center mt-1">
-                    <TrendingUp className="w-3 h-3 text-green-500 mr-1" />
-                    <span className="text-xs text-green-500">+8.7%</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border border-gray-200 bg-white rounded-2xl">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2">
-                <Clock className="w-5 h-5 text-yellow-500" />
-                <div>
-                  <p className="text-2xl font-bold">2.3s</p>
-                  <p className="text-sm text-gray-600">Avg Response Time</p>
-                  <div className="flex items-center mt-1">
-                    <TrendingUp className="w-3 h-3 text-red-500 mr-1 rotate-180" />
-                    <span className="text-xs text-red-500">+0.2s</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border border-gray-200 bg-white rounded-2xl">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2">
-                <span className="text-yellow-400 text-lg">★</span>
-                <div>
-                  <p className="text-2xl font-bold">4.6</p>
-                  <p className="text-sm text-gray-600">Satisfaction Score</p>
-                  <div className="flex items-center mt-1">
-                    <TrendingUp className="w-3 h-3 text-green-500 mr-1" />
-                    <span className="text-xs text-green-500">+0.3</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Conversations Over Time */}
-          <Card className="border border-gray-200 bg-white rounded-2xl">
-            <CardHeader>
-              <CardTitle>Conversations Over Time</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={conversationData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                  <XAxis 
-                    dataKey="date" 
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                  />
-                  <YAxis 
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="conversations" 
-                    stroke="#c084fc" 
-                    strokeWidth={2}
-                    name="Conversations"
-                    dot={{ fill: 'white', stroke: '#c084fc', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, stroke: '#c084fc', strokeWidth: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="messages" 
-                    stroke="#8b5cf6" 
-                    strokeWidth={2}
-                    name="Messages"
-                    dot={{ fill: 'white', stroke: '#8b5cf6', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, stroke: '#8b5cf6', strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+            <Card className="border border-gray-200 bg-white rounded-2xl">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-2">
+                  <Globe className="w-5 h-5 text-blue-500" />
+                  <div>
+                    <p className="text-2xl font-bold">{languagesData.data.length}</p>
+                    <p className="text-sm text-gray-600">Languages Used</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Satisfaction Ratings */}
-          <Card className="border border-gray-200 bg-white rounded-2xl">
-            <CardHeader>
-              <CardTitle>Customer Satisfaction</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={satisfactionData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                  <XAxis 
-                    dataKey="rating" 
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                  />
-                  <YAxis 
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
-                  <Bar 
-                    dataKey="count" 
-                    fill="#6566F1"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
+            <Card className="border border-gray-200 bg-white rounded-2xl">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-2">
+                  <MessageCircle className="w-5 h-5 text-green-500" />
+                  <div>
+                    <p className="text-2xl font-bold">{questionsData.total}</p>
+                    <p className="text-sm text-gray-600">Total Questions</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Language Distribution */}
         <Card className="border border-gray-200 bg-white rounded-2xl">
@@ -280,45 +170,56 @@ const AnalyticsPage = () => {
             <CardTitle>Language Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between">
-              <ResponsiveContainer width="60%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={languageData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={120}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {languageData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="space-y-3">
-                {languageData.map((item, index) => (
-                  <div key={index} className="flex items-center space-x-3">
-                    <div 
-                      className="w-4 h-4 rounded-full" 
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-sm font-medium text-gray-900">{item.name}</span>
-                    <span className="text-sm text-gray-600">{item.value}%</span>
-                  </div>
-                ))}
+            {loading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6566F1]"></div>
               </div>
-            </div>
+            ) : pieChartData.length > 0 ? (
+              <div className="flex items-center justify-between">
+                <ResponsiveContainer width="60%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={pieChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={120}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {pieChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="space-y-3">
+                  {pieChartData.map((item, index) => (
+                    <div key={index} className="flex items-center space-x-3">
+                      <div
+                        className="w-4 h-4 rounded-full"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="text-sm font-medium text-gray-900">{item.name}</span>
+                      <span className="text-sm text-gray-600">{item.percentage}% ({item.value})</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Globe className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">No language data available</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -328,55 +229,39 @@ const AnalyticsPage = () => {
             <CardTitle>Most Asked Questions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {topQuestions.map((item, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-6 h-6 bg-gray-200 text-gray-600 rounded-full flex items-center justify-center text-xs font-medium">
-                      {index + 1}
-                    </div>
-                    <span className="text-sm text-gray-700">{item.question}</span>
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="animate-pulse flex items-center space-x-3">
+                    <div className="h-6 w-6 bg-gray-200 rounded-full"></div>
+                    <div className="flex-1 h-4 bg-gray-200 rounded"></div>
+                    <div className="h-4 w-12 bg-gray-200 rounded"></div>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">{item.count}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Real-time Stats */}
-        <Card className="border border-gray-200 bg-white rounded-2xl">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Calendar className="w-5 h-5" />
-              <span>Real-time Activity</span>
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <MessageCircle className="w-6 h-6 text-green-600 mr-2" />
-                  <p className="text-3xl font-bold text-green-600">12</p>
-                </div>
-                <p className="text-sm text-gray-600">Active Conversations</p>
+                ))}
               </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <Globe className="w-6 h-6 text-blue-600 mr-2" />
-                  <p className="text-3xl font-bold text-blue-600">47</p>
-                </div>
-                <p className="text-sm text-gray-600">Visitors Online</p>
+            ) : questionsData.data.length > 0 ? (
+              <div className="space-y-4">
+                {questionsData.data.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between border-b border-gray-100 pb-3 last:border-0">
+                    <div className="flex items-center space-x-3 flex-1">
+                      <div className="w-6 h-6 bg-[#6566F1] text-white rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0">
+                        {index + 1}
+                      </div>
+                      <span className="text-sm text-gray-700">{item.question}</span>
+                    </div>
+                    <div className="text-right ml-4">
+                      <span className="text-sm font-medium text-gray-900">{item.count}</span>
+                      <p className="text-xs text-gray-500">{item.percentage}%</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <Clock className="w-6 h-6 text-[#6566F1] mr-2" />
-                  <p className="text-3xl font-bold text-[#6566F1]">1.8s</p>
-                </div>
-                <p className="text-sm text-gray-600">Current Response Time</p>
+            ) : (
+              <div className="text-center py-12">
+                <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">No questions data available</p>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
     </div>
