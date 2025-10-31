@@ -226,27 +226,29 @@ const SettingsPage = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Company
+                    Company <span className="text-xs text-gray-500">(Coming Soon)</span>
                   </label>
                   <Input
                     value={profileData.company}
-                    onChange={(e) => setProfileData({...profileData, company: e.target.value})}
-                    disabled={!isEditing}
-                    className="border-gray-300 focus:border-purple-600 focus:ring-purple-600"
+                    disabled={true}
+                    placeholder="Company field not yet available"
+                    className="border-gray-300 focus:border-purple-600 focus:ring-purple-600 bg-gray-100"
+                    title="Company field will be available in a future update"
                   />
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Bio
+                  Bio <span className="text-xs text-gray-500">(Coming Soon)</span>
                 </label>
                 <Textarea
                   value={profileData.bio}
-                  onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
-                  disabled={!isEditing}
+                  disabled={true}
+                  placeholder="Bio field not yet available. You'll be able to add a personal bio in a future update."
                   rows={4}
-                  className="border-gray-300 focus:border-purple-600 focus:ring-purple-600"
+                  className="border-gray-300 focus:border-purple-600 focus:ring-purple-600 bg-gray-100"
+                  title="Bio field will be available in a future update"
                 />
               </div>
 
