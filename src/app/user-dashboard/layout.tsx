@@ -37,20 +37,47 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Mock data for issue counts
-  const [issueCounts] = useState({
-    total: 2,
+  // Real data for issue counts
+  const [issueCounts, setIssueCounts] = useState({
+    total: 0,
     resolved: 0,
-    pending: 2
+    pending: 0
   });
 
-  // Mock data for human handoff counts
-  const [handoffCounts] = useState({
-    total: 2,
-    pending: 1,
-    inProgress: 1,
+  // Real data for human handoff counts
+  const [handoffCounts, setHandoffCounts] = useState({
+    total: 0,
+    pending: 0,
+    inProgress: 0,
     resolved: 0
   });
+
+  // Fetch stats on mount
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Fetch issue stats
+        const issuesResponse = await fetch('/api/user/issues/stats');
+        if (issuesResponse.ok) {
+          const issuesData = await issuesResponse.json();
+          setIssueCounts(issuesData);
+        }
+
+        // Fetch handoff stats
+        const handoffResponse = await fetch('/api/user/handoff/stats');
+        if (handoffResponse.ok) {
+          const handoffData = await handoffResponse.json();
+          setHandoffCounts(handoffData);
+        }
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    };
+
+    if (status === 'authenticated') {
+      fetchStats();
+    }
+  }, [status]);
 
   // Navigation items for user dashboard
   const navigationItems = [

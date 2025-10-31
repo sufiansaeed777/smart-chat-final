@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   CreditCard, 
   Download, 
@@ -18,42 +18,69 @@ import {
 } from 'lucide-react';
 
 const BillingPage: React.FC = () => {
-  const [currentPlan] = useState({
-    name: 'Enterprise',
-    price: 299,
-    period: 'month',
+  const [loading, setLoading] = useState(true);
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadBillingData = async () => {
+      try {
+        // Fetch analytics for usage stats
+        const analyticsResponse = await fetch('/api/admin/analytics');
+        if (analyticsResponse.ok) {
+          const analyticsData = await analyticsResponse.json();
+          setAnalytics(analyticsData);
+        }
+
+        // Fetch invoices
+        const invoicesResponse = await fetch('/api/admin/billing/invoices');
+        if (invoicesResponse.ok) {
+          const invoicesData = await invoicesResponse.json();
+          setInvoices(invoicesData.invoices || []);
+        }
+
+        // Fetch subscriptions
+        const subscriptionsResponse = await fetch('/api/admin/billing/subscriptions');
+        if (subscriptionsResponse.ok) {
+          const subscriptionsData = await subscriptionsResponse.json();
+          setSubscriptions(subscriptionsData.subscriptions || []);
+        }
+      } catch (error) {
+        console.error('Error loading billing data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadBillingData();
+  }, []);
+
+  // Calculate current plan from active subscriptions
+  const activeSubscription = subscriptions.find(sub => sub.status === 'active');
+  const currentPlan = activeSubscription ? {
+    name: activeSubscription.planName || 'No Active Plan',
+    price: activeSubscription.amount || 0,
+    period: activeSubscription.billingCycle || 'month',
     features: ['Unlimited Users', 'Unlimited Bots', 'Priority Support', 'Advanced Analytics'],
     usage: {
-      users: 1247,
-      bots: 89,
-      conversations: 15678,
-      storage: 2.4
+      users: analytics?.overview?.totalUsers || 0,
+      bots: analytics?.overview?.totalBots || 0,
+      conversations: analytics?.overview?.totalConversations || 0,
+      storage: 0
     }
-  });
-
-  const [invoices] = useState([
-    {
-      id: 'INV-001',
-      date: '2024-01-01',
-      amount: 299,
-      status: 'paid',
-      description: 'Enterprise Plan - January 2024'
-    },
-    {
-      id: 'INV-002',
-      date: '2023-12-01',
-      amount: 299,
-      status: 'paid',
-      description: 'Enterprise Plan - December 2023'
-    },
-    {
-      id: 'INV-003',
-      date: '2023-11-01',
-      amount: 299,
-      status: 'paid',
-      description: 'Enterprise Plan - November 2023'
+  } : {
+    name: 'No Active Plan',
+    price: 0,
+    period: 'month',
+    features: [],
+    usage: {
+      users: analytics?.overview?.totalUsers || 0,
+      bots: analytics?.overview?.totalBots || 0,
+      conversations: analytics?.overview?.totalConversations || 0,
+      storage: 0
     }
-  ]);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -80,6 +107,24 @@ const BillingPage: React.FC = () => {
         return <Clock className="w-4 h-4" />;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border-0">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -253,45 +298,53 @@ const BillingPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {invoices.map((invoice) => (
-                <tr key={invoice.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
-                        <FileText className="w-5 h-5 text-gray-600" />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-semibold text-gray-900">{invoice.id}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {new Date(invoice.date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {invoice.description}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                    ${invoice.amount}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-full border flex items-center w-fit ${getStatusColor(invoice.status)}`}>
-                      {getStatusIcon(invoice.status)}
-                      <span className="ml-1 capitalize">{invoice.status}</span>
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      <button className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors">
-                        <Download className="w-4 h-4" />
-                      </button>
-                      <button className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                        <FileText className="w-4 h-4" />
-                      </button>
-                    </div>
+              {invoices.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                    No invoices found
                   </td>
                 </tr>
-              ))}
+              ) : (
+                invoices.map((invoice) => (
+                  <tr key={invoice.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+                          <FileText className="w-5 h-5 text-gray-600" />
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-semibold text-gray-900">{invoice.invoiceNumber || invoice.id}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {new Date(invoice.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {invoice.planName || invoice.notes || 'Subscription Payment'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                      ${(invoice.total || invoice.amount || 0).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-3 py-1 text-xs font-semibold rounded-full border flex items-center w-fit ${getStatusColor(invoice.status)}`}>
+                        {getStatusIcon(invoice.status)}
+                        <span className="ml-1 capitalize">{invoice.status}</span>
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center space-x-2">
+                        <button className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors">
+                          <Download className="w-4 h-4" />
+                        </button>
+                        <button className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                          <FileText className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Plus,
@@ -27,43 +27,37 @@ import {
 } from '@/components/ui/dropdown-menu';
 import DashboardLayoutWithAuth from '@/components/dashboard/DashboardLayoutWithAuth';
 
-// Mock data
-const mockBots = [
-  {
-    id: "1",
-    name: "Customer Support Bot",
-    status: "active",
-    conversations: 1247,
-    lastActive: "2 minutes ago",
-    knowledgeBase: 23,
-    domain: "support.yoursite.com"
-  },
-  {
-    id: "2",
-    name: "Sales Assistant",
-    status: "paused",
-    conversations: 892,
-    lastActive: "1 hour ago",
-    knowledgeBase: 15,
-    domain: "shop.yoursite.com"
-  },
-  {
-    id: "3",
-    name: "FAQ Helper",
-    status: "active",
-    conversations: 534,
-    lastActive: "5 minutes ago",
-    knowledgeBase: 8,
-    domain: "help.yoursite.com"
-  }
-];
-
 const BotsPage = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [bots, setBots] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredBots = mockBots.filter(bot => {
+  useEffect(() => {
+    const loadBots = async () => {
+      try {
+        const response = await fetch('/api/user/assigned-bots');
+
+        if (response.ok) {
+          const data = await response.json();
+          setBots(data.bots || []);
+        } else {
+          console.error('Failed to fetch bots:', response.statusText);
+          setBots([]);
+        }
+      } catch (error) {
+        console.error('Error loading bots:', error);
+        setBots([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadBots();
+  }, []);
+
+  const filteredBots = bots.filter(bot => {
     const matchesSearch = bot.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          bot.domain.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === "all" || bot.status === filterStatus;
@@ -126,8 +120,15 @@ const BotsPage = () => {
           </select>
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6566F1]"></div>
+          </div>
+        )}
+
         {/* Empty State */}
-        {filteredBots.length === 0 && searchTerm === "" && (
+        {!loading && filteredBots.length === 0 && searchTerm === "" && (
           <Card className="border border-gray-200 bg-white rounded-2xl">
             <CardContent className="p-12 text-center">
               <Bot className="h-16 w-16 text-gray-400 mx-auto mb-6" />

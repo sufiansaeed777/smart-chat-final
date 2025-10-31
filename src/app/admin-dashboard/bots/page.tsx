@@ -35,7 +35,7 @@ interface BotData {
   users: number;
   lastActive: string;
   createdAt: string;
-  performance: number;
+  createdBy?: string;
   avatar?: string;
 }
 
@@ -50,71 +50,19 @@ const BotsPage: React.FC = () => {
   useEffect(() => {
     const loadBots = async () => {
       try {
-        const mockBots: BotData[] = [
-          {
-            id: '1',
-            name: 'Customer Support Bot',
-            description: 'Handles customer inquiries and provides support',
-            status: 'active',
-            category: 'Support',
-            conversations: 2456,
-            users: 892,
-            lastActive: '2 minutes ago',
-            createdAt: '2024-01-15',
-            performance: 95
-          },
-          {
-            id: '2',
-            name: 'Sales Assistant',
-            description: 'Helps with sales inquiries and product information',
-            status: 'active',
-            category: 'Sales',
-            conversations: 1890,
-            users: 567,
-            lastActive: '5 minutes ago',
-            createdAt: '2024-01-16',
-            performance: 88
-          },
-          {
-            id: '3',
-            name: 'Technical Help Bot',
-            description: 'Provides technical support and troubleshooting',
-            status: 'maintenance',
-            category: 'Technical',
-            conversations: 1567,
-            users: 423,
-            lastActive: '1 hour ago',
-            createdAt: '2024-01-17',
-            performance: 92
-          },
-          {
-            id: '4',
-            name: 'FAQ Bot',
-            description: 'Answers frequently asked questions',
-            status: 'inactive',
-            category: 'General',
-            conversations: 1234,
-            users: 234,
-            lastActive: '2 days ago',
-            createdAt: '2024-01-18',
-            performance: 76
-          },
-          {
-            id: '5',
-            name: 'Lead Generation Bot',
-            description: 'Captures and qualifies leads',
-            status: 'active',
-            category: 'Marketing',
-            conversations: 987,
-            users: 345,
-            lastActive: '10 minutes ago',
-            createdAt: '2024-01-19',
-            performance: 89
-          }
-        ];
-        setBots(mockBots);
-      } catch {
-        // Handle error silently
+        const response = await fetch('/api/admin/bots');
+
+        if (!response.ok) {
+          console.error('Failed to fetch bots:', response.statusText);
+          setBots([]);
+          return;
+        }
+
+        const data = await response.json();
+        setBots(data.bots || []);
+      } catch (error) {
+        console.error('Error loading bots:', error);
+        setBots([]);
       } finally {
         setLoading(false);
       }
@@ -148,12 +96,6 @@ const BotsPage: React.FC = () => {
       case 'maintenance': return <Clock className="w-4 h-4" />;
       default: return <Clock className="w-4 h-4" />;
     }
-  };
-
-  const getPerformanceColor = (performance: number) => {
-    if (performance >= 90) return 'text-green-600';
-    if (performance >= 70) return 'text-yellow-600';
-    return 'text-red-600';
   };
 
   const handleSelectBot = (botId: string) => {
@@ -349,15 +291,11 @@ const BotsPage: React.FC = () => {
               <p className="text-sm text-gray-600 mb-4">{bot.description}</p>
 
               {/* Status */}
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center mb-4">
                 <span className={`px-3 py-1 text-xs font-semibold rounded-full border flex items-center w-fit ${getStatusBadgeColor(bot.status)}`}>
                   {getStatusIcon(bot.status)}
                   <span className="ml-1">{bot.status.charAt(0).toUpperCase() + bot.status.slice(1)}</span>
                 </span>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-gray-900">{bot.performance}%</p>
-                  <p className={`text-xs ${getPerformanceColor(bot.performance)}`}>Performance</p>
-                </div>
               </div>
 
               {/* Stats */}
