@@ -44,10 +44,10 @@ const AdminDashboardLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     { id: 'chatbot-analytics', label: 'Chatbot Analytics', icon: MessageSquare, path: `${basePath}/chatbot-analytics` },
     { id: 'chatbot-issues', label: 'Chatbot Issues', icon: AlertTriangle, path: `${basePath}/chatbot-issues` },
     { id: 'billing-management', label: 'Billing Management', icon: CreditCard, path: `${basePath}/billing-management` },
-    // { id: 'database', label: 'Database', icon: Database, path: `${basePath}/database` },
+    { id: 'database', label: 'Database', icon: Database, path: `${basePath}/database` },
     { id: 'system-health', label: 'System Health', icon: Activity, path: `${basePath}/system-health` },
     { id: 'settings', label: 'Settings', icon: Settings, path: `${basePath}/settings` },
-    // { id: 'help', label: 'Help', icon: HelpCircle, path: `${basePath}/help` },
+    { id: 'help', label: 'Help', icon: HelpCircle, path: `${basePath}/help` },
   ];
 
   const getActiveSection = (pathname: string): string => {
@@ -57,10 +57,10 @@ const AdminDashboardLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     if (pathname.includes('/chatbot-analytics')) return 'chatbot-analytics';
     if (pathname.includes('/chatbot-issues')) return 'chatbot-issues';
     if (pathname.includes('/billing-management')) return 'billing-management';
-    // if (pathname.includes('/database')) return 'database';
+    if (pathname.includes('/database')) return 'database';
     if (pathname.includes('/system-health')) return 'system-health';
     if (pathname.includes('/settings')) return 'settings';
-    // if (pathname.includes('/help')) return 'help';
+    if (pathname.includes('/help')) return 'help';
     return 'overview';
   };
 
