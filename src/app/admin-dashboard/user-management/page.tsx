@@ -44,6 +44,7 @@ const UserManagementPage: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -105,6 +106,86 @@ const UserManagementPage: React.FC = () => {
 
     loadUsers();
   }, []);
+
+  const handleDeleteUser = async (userId: string, userEmail: string) => {
+    if (!confirm(`Are you sure you want to delete user: ${userEmail}?`)) return;
+
+    setDeleting(userId);
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      });
+
+      if (response.ok) {
+        setUsers(prev => prev.filter(u => u.id !== userId));
+        alert('User deleted successfully!');
+      } else {
+        const error = await response.json();
+        alert(`Failed to delete user: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Failed to delete user. Please try again.');
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const handleEditUser = (user: User) => {
+    const newRole = prompt(`Change role for ${user.email}. Current: ${user.role}\nEnter new role (admin, manager, user):`, user.role);
+
+    if (!newRole || newRole === user.role) return;
+
+    if (!['admin', 'manager', 'user'].includes(newRole)) {
+      alert('Invalid role! Must be: admin, manager, or user');
+      return;
+    }
+
+    updateUser(user.id, { role: newRole as 'admin' | 'manager' | 'user' });
+  };
+
+  const updateUser = async (userId: string, updates: Partial<User>) => {
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, updates })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
+        alert('User updated successfully!');
+      } else {
+        const error = await response.json();
+        alert(`Failed to update user: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      alert('Failed to update user. Please try again.');
+    }
+  };
+
+  const handleAddUser = () => {
+    alert('Add user functionality requires a form. This will be available in a future update.');
+  };
+
+  const handleExport = () => {
+    const csv = [
+      ['Email', 'First Name', 'Last Name', 'Role', 'Status', 'Email Verified', 'Created At', 'Last Login'].join(','),
+      ...users.map(u => [u.email, u.firstName, u.lastName, u.role, u.status, u.isEmailVerified, u.createdAt, u.lastLoginAt].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -184,11 +265,11 @@ const UserManagementPage: React.FC = () => {
           <p className="text-gray-600 mt-2">Manage managers and their permissions across the platform</p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
+          <button onClick={handleExport} className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
             <Download className="w-5 h-5" />
             <span>Export</span>
           </button>
-          <button className="flex items-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors shadow-lg">
+          <button onClick={handleAddUser} className="flex items-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors shadow-lg">
             <UserPlus className="w-5 h-5" />
             <span>Add Manager</span>
           </button>
@@ -398,13 +479,26 @@ const UserManagementPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-2">
-                      <button className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors">
+                      <button
+                        onClick={() => alert(`View user details:\n\nName: ${user.firstName} ${user.lastName}\nEmail: ${user.email}\nRole: ${user.role}\nStatus: ${user.status}`)}
+                        className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors"
+                        title="View user details"
+                      >
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                      <button
+                        onClick={() => handleEditUser(user)}
+                        className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                        title="Edit user"
+                      >
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button className="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors">
+                      <button
+                        onClick={() => handleDeleteUser(user.id, user.email)}
+                        disabled={deleting === user.id}
+                        className="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Delete user"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -435,13 +529,45 @@ const UserManagementPage: React.FC = () => {
               {selectedUsers.length} manager{selectedUsers.length > 1 ? 's' : ''} selected
             </span>
             <div className="flex items-center space-x-2">
-              <button className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
+              <button
+                onClick={() => {
+                  const selectedUsersList = users.filter(u => selectedUsers.includes(u.id));
+                  const csv = [
+                    ['Email', 'First Name', 'Last Name', 'Role', 'Status'].join(','),
+                    ...selectedUsersList.map(u => [u.email, u.firstName, u.lastName, u.role, u.status].join(','))
+                  ].join('\n');
+                  const blob = new Blob([csv], { type: 'text/csv' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `selected-users-${new Date().toISOString().split('T')[0]}.csv`;
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                }}
+                className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+              >
                 Export
               </button>
-              <button className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors">
+              <button
+                onClick={() => {
+                  if (confirm(`Activate ${selectedUsers.length} user(s)?`)) {
+                    selectedUsers.forEach(userId => updateUser(userId, { status: 'active' }));
+                    setSelectedUsers([]);
+                  }
+                }}
+                className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+              >
                 Activate
               </button>
-              <button className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors">
+              <button
+                onClick={() => {
+                  if (confirm(`Deactivate ${selectedUsers.length} user(s)?`)) {
+                    selectedUsers.forEach(userId => updateUser(userId, { status: 'inactive' }));
+                    setSelectedUsers([]);
+                  }
+                }}
+                className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+              >
                 Deactivate
               </button>
             </div>

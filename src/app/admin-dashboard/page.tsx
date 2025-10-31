@@ -33,16 +33,41 @@ const AdminOverview: React.FC = () => {
   useEffect(() => {
     const loadAdminStats = async () => {
       try {
+        const response = await fetch('/api/admin/stats');
+
+        if (response.ok) {
+          const data = await response.json();
+          setStats({
+            totalUsers: data.stats.totalUsers || 0,
+            totalBots: data.stats.totalBots || 0,
+            totalConversations: data.stats.totalConversations || 0,
+            activeUsers: data.stats.activeUsers || 0,
+            systemHealth: data.stats.systemHealth || 'healthy',
+            databaseStatus: data.stats.databaseStatus || 'connected'
+          });
+        } else {
+          // Fallback to mock data if API fails
+          console.error('Failed to fetch admin stats');
+          setStats({
+            totalUsers: 0,
+            totalBots: 0,
+            totalConversations: 0,
+            activeUsers: 0,
+            systemHealth: 'unknown',
+            databaseStatus: 'disconnected'
+          });
+        }
+      } catch (error) {
+        console.error('Error loading admin stats:', error);
+        // Fallback to mock data on error
         setStats({
-          totalUsers: 1247,
-          totalBots: 89,
-          totalConversations: 15678,
-          activeUsers: 892,
-          systemHealth: 'healthy',
-          databaseStatus: 'connected'
+          totalUsers: 0,
+          totalBots: 0,
+          totalConversations: 0,
+          activeUsers: 0,
+          systemHealth: 'unknown',
+          databaseStatus: 'disconnected'
         });
-      } catch {
-        // Handle error silently
       } finally {
         setLoading(false);
       }

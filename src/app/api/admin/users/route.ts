@@ -2,78 +2,184 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
-import { User } from '@/entities/User';
-import { UserRole } from '@/types/UserRole';
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Initialize database connection
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
     }
 
-    // Check if user is admin
-    const userRepository = AppDataSource.getRepository("users");
+    const userRepository = AppDataSource.getRepository('users');
     const currentUser = await userRepository.findOne({
-      where: { email: session.user.email },
-      select: ['role']
+      where: { email: session.user.email }
     });
 
-    if (!currentUser || currentUser.role !== UserRole.ADMIN) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (!currentUser || currentUser.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
 
-    // Fetch only manager users
-    const users = await userRepository.find({
-      where: {
-        role: UserRole.MANAGER
-      },
-      select: ['id', 'email', 'firstName', 'lastName', 'role', 'createdAt', 'updatedAt', 'isEmailVerified', 'isActive', 'lastLoginAt'],
-      order: {
-        createdAt: 'DESC'
-      }
+    const searchParams = request.nextUrl.searchParams;
+    const role = searchParams.get('role');
+    const search = searchParams.get('search');
+
+    let query = userRepository.createQueryBuilder('user');
+
+    if (role && role !== 'all') {
+      query = query.andWhere('user.role = :role', { role });
+    }
+
+    if (search) {
+      query = query.andWhere(
+        '(user.firstName ILIKE :search OR user.lastName ILIKE :search OR user.email ILIKE :search)',
+        { search: `%${search}%` }
+      );
+    }
+
+    query = query.orderBy('user.createdAt', 'DESC');
+    const users = await query.getMany();
+
+    const sanitizedUsers = users.map(user => ({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      subscriptionPlan: user.subscriptionPlan || 'free',
+      subscriptionStatus: user.subscriptionStatus,
+      messagesUsedThisMonth: user.messagesUsedThisMonth || 0,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    }));
+
+    return NextResponse.json({
+      success: true,
+      users: sanitizedUsers,
+      total: users.length
     });
 
-    // Transform the data to match the expected format
-    const transformedUsers = users.map(user => {
-      const firstName = user.firstName || '';
-      const lastName = user.lastName || '';
-      
-      // Determine status based on isActive
-      let status: 'active' | 'inactive' | 'pending' = 'active';
-      if (!user.isActive) {
-        status = 'inactive';
-      } else if (!user.isEmailVerified) {
-        status = 'pending';
-      }
-      
-      return {
-        id: user.id,
-        email: user.email,
-        firstName,
-        lastName,
-        role: user.role as 'admin' | 'manager' | 'user',
-        status,
-        createdAt: user.createdAt.toISOString().split('T')[0],
-        lastLoginAt: user.lastLoginAt ? user.lastLoginAt.toISOString().split('T')[0] : 'Never',
-        isEmailVerified: user.isEmailVerified,
-        phone: undefined, // Add phone field to User model if needed
-        avatar: undefined
-      };
-    });
-
-    return NextResponse.json({ users: transformedUsers });
   } catch (error) {
     console.error('Error fetching users:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch users' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
+
+    const userRepository = AppDataSource.getRepository('users');
+    const currentUser = await userRepository.findOne({
+      where: { email: session.user.email }
+    });
+
+    if (!currentUser || currentUser.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
+    }
+
+    const { userId, updates } = await request.json();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    const userToUpdate = await userRepository.findOne({
+      where: { id: userId }
+    });
+
+    if (!userToUpdate) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (userToUpdate.id === currentUser.id && updates.role && updates.role !== currentUser.role) {
+      return NextResponse.json({ error: 'Cannot change your own role' }, { status: 400 });
+    }
+
+    await userRepository.update(userId, updates);
+
+    const updatedUser = await userRepository.findOne({
+      where: { id: userId }
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'User updated successfully',
+      user: {
+        id: updatedUser.id,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        email: updatedUser.email,
+        role: updatedUser.role
+      }
+    });
+
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
+
+    const userRepository = AppDataSource.getRepository('users');
+    const currentUser = await userRepository.findOne({
+      where: { email: session.user.email }
+    });
+
+    if (!currentUser || currentUser.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
+    }
+
+    const { userId } = await request.json();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    if (userId === currentUser.id) {
+      return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 });
+    }
+
+    const userToDelete = await userRepository.findOne({
+      where: { id: userId }
+    });
+
+    if (!userToDelete) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    await userRepository.delete(userId);
+
+    return NextResponse.json({
+      success: true,
+      message: 'User deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

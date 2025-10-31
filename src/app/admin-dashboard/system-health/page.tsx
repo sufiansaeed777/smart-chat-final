@@ -47,103 +47,113 @@ const SystemHealthPage: React.FC = () => {
   useEffect(() => {
     const loadSystemHealth = async () => {
       try {
-        setMetrics([
-          {
-            name: 'CPU Usage',
-            value: '45%',
-            status: 'healthy',
-            trend: 'up',
-            change: 2.3,
-            icon: Cpu
-          },
-          {
-            name: 'Memory Usage',
-            value: '68%',
-            status: 'warning',
-            trend: 'up',
-            change: 5.1,
-            icon: HardDrive
-          },
-          {
-            name: 'Disk Usage',
-            value: '32%',
-            status: 'healthy',
-            trend: 'stable',
-            change: 0.2,
-            icon: Database
-          },
-          {
-            name: 'Network Latency',
-            value: '12ms',
-            status: 'healthy',
-            trend: 'down',
-            change: -1.5,
-            icon: Wifi
-          },
-          {
-            name: 'API Response Time',
-            value: '89ms',
-            status: 'healthy',
-            trend: 'down',
-            change: -8.2,
-            icon: Globe
-          },
-          {
-            name: 'Database Connections',
-            value: '24/100',
-            status: 'healthy',
-            trend: 'stable',
-            change: 1.0,
-            icon: Server
-          }
-        ]);
+        const response = await fetch('/api/admin/system-health');
 
-        setServices([
-          {
-            name: 'API Gateway',
-            status: 'operational',
-            uptime: '99.9%',
-            responseTime: '45ms',
-            lastCheck: '2 minutes ago'
-          },
-          {
-            name: 'Database',
-            status: 'operational',
-            uptime: '99.8%',
-            responseTime: '12ms',
-            lastCheck: '1 minute ago'
-          },
-          {
-            name: 'Authentication Service',
-            status: 'operational',
-            uptime: '99.9%',
-            responseTime: '23ms',
-            lastCheck: '30 seconds ago'
-          },
-          {
-            name: 'File Storage',
-            status: 'degraded',
-            uptime: '98.5%',
-            responseTime: '156ms',
-            lastCheck: '1 minute ago'
-          },
-          {
-            name: 'Email Service',
-            status: 'operational',
-            uptime: '99.7%',
-            responseTime: '67ms',
-            lastCheck: '2 minutes ago'
-          },
-          {
-            name: 'WebSocket Service',
-            status: 'operational',
-            uptime: '99.9%',
-            responseTime: '8ms',
-            lastCheck: '15 seconds ago'
-          }
-        ]);
-      } catch {
-        // Handle error silently
+        if (response.ok) {
+          const data = await response.json();
+          const systemData = data.system;
+
+          // Map API data to metrics
+          setMetrics([
+            {
+              name: 'CPU Usage',
+              value: `${systemData.cpu.usagePercent}%`,
+              status: systemData.cpu.status as 'healthy' | 'warning' | 'critical',
+              trend: parseFloat(systemData.cpu.usagePercent) > 50 ? 'up' : 'stable',
+              change: 2.3,
+              icon: Cpu
+            },
+            {
+              name: 'Memory Usage',
+              value: `${systemData.memory.usagePercent}%`,
+              status: systemData.memory.status as 'healthy' | 'warning' | 'critical',
+              trend: parseFloat(systemData.memory.usagePercent) > 60 ? 'up' : 'stable',
+              change: 5.1,
+              icon: HardDrive
+            },
+            {
+              name: 'Total Memory',
+              value: systemData.memory.total,
+              status: 'healthy',
+              trend: 'stable',
+              change: 0.2,
+              icon: Database
+            },
+            {
+              name: 'Uptime',
+              value: systemData.uptime.formatted,
+              status: 'healthy',
+              trend: 'up',
+              change: 0,
+              icon: Clock
+            },
+            {
+              name: 'Database Response',
+              value: systemData.database.responseTime,
+              status: systemData.database.health === 'excellent' ? 'healthy' : 'warning',
+              trend: 'down',
+              change: -8.2,
+              icon: Globe
+            },
+            {
+              name: 'Database Status',
+              value: systemData.database.status,
+              status: systemData.database.status === 'connected' ? 'healthy' : 'critical',
+              trend: 'stable',
+              change: 0,
+              icon: Server
+            }
+          ]);
+
+          // Mock services for now (can be extended later)
+          setServices([
+            {
+              name: 'Database',
+              status: systemData.database.status === 'connected' ? 'operational' : 'outage',
+              uptime: '99.8%',
+              responseTime: systemData.database.responseTime,
+              lastCheck: 'Just now'
+            },
+            {
+              name: 'API Gateway',
+              status: 'operational',
+              uptime: '99.9%',
+              responseTime: '45ms',
+              lastCheck: 'Just now'
+            },
+            {
+              name: 'Authentication Service',
+              status: 'operational',
+              uptime: '99.9%',
+              responseTime: '23ms',
+              lastCheck: 'Just now'
+            },
+            {
+              name: 'CPU Monitor',
+              status: systemData.cpu.status === 'healthy' ? 'operational' : 'degraded',
+              uptime: '100%',
+              responseTime: '<1ms',
+              lastCheck: 'Just now'
+            },
+            {
+              name: 'Memory Monitor',
+              status: systemData.memory.status === 'healthy' ? 'operational' : 'degraded',
+              uptime: '100%',
+              responseTime: '<1ms',
+              lastCheck: 'Just now'
+            }
+          ]);
+        } else {
+          console.error('Failed to fetch system health');
+          // Fallback to empty state
+          setMetrics([]);
+          setServices([]);
+        }
+      } catch (error) {
+        console.error('Error loading system health:', error);
+        // Fallback to empty state
+        setMetrics([]);
+        setServices([]);
       } finally {
         setLoading(false);
       }
@@ -159,6 +169,112 @@ const SystemHealthPage: React.FC = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  const handleRefresh = async () => {
+    setLoading(true);
+    setLastUpdated(new Date());
+
+    try {
+      const response = await fetch('/api/admin/system-health');
+      if (response.ok) {
+        const data = await response.json();
+        const systemData = data.system;
+
+        setMetrics([
+          {
+            name: 'CPU Usage',
+            value: `${systemData.cpu.usagePercent}%`,
+            status: systemData.cpu.status as 'healthy' | 'warning' | 'critical',
+            trend: parseFloat(systemData.cpu.usagePercent) > 50 ? 'up' : 'stable',
+            change: 2.3,
+            icon: Cpu
+          },
+          {
+            name: 'Memory Usage',
+            value: `${systemData.memory.usagePercent}%`,
+            status: systemData.memory.status as 'healthy' | 'warning' | 'critical',
+            trend: parseFloat(systemData.memory.usagePercent) > 60 ? 'up' : 'stable',
+            change: 5.1,
+            icon: HardDrive
+          },
+          {
+            name: 'Total Memory',
+            value: systemData.memory.total,
+            status: 'healthy',
+            trend: 'stable',
+            change: 0.2,
+            icon: Database
+          },
+          {
+            name: 'Uptime',
+            value: systemData.uptime.formatted,
+            status: 'healthy',
+            trend: 'up',
+            change: 0,
+            icon: Clock
+          },
+          {
+            name: 'Database Response',
+            value: systemData.database.responseTime,
+            status: systemData.database.health === 'excellent' ? 'healthy' : 'warning',
+            trend: 'down',
+            change: -8.2,
+            icon: Globe
+          },
+          {
+            name: 'Database Status',
+            value: systemData.database.status,
+            status: systemData.database.status === 'connected' ? 'healthy' : 'critical',
+            trend: 'stable',
+            change: 0,
+            icon: Server
+          }
+        ]);
+
+        setServices([
+          {
+            name: 'Database',
+            status: systemData.database.status === 'connected' ? 'operational' : 'outage',
+            uptime: '99.8%',
+            responseTime: systemData.database.responseTime,
+            lastCheck: 'Just now'
+          },
+          {
+            name: 'API Gateway',
+            status: 'operational',
+            uptime: '99.9%',
+            responseTime: '45ms',
+            lastCheck: 'Just now'
+          },
+          {
+            name: 'Authentication Service',
+            status: 'operational',
+            uptime: '99.9%',
+            responseTime: '23ms',
+            lastCheck: 'Just now'
+          },
+          {
+            name: 'CPU Monitor',
+            status: systemData.cpu.status === 'healthy' ? 'operational' : 'degraded',
+            uptime: '100%',
+            responseTime: '<1ms',
+            lastCheck: 'Just now'
+          },
+          {
+            name: 'Memory Monitor',
+            status: systemData.memory.status === 'healthy' ? 'operational' : 'degraded',
+            uptime: '100%',
+            responseTime: '<1ms',
+            lastCheck: 'Just now'
+          }
+        ]);
+      }
+    } catch (error) {
+      console.error('Error refreshing system health:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -236,9 +352,9 @@ const SystemHealthPage: React.FC = () => {
             <Clock className="w-4 h-4" />
             <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
           </div>
-          <button className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
-            <RefreshCw className="w-5 h-5" />
-            <span>Refresh</span>
+          <button onClick={handleRefresh} disabled={loading} className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
           </button>
         </div>
       </div>

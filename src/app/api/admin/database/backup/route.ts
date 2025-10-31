@@ -1,0 +1,171 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { AppDataSource } from '@/config/database';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import path from 'path';
+import fs from 'fs';
+
+const execAsync = promisify(exec);
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user is admin
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
+
+    const userRepository = AppDataSource.getRepository('users');
+    const user = await userRepository.findOne({
+      where: { email: session.user.email }
+    });
+
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
+    }
+
+    const { type } = await request.json();
+    const backupType = type || 'full';
+
+    // Create backups directory if it doesn't exist
+    const backupDir = path.join(process.cwd(), 'backups');
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+
+    // Generate backup filename with timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupFile = path.join(backupDir, `backup-${backupType}-${timestamp}.sql`);
+
+    // Get database connection details from environment
+    const databaseUrl = process.env.DATABASE_URL;
+
+    if (!databaseUrl) {
+      return NextResponse.json({ error: 'Database URL not configured' }, { status: 500 });
+    }
+
+    // Parse database URL
+    const url = new URL(databaseUrl);
+    const dbUser = url.username;
+    const dbPassword = url.password;
+    const dbHost = url.hostname;
+    const dbPort = url.port || '5432';
+    const dbName = url.pathname.slice(1);
+
+    // Create pg_dump command
+    const pgDumpCommand = `PGPASSWORD="${dbPassword}" pg_dump -h ${dbHost} -p ${dbPort} -U ${dbUser} -d ${dbName} -F p -f "${backupFile}"`;
+
+    try {
+      // Execute backup
+      await execAsync(pgDumpCommand);
+
+      // Get file size
+      const stats = fs.statSync(backupFile);
+      const fileSizeInBytes = stats.size;
+      const fileSizeInMB = (fileSizeInBytes / (1024 * 1024)).toFixed(2);
+
+      return NextResponse.json({
+        success: true,
+        message: 'Backup created successfully',
+        backup: {
+          id: timestamp,
+          name: `backup-${backupType}-${timestamp}.sql`,
+          type: backupType,
+          size: `${fileSizeInMB} MB`,
+          path: backupFile,
+          createdAt: new Date().toISOString()
+        }
+      });
+
+    } catch (error) {
+      console.error('Backup creation error:', error);
+      return NextResponse.json({
+        error: 'Failed to create backup',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }, { status: 500 });
+    }
+
+  } catch (error) {
+    console.error('Error creating backup:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// Get list of backups
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user is admin
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
+
+    const userRepository = AppDataSource.getRepository('users');
+    const user = await userRepository.findOne({
+      where: { email: session.user.email }
+    });
+
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
+    }
+
+    const backupDir = path.join(process.cwd(), 'backups');
+
+    if (!fs.existsSync(backupDir)) {
+      return NextResponse.json({
+        success: true,
+        backups: []
+      });
+    }
+
+    const files = fs.readdirSync(backupDir);
+    const backups = files
+      .filter(file => file.endsWith('.sql'))
+      .map(file => {
+        const filePath = path.join(backupDir, file);
+        const stats = fs.statSync(filePath);
+        const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2);
+
+        const match = file.match(/backup-(full|incremental)-(.+)\.sql/);
+        const type = match ? match[1] : 'full';
+        const id = match ? match[2] : file;
+
+        return {
+          id,
+          name: file,
+          type,
+          size: `${fileSizeInMB} MB`,
+          createdAt: stats.mtime.toISOString(),
+          status: 'completed'
+        };
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return NextResponse.json({
+      success: true,
+      backups
+    });
+
+  } catch (error) {
+    console.error('Error fetching backups:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

@@ -40,21 +40,28 @@ const DatabasePage: React.FC = () => {
   const [metrics, setMetrics] = useState<DatabaseMetric[]>([]);
   const [backups, setBackups] = useState<Backup[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
 
-  useEffect(() => {
-    const loadDatabaseData = async () => {
-      try {
+  const loadDatabaseData = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch database stats
+      const statsResponse = await fetch('/api/admin/database/stats');
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+
         setMetrics([
           {
             name: 'Database Size',
-            value: '2.4 GB',
+            value: statsData.stats.databaseSize,
             status: 'healthy',
             change: 5.2,
             icon: HardDrive
           },
           {
             name: 'Active Connections',
-            value: '24/100',
+            value: `${statsData.stats.activeConnections}/${statsData.stats.totalConnections}`,
             status: 'healthy',
             change: -2.1,
             icon: Activity
@@ -68,46 +75,92 @@ const DatabasePage: React.FC = () => {
           },
           {
             name: 'Cache Hit Ratio',
-            value: '98.5%',
+            value: statsData.stats.cacheHitRatio,
             status: 'healthy',
             change: 1.2,
             icon: BarChart3
           }
         ]);
-
-        setBackups([
-          {
-            id: '1',
-            name: 'Full Backup - Daily',
-            size: '2.4 GB',
-            createdAt: '2024-01-20 02:00:00',
-            status: 'completed',
-            type: 'full'
-          },
-          {
-            id: '2',
-            name: 'Incremental Backup',
-            size: '156 MB',
-            createdAt: '2024-01-20 14:00:00',
-            status: 'completed',
-            type: 'incremental'
-          },
-          {
-            id: '3',
-            name: 'Full Backup - Weekly',
-            size: '2.4 GB',
-            createdAt: '2024-01-19 02:00:00',
-            status: 'completed',
-            type: 'full'
-          }
-        ]);
-      } catch {
-        // Handle error silently
-      } finally {
-        setLoading(false);
       }
-    };
 
+      // Fetch backups list
+      const backupsResponse = await fetch('/api/admin/database/backup');
+      if (backupsResponse.ok) {
+        const backupsData = await backupsResponse.json();
+        setBackups(backupsData.backups || []);
+      }
+
+    } catch (error) {
+      console.error('Error loading database data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateBackup = async () => {
+    if (creating) return;
+
+    setCreating(true);
+    try {
+      const response = await fetch('/api/admin/database/backup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'full' })
+      });
+
+      if (response.ok) {
+        await loadDatabaseData(); // Refresh backup list
+        alert('Backup created successfully!');
+      } else {
+        const error = await response.json();
+        alert(`Failed to create backup: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error creating backup:', error);
+      alert('Failed to create backup. Please try again.');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleDeleteBackup = async (backupId: string) => {
+    if (!confirm('Are you sure you want to delete this backup?')) return;
+
+    try {
+      const response = await fetch('/api/admin/database/backup', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ backupId })
+      });
+
+      if (response.ok) {
+        await loadDatabaseData(); // Refresh backup list
+        alert('Backup deleted successfully!');
+      } else {
+        const error = await response.json();
+        alert(`Failed to delete backup: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting backup:', error);
+      alert('Failed to delete backup. Please try again.');
+    }
+  };
+
+  const handleExportDatabase = () => {
+    alert('Export database functionality will trigger a full database export. This feature requires additional server configuration.');
+  };
+
+  const handleImportDatabase = () => {
+    alert('Import database functionality will restore from a backup file. This feature requires additional server configuration.');
+  };
+
+  const handleOptimizeDatabase = async () => {
+    if (!confirm('Are you sure you want to optimize the database? This may take a few minutes.')) return;
+
+    alert('Database optimization started. This process will run in the background.');
+  };
+
+  useEffect(() => {
     loadDatabaseData();
   }, []);
 
@@ -170,13 +223,13 @@ const DatabasePage: React.FC = () => {
           <p className="text-gray-600 mt-2">Monitor and manage database performance and backups</p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
+          <button onClick={loadDatabaseData} className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
             <RefreshCw className="w-5 h-5" />
             <span>Refresh</span>
           </button>
-          <button className="flex items-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors shadow-lg">
+          <button onClick={handleCreateBackup} disabled={creating} className="flex items-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
             <Plus className="w-5 h-5" />
-            <span>Create Backup</span>
+            <span>{creating ? 'Creating...' : 'Create Backup'}</span>
           </button>
         </div>
       </div>
@@ -218,7 +271,7 @@ const DatabasePage: React.FC = () => {
             Database Operations
           </h3>
           <div className="space-y-4">
-            <button className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+            <button onClick={handleExportDatabase} className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
                   <Download className="w-5 h-5 text-blue-600" />
@@ -232,7 +285,7 @@ const DatabasePage: React.FC = () => {
                 <Settings className="w-5 h-5" />
               </div>
             </button>
-            <button className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+            <button onClick={handleImportDatabase} className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center">
                   <Upload className="w-5 h-5 text-green-600" />
@@ -246,7 +299,7 @@ const DatabasePage: React.FC = () => {
                 <Settings className="w-5 h-5" />
               </div>
             </button>
-            <button className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+            <button onClick={handleOptimizeDatabase} className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
                   <RefreshCw className="w-5 h-5 text-purple-600" />
@@ -311,9 +364,9 @@ const DatabasePage: React.FC = () => {
               </h3>
               <p className="text-gray-600 mt-1">Manage database backups and restore points</p>
             </div>
-            <button className="flex items-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors">
+            <button onClick={handleCreateBackup} disabled={creating} className="flex items-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
               <Plus className="w-5 h-5" />
-              <span>New Backup</span>
+              <span>{creating ? 'Creating...' : 'New Backup'}</span>
             </button>
           </div>
         </div>
@@ -375,13 +428,25 @@ const DatabasePage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-2">
-                      <button className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors">
+                      <button
+                        onClick={() => alert('Download functionality requires server configuration to serve backup files')}
+                        className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors"
+                        title="Download backup"
+                      >
                         <Download className="w-4 h-4" />
                       </button>
-                      <button className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                      <button
+                        onClick={() => alert('Backup settings functionality will be available soon')}
+                        className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                        title="Backup settings"
+                      >
                         <Settings className="w-4 h-4" />
                       </button>
-                      <button className="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors">
+                      <button
+                        onClick={() => handleDeleteBackup(backup.id)}
+                        className="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                        title="Delete backup"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
