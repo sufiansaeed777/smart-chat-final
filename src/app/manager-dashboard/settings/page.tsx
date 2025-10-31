@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-
   Bell,
   Shield,
   Globe,
@@ -12,7 +11,9 @@ import {
   Camera,
   Key,
   Edit,
-  User
+  User,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +42,17 @@ const SettingsPage = () => {
     company: '',
     bio: ''
   });
+
+  // Password change state
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
@@ -112,6 +124,59 @@ const SettingsPage = () => {
   const handleCancel = () => {
     setProfileData(originalData);
     setIsEditing(false);
+  };
+
+  const handleChangePassword = async () => {
+    try {
+      // Validate passwords
+      if (!passwordData.currentPassword) {
+        alert('Please enter your current password');
+        return;
+      }
+      if (!passwordData.newPassword) {
+        alert('Please enter a new password');
+        return;
+      }
+      if (passwordData.newPassword.length < 8) {
+        alert('New password must be at least 8 characters long');
+        return;
+      }
+      if (passwordData.newPassword !== passwordData.confirmPassword) {
+        alert('New passwords do not match');
+        return;
+      }
+      if (passwordData.currentPassword === passwordData.newPassword) {
+        alert('New password must be different from current password');
+        return;
+      }
+
+      setChangingPassword(true);
+      const response = await fetch('/api/user/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        })
+      });
+
+      if (response.ok) {
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+        alert('Password changed successfully!');
+      } else {
+        const error = await response.json();
+        alert(`Failed to change password: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      alert('Failed to change password. Please try again.');
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   const handleNavigation = (path: string) => {
@@ -323,29 +388,123 @@ const SettingsPage = () => {
         {activeTab === 'security' && (
           <Card className="border border-gray-200 bg-white">
             <CardHeader>
-              <CardTitle className="text-lg">Security Settings</CardTitle>
-              <CardDescription>
-                Manage your account security
-              </CardDescription>
+              <div className="flex items-center space-x-3">
+                <Shield className="w-5 h-5 text-purple-600" />
+                <div>
+                  <CardTitle className="text-lg">Security Settings</CardTitle>
+                  <CardDescription>
+                    Manage your password and account security
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Button 
-                  variant="outline" 
-                  className="border-gray-300 hover:bg-gray-50 text-gray-700"
-                  onClick={() => handleNavigation('/dashboard/help')}
-                >
-                  <Key className="w-4 h-4 mr-2" />
+            <CardContent className="space-y-6">
+              {/* Change Password Section */}
+              <div className="border-b border-gray-200 pb-6">
+                <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center">
+                  <Key className="w-4 h-4 mr-2 text-purple-600" />
                   Change Password
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="border-gray-300 hover:bg-gray-50 text-gray-700"
-                  onClick={() => handleNavigation('/dashboard/analytics')}
-                >
-                  <Shield className="w-4 h-4 mr-2" />
-                  Enable Two-Factor Authentication
-                </Button>
+                </h3>
+                <div className="space-y-4">
+                  {/* Current Password */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Current Password
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type={showCurrentPassword ? 'text' : 'password'}
+                        value={passwordData.currentPassword}
+                        onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                        className="border-gray-300 focus:border-purple-600 focus:ring-purple-600 pr-10"
+                        placeholder="Enter current password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* New Password */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      New Password
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type={showNewPassword ? 'text' : 'password'}
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                        className="border-gray-300 focus:border-purple-600 focus:ring-purple-600 pr-10"
+                        placeholder="Enter new password (min 8 characters)"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Confirm New Password
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                        className="border-gray-300 focus:border-purple-600 focus:ring-purple-600 pr-10"
+                        placeholder="Confirm new password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Change Password Button */}
+                  <Button
+                    onClick={handleChangePassword}
+                    disabled={changingPassword}
+                    className="bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Key className="w-4 h-4 mr-2" />
+                    {changingPassword ? 'Changing Password...' : 'Change Password'}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Two-Factor Authentication Section */}
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center">
+                  <Shield className="w-4 h-4 mr-2 text-purple-600" />
+                  Two-Factor Authentication
+                </h3>
+                <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="font-medium text-gray-900">2FA Status</p>
+                      <p className="text-sm text-gray-600">Add an extra layer of security to your account</p>
+                    </div>
+                    <Badge variant="outline" className="text-gray-600">Coming Soon</Badge>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Two-factor authentication will be available in a future update
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
