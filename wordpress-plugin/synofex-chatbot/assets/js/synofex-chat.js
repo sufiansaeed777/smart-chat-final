@@ -143,11 +143,11 @@ if (typeof jQuery === 'undefined') {
 
             // Send to backend via AJAX
             $.ajax({
-                url: synofex_ajax.ajax_url, // WordPress AJAX URL
+                url: this.config.ajax_url, // WordPress AJAX URL
                 type: 'POST',
                 data: {
                     action: 'synofex_send_message',
-                    nonce: synofex_ajax.nonce,
+                    nonce: this.config.nonce,
                     message: message,
                     bot_id: this.botId,
                     session_id: this.sessionId
@@ -287,11 +287,11 @@ if (typeof jQuery === 'undefined') {
         // Check connection status
         checkConnection: function() {
             $.ajax({
-                url: synofex_ajax.ajax_url,
+                url: this.config.ajax_url,
                 type: 'POST',
                 data: {
                     action: 'synofex_check_connection',
-                    nonce: synofex_ajax.nonce
+                    nonce: this.config.nonce
                 },
                 success: (response) => {
                     if (response.success) {
