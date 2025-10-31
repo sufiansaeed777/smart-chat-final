@@ -46,10 +46,13 @@ export async function GET(request: NextRequest) {
 
     const sanitizedUsers = users.map(user => ({
       id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
       email: user.email,
       role: user.role,
+      status: user.isActive ? 'active' : 'inactive',
+      isEmailVerified: user.isEmailVerified || false,
+      lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toISOString() : 'Never',
       subscriptionPlan: user.subscriptionPlan || 'free',
       subscriptionStatus: user.subscriptionStatus,
       messagesUsedThisMonth: user.messagesUsedThisMonth || 0,
@@ -108,7 +111,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Cannot change your own role' }, { status: 400 });
     }
 
-    await userRepository.update(userId, updates);
+    // Map status to isActive
+    const dbUpdates: any = { ...updates };
+    if (updates.status) {
+      dbUpdates.isActive = updates.status === 'active';
+      delete dbUpdates.status;
+    }
+
+    await userRepository.update(userId, dbUpdates);
 
     const updatedUser = await userRepository.findOne({
       where: { id: userId }

@@ -169,3 +169,72 @@ export async function GET() {
     );
   }
 }
+
+// Delete a backup
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user is admin
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
+
+    const userRepository = AppDataSource.getRepository('users');
+    const user = await userRepository.findOne({
+      where: { email: session.user.email }
+    });
+
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
+    }
+
+    const { backupId } = await request.json();
+
+    if (!backupId) {
+      return NextResponse.json({ error: 'Backup ID is required' }, { status: 400 });
+    }
+
+    const backupDir = path.join(process.cwd(), 'backups');
+
+    // Find the backup file
+    const files = fs.readdirSync(backupDir);
+    const backupFile = files.find(file => {
+      const match = file.match(/backup-(full|incremental)-(.+)\.sql/);
+      return match && match[2] === backupId;
+    });
+
+    if (!backupFile) {
+      return NextResponse.json({ error: 'Backup not found' }, { status: 404 });
+    }
+
+    const filePath = path.join(backupDir, backupFile);
+
+    try {
+      fs.unlinkSync(filePath);
+
+      return NextResponse.json({
+        success: true,
+        message: 'Backup deleted successfully'
+      });
+
+    } catch (error) {
+      console.error('Error deleting backup file:', error);
+      return NextResponse.json({
+        error: 'Failed to delete backup file',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }, { status: 500 });
+    }
+
+  } catch (error) {
+    console.error('Error deleting backup:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
