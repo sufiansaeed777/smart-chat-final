@@ -91,6 +91,37 @@ export class Conversation {
   @Column({ type: 'boolean', default: false })
   isTestMessage!: boolean;
 
+  // Content Moderation / Flagging
+  @Column({ type: 'boolean', default: false })
+  @Index()
+  isFlagged!: boolean;
+
+  @Column({ type: 'text', nullable: true })
+  flagReason?: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  flaggedBy?: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  flaggedAt?: Date;
+
+  @Column({
+    type: 'enum',
+    enum: ['pending', 'approved', 'rejected', 'resolved'],
+    nullable: true
+  })
+  @Index()
+  reviewStatus?: 'pending' | 'approved' | 'rejected' | 'resolved';
+
+  @Column({ type: 'uuid', nullable: true })
+  reviewedBy?: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  reviewedAt?: Date;
+
+  @Column({ type: 'text', nullable: true })
+  reviewNotes?: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 

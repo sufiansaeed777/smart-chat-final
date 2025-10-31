@@ -26,7 +26,11 @@
     "docker:down": "docker-compose down",
     "deploy:vercel": "vercel --prod",
     "deploy:build": "npm run lint && npm run build",
-    "health": "curl -f http://localhost:3000/api/health || exit 1"
+    "health": "curl -f http://localhost:3000/api/health || exit 1",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@auth/core": "^0.34.2",
@@ -67,6 +71,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^16.0.0",

@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  BarChart3, 
-  TrendingUp, 
+import {
+  BarChart3,
+  TrendingUp,
   TrendingDown,
-  Users, 
-  Bot, 
-  MessageSquare, 
+  Users,
+  Bot,
+  MessageSquare,
   Activity,
   Calendar,
   Filter,
@@ -17,47 +17,76 @@ import {
   ArrowDown,
   Minus
 } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
 
 interface AnalyticsData {
-  totalUsers: number;
-  totalBots: number;
-  totalConversations: number;
-  activeUsers: number;
-  userGrowth: number;
-  botGrowth: number;
-  conversationGrowth: number;
-  activeUserGrowth: number;
+  overview: {
+    totalUsers: number;
+    totalBots: number;
+    totalConversations: number;
+    activeUsers: number;
+    activeConversations: number;
+    activeBots: number;
+    inactiveBots: number;
+  };
+  growth: {
+    userWeeklyGrowth: number;
+    conversationWeeklyGrowth: number;
+    userGrowth: Array<{ date: string; users: number }>;
+    conversationVolume: Array<{ date: string; conversations: number }>;
+  };
+  distribution: {
+    userRoleDistribution: Array<{ role: string; count: number; percentage: string }>;
+    avgConversationsPerUser: number;
+    avgBotsPerUser: number;
+  };
+  topBots: Array<{
+    id: string;
+    name: string;
+    conversationCount: number;
+    status: string;
+  }>;
+  recentActivity: Array<{
+    id: string;
+    bot: string;
+    user: string;
+    createdAt: string;
+    status: string;
+    messageCount: number;
+  }>;
 }
 
+const COLORS = ['#6566F1', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
+
 const AnalyticsPage: React.FC = () => {
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
-    totalUsers: 0,
-    totalBots: 0,
-    totalConversations: 0,
-    activeUsers: 0,
-    userGrowth: 0,
-    botGrowth: 0,
-    conversationGrowth: 0,
-    activeUserGrowth: 0
-  });
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30d');
 
   useEffect(() => {
     const loadAnalytics = async () => {
       try {
-        setAnalyticsData({
-          totalUsers: 1247,
-          totalBots: 89,
-          totalConversations: 15678,
-          activeUsers: 892,
-          userGrowth: 12.5,
-          botGrowth: 8.3,
-          conversationGrowth: 15.7,
-          activeUserGrowth: 5.2
-        });
-      } catch {
-        // Handle error silently
+        const response = await fetch('/api/admin/analytics');
+        if (response.ok) {
+          const data = await response.json();
+          setAnalyticsData(data);
+        } else {
+          console.error('Failed to load analytics:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error loading analytics:', error);
       } finally {
         setLoading(false);
       }
@@ -78,52 +107,6 @@ const AnalyticsPage: React.FC = () => {
     return 'text-gray-600';
   };
 
-  const metrics = [
-    {
-      title: 'Total Users',
-      value: analyticsData.totalUsers.toLocaleString(),
-      growth: analyticsData.userGrowth,
-      icon: Users,
-      color: 'blue',
-      bgColor: 'bg-blue-50',
-      iconColor: 'text-blue-600'
-    },
-    {
-      title: 'Total Bots',
-      value: analyticsData.totalBots.toLocaleString(),
-      growth: analyticsData.botGrowth,
-      icon: Bot,
-      color: 'green',
-      bgColor: 'bg-green-50',
-      iconColor: 'text-green-600'
-    },
-    {
-      title: 'Total Conversations',
-      value: analyticsData.totalConversations.toLocaleString(),
-      growth: analyticsData.conversationGrowth,
-      icon: MessageSquare,
-      color: 'purple',
-      bgColor: 'bg-purple-50',
-      iconColor: 'text-purple-600'
-    },
-    {
-      title: 'Active Users',
-      value: analyticsData.activeUsers.toLocaleString(),
-      growth: analyticsData.activeUserGrowth,
-      icon: Activity,
-      color: 'orange',
-      bgColor: 'bg-orange-50',
-      iconColor: 'text-orange-600'
-    }
-  ];
-
-  const chartData = [
-    { month: 'Jan', users: 1200, bots: 80, conversations: 12000 },
-    { month: 'Feb', users: 1250, bots: 85, conversations: 13500 },
-    { month: 'Mar', users: 1300, bots: 88, conversations: 14500 },
-    { month: 'Apr', users: 1247, bots: 89, conversations: 15678 }
-  ];
-
   if (loading) {
     return (
       <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -141,6 +124,55 @@ const AnalyticsPage: React.FC = () => {
       </div>
     );
   }
+
+  if (!analyticsData) {
+    return (
+      <div className="p-6 bg-gray-50 min-h-screen">
+        <div className="text-center">
+          <p className="text-gray-600">Failed to load analytics data</p>
+        </div>
+      </div>
+    );
+  }
+
+  const metrics = [
+    {
+      title: 'Total Users',
+      value: analyticsData.overview.totalUsers.toLocaleString(),
+      growth: analyticsData.growth.userWeeklyGrowth,
+      icon: Users,
+      color: 'blue',
+      bgColor: 'bg-blue-50',
+      iconColor: 'text-blue-600'
+    },
+    {
+      title: 'Total Bots',
+      value: analyticsData.overview.totalBots.toLocaleString(),
+      growth: 0,
+      icon: Bot,
+      color: 'green',
+      bgColor: 'bg-green-50',
+      iconColor: 'text-green-600'
+    },
+    {
+      title: 'Total Conversations',
+      value: analyticsData.overview.totalConversations.toLocaleString(),
+      growth: analyticsData.growth.conversationWeeklyGrowth,
+      icon: MessageSquare,
+      color: 'purple',
+      bgColor: 'bg-purple-50',
+      iconColor: 'text-purple-600'
+    },
+    {
+      title: 'Active Users (30d)',
+      value: analyticsData.overview.activeUsers.toLocaleString(),
+      growth: 0,
+      icon: Activity,
+      color: 'orange',
+      bgColor: 'bg-orange-50',
+      iconColor: 'text-orange-600'
+    }
+  ];
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -178,10 +210,12 @@ const AnalyticsPage: React.FC = () => {
                 <div>
                   <p className="text-sm font-medium text-gray-600">{metric.title}</p>
                   <p className="text-3xl font-bold text-gray-900">{metric.value}</p>
-                  <p className={`text-sm flex items-center mt-1 ${getGrowthColor(metric.growth)}`}>
-                    {getGrowthIcon(metric.growth)}
-                    <span className="ml-1">{Math.abs(metric.growth)}% from last period</span>
-                  </p>
+                  {metric.growth !== 0 && (
+                    <p className={`text-sm flex items-center mt-1 ${getGrowthColor(metric.growth)}`}>
+                      {getGrowthIcon(metric.growth)}
+                      <span className="ml-1">{Math.abs(metric.growth)}% weekly</span>
+                    </p>
+                  )}
                 </div>
                 <div className={`w-12 h-12 ${metric.bgColor} rounded-xl flex items-center justify-center`}>
                   <Icon className={`w-6 h-6 ${metric.iconColor}`} />
@@ -199,63 +233,77 @@ const AnalyticsPage: React.FC = () => {
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-gray-900 flex items-center">
               <TrendingUp className="w-6 h-6 mr-2 text-[#6566F1]" />
-              User Growth
+              User Growth (Last 30 Days)
             </h3>
-            <button className="text-gray-500 hover:text-gray-700">
-              <Eye className="w-5 h-5" />
-            </button>
           </div>
-          <div className="space-y-4">
-            {chartData.map((data, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-600">{data.month}</span>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                    <span className="text-sm text-gray-600">{data.users.toLocaleString()}</span>
-                  </div>
-                  <div className="w-32 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-500 h-2 rounded-full" 
-                      style={{ width: `${(data.users / 1500) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          {analyticsData.growth.userGrowth.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={analyticsData.growth.userGrowth}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="date" stroke="#6B7280" tick={{ fontSize: 12 }} />
+                <YAxis stroke="#6B7280" tick={{ fontSize: 12 }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#FFF',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '8px'
+                  }}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="users"
+                  stroke="#6566F1"
+                  strokeWidth={2}
+                  dot={{ fill: '#6566F1', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-gray-400">
+              <p>No user growth data available</p>
+            </div>
+          )}
         </div>
 
-        {/* Bot Performance Chart */}
+        {/* Conversation Volume Chart */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border-0">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-gray-900 flex items-center">
-              <Bot className="w-6 h-6 mr-2 text-[#6566F1]" />
-              Bot Performance
+              <MessageSquare className="w-6 h-6 mr-2 text-[#6566F1]" />
+              Conversation Volume (Last 30 Days)
             </h3>
-            <button className="text-gray-500 hover:text-gray-700">
-              <Eye className="w-5 h-5" />
-            </button>
           </div>
-          <div className="space-y-4">
-            {chartData.map((data, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-600">{data.month}</span>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-600">{data.bots}</span>
-                  </div>
-                  <div className="w-32 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-green-500 h-2 rounded-full" 
-                      style={{ width: `${(data.bots / 100) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          {analyticsData.growth.conversationVolume.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={analyticsData.growth.conversationVolume}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="date" stroke="#6B7280" tick={{ fontSize: 12 }} />
+                <YAxis stroke="#6B7280" tick={{ fontSize: 12 }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#FFF',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '8px'
+                  }}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="conversations"
+                  stroke="#10B981"
+                  strokeWidth={2}
+                  dot={{ fill: '#10B981', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-gray-400">
+              <p>No conversation volume data available</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -268,82 +316,148 @@ const AnalyticsPage: React.FC = () => {
             Top Performing Bots
           </h3>
           <div className="space-y-4">
-            {[
-              { name: 'Customer Support Bot', conversations: 2456, growth: 12.5 },
-              { name: 'Sales Assistant', conversations: 1890, growth: 8.3 },
-              { name: 'Technical Help', conversations: 1567, growth: 15.7 },
-              { name: 'FAQ Bot', conversations: 1234, growth: 5.2 }
-            ].map((bot, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                <div>
-                  <p className="font-semibold text-gray-900">{bot.name}</p>
-                  <p className="text-sm text-gray-600">{bot.conversations.toLocaleString()} conversations</p>
+            {analyticsData.topBots.length > 0 ? (
+              analyticsData.topBots.slice(0, 5).map((bot, index) => (
+                <div key={bot.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                  <div>
+                    <p className="font-semibold text-gray-900">{bot.name}</p>
+                    <p className="text-sm text-gray-600">{bot.conversationCount.toLocaleString()} conversations</p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div
+                      className="w-6 h-6 rounded-full text-white text-xs flex items-center justify-center font-bold"
+                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                    >
+                      {index + 1}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className={`text-sm font-semibold flex items-center ${getGrowthColor(bot.growth)}`}>
-                    {getGrowthIcon(bot.growth)}
-                    <span className="ml-1">{bot.growth}%</span>
-                  </p>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-gray-500 text-center">No bot data available</p>
+            )}
           </div>
         </div>
 
-        {/* User Activity */}
+        {/* User Role Distribution */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border-0">
           <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-            <Activity className="w-6 h-6 mr-2 text-[#6566F1]" />
-            User Activity
+            <Users className="w-6 h-6 mr-2 text-[#6566F1]" />
+            User Role Distribution
           </h3>
-          <div className="space-y-4">
-            {[
-              { label: 'Daily Active Users', value: 892, percentage: 85 },
-              { label: 'Weekly Active Users', value: 1156, percentage: 92 },
-              { label: 'Monthly Active Users', value: 1247, percentage: 100 },
-              { label: 'New Registrations', value: 45, percentage: 12 }
-            ].map((activity, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600">{activity.label}</span>
-                  <span className="text-sm font-semibold text-gray-900">{activity.value.toLocaleString()}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-[#6566F1] h-2 rounded-full" 
-                    style={{ width: `${activity.percentage}%` }}
-                  ></div>
-                </div>
+          {analyticsData.distribution.userRoleDistribution.length > 0 ? (
+            <div className="space-y-4">
+              <ResponsiveContainer width="100%" height={150}>
+                <PieChart>
+                  <Pie
+                    data={analyticsData.distribution.userRoleDistribution}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(entry) => `${entry.role} (${entry.percentage}%)`}
+                    outerRadius={60}
+                    fill="#8884d8"
+                    dataKey="count"
+                  >
+                    {analyticsData.distribution.userRoleDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="space-y-2">
+                {analyticsData.distribution.userRoleDistribution.map((role, index) => (
+                  <div key={role.role} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                      />
+                      <span className="text-sm font-medium text-gray-700 capitalize">{role.role}</span>
+                    </div>
+                    <span className="text-sm text-gray-600">{role.count}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-gray-400">
+              <p>No user role data available</p>
+            </div>
+          )}
         </div>
 
-        {/* System Health */}
+        {/* Platform Stats */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border-0">
           <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
             <Activity className="w-6 h-6 mr-2 text-[#6566F1]" />
-            System Health
+            Platform Stats
           </h3>
           <div className="space-y-4">
-            {[
-              { label: 'API Response Time', value: '120ms', status: 'good' },
-              { label: 'Database Performance', value: '98.5%', status: 'excellent' },
-              { label: 'Server Uptime', value: '99.9%', status: 'excellent' },
-              { label: 'Error Rate', value: '0.1%', status: 'good' }
-            ].map((health, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                <span className="text-sm font-medium text-gray-600">{health.label}</span>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-semibold text-gray-900">{health.value}</span>
-                  <div className={`w-2 h-2 rounded-full ${
-                    health.status === 'excellent' ? 'bg-green-500' : 
-                    health.status === 'good' ? 'bg-yellow-500' : 'bg-red-500'
-                  }`}></div>
-                </div>
-              </div>
-            ))}
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+              <span className="text-sm font-medium text-gray-600">Active Bots</span>
+              <span className="text-sm font-semibold text-gray-900">{analyticsData.overview.activeBots}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+              <span className="text-sm font-medium text-gray-600">Inactive Bots</span>
+              <span className="text-sm font-semibold text-gray-900">{analyticsData.overview.inactiveBots}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+              <span className="text-sm font-medium text-gray-600">Avg Conversations/User</span>
+              <span className="text-sm font-semibold text-gray-900">{analyticsData.distribution.avgConversationsPerUser}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+              <span className="text-sm font-medium text-gray-600">Avg Bots/User</span>
+              <span className="text-sm font-semibold text-gray-900">{analyticsData.distribution.avgBotsPerUser}</span>
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border-0">
+        <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+          <Calendar className="w-6 h-6 mr-2 text-[#6566F1]" />
+          Recent Activity
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Bot</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">User</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Messages</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Status</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {analyticsData.recentActivity.length > 0 ? (
+                analyticsData.recentActivity.map((activity) => (
+                  <tr key={activity.id} className="border-b border-gray-100">
+                    <td className="py-3 px-4 text-sm text-gray-900">{activity.bot}</td>
+                    <td className="py-3 px-4 text-sm text-gray-600">{activity.user}</td>
+                    <td className="py-3 px-4 text-sm text-gray-600">{activity.messageCount}</td>
+                    <td className="py-3 px-4">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        activity.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {activity.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-600">
+                      {new Date(activity.createdAt).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-gray-500">No recent activity</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
