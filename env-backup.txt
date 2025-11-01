@@ -60,6 +60,11 @@ STRIPE_WEBHOOK_SECRET=whsec_uhqb0Fopwfq6rsSHa9xdiOrdCFA2rLak
 # Resend API Key (placeholder - update when you get the key)
 RESEND_API_KEY=re_placeholder_key
 
+# Redis Configuration - Redis Cloud
+# Used for: Rate limiting, session caching, bot config caching, performance optimization
+# Dashboard: https://app.redislabs.com/
+REDIS_URL=redis://default:PKPlolf7SgD8rZO15G3tL7Jow1pIzQMv@redis-18878.c326.us-east-1-3.ec2.redns.redis-cloud.com:18878
+
 # ===== IMPORTANT NOTES FOR PRODUCTION =====
 #
 # 1. This file contains PRODUCTION settings for https://smart-chat-finale.vercel.app
