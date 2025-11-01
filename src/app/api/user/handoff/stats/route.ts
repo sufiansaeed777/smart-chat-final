@@ -26,22 +26,21 @@ export async function GET(request: NextRequest) {
 
     const conversationRepository = AppDataSource.getRepository('conversations');
 
-    // Count conversations that need human handoff
-    // Assuming conversations have a requiresHumanHandoff field or specific status
+    // Count conversations in Human mode (human handoff)
     const totalHandoffs = await conversationRepository.count({
-      where: { userId: user.id, requiresHumanHandoff: true }
+      where: { userId: user.id, mode: 'Human' }
     });
 
     const pendingHandoffs = await conversationRepository.count({
-      where: { userId: user.id, requiresHumanHandoff: true, status: 'pending' }
+      where: { userId: user.id, mode: 'Human', status: 'waiting' }
     });
 
     const inProgressHandoffs = await conversationRepository.count({
-      where: { userId: user.id, requiresHumanHandoff: true, status: 'active' }
+      where: { userId: user.id, mode: 'Human', status: 'active' }
     });
 
     const resolvedHandoffs = await conversationRepository.count({
-      where: { userId: user.id, requiresHumanHandoff: true, status: 'completed' }
+      where: { userId: user.id, mode: 'Human', status: 'completed' }
     });
 
     return NextResponse.json({
