@@ -25,6 +25,7 @@ import { useChatBot } from '@/contexts/ChatBotContext';
 interface UserStats {
   assignedBots: number;
   totalConversations: number;
+  totalUsersWhoMessaged: number;
   activeConversations: number;
   responseTime: string;
 }
@@ -43,6 +44,7 @@ export default function UserOverviewPage() {
   const [stats, setStats] = useState<UserStats>({
     assignedBots: 0,
     totalConversations: 0,
+    totalUsersWhoMessaged: 0,
     activeConversations: 0,
     responseTime: '0 min'
   });
@@ -62,6 +64,7 @@ export default function UserOverviewPage() {
           setStats({
             assignedBots: analyticsData.stats.assignedBots,
             totalConversations: analyticsData.stats.totalConversations,
+            totalUsersWhoMessaged: analyticsData.stats.totalUsersWhoMessaged || 0,
             activeConversations: analyticsData.stats.activeConversations,
             responseTime: analyticsData.stats.avgResponseTime
           });
@@ -106,10 +109,10 @@ export default function UserOverviewPage() {
 
   const metrics = [
     {
-      title: "Assigned Bots",
-      value: stats.assignedBots.toString(),
-      change: "Active bots",
-      icon: Bot,
+      title: "Users Who Messaged",
+      value: stats.totalUsersWhoMessaged.toString(),
+      change: "Unique visitors",
+      icon: User,
       bgColor: "bg-purple-50",
       iconBg: "bg-purple-500",
       textColor: "text-purple-600"
@@ -124,19 +127,19 @@ export default function UserOverviewPage() {
       textColor: "text-green-600"
     },
     {
-      title: "Active Now",
+      title: "Active Chats",
       value: stats.activeConversations.toString(),
-      change: "Currently ongoing",
+      change: "Last 24 hours",
       icon: Activity,
       bgColor: "bg-blue-50",
       iconBg: "bg-blue-500",
       textColor: "text-blue-600"
     },
     {
-      title: "Avg Response",
-      value: stats.responseTime,
-      change: "Response time",
-      icon: Clock,
+      title: "Assigned Bots",
+      value: stats.assignedBots.toString(),
+      change: "Your bots",
+      icon: Bot,
       bgColor: "bg-gray-50",
       iconBg: "bg-gray-500",
       textColor: "text-gray-600"
