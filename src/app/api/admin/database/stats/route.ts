@@ -36,17 +36,24 @@ export async function GET() {
         SELECT pg_size_pretty(pg_database_size(current_database())) as size
       `);
 
-      // Get table sizes
-      const tableStats = await queryRunner.query(`
-        SELECT
-          schemaname as schema,
-          tablename as table,
-          pg_size_pretty(pg_total_relation_size(quote_ident(schemaname)||'.'||quote_ident(tablename))) as size
-        FROM pg_tables
-        WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
-        ORDER BY pg_total_relation_size(quote_ident(schemaname)||'.'||quote_ident(tablename)) DESC
-        LIMIT 10
-      `);
+      // Get table sizes - wrap in try-catch to handle any missing tables
+      let tableStats = [];
+      try {
+        tableStats = await queryRunner.query(`
+          SELECT
+            t.schemaname as schema,
+            t.tablename as table,
+            pg_size_pretty(pg_total_relation_size('"' || t.schemaname || '"."' || t.tablename || '"')) as size,
+            pg_total_relation_size('"' || t.schemaname || '"."' || t.tablename || '"') as size_bytes
+          FROM pg_tables t
+          WHERE t.schemaname = 'public'
+          ORDER BY size_bytes DESC
+          LIMIT 10
+        `);
+      } catch (tableError) {
+        console.error('Error fetching table sizes:', tableError);
+        tableStats = [];
+      }
 
       // Get connection stats
       const connectionStats = await queryRunner.query(`
