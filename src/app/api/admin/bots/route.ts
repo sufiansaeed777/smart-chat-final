@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
     const bots = await botRepository.find({
       order: { createdAt: 'DESC' },
-      relations: ['assignments', 'assignments.user', 'botDocuments', 'botDocuments.document', 'creator']
+      relations: ['assignments', 'assignments.user', 'botDocuments', 'botDocuments.document']
     });
 
     // Get real conversation counts for each bot
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       totalUsers: bot.assignments?.length || 0,
       lastActive: bot.lastActive ? new Date(bot.lastActive).toLocaleString() : 'Never',
       assignedUsers: bot.assignments?.map(assignment => assignment.user?.email).filter(Boolean) || [],
-      createdBy: bot.creator?.email || 'Unknown',
+      createdBy: bot.createdBy || 'Unknown',
       createdAt: bot.createdAt.toISOString().split('T')[0],
       lastConversation: bot.lastActive ? new Date(bot.lastActive).toISOString().split('T')[0] : null,
       documents: bot.botDocuments?.map(bd => ({

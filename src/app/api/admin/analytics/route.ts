@@ -175,9 +175,9 @@ export async function GET() {
     // Bot Distribution Across Users
     const botDistribution = await botRepository
       .createQueryBuilder('bot')
-      .select('bot.userId', 'userId')
+      .select('bot.createdBy', 'userId')
       .addSelect('COUNT(*)', 'botCount')
-      .groupBy('bot.userId')
+      .groupBy('bot.createdBy')
       .getRawMany();
 
     const avgBotsPerUser = totalUsers > 0

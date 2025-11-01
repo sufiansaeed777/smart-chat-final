@@ -41,10 +41,10 @@ export async function GET() {
         SELECT
           schemaname as schema,
           tablename as table,
-          pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size
+          pg_size_pretty(pg_total_relation_size(quote_ident(schemaname)||'.'||quote_ident(tablename))) as size
         FROM pg_tables
         WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
-        ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC
+        ORDER BY pg_total_relation_size(quote_ident(schemaname)||'.'||quote_ident(tablename)) DESC
         LIMIT 10
       `);
 
