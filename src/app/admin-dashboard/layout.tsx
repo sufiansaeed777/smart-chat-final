@@ -4,13 +4,13 @@ import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Bot, 
-  BarChart3, 
-  Settings, 
-  HelpCircle, 
+import {
+  LayoutDashboard,
+  Users,
+  Bot,
+  BarChart3,
+  Settings,
+  HelpCircle,
   CreditCard,
   Database,
   Shield,
@@ -19,7 +19,8 @@ import {
   Activity,
   PanelLeftClose,
   PanelLeftOpen,
-  LogOut
+  LogOut,
+  User
 } from 'lucide-react';
 
 interface NavItem {
@@ -46,6 +47,7 @@ const AdminDashboardLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     { id: 'billing-management', label: 'Billing Management', icon: CreditCard, path: `${basePath}/billing-management` },
     { id: 'database', label: 'Database', icon: Database, path: `${basePath}/database` },
     { id: 'system-health', label: 'System Health', icon: Activity, path: `${basePath}/system-health` },
+    { id: 'profile', label: 'Profile', icon: User, path: `${basePath}/profile` },
     { id: 'settings', label: 'Settings', icon: Settings, path: `${basePath}/settings` },
     { id: 'help', label: 'Help', icon: HelpCircle, path: `${basePath}/help` },
   ];
@@ -59,6 +61,7 @@ const AdminDashboardLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     if (pathname.includes('/billing-management')) return 'billing-management';
     if (pathname.includes('/database')) return 'database';
     if (pathname.includes('/system-health')) return 'system-health';
+    if (pathname.includes('/profile')) return 'profile';
     if (pathname.includes('/settings')) return 'settings';
     if (pathname.includes('/help')) return 'help';
     return 'overview';

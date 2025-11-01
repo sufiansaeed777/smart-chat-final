@@ -80,6 +80,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
         { id: 'human-handoff', label: 'Human Handoff', icon: HandHeart, path: `${basePath}/human-handoff` },
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: `${basePath}/analytics` },
         { id: 'issues', label: 'Issues', icon: AlertTriangle, path: `${basePath}/issues` },
+        { id: 'settings', label: 'Settings', icon: Settings, path: `${basePath}/settings` },
         { id: 'billing', label: 'Billing', icon: CreditCard, path: `${basePath}/billing` },
         { id: 'help', label: 'Help', icon: HelpCircle, path: `${basePath}/help` },
       ];
