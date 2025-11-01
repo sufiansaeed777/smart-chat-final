@@ -503,7 +503,12 @@ const BotsPage = () => {
                       type="file"
                       multiple
                       accept=".pdf,.doc,.docx,.txt"
-                      onChange={(e) => e.target.files && handleDocumentUpload(e.target.files)}
+                      onChange={(e) => {
+                        if (e.target.files) {
+                          handleDocumentUpload(e.target.files);
+                          e.target.value = ''; // Clear to prevent double upload bug
+                        }
+                      }}
                       className="hidden"
                       id="document-upload"
                     />
