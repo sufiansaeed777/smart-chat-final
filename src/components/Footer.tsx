@@ -7,21 +7,21 @@ const Footer = () => {
   
   const footerLinks = {
     product: [
-      { label: "Features", href: "/product" },
-      { label: "How It Works", href: "/product#how-it-works" },
-      { label: "Customer Stories", href: "/product#testimonials" },
+      { label: "Features", href: "/#features" },
+      { label: "How It Works", href: "/#how-it-works" },
+      { label: "Customer Stories", href: "/#testimonials" },
     ],
     support: [
-      { label: "Help Center", href: "/support#help-center" },
-      { label: "Contact Support", href: "/support#contact-support" },
-      { label: "Status Page", href: "/support#status-page" },
-      { label: "Community", href: "/support#community" },
+      { label: "Help Center", href: "/help-center" },
+      { label: "Contact Support", href: "/contact-support" },
+      { label: "Status Page", href: "/status" },
+      { label: "Community", href: "/community" },
     ],
     legal: [
-      { label: "Privacy Policy", href: "/legal#privacy-policy" },
-      { label: "Terms of Service", href: "/legal#terms-of-service" },
-      { label: "Cookie Policy", href: "/legal#cookie-policy" },
-      { label: "GDPR", href: "/legal#gdpr" },
+      { label: "Privacy Policy", href: "/privacy-policy" },
+      { label: "Terms of Service", href: "/terms-of-service" },
+      { label: "Cookie Policy", href: "/cookie-policy" },
+      { label: "GDPR", href: "/gdpr" },
     ],
   };
 
@@ -101,9 +101,7 @@ const Footer = () => {
 
           {/* Support Links */}
           <div>
-            <Link href="/support" className="text-lg font-semibold mb-4 block text-white hover:text-blue-300 transition-colors">
-              Support
-            </Link>
+            <h3 className="text-lg font-semibold mb-4">Support</h3>
             <ul className="space-y-3">
               {footerLinks.support.map((link) => (
                 <li key={link.label}>
@@ -120,9 +118,7 @@ const Footer = () => {
 
           {/* Legal Links */}
           <div>
-            <Link href="/legal" className="text-lg font-semibold mb-4 block text-white hover:text-blue-300 transition-colors">
-              Legal
-            </Link>
+            <h3 className="text-lg font-semibold mb-4">Legal</h3>
             <ul className="space-y-3">
               {footerLinks.legal.map((link) => (
                 <li key={link.label}>
