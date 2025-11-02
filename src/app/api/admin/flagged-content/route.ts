@@ -157,3 +157,44 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// DELETE /api/admin/flagged-content - Delete flagged content
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { contentId } = await request.json();
+
+    if (!contentId) {
+      return NextResponse.json({ error: 'Content ID is required' }, { status: 400 });
+    }
+
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
+
+    const flaggedContentRepository = AppDataSource.getRepository('flagged_content');
+    
+    // Delete the flagged content
+    await flaggedContentRepository.delete(contentId);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Flagged content deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Error deleting flagged content:', error);
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}

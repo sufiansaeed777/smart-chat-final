@@ -104,3 +104,119 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// PATCH /api/admin/bots - Update a bot
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
+
+    const userRepository = AppDataSource.getRepository("users");
+    const user = await userRepository.findOne({
+      where: { email: session.user.email }
+    });
+
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Only admins can update bots' }, { status: 403 });
+    }
+
+    const { botId, updates } = await request.json();
+
+    if (!botId) {
+      return NextResponse.json({ error: 'Bot ID is required' }, { status: 400 });
+    }
+
+    const botRepository = AppDataSource.getRepository("bots");
+    const bot = await botRepository.findOne({ where: { id: botId } });
+
+    if (!bot) {
+      return NextResponse.json({ error: 'Bot not found' }, { status: 404 });
+    }
+
+    // Update bot fields
+    if (updates.name !== undefined) bot.name = updates.name;
+    if (updates.description !== undefined) bot.description = updates.description;
+    if (updates.domain !== undefined) bot.domain = updates.domain;
+    if (updates.status !== undefined) bot.status = updates.status;
+
+    await botRepository.save(bot);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Bot updated successfully',
+      bot: {
+        id: bot.id,
+        name: bot.name,
+        description: bot.description,
+        domain: bot.domain,
+        status: bot.status
+      }
+    });
+
+  } catch (error) {
+    console.error('Error updating bot:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/admin/bots - Delete a bot
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
+
+    const userRepository = AppDataSource.getRepository("users");
+    const user = await userRepository.findOne({
+      where: { email: session.user.email }
+    });
+
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Only admins can delete bots' }, { status: 403 });
+    }
+
+    const { botId } = await request.json();
+
+    if (!botId) {
+      return NextResponse.json({ error: 'Bot ID is required' }, { status: 400 });
+    }
+
+    const botRepository = AppDataSource.getRepository("bots");
+    const bot = await botRepository.findOne({ where: { id: botId } });
+
+    if (!bot) {
+      return NextResponse.json({ error: 'Bot not found' }, { status: 404 });
+    }
+
+    // Delete the bot
+    await botRepository.delete(botId);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Bot deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Error deleting bot:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

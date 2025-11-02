@@ -114,6 +114,50 @@ const BotsPage: React.FC = () => {
     }
   };
 
+  const handleDeleteBot = async (botId: string, botName: string) => {
+    if (!confirm(`Are you sure you want to delete bot: ${botName}?\n\nThis action cannot be undone.`)) return;
+
+    try {
+      const response = await fetch('/api/admin/bots', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ botId })
+      });
+
+      if (response.ok) {
+        setBots(prev => prev.filter(b => b.id !== botId));
+        alert('Bot deleted successfully!');
+      } else {
+        const error = await response.json();
+        alert(`Failed to delete bot: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting bot:', error);
+      alert('Failed to delete bot. Please try again.');
+    }
+  };
+
+  const handleUpdateBotStatus = async (botId: string, newStatus: string) => {
+    try {
+      const response = await fetch('/api/admin/bots', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ botId, updates: { status: newStatus } })
+      });
+
+      if (response.ok) {
+        setBots(prev => prev.map(b => b.id === botId ? { ...b, status: newStatus as 'active' | 'inactive' | 'maintenance' } : b));
+        alert('Bot status updated successfully!');
+      } else {
+        const error = await response.json();
+        alert(`Failed to update bot: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error updating bot:', error);
+      alert('Failed to update bot. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -330,11 +374,26 @@ const BotsPage: React.FC = () => {
                   <Eye className="w-4 h-4" />
                   <span>View</span>
                 </button>
-                <button className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors">
+                <button
+                  onClick={() => {
+                    const newStatus = prompt(`Change status for ${bot.name}\nCurrent: ${bot.status}\n\nEnter new status (active, inactive, or maintenance):`, bot.status);
+                    if (newStatus && ['active', 'inactive', 'maintenance'].includes(newStatus)) {
+                      handleUpdateBotStatus(bot.id, newStatus);
+                    } else if (newStatus) {
+                      alert('Invalid status! Must be: active, inactive, or maintenance');
+                    }
+                  }}
+                  className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors"
+                  title="Edit bot status"
+                >
                   <Edit className="w-4 h-4" />
                 </button>
-                <button className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors">
-                  <Settings className="w-4 h-4" />
+                <button
+                  onClick={() => handleDeleteBot(bot.id, bot.name)}
+                  className="flex items-center justify-center p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-colors"
+                  title="Delete bot"
+                >
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -369,7 +428,20 @@ const BotsPage: React.FC = () => {
                 <Pause className="w-4 h-4 inline mr-1" />
                 Pause
               </button>
-              <button className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors">
+              <button
+                onClick={async () => {
+                  if (confirm(`Delete ${selectedBots.length} bot(s)?\n\nThis action cannot be undone.`)) {
+                    for (const botId of selectedBots) {
+                      const bot = bots.find(b => b.id === botId);
+                      if (bot) {
+                        await handleDeleteBot(botId, bot.name);
+                      }
+                    }
+                    setSelectedBots([]);
+                  }
+                }}
+                className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+              >
                 <Trash2 className="w-4 h-4 inline mr-1" />
                 Delete
               </button>

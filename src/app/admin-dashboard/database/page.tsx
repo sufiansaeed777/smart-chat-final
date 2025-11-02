@@ -41,6 +41,9 @@ const DatabasePage: React.FC = () => {
   const [backups, setBackups] = useState<Backup[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [optimizing, setOptimizing] = useState(false);
 
   const loadDatabaseData = async () => {
     try {
@@ -146,18 +149,96 @@ const DatabasePage: React.FC = () => {
     }
   };
 
-  const handleExportDatabase = () => {
-    alert('Export database functionality will trigger a full database export. This feature requires additional server configuration.');
+  const handleExportDatabase = async () => {
+    setExporting(true);
+    try {
+      const response = await fetch('/api/admin/database/export', {
+        method: 'POST'
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `database-export-${new Date().toISOString().split('T')[0]}.sql`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        alert('Database exported successfully!');
+      } else {
+        const error = await response.json();
+        alert(`Export failed: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Failed to export database. Please try again.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleImportDatabase = () => {
-    alert('Import database functionality will restore from a backup file. This feature requires additional server configuration.');
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.sql';
+    input.onchange = async (e: Event) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      if (!confirm(`Import database from ${file.name}?\n\nWARNING: This will overwrite existing data!`)) return;
+
+      setImporting(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/admin/database/import', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (response.ok) {
+          alert('Database imported successfully!');
+          loadDatabaseData(); // Reload stats
+        } else {
+          const error = await response.json();
+          alert(`Import failed: ${error.error || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Import error:', error);
+        alert('Failed to import database. Please try again.');
+      } finally {
+        setImporting(false);
+      }
+    };
+    input.click();
   };
 
   const handleOptimizeDatabase = async () => {
     if (!confirm('Are you sure you want to optimize the database? This may take a few minutes.')) return;
 
-    alert('Database optimization started. This process will run in the background.');
+    setOptimizing(true);
+    try {
+      const response = await fetch('/api/admin/database/optimize', {
+        method: 'POST'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(`Database optimization completed!\n\nOptimized ${data.results?.length || 0} tables.`);
+        loadDatabaseData(); // Reload stats
+      } else {
+        const error = await response.json();
+        alert(`Optimization failed: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Optimization error:', error);
+      alert('Failed to optimize database. Please try again.');
+    } finally {
+      setOptimizing(false);
+    }
   };
 
   useEffect(() => {
@@ -429,7 +510,27 @@ const DatabasePage: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => alert('Download functionality requires server configuration to serve backup files')}
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(`/api/admin/database/backup/${backup.id}/download`);
+                            if (response.ok) {
+                              const blob = await response.blob();
+                              const url = window.URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = `backup-${backup.id}.sql`;
+                              document.body.appendChild(a);
+                              a.click();
+                              window.URL.revokeObjectURL(url);
+                              document.body.removeChild(a);
+                            } else {
+                              alert('Failed to download backup');
+                            }
+                          } catch (error) {
+                            console.error('Download error:', error);
+                            alert('Failed to download backup');
+                          }
+                        }}
                         className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors"
                         title="Download backup"
                       >
