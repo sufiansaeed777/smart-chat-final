@@ -96,8 +96,8 @@ export async function PUT(request: NextRequest) {
       // Delete existing bot-document relationships
       await botDocumentRepository.delete({ botId: bot.id });
 
-      // Filter out null/undefined values and create new bot-document relationships
-      const validDocumentIds = knowledgeIds.filter(id => id !== null && id !== undefined && id !== '');
+      // Filter out null/undefined values and remove duplicates
+      const validDocumentIds = [...new Set(knowledgeIds.filter(id => id !== null && id !== undefined && id !== ''))];
 
       if (validDocumentIds.length > 0) {
         const botDocuments = validDocumentIds.map(documentId => ({
