@@ -80,7 +80,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
         { id: 'human-handoff', label: 'Human Handoff', icon: HandHeart, path: `${basePath}/human-handoff` },
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: `${basePath}/analytics` },
         { id: 'issues', label: 'Issues', icon: AlertTriangle, path: `${basePath}/issues` },
-        { id: 'settings', label: 'Settings', icon: Settings, path: `${basePath}/settings` },
+        { id: 'account', label: 'Account', icon: Settings, path: `${basePath}/account` },
         { id: 'billing', label: 'Billing', icon: CreditCard, path: `${basePath}/billing` },
         { id: 'help', label: 'Help', icon: HelpCircle, path: `${basePath}/help` },
       ];
@@ -90,7 +90,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
         { id: 'bots', label: 'Bots', icon: Bot, path: `${basePath}/bots` },
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: `${basePath}/analytics` },
         { id: 'chatbot-analytics', label: 'Chatbot Analytics', icon: MessageSquare, path: `${basePath}/chatbot-analytics` },
-        { id: 'settings', label: 'Settings', icon: Settings, path: `${basePath}/settings` },
+        { id: 'account', label: 'Account', icon: Settings, path: `${basePath}/account` },
         { id: 'billing', label: 'Billing', icon: CreditCard, path: `${basePath}/billing` },
         { id: 'help', label: 'Help', icon: HelpCircle, path: `${basePath}/help` },
       ];
@@ -99,7 +99,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
         { id: 'overview', label: 'Overview', icon: LayoutDashboard, path: basePath },
         { id: 'bots', label: 'Bots', icon: Bot, path: `${basePath}/bots` },
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: `${basePath}/analytics` },
-        { id: 'settings', label: 'Settings', icon: Settings, path: `${basePath}/settings` },
+        { id: 'account', label: 'Account', icon: Settings, path: `${basePath}/account` },
         { id: 'billing', label: 'Billing', icon: CreditCard, path: `${basePath}/billing` },
         { id: 'help', label: 'Help', icon: HelpCircle, path: `${basePath}/help` },
       ];
@@ -123,7 +123,8 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
     if (pathname.includes('/billing')) return 'billing';
     if (pathname.includes('/bots')) return 'bots';
     if (pathname.includes('/chatbot-analytics')) return 'chatbot-analytics';
-    if (pathname.includes('/settings')) return 'settings';
+    if (pathname.includes('/account')) return 'account';
+    if (pathname.includes('/settings')) return 'account';
     if (pathname.includes('/help')) return 'help';
     return 'overview';
   };
@@ -144,7 +145,8 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
     if (pathname.includes('/issues')) return 'Issues';
     if (pathname.includes('/billing')) return 'Billing';
     if (pathname.includes('/bots')) return 'Bots';
-    if (pathname.includes('/settings')) return 'Settings';
+    if (pathname.includes('/account')) return 'Account';
+    if (pathname.includes('/settings')) return 'Account';
     if (pathname.includes('/help')) return 'Help';
     return 'Manager Dashboard';
   };
