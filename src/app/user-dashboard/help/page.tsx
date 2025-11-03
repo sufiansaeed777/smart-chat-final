@@ -240,10 +240,10 @@ const HelpPage = () => {
                 <div className="p-4 border border-gray-200 rounded-lg">
                   <h3 className="font-medium mb-2">Email Support</h3>
                   <p className="text-sm text-gray-600 mb-3">Send us an email and we&apos;ll get back to you within 24 hours</p>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="border-gray-300 hover:bg-gray-50 text-gray-700"
-                    onClick={() => handleNavigation('/dashboard/settings')}
+                    onClick={() => window.location.href = 'mailto:support@chatbotpro.com'}
                   >
                     Send Email
                   </Button>
