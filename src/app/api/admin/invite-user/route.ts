@@ -43,19 +43,13 @@ export async function POST(request: NextRequest) {
     const existingUser = await userRepository.findOne({ where: { email } });
 
     if (existingUser) {
-      // If user exists and is already active, just update their role and inviter
+      // If user exists and is already active, do NOT modify their account
       if (existingUser.password && existingUser.isActive) {
-        // Update the user's role and who invited them
-        existingUser.role = role || existingUser.role;
-        existingUser.invitedBy = currentUser.id;
-        existingUser.updatedAt = new Date();
-
-        await userRepository.save(existingUser);
-
+        // Return error - cannot invite already registered users
         return NextResponse.json({
-          message: 'User already exists and has been added to your team',
-          userId: existingUser.id
-        }, { status: 200 });
+          error: 'This email is already registered and active. Cannot send invitation to existing users.',
+          userExists: true
+        }, { status: 400 });
       }
 
       // If user exists but has no password or is inactive, send invitation

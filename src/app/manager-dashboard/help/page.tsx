@@ -241,20 +241,20 @@ const HelpPage = () => {
                   <Button
                     variant="outline"
                     className="border-gray-300 hover:bg-gray-50 text-gray-700"
-                    onClick={() => handleNavigation('/manager-dashboard/settings')}
+                    onClick={() => window.location.href = 'mailto:support@chatbotpro.com'}
                   >
                     Send Email
                   </Button>
                 </div>
                 <div className="p-4 border border-gray-200 rounded-lg">
-                  <h3 className="font-medium mb-2">Live Chat</h3>
-                  <p className="text-sm text-gray-600 mb-3">Chat with our support team in real-time</p>
+                  <h3 className="font-medium mb-2">Report Issues</h3>
+                  <p className="text-sm text-gray-600 mb-3">View and manage reported issues from your team</p>
                   <Button
                     variant="outline"
                     className="border-gray-300 hover:bg-gray-50 text-gray-700"
                     onClick={() => handleNavigation('/manager-dashboard/issues')}
                   >
-                    Report Issue
+                    View Issues
                   </Button>
                 </div>
               </div>
