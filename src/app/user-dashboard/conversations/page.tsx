@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { MessageSquare, Clock, User, Search, Filter, MoreHorizontal, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +30,7 @@ interface ConversationStats {
 }
 
 const ConversationsPage = () => {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [conversations, setConversations] = useState<ConversationSession[]>([]);
@@ -40,6 +42,11 @@ const ConversationsPage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Handle conversation navigation
+  const handleViewConversation = (conversationId: string) => {
+    router.push(`/user-dashboard/conversations/${conversationId}`);
+  };
 
   // Fetch conversations from API
   useEffect(() => {
@@ -231,7 +238,17 @@ const ConversationsPage = () => {
           </Card>
         ) : (
           filteredConversations.map((conversation) => (
-            <Card key={conversation.id} className="border border-gray-200 bg-white hover:shadow-lg transition-shadow">
+            <Card
+              key={conversation.id}
+              className="border border-gray-200 bg-white hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={(e) => {
+                // Don't navigate if clicking on buttons
+                const target = e.target as HTMLElement;
+                if (!target.closest('button')) {
+                  handleViewConversation(conversation.id);
+                }
+              }}
+            >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -258,7 +275,12 @@ const ConversationsPage = () => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                      onClick={() => handleViewConversation(conversation.id)}
+                    >
                       View Details
                     </Button>
                     <Button variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-50">

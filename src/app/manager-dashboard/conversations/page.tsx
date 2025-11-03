@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { MessageSquare, Clock, User, Search, Filter, MoreHorizontal, Loader2, SortAsc, SortDesc, Calendar, Bot, Users, Eye, Download, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,6 +44,7 @@ interface FilterOptions {
 }
 
 const ManagerConversationsPage = () => {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterBot, setFilterBot] = useState('all');
@@ -67,10 +69,9 @@ const ManagerConversationsPage = () => {
 
   // Handle conversation actions
   const handleViewConversation = (conversationId: string) => {
-    // Navigate to conversation details page or open modal
+    // Navigate to conversation details page in same tab
     console.log('View conversation:', conversationId);
-    // TODO: Implement navigation to conversation details
-    window.open(`/manager-dashboard/conversations/${conversationId}`, '_blank');
+    router.push(`/manager-dashboard/conversations/${conversationId}`);
   };
 
   const handleExportConversation = async (conversationId: string) => {
@@ -462,7 +463,17 @@ const ManagerConversationsPage = () => {
               </div>
             ) : (
               filteredConversations.map((conversation) => (
-                <div key={conversation.id} className="px-4 py-3 hover:bg-gray-50 transition-colors">
+                <div
+                  key={conversation.id}
+                  className="px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={(e) => {
+                    // Don't navigate if clicking on dropdown or action buttons
+                    const target = e.target as HTMLElement;
+                    if (!target.closest('[role="menuitem"]') && !target.closest('button')) {
+                      handleViewConversation(conversation.id);
+                    }
+                  }}
+                >
                   <div className="grid grid-cols-12 gap-3 items-center">
                     {/* User */}
                     <div className="col-span-3">
