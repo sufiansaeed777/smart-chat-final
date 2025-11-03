@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useSession } from 'next-auth/react';
-import { User, Key, Save, Eye, EyeOff } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
+import { User, Key, Save, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +30,9 @@ const AccountPage = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [successMessage, setSuccessMessage] = useState('');
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [deactivateConfirmText, setDeactivateConfirmText] = useState('');
+  const [deactivating, setDeactivating] = useState(false);
 
   const handleSaveProfile = async () => {
     setErrors({});
@@ -170,6 +173,38 @@ const AccountPage = () => {
       lastName: session?.user?.name?.split(' ')[1] || 'Doe',
       email: session?.user?.email || 'user@example.com'
     });
+  };
+
+  const handleDeactivateAccount = async () => {
+    if (deactivateConfirmText !== 'DEACTIVATE') {
+      setErrors({ deactivate: 'Please type DEACTIVATE to confirm' });
+      return;
+    }
+
+    setDeactivating(true);
+    setErrors({});
+
+    try {
+      const response = await fetch('/api/user/deactivate-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to deactivate account');
+      }
+
+      // Sign out and redirect to home page
+      await signOut({ callbackUrl: '/' });
+    } catch (error) {
+      console.error('Error deactivating account:', error);
+      setErrors({ deactivate: error instanceof Error ? error.message : 'Unknown error occurred' });
+    } finally {
+      setDeactivating(false);
+    }
   };
 
   return (
@@ -465,6 +500,104 @@ const AccountPage = () => {
                     )}
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Deactivate Account */}
+            <Card className="group bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-red-100 hover:shadow-3xl transition-all duration-500">
+              <CardHeader className="pb-8">
+                <div className="flex items-center space-x-5">
+                  <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <AlertTriangle className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl font-bold text-gray-900">Deactivate Account</CardTitle>
+                    <CardDescription className="text-gray-600 text-lg">
+                      Permanently deactivate your account and data
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6">
+                  <h4 className="font-semibold text-red-900 mb-2 flex items-center">
+                    <AlertTriangle className="w-5 h-5 mr-2" />
+                    Warning: This action cannot be undone
+                  </h4>
+                  <ul className="text-sm text-red-800 space-y-1 ml-7">
+                    <li>• Your account will be deactivated immediately</li>
+                    <li>• You will no longer be able to log in</li>
+                    <li>• All your bots and configurations will be deleted</li>
+                    <li>• Your chat history will be permanently removed</li>
+                    <li>• This action is irreversible</li>
+                  </ul>
+                </div>
+
+                {!showDeactivateModal ? (
+                  <div className="flex justify-end pt-6 border-t border-red-100">
+                    <Button
+                      onClick={() => setShowDeactivateModal(true)}
+                      className="h-14 px-10 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold shadow-xl hover:shadow-2xl transition-all duration-300"
+                    >
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      Deactivate Account
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4 pt-6 border-t border-red-100">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Type <span className="font-mono bg-red-100 px-2 py-1 rounded text-red-700">DEACTIVATE</span> to confirm
+                      </label>
+                      <Input
+                        type="text"
+                        value={deactivateConfirmText}
+                        onChange={(e) => setDeactivateConfirmText(e.target.value)}
+                        className={`h-14 rounded-2xl border-2 transition-all duration-300 text-lg ${
+                          errors.deactivate
+                            ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20 bg-red-50'
+                            : 'border-gray-200 focus:border-red-500 focus:ring-red-500/20'
+                        }`}
+                        placeholder="Type DEACTIVATE"
+                      />
+                      {errors.deactivate && (
+                        <p className="text-sm text-red-600">{errors.deactivate}</p>
+                      )}
+                    </div>
+
+                    <div className="flex justify-end space-x-3">
+                      <Button
+                        onClick={() => {
+                          setShowDeactivateModal(false);
+                          setDeactivateConfirmText('');
+                          setErrors({});
+                        }}
+                        variant="outline"
+                        disabled={deactivating}
+                        className="h-14 px-8 rounded-2xl border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 text-lg font-semibold"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleDeactivateAccount}
+                        disabled={deactivating || deactivateConfirmText !== 'DEACTIVATE'}
+                        className="h-14 px-10 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold shadow-xl hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {deactivating ? (
+                          <div className="flex items-center space-x-2">
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span>Deactivating...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <AlertTriangle className="w-4 h-4 mr-2" />
+                            Confirm Deactivation
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
