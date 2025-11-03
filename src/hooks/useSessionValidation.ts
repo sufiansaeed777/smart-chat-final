@@ -12,7 +12,24 @@ export function useSessionValidation() {
     if (status === 'loading') return;
 
     // List of public routes that don't require authentication
-    const publicRoutes = ['/', '/login', '/signup', '/contact', '/pricing', '/product'];
+    const publicRoutes = [
+      '/',
+      '/login',
+      '/signup',
+      '/contact',
+      '/pricing',
+      '/product',
+      '/legal',
+      '/support',
+      '/help-center',
+      '/contact-support',
+      '/status',
+      '/community',
+      '/privacy-policy',
+      '/terms-of-service',
+      '/cookie-policy',
+      '/gdpr',
+    ];
     const isPublicRoute = publicRoutes.includes(pathname);
 
     // Only redirect to login if:
