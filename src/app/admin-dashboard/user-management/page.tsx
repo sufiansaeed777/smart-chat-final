@@ -63,50 +63,11 @@ const UserManagementPage: React.FC = () => {
           const data = await response.json();
           setUsers(data.users);
         } else {
-          // Fallback to mock data if API fails (only managers)
-          const mockUsers: User[] = [
-            {
-              id: '1',
-              email: 'manager1@example.com',
-              firstName: 'Jane',
-              lastName: 'Manager',
-              role: 'manager',
-              status: 'active',
-              createdAt: '2024-01-16',
-              lastLoginAt: '2024-01-19',
-              isEmailVerified: true,
-              phone: '+1 (555) 234-5678'
-            },
-            {
-              id: '2',
-              email: 'manager2@example.com',
-              firstName: 'Mike',
-              lastName: 'Johnson',
-              role: 'manager',
-              status: 'active',
-              createdAt: '2024-01-19',
-              lastLoginAt: '2024-01-15',
-              isEmailVerified: true,
-              phone: '+1 (555) 567-8901'
-            },
-            {
-              id: '3',
-              email: 'manager3@example.com',
-              firstName: 'Sarah',
-              lastName: 'Wilson',
-              role: 'manager',
-              status: 'pending',
-              createdAt: '2024-01-18',
-              lastLoginAt: 'Never',
-              isEmailVerified: false,
-              phone: '+1 (555) 456-7890'
-            }
-          ];
-          setUsers(mockUsers);
+          console.error('Failed to load users');
+          setUsers([]);
         }
       } catch (error) {
         console.error('Error loading users:', error);
-        // Handle error silently and show empty state
         setUsers([]);
       } finally {
         setLoading(false);
