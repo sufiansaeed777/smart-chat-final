@@ -450,7 +450,10 @@ const AnalyticsPage: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
 
+      {/* Additional Analytics Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* User Activity */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border-0">
           <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
@@ -459,10 +462,10 @@ const AnalyticsPage: React.FC = () => {
           </h3>
           <div className="space-y-4">
             {[
-              { label: 'Daily Active Users', value: analyticsData ? analyticsData.overview.activeUsers : 892, percentage: 85 },
-              { label: 'Weekly Active Users', value: analyticsData ? Math.floor(analyticsData.overview.activeUsers * 1.3) : 1156, percentage: 92 },
-              { label: 'Monthly Active Users', value: analyticsData ? analyticsData.overview.totalUsers : 1247, percentage: 100 },
-              { label: 'New Registrations', value: analyticsData ? Math.floor(analyticsData.overview.totalUsers * 0.04) : 45, percentage: 12 }
+              { label: 'Daily Active Users', value: analyticsData.overview.activeUsers, percentage: 85 },
+              { label: 'Weekly Active Users', value: Math.floor(analyticsData.overview.activeUsers * 1.3), percentage: 92 },
+              { label: 'Monthly Active Users', value: analyticsData.overview.totalUsers, percentage: 100 },
+              { label: 'New Registrations', value: Math.floor(analyticsData.overview.totalUsers * 0.04), percentage: 12 }
             ].map((activity, index) => (
               <div key={index} className="space-y-2">
                 <div className="flex items-center justify-between">
