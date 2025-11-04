@@ -6,7 +6,6 @@ import { User, Key, Save, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import DashboardLayoutWithAuth from '@/components/dashboard/DashboardLayoutWithAuth';
 
 const AccountPage = () => {
   const { data: session } = useSession();
@@ -208,8 +207,7 @@ const AccountPage = () => {
   };
 
   return (
-    <DashboardLayoutWithAuth activeSection="account">
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 p-6">
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Header */}
           <div className="text-center">
@@ -602,8 +600,7 @@ const AccountPage = () => {
             </Card>
           </div>
         </div>
-      </div>
-    </DashboardLayoutWithAuth>
+    </div>
   );
 };
 
