@@ -371,7 +371,17 @@ const ManagerOverview = () => {
         {/* User List */}
         <div className="space-y-3">
           {users.slice(0, 3).map((user, index) => (
-            <Card key={index} className="group relative border border-gray-200 bg-white hover:border-[#5A5BD8] hover:scale-[1.01] transition-all duration-300 rounded-xl overflow-hidden cursor-pointer">
+            <Card
+              key={index}
+              className="group relative border border-gray-200 bg-white hover:border-[#5A5BD8] hover:scale-[1.01] transition-all duration-300 rounded-xl overflow-hidden cursor-pointer"
+              onClick={(e) => {
+                // Don't navigate if clicking on the button
+                const target = e.target as HTMLElement;
+                if (!target.closest('button')) {
+                  router.push(`/manager-dashboard/team-management?select=${overviewData.users[index].id}`);
+                }
+              }}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -438,7 +448,16 @@ const ManagerOverview = () => {
           
           {/* More Button */}
           {users.length > 3 && (
-            <Card className="group relative border border-gray-200 bg-white hover:border-[#5A5BD8] hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.01] transition-all duration-300 rounded-xl overflow-hidden cursor-pointer">
+            <Card
+              className="group relative border border-gray-200 bg-white hover:border-[#5A5BD8] hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.01] transition-all duration-300 rounded-xl overflow-hidden cursor-pointer"
+              onClick={(e) => {
+                // Don't navigate if clicking on the button
+                const target = e.target as HTMLElement;
+                if (!target.closest('button')) {
+                  router.push('/manager-dashboard/team-management');
+                }
+              }}
+            >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
