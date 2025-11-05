@@ -35,7 +35,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     { id: 'bots', label: 'Bots', icon: Bot, path: '/dashboard/bots' },
     { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/dashboard/analytics' },
     { id: 'chatbot-analytics', label: 'Chatbot Analytics', icon: MessageSquare, path: '/dashboard/chatbot-analytics' },
-    { id: 'settings', label: 'Settings', icon: Settings, path: '/dashboard/settings' },
+    { id: 'account', label: 'Account', icon: Settings, path: '/dashboard/account' },
     { id: 'billing', label: 'Billing', icon: CreditCard, path: '/dashboard/billing' },
     { id: 'help', label: 'Help', icon: HelpCircle, path: '/dashboard/help' },
   ];

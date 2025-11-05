@@ -224,10 +224,10 @@ const BotsPage = () => {
                       <PlayCircle className="w-4 h-4 mr-2" />
                       Test
                     </Button>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       className="flex-1 bg-[#6566F1] hover:bg-[#5A5BD8] text-white rounded-2xl"
-                      onClick={() => handleNavigation('/dashboard/settings')}
+                      onClick={() => handleNavigation('/dashboard/account')}
                     >
                       <Settings className="w-4 h-4 mr-2" />
                       Manage

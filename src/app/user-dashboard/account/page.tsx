@@ -501,7 +501,7 @@ const AccountPage = () => {
             </CardContent>
           </Card>
 
-          {/* Deactivate Account */}
+          {/* Delete Account */}
           <Card className="group bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-red-100 hover:shadow-3xl transition-all duration-500">
             <CardHeader className="pb-8">
               <div className="flex items-center space-x-5">
@@ -509,9 +509,9 @@ const AccountPage = () => {
                   <AlertTriangle className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl font-bold text-gray-900">Deactivate Account</CardTitle>
+                  <CardTitle className="text-2xl font-bold text-gray-900">Delete Account</CardTitle>
                   <CardDescription className="text-gray-600 text-lg">
-                    Permanently deactivate your account and data
+                    Permanently delete your account and all associated data
                   </CardDescription>
                 </div>
               </div>
@@ -520,14 +520,15 @@ const AccountPage = () => {
               <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6">
                 <h4 className="font-semibold text-red-900 mb-2 flex items-center">
                   <AlertTriangle className="w-5 h-5 mr-2" />
-                  Warning: This action cannot be undone
+                  Warning: This action permanently deletes everything
                 </h4>
                 <ul className="text-sm text-red-800 space-y-1 ml-7">
-                  <li>• Your account will be deactivated immediately</li>
-                  <li>• You will no longer be able to log in</li>
-                  <li>• All your bots and configurations will be deleted</li>
-                  <li>• Your chat history will be permanently removed</li>
-                  <li>• This action is irreversible</li>
+                  <li>• Your account will be permanently deleted</li>
+                  <li>• All bots created by you will be deleted</li>
+                  <li>• All documents and knowledge base content will be removed</li>
+                  <li>• All conversations and chat history will be deleted</li>
+                  <li>• All subscriptions and billing data will be removed</li>
+                  <li>• You will lose access immediately and cannot recover this data</li>
                 </ul>
               </div>
 
@@ -538,7 +539,7 @@ const AccountPage = () => {
                     className="h-14 px-10 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold shadow-xl hover:shadow-2xl transition-all duration-300"
                   >
                     <AlertTriangle className="w-4 h-4 mr-2" />
-                    Deactivate Account
+                    Delete Account Permanently
                   </Button>
                 </div>
               ) : (
