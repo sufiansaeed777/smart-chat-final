@@ -22,8 +22,8 @@ import { useRouter } from 'next/navigation';
 
 const ManagerOverview = () => {
   const router = useRouter();
-  const [overviewData, setOverviewData] = useState<{ 
-    metrics: { totalUsers: number; activeChats: number; pendingHandoffs: number; resolvedToday: number }; 
+  const [overviewData, setOverviewData] = useState<{
+    metrics: { totalUsers: number; activeChats: number; totalConversations: number; resolvedToday: number }; 
     stats: { acceptedUsers: number; chatChange: number }; 
     connectedMetrics: { totalUsers: number; totalBots: number; availableAgents: number }; 
     users: { 
@@ -135,11 +135,11 @@ const ManagerOverview = () => {
       iconColor: "text-gray-600"
     },
     {
-      title: "Pending Users",
-      value: overviewData.metrics.pendingHandoffs.toString(),
-      change: "Awaiting acceptance",
-      changeType: "warning",
-      icon: Clock,
+      title: "Total Conversations",
+      value: overviewData.metrics.totalConversations.toString(),
+      change: "All-time chats",
+      changeType: "positive",
+      icon: MessageCircle,
       iconColor: "text-gray-600"
     },
     {
@@ -276,7 +276,7 @@ const ManagerOverview = () => {
                 iconBg: 'bg-green-500',
                 textColor: 'text-green-600'
               };
-            } else if (title.includes('Pending Users')) {
+            } else if (title.includes('Total Conversations')) {
               return {
                 bg: 'bg-blue-50',
                 iconBg: 'bg-blue-500',
@@ -309,8 +309,8 @@ const ManagerOverview = () => {
               return '/manager-dashboard/team-management';
             } else if (title.includes('Active Chats')) {
               return '/manager-dashboard/conversations';
-            } else if (title.includes('Pending Users')) {
-              return '/manager-dashboard/team-management';
+            } else if (title.includes('Total Conversations')) {
+              return '/manager-dashboard/conversations';
             } else if (title.includes('Resolved Today')) {
               return '/manager-dashboard/issues';
             }
