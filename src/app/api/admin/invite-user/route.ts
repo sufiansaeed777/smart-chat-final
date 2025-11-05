@@ -43,16 +43,17 @@ export async function POST(request: NextRequest) {
     const existingUser = await userRepository.findOne({ where: { email } });
 
     if (existingUser) {
-      // If user exists and is already active, do NOT modify their account
-      if (existingUser.password && existingUser.isActive) {
+      // If user exists and has a password, do NOT modify their account
+      // This prevents converting already registered users (active or inactive)
+      if (existingUser.password) {
         // Return error - cannot invite already registered users
         return NextResponse.json({
-          error: 'This email is already registered and active. Cannot send invitation to existing users.',
+          error: 'This email is already registered. Cannot send invitation to existing users.',
           userExists: true
         }, { status: 400 });
       }
 
-      // If user exists but has no password or is inactive, send invitation
+      // If user exists but has no password (pending invitation), send re-invitation
       // Update their invitation token and expiry
       const invitationToken = crypto.randomBytes(32).toString('hex');
       const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours

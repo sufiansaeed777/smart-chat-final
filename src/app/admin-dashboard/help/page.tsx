@@ -182,6 +182,8 @@ const HelpPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {supportOptions.map((option, index) => {
             const Icon = option.icon;
+            const isEmailSupport = option.title === 'Email Support';
+
             return (
               <div key={index} className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
                 <div className="flex items-center space-x-3 mb-3">
@@ -206,16 +208,25 @@ const HelpPage: React.FC = () => {
               </div>
                 </div>
                 <p className="text-sm text-gray-600 mb-3">{option.description}</p>
-                <button 
-                  disabled={!option.available}
-                  className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                    option.available
-                      ? 'bg-[#6566F1] text-white hover:bg-[#5A5BD9]'
-                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  {option.action}
-                </button>
+                {isEmailSupport && option.available ? (
+                  <a
+                    href="mailto:support@chatbotpro.com"
+                    className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors bg-[#6566F1] text-white hover:bg-[#5A5BD9] flex items-center justify-center"
+                  >
+                    {option.action}
+                  </a>
+                ) : (
+                  <button
+                    disabled={!option.available}
+                    className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                      option.available
+                        ? 'bg-[#6566F1] text-white hover:bg-[#5A5BD9]'
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {option.action}
+                  </button>
+                )}
               </div>
             );
           })}

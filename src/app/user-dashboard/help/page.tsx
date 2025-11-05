@@ -243,9 +243,9 @@ const HelpPage = () => {
                   <Button
                     variant="outline"
                     className="border-gray-300 hover:bg-gray-50 text-gray-700"
-                    onClick={() => window.location.href = 'mailto:support@chatbotpro.com'}
+                    asChild
                   >
-                    Send Email
+                    <a href="mailto:support@chatbotpro.com">Send Email</a>
                   </Button>
                 </div>
                 <div className="p-4 border border-gray-200 rounded-lg">
