@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
+import { ILike } from 'typeorm';
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     const userRepository = AppDataSource.getRepository('users');
     const currentUser = await userRepository.findOne({
-      where: { email: session.user.email.toLowerCase() }
+      where: { email: ILike(session.user.email) }
     });
 
     if (!currentUser || currentUser.role !== 'admin') {
@@ -44,9 +45,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid role. Must be: admin, manager, or user' }, { status: 400 });
     }
 
-    // Check if user already exists
+    // Check if user already exists (case-insensitive)
     const existingUser = await userRepository.findOne({
-      where: { email: email.toLowerCase() }
+      where: { email: ILike(email) }
     });
 
     if (existingUser) {

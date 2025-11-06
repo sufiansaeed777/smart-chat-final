@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AppDataSource } from '@/config/database';
 import { User } from '@/entities/User';
+import { ILike } from 'typeorm';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
@@ -19,8 +20,8 @@ export async function POST(request: NextRequest) {
 
     const userRepository = AppDataSource.getRepository(User);
 
-    // Find user by email
-    const user = await userRepository.findOne({ where: { email: email.toLowerCase() } });
+    // Find user by email (case-insensitive)
+    const user = await userRepository.findOne({ where: { email: ILike(email) } });
 
     // Always return success to prevent email enumeration
     if (!user) {

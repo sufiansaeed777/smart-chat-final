@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { AppDataSource } from '@/config/database';
 import { User } from '@/entities/User';
 import { UserRole } from '@/types/UserRole';
+import { ILike } from 'typeorm';
 import { EmailVerificationService } from '@/services/emailVerificationService';
 
 export async function POST(request: NextRequest) {
@@ -22,9 +23,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already exists
+    // Check if user already exists (case-insensitive)
     const userRepository = AppDataSource.getRepository("users");
-    const existingUser = await userRepository.findOne({ where: { email: email.toLowerCase() } });
+    const existingUser = await userRepository.findOne({ where: { email: ILike(email) } });
 
     if (existingUser) {
       // If user exists and is verified, they can't re-register
