@@ -26,6 +26,12 @@ const HelpPage = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('tutorials');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [articles, setArticles] = useState<Array<{id: number; title: string; content: string; category: string}>>([]);
+  const [faqs, setFaqs] = useState<Array<{id: number; question: string; answer: string}>>([]);
+  const [newArticle, setNewArticle] = useState({title: '', content: '', category: ''});
+  const [newVideo, setNewVideo] = useState({title: '', url: '', description: '', difficulty: 'Beginner'});
+  const [newFaq, setNewFaq] = useState({question: '', answer: ''});
 
   const tabs = [
     { id: 'articles', label: 'Articles', icon: BookOpen },
@@ -91,6 +97,8 @@ const HelpPage = () => {
     }
   ];
 
+  const [customTutorials, setCustomTutorials] = useState<Array<{id: number; title: string; url: string; description: string; difficulty: string}>>([]);
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Beginner": return "bg-green-100 text-green-800 border-green-200";
@@ -102,6 +110,30 @@ const HelpPage = () => {
 
   const handleNavigation = (path: string) => {
     router.push(path);
+  };
+
+  const handleAddArticle = () => {
+    if (newArticle.title && newArticle.content) {
+      setArticles([...articles, { id: Date.now(), ...newArticle }]);
+      setNewArticle({title: '', content: '', category: ''});
+      setShowAddModal(false);
+    }
+  };
+
+  const handleAddVideo = () => {
+    if (newVideo.title && newVideo.url) {
+      setCustomTutorials([...customTutorials, { id: Date.now(), ...newVideo }]);
+      setNewVideo({title: '', url: '', description: '', difficulty: 'Beginner'});
+      setShowAddModal(false);
+    }
+  };
+
+  const handleAddFaq = () => {
+    if (newFaq.question && newFaq.answer) {
+      setFaqs([...faqs, { id: Date.now(), ...newFaq }]);
+      setNewFaq({question: '', answer: ''});
+      setShowAddModal(false);
+    }
   };
 
   return (
@@ -151,77 +183,143 @@ const HelpPage = () => {
 
         {/* Tutorials Tab Content */}
         {activeTab === 'tutorials' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tutorials.map((tutorial) => {
-              const Icon = tutorial.icon;
-              return (
-                <Card key={tutorial.id} className="border border-gray-200 bg-white hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-6">
-                    <div className="text-center space-y-4">
-                      <div className={`w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto`}>
-                        <Icon className={`w-8 h-8 ${tutorial.color}`} />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                          {tutorial.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 mb-4">
-                          {tutorial.description}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <Badge className={getDifficultyColor(tutorial.difficulty)}>
-                            {tutorial.difficulty}
-                          </Badge>
-                          <div className="flex items-center space-x-2 text-sm text-gray-500">
-                            <Play className="w-4 h-4" />
-                            <span>{tutorial.duration}</span>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-900">Video Tutorials</h2>
+              <Button onClick={() => setShowAddModal(true)} className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Video Link
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {tutorials.map((tutorial) => {
+                const Icon = tutorial.icon;
+                return (
+                  <Card key={tutorial.id} className="border border-gray-200 bg-white hover:shadow-md transition-shadow cursor-pointer">
+                    <CardContent className="p-6">
+                      <div className="text-center space-y-4">
+                        <div className={`w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto`}>
+                          <Icon className={`w-8 h-8 ${tutorial.color}`} />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                            {tutorial.title}
+                          </h3>
+                          <p className="text-sm text-gray-600 mb-4">
+                            {tutorial.description}
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <Badge className={getDifficultyColor(tutorial.difficulty)}>
+                              {tutorial.difficulty}
+                            </Badge>
+                            <div className="flex items-center space-x-2 text-sm text-gray-500">
+                              <Play className="w-4 h-4" />
+                              <span>{tutorial.duration}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+              {customTutorials.map((tutorial) => (
+                <Card key={tutorial.id} className="border border-gray-200 bg-white hover:shadow-md transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900">{tutorial.title}</h3>
+                        <Badge className={getDifficultyColor(tutorial.difficulty)}>{tutorial.difficulty}</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600">{tutorial.description}</p>
+                      <a href={tutorial.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-sm text-[#6566F1] hover:text-[#5A5BD9]">
+                        <Play className="w-4 h-4 mr-1" />
+                        Watch Video
+                      </a>
                     </div>
                   </CardContent>
                 </Card>
-              );
-            })}
+              ))}
+            </div>
           </div>
         )}
 
         {/* Articles Tab Content */}
         {activeTab === 'articles' && (
-          <Card className="border border-gray-200 bg-white">
-            <CardHeader>
-              <CardTitle className="text-lg">Help Articles</CardTitle>
-              <CardDescription>
-                Comprehensive guides and documentation
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Articles Coming Soon</h3>
-                <p className="text-gray-600">Detailed help articles will be available here</p>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-900">Help Articles</h2>
+              <Button onClick={() => setShowAddModal(true)} className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Article
+              </Button>
+            </div>
+            {articles.length === 0 ? (
+              <Card className="border border-gray-200 bg-white">
+                <CardContent className="py-12">
+                  <div className="text-center">
+                    <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Articles Yet</h3>
+                    <p className="text-gray-600">Click "Add Article" to create your first help article</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {articles.map((article) => (
+                  <Card key={article.id} className="border border-gray-200 bg-white hover:shadow-md transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-3">
+                        <h3 className="text-lg font-semibold text-gray-900">{article.title}</h3>
+                        {article.category && (
+                          <Badge className="bg-gray-100 text-gray-800">{article.category}</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 whitespace-pre-wrap">{article.content}</p>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         )}
 
         {/* FAQ Tab Content */}
         {activeTab === 'faq' && (
-          <Card className="border border-gray-200 bg-white">
-            <CardHeader>
-              <CardTitle className="text-lg">Frequently Asked Questions</CardTitle>
-              <CardDescription>
-                Quick answers to common questions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <HelpCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">FAQ Coming Soon</h3>
-                <p className="text-gray-600">Common questions and answers will be listed here</p>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-900">Frequently Asked Questions</h2>
+              <Button onClick={() => setShowAddModal(true)} className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                Add FAQ
+              </Button>
+            </div>
+            {faqs.length === 0 ? (
+              <Card className="border border-gray-200 bg-white">
+                <CardContent className="py-12">
+                  <div className="text-center">
+                    <HelpCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No FAQs Yet</h3>
+                    <p className="text-gray-600">Click "Add FAQ" to create your first FAQ entry</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {faqs.map((faq) => (
+                  <Card key={faq.id} className="border border-gray-200 bg-white">
+                    <CardContent className="p-6">
+                      <h3 className="text-base font-semibold text-gray-900 mb-2 flex items-start">
+                        <HelpCircle className="w-5 h-5 mr-2 text-[#6566F1] flex-shrink-0 mt-0.5" />
+                        {faq.question}
+                      </h3>
+                      <p className="text-sm text-gray-600 ml-7">{faq.answer}</p>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         )}
 
         {/* Contact Tab Content */}
@@ -264,6 +362,157 @@ const HelpPage = () => {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Add Resource Modal */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {activeTab === 'articles' && 'Add New Article'}
+                  {activeTab === 'tutorials' && 'Add Video Link'}
+                  {activeTab === 'faq' && 'Add FAQ'}
+                </h2>
+                <button onClick={() => setShowAddModal(false)} className="text-gray-500 hover:text-gray-700">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Article Form */}
+              {activeTab === 'articles' && (
+                <form onSubmit={(e) => { e.preventDefault(); handleAddArticle(); }} className="space-y-4">
+                  <div>
+                    <Label htmlFor="article-title" className="text-sm font-medium text-gray-700 mb-2 block">Title</Label>
+                    <Input
+                      id="article-title"
+                      value={newArticle.title}
+                      onChange={(e) => setNewArticle({...newArticle, title: e.target.value})}
+                      placeholder="Enter article title"
+                      required
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="article-category" className="text-sm font-medium text-gray-700 mb-2 block">Category (Optional)</Label>
+                    <Input
+                      id="article-category"
+                      value={newArticle.category}
+                      onChange={(e) => setNewArticle({...newArticle, category: e.target.value})}
+                      placeholder="e.g., Getting Started, Advanced"
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="article-content" className="text-sm font-medium text-gray-700 mb-2 block">Content</Label>
+                    <textarea
+                      id="article-content"
+                      value={newArticle.content}
+                      onChange={(e) => setNewArticle({...newArticle, content: e.target.value})}
+                      placeholder="Enter article content..."
+                      required
+                      rows={10}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-2 focus:ring-[#6566F1]/20 text-gray-900 resize-none"
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
+                    <Button type="submit" className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white">Add Article</Button>
+                  </div>
+                </form>
+              )}
+
+              {/* Video Link Form */}
+              {activeTab === 'tutorials' && (
+                <form onSubmit={(e) => { e.preventDefault(); handleAddVideo(); }} className="space-y-4">
+                  <div>
+                    <Label htmlFor="video-title" className="text-sm font-medium text-gray-700 mb-2 block">Video Title</Label>
+                    <Input
+                      id="video-title"
+                      value={newVideo.title}
+                      onChange={(e) => setNewVideo({...newVideo, title: e.target.value})}
+                      placeholder="Enter video title"
+                      required
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="video-url" className="text-sm font-medium text-gray-700 mb-2 block">Video URL</Label>
+                    <Input
+                      id="video-url"
+                      type="url"
+                      value={newVideo.url}
+                      onChange={(e) => setNewVideo({...newVideo, url: e.target.value})}
+                      placeholder="https://youtube.com/... or https://vimeo.com/..."
+                      required
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="video-description" className="text-sm font-medium text-gray-700 mb-2 block">Description</Label>
+                    <textarea
+                      id="video-description"
+                      value={newVideo.description}
+                      onChange={(e) => setNewVideo({...newVideo, description: e.target.value})}
+                      placeholder="Brief description of the video content..."
+                      rows={3}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-2 focus:ring-[#6566F1]/20 text-gray-900 resize-none"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="video-difficulty" className="text-sm font-medium text-gray-700 mb-2 block">Difficulty Level</Label>
+                    <select
+                      id="video-difficulty"
+                      value={newVideo.difficulty}
+                      onChange={(e) => setNewVideo({...newVideo, difficulty: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] text-gray-900"
+                    >
+                      <option value="Beginner">Beginner</option>
+                      <option value="Intermediate">Intermediate</option>
+                      <option value="Advanced">Advanced</option>
+                    </select>
+                  </div>
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
+                    <Button type="submit" className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white">Add Video</Button>
+                  </div>
+                </form>
+              )}
+
+              {/* FAQ Form */}
+              {activeTab === 'faq' && (
+                <form onSubmit={(e) => { e.preventDefault(); handleAddFaq(); }} className="space-y-4">
+                  <div>
+                    <Label htmlFor="faq-question" className="text-sm font-medium text-gray-700 mb-2 block">Question</Label>
+                    <Input
+                      id="faq-question"
+                      value={newFaq.question}
+                      onChange={(e) => setNewFaq({...newFaq, question: e.target.value})}
+                      placeholder="Enter the question..."
+                      required
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="faq-answer" className="text-sm font-medium text-gray-700 mb-2 block">Answer</Label>
+                    <textarea
+                      id="faq-answer"
+                      value={newFaq.answer}
+                      onChange={(e) => setNewFaq({...newFaq, answer: e.target.value})}
+                      placeholder="Enter the answer..."
+                      required
+                      rows={6}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-2 focus:ring-[#6566F1]/20 text-gray-900 resize-none"
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
+                    <Button type="submit" className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white">Add FAQ</Button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </RoleGuard>
