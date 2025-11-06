@@ -31,7 +31,7 @@ export const authOptions: NextAuthOptions = {
 
           const userRepository = AppDataSource.getRepository("users");
           const user = await userRepository.findOne({
-            where: { email: credentials.email }
+            where: { email: credentials.email.toLowerCase() }
           });
 
           // Debug: Log user status for NextAuth
@@ -88,16 +88,16 @@ export const authOptions: NextAuthOptions = {
           }
 
           const userRepository = AppDataSource.getRepository("users");
-          
+
           // Check if user already exists
           const existingUser = await userRepository.findOne({
-            where: { email: user.email! }
+            where: { email: user.email!.toLowerCase() }
           });
 
           if (!existingUser) {
             // Create new user with Google info
             const newUser = new User();
-            newUser.email = user.email!;
+            newUser.email = user.email!.toLowerCase();
             newUser.firstName = user.name?.split(' ')[0] || null;
             newUser.lastName = user.name?.split(' ').slice(1).join(' ') || null;
             newUser.isEmailVerified = true; // Google accounts are pre-verified
@@ -136,7 +136,7 @@ export const authOptions: NextAuthOptions = {
           }
           const userRepository = AppDataSource.getRepository("users");
           const dbUser = await userRepository.findOne({
-            where: { email: token.email as string }
+            where: { email: (token.email as string).toLowerCase() }
           });
           
           if (!dbUser || !dbUser.isActive || !dbUser.password) {
@@ -167,7 +167,7 @@ export const authOptions: NextAuthOptions = {
           }
           const userRepository = AppDataSource.getRepository("users");
           const dbUser = await userRepository.findOne({
-            where: { email: user.email! }
+            where: { email: user.email!.toLowerCase() }
           });
           if (dbUser) {
             token.role = dbUser.role;

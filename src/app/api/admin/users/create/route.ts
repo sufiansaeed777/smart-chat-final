@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     const userRepository = AppDataSource.getRepository('users');
     const currentUser = await userRepository.findOne({
-      where: { email: session.user.email }
+      where: { email: session.user.email.toLowerCase() }
     });
 
     if (!currentUser || currentUser.role !== 'admin') {
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user already exists
     const existingUser = await userRepository.findOne({
-      where: { email }
+      where: { email: email.toLowerCase() }
     });
 
     if (existingUser) {
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     // Create new user
     const newUser = userRepository.create({
-      email,
+      email: email.toLowerCase(),
       firstName,
       lastName,
       role,

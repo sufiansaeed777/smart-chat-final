@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user already exists
     const userRepository = AppDataSource.getRepository("users");
-    const existingUser = await userRepository.findOne({ where: { email } });
+    const existingUser = await userRepository.findOne({ where: { email: email.toLowerCase() } });
 
     if (existingUser) {
       // If user exists and is verified, they can't re-register
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
 
     // Create user (not verified yet)
     const user = new User();
-    user.email = email;
+    user.email = email.toLowerCase();
     user.password = hashedPassword;
     user.firstName = firstName || null;
     user.lastName = lastName || null;

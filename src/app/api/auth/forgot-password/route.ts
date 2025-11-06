@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const userRepository = AppDataSource.getRepository(User);
 
     // Find user by email
-    const user = await userRepository.findOne({ where: { email } });
+    const user = await userRepository.findOne({ where: { email: email.toLowerCase() } });
 
     // Always return success to prevent email enumeration
     if (!user) {

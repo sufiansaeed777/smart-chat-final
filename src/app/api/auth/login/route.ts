@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     // Find user by email - use string to avoid minification issues
     const userRepository = AppDataSource.getRepository("users");
-    const user = await userRepository.findOne({ where: { email } });
+    const user = await userRepository.findOne({ where: { email: email.toLowerCase() } });
 
     if (!user) {
       return NextResponse.json(
