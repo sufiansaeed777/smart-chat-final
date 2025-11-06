@@ -252,9 +252,9 @@ const HelpPage = () => {
                   <Button
                     variant="outline"
                     className="border-gray-300 hover:bg-gray-50 text-gray-700"
-                    onClick={() => handleNavigation('/manager-dashboard/report-issue')}
+                    asChild
                   >
-                    Report an Issue
+                    <a href="mailto:support@chatbotpro.com?subject=Issue Report">Report an Issue</a>
                   </Button>
                 </div>
               </div>
