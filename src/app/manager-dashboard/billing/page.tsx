@@ -272,6 +272,39 @@ const BillingPage: React.FC = () => {
     }
   };
 
+  // Handle download invoice
+  const handleDownloadInvoice = async (invoiceId: string) => {
+    try {
+      const response = await fetch(`/api/billing/invoice/${invoiceId}/download`, {
+        method: 'GET',
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `invoice-${invoiceId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        console.error('Failed to download invoice');
+        alert('Failed to download invoice. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      alert('An error occurred while downloading. Please try again.');
+    }
+  };
+
+  // Handle view invoice
+  const handleViewInvoice = (invoiceId: string) => {
+    // Navigate to invoice detail page or open modal
+    router.push(`/manager-dashboard/billing/invoice/${invoiceId}`);
+  };
+
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       {/* Header */}
@@ -355,7 +388,10 @@ const BillingPage: React.FC = () => {
                 <span className="font-medium">**** 4242</span>
               </div>
             </div>
-            <button className="w-full px-4 py-2 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 text-[#6566F1] hover:text-[#5A5BD9] font-medium transition-colors">
+            <button
+              onClick={() => alert('Payment method update feature coming soon. Please contact support to update your payment method.')}
+              className="w-full px-4 py-2 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 text-[#6566F1] hover:text-[#5A5BD9] font-medium transition-colors"
+            >
               Update Payment Method
             </button>
           </div>
@@ -552,10 +588,18 @@ const BillingPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-2">
-                      <button className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors">
+                      <button
+                        onClick={() => handleDownloadInvoice(invoice.id)}
+                        className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors"
+                        title="Download Invoice"
+                      >
                         <Download className="w-4 h-4" />
                       </button>
-                      <button className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                      <button
+                        onClick={() => handleViewInvoice(invoice.id)}
+                        className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                        title="View Invoice Details"
+                      >
                         <FileText className="w-4 h-4" />
                       </button>
                     </div>

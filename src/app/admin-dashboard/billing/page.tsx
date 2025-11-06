@@ -135,11 +135,17 @@ const BillingPage: React.FC = () => {
           <p className="text-gray-600 mt-2">Manage your subscription and view usage statistics</p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
+          <button
+            onClick={() => alert('Export billing data feature coming soon.')}
+            className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+          >
             <Download className="w-5 h-5" />
             <span>Export</span>
           </button>
-          <button className="flex items-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors shadow-lg">
+          <button
+            onClick={() => alert('Upgrade plan feature coming soon. Please contact support for plan upgrades.')}
+            className="flex items-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors shadow-lg"
+          >
             <Plus className="w-5 h-5" />
             <span>Upgrade Plan</span>
           </button>
@@ -334,10 +340,18 @@ const BillingPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-2">
-                        <button className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors">
+                        <button
+                          onClick={() => alert(`Download invoice ${invoice.invoiceId || invoice.id} feature coming soon.`)}
+                          className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors"
+                          title="Download Invoice"
+                        >
                           <Download className="w-4 h-4" />
                         </button>
-                        <button className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                        <button
+                          onClick={() => alert(`View invoice ${invoice.invoiceId || invoice.id} details feature coming soon.`)}
+                          className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                          title="View Invoice Details"
+                        >
                           <FileText className="w-4 h-4" />
                         </button>
                       </div>
@@ -367,7 +381,10 @@ const BillingPage: React.FC = () => {
               <p className="text-sm text-gray-600">Expires 12/25</p>
             </div>
           </div>
-          <button className="text-[#6566F1] hover:text-[#5A5BD9] font-medium">
+          <button
+            onClick={() => alert('Payment method update feature coming soon. Please contact support to update payment method.')}
+            className="text-[#6566F1] hover:text-[#5A5BD9] font-medium"
+          >
             Update
           </button>
         </div>
