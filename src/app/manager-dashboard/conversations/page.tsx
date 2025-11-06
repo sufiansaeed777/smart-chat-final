@@ -539,21 +539,30 @@ const ManagerConversationsPage = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" side="top" sideOffset={5} onEscapeKeyDown={(e) => e.preventDefault()}>
                           <DropdownMenuItem
-                            onClick={() => handleViewConversation(conversation.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewConversation(conversation.id);
+                            }}
                             className="cursor-pointer"
                           >
                             <Eye className="w-4 h-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleExportConversation(conversation.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleExportConversation(conversation.id);
+                            }}
                             className="cursor-pointer"
                           >
                             <Download className="w-4 h-4 mr-2" />
                             Export Chat
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleDeleteConversation(conversation.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteConversation(conversation.id);
+                            }}
                             className="cursor-pointer text-red-600 focus:text-red-600"
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
