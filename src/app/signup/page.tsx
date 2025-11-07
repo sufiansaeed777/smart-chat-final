@@ -51,7 +51,7 @@ const SignupComponent = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: form.email,
+          email: form.email.toLowerCase().trim(),
           password: form.password,
           firstName: form.firstName,
           lastName: form.lastName,

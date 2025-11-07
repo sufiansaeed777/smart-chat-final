@@ -29,9 +29,12 @@ export const authOptions: NextAuthOptions = {
             await AppDataSource.initialize();
           }
 
+          // Normalize email to lowercase
+          const normalizedEmail = credentials.email.toLowerCase().trim();
+
           const userRepository = AppDataSource.getRepository("users");
           const user = await userRepository.findOne({
-            where: { email: credentials.email }
+            where: { email: normalizedEmail }
           });
 
           // Debug: Log user status for NextAuth

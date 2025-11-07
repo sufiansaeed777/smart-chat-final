@@ -20,9 +20,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Normalize email to lowercase
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Find user by email - use string to avoid minification issues
     const userRepository = AppDataSource.getRepository("users");
-    const user = await userRepository.findOne({ where: { email } });
+    const user = await userRepository.findOne({ where: { email: normalizedEmail } });
 
     if (!user) {
       return NextResponse.json(

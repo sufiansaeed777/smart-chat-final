@@ -22,9 +22,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Normalize email to lowercase
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Check if user already exists
     const userRepository = AppDataSource.getRepository("users");
-    const existingUser = await userRepository.findOne({ where: { email } });
+    const existingUser = await userRepository.findOne({ where: { email: normalizedEmail } });
 
     if (existingUser) {
       // If user exists and is verified, they can't re-register
@@ -87,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     // Create user (not verified yet)
     const user = new User();
-    user.email = email;
+    user.email = normalizedEmail;
     user.password = hashedPassword;
     user.firstName = firstName || null;
     user.lastName = lastName || null;

@@ -39,7 +39,7 @@ const LoginComponent = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: form.email,
+          email: form.email.toLowerCase().trim(),
           password: form.password,
         }),
       });
@@ -65,7 +65,7 @@ const LoginComponent = () => {
 
       // If API login successful, use NextAuth signIn for session management
       const result = await signIn('credentials', {
-        email: form.email,
+        email: form.email.toLowerCase().trim(),
         password: form.password,
         redirect: false,
       });
