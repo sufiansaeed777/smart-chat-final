@@ -132,8 +132,8 @@ export const Tooltip: React.FC<TooltipProps> = ({
           }`}
           style={tooltipStyle}
         >
-          <div className="bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 text-white text-sm font-semibold px-5 py-3 rounded-2xl shadow-2xl max-w-[300px] relative border border-slate-700/40 backdrop-blur-md animate-in fade-in-0 zoom-in-95 duration-200 ring-1 ring-black/20">
-            <div className="whitespace-normal break-words leading-relaxed text-center drop-shadow-sm tracking-tight">{content}</div>
+          <div className="bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-xl max-w-[200px] relative border border-slate-700/40 backdrop-blur-sm animate-in fade-in-0 zoom-in-95 duration-200">
+            <div className="whitespace-normal break-words leading-tight text-center">{content}</div>
           </div>
         </div>
       )}

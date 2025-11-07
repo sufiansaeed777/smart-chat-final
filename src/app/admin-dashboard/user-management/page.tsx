@@ -22,6 +22,7 @@ import {
   Clock,
   TrendingUp
 } from 'lucide-react';
+import { Tooltip } from '@/components/ui/tooltip';
 
 interface User {
   id: string;
@@ -219,10 +220,10 @@ const UserManagementPage: React.FC = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'active': return <CheckCircle className="w-4 h-4" />;
-      case 'inactive': return <XCircle className="w-4 h-4" />;
-      case 'pending': return <Clock className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
+      case 'active': return <CheckCircle className="w-3 h-3" />;
+      case 'inactive': return <XCircle className="w-3 h-3" />;
+      case 'pending': return <Clock className="w-3 h-3" />;
+      default: return <Clock className="w-3 h-3" />;
     }
   };
 
@@ -387,30 +388,30 @@ const UserManagementPage: React.FC = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left">
+                <th className="px-3 py-2 text-left">
                   <input
                     type="checkbox"
                     checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
                     onChange={handleSelectAll}
-                    className="w-4 h-4 text-[#6566F1] bg-gray-100 border-gray-300 rounded focus:ring-[#6566F1] focus:ring-2"
+                    className="w-3 h-3 text-[#6566F1] bg-gray-100 border-gray-300 rounded focus:ring-[#6566F1] focus:ring-2"
                   />
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                   Manager
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                   Role
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                   Email Verified
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                   Last Login
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -418,92 +419,95 @@ const UserManagementPage: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-100">
               {filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
+                  <td className="px-3 py-2">
                     <input
                       type="checkbox"
                       checked={selectedUsers.includes(user.id)}
                       onChange={() => handleSelectUser(user.id)}
-                      className="w-4 h-4 text-[#6566F1] bg-gray-100 border-gray-300 rounded focus:ring-[#6566F1] focus:ring-2"
+                      className="w-3 h-3 text-[#6566F1] bg-gray-100 border-gray-300 rounded focus:ring-[#6566F1] focus:ring-2"
                     />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="w-12 h-12 bg-gradient-to-br from-[#6566F1] to-[#7F82F3] rounded-xl flex items-center justify-center shadow-lg">
-                        <span className="text-white font-semibold text-sm">
+                      <div className="w-8 h-8 bg-gradient-to-br from-[#6566F1] to-[#7F82F3] rounded-lg flex items-center justify-center shadow-sm">
+                        <span className="text-white font-semibold text-[10px]">
                           {user.firstName[0]}{user.lastName[0]}
                         </span>
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-semibold text-gray-900">
+                      <div className="ml-2">
+                        <div className="text-xs font-semibold text-gray-900">
                           {user.firstName} {user.lastName}
                         </div>
-                        <div className="text-sm text-gray-500 flex items-center">
-                          <Mail className="w-3 h-3 mr-1" />
+                        <div className="text-[10px] text-gray-500 flex items-center">
+                          <Mail className="w-2.5 h-2.5 mr-0.5" />
                           {user.email}
                         </div>
                         {user.phone && (
-                          <div className="text-xs text-gray-400 flex items-center">
-                            <Phone className="w-3 h-3 mr-1" />
+                          <div className="text-[10px] text-gray-400 flex items-center">
+                            <Phone className="w-2.5 h-2.5 mr-0.5" />
                             {user.phone}
                           </div>
                         )}
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${getRoleBadgeColor(user.role)}`}>
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full border ${getRoleBadgeColor(user.role)}`}>
                       {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-full border flex items-center w-fit ${getStatusBadgeColor(user.status)}`}>
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full border flex items-center w-fit ${getStatusBadgeColor(user.status)}`}>
                       {getStatusIcon(user.status)}
-                      <span className="ml-1">{user.status.charAt(0).toUpperCase() + user.status.slice(1)}</span>
+                      <span className="ml-0.5">{user.status.charAt(0).toUpperCase() + user.status.slice(1)}</span>
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap">
                     <div className="flex items-center">
                       {user.isEmailVerified ? (
-                        <span className="text-green-600 text-sm font-medium flex items-center">
-                          <CheckCircle className="w-4 h-4 mr-1" />
+                        <span className="text-green-600 text-[10px] font-medium flex items-center">
+                          <CheckCircle className="w-3 h-3 mr-0.5" />
                           Verified
                         </span>
                       ) : (
-                        <span className="text-yellow-600 text-sm font-medium flex items-center">
-                          <Clock className="w-4 h-4 mr-1" />
+                        <span className="text-yellow-600 text-[10px] font-medium flex items-center">
+                          <Clock className="w-3 h-3 mr-0.5" />
                           Pending
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 flex items-center">
-                    <Calendar className="w-3 h-3 mr-1" />
+                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-500 flex items-center">
+                    <Calendar className="w-2.5 h-2.5 mr-0.5" />
                     {user.lastLoginAt}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
+                  <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium">
+                    <div className="flex items-center space-x-1">
+                      <Tooltip content="View user" position="top">
                       <button
                         onClick={() => alert(`View user details:\n\nName: ${user.firstName} ${user.lastName}\nEmail: ${user.email}\nRole: ${user.role}\nStatus: ${user.status}`)}
-                        className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors"
-                        title="View user details"
+                          className="text-[#6566F1] hover:text-[#5A5BD9] p-1 rounded-lg hover:bg-[#6566F1]/10 transition-colors"
                       >
-                        <Eye className="w-4 h-4" />
+                          <Eye className="w-3 h-3" />
                       </button>
+                      </Tooltip>
+                      <Tooltip content="Edit user" position="top">
                       <button
                         onClick={() => handleEditUser(user)}
-                        className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                        title="Edit user"
+                          className="text-gray-600 hover:text-gray-900 p-1 rounded-lg hover:bg-gray-100 transition-colors"
                       >
-                        <Edit className="w-4 h-4" />
+                          <Edit className="w-3 h-3" />
                       </button>
+                      </Tooltip>
+                      <Tooltip content="Delete user" position="top">
                       <button
                         onClick={() => handleDeleteUser(user.id, user.email)}
                         disabled={deleting === user.id}
-                        className="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Delete user"
+                          className="text-red-600 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3" />
                       </button>
+                      </Tooltip>
                     </div>
                   </td>
                 </tr>
