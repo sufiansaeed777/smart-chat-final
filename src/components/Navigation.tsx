@@ -4,11 +4,12 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ChevronDown } from 'lucide-react';
 
 const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
   const pathname = usePathname();
   const { data: session } = useSession();
 
@@ -76,19 +77,71 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-8">
-            {navItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={`transition-all duration-200 hover:scale-110 ${
-                  isActive(item.href)
-                    ? "text-blue-600 font-medium"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              if (item.label === "Product") {
+                return (
+                  <div
+                    key={item.label}
+                    className="relative"
+                    onMouseEnter={() => setIsProductDropdownOpen(true)}
+                    onMouseLeave={() => setIsProductDropdownOpen(false)}
+                  >
+                    <Link
+                      href={item.href}
+                      className={`transition-all duration-200 hover:scale-110 flex items-center space-x-1 ${
+                        isActive(item.href)
+                          ? "text-blue-600 font-medium"
+                          : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      <span>{item.label}</span>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${isProductDropdownOpen ? 'rotate-180' : ''}`} />
+                    </Link>
+                    {isProductDropdownOpen && (
+                      <div className="absolute top-full left-0 mt-2 w-56 bg-gray-900 rounded-lg shadow-xl py-2 z-50">
+                        <div className="px-4 py-2 border-b border-gray-800">
+                          <h3 className="text-white font-bold text-sm">Product</h3>
+                        </div>
+                        <Link
+                          href="/product#features"
+                          className="block px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                          onClick={() => setIsProductDropdownOpen(false)}
+                        >
+                          Features
+                        </Link>
+                        <Link
+                          href="/product#how-it-works"
+                          className="block px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                          onClick={() => setIsProductDropdownOpen(false)}
+                        >
+                          How It Works
+                        </Link>
+                        <Link
+                          href="/product#testimonials"
+                          className="block px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                          onClick={() => setIsProductDropdownOpen(false)}
+                        >
+                          Customer Stories
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={`transition-all duration-200 hover:scale-110 ${
+                    isActive(item.href)
+                      ? "text-blue-600 font-medium"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </div>
 
           {/* Desktop CTA */}
@@ -160,20 +213,73 @@ const Navigation = () => {
             {/* Navigation Links */}
             <div className="flex-1 px-6 py-8 bg-white">
               <div className="space-y-6">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`block text-2xl font-medium transition-all duration-200 w-full text-left py-3 hover:scale-105 ${
-                      isActive(item.href)
-                        ? "text-blue-600"
-                        : "text-gray-600 hover:text-gray-900"
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
+                {navItems.map((item) => {
+                  if (item.label === "Product") {
+                    return (
+                      <div key={item.label}>
+                        <button
+                          onClick={() => setIsProductDropdownOpen(!isProductDropdownOpen)}
+                          className={`block text-2xl font-medium transition-all duration-200 w-full text-left py-3 hover:scale-105 flex items-center justify-between ${
+                            isActive(item.href)
+                              ? "text-blue-600"
+                              : "text-gray-600 hover:text-gray-900"
+                          }`}
+                        >
+                          <span>{item.label}</span>
+                          <ChevronDown className={`w-5 h-5 transition-transform ${isProductDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isProductDropdownOpen && (
+                          <div className="pl-4 mt-2 space-y-3 border-l-2 border-gray-200">
+                            <Link
+                              href="/product#features"
+                              onClick={() => {
+                                setIsMobileMenuOpen(false);
+                                setIsProductDropdownOpen(false);
+                              }}
+                              className="block text-lg text-gray-600 hover:text-blue-600 py-2 transition-colors"
+                            >
+                              Features
+                            </Link>
+                            <Link
+                              href="/product#how-it-works"
+                              onClick={() => {
+                                setIsMobileMenuOpen(false);
+                                setIsProductDropdownOpen(false);
+                              }}
+                              className="block text-lg text-gray-600 hover:text-blue-600 py-2 transition-colors"
+                            >
+                              How It Works
+                            </Link>
+                            <Link
+                              href="/product#testimonials"
+                              onClick={() => {
+                                setIsMobileMenuOpen(false);
+                                setIsProductDropdownOpen(false);
+                              }}
+                              className="block text-lg text-gray-600 hover:text-blue-600 py-2 transition-colors"
+                            >
+                              Customer Stories
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  return (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`block text-2xl font-medium transition-all duration-200 w-full text-left py-3 hover:scale-105 ${
+                        isActive(item.href)
+                          ? "text-blue-600"
+                          : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
             

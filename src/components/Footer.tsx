@@ -7,15 +7,15 @@ const Footer = () => {
   
   const footerLinks = {
     product: [
-      { label: "Features", href: "/#features" },
-      { label: "How It Works", href: "/#how-it-works" },
-      { label: "Customer Stories", href: "/#testimonials" },
+      { label: "Features", href: "/product#features" },
+      { label: "How It Works", href: "/product#how-it-works" },
+      { label: "Customer Stories", href: "/product#testimonials" },
     ],
     support: [
-      { label: "Help Center", href: "/help-center" },
-      { label: "Contact Support", href: "/contact-support" },
-      { label: "Status Page", href: "/status" },
-      { label: "Community", href: "/community" },
+      { label: "Help Center", href: "/support#help-center" },
+      { label: "Contact Support", href: "/support#contact-support" },
+      { label: "Status Page", href: "/support#status-page" },
+      { label: "Community", href: "/support#community" },
     ],
     legal: [
       { label: "Privacy Policy", href: "/privacy-policy" },
