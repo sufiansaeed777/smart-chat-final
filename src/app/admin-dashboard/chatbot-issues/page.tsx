@@ -9,10 +9,11 @@ import {
   CheckCircle, 
   XCircle,
   Search,
-  MoreVertical,
   Eye,
-  MessageCircle
+  MessageCircle,
+  Trash2
 } from 'lucide-react';
+import { Tooltip } from '@/components/ui/tooltip';
 
 interface ChatbotIssue {
   id: string;
@@ -25,6 +26,9 @@ interface ChatbotIssue {
   updatedAt: Date;
   status: 'pending' | 'in_progress' | 'resolved' | 'closed';
   priority: 'low' | 'medium' | 'high' | 'urgent';
+  botName?: string;
+  botId?: string;
+  conversationId?: string;
   assignedTo?: string;
   notes?: string;
   response?: string;
@@ -62,6 +66,20 @@ const ChatbotIssuesPage: React.FC = () => {
 
     fetchIssues();
   }, []);
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isDetailModalOpen) {
+        setIsDetailModalOpen(false);
+      }
+    };
+
+    if (isDetailModalOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [isDetailModalOpen]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -115,6 +133,12 @@ const ChatbotIssuesPage: React.FC = () => {
   const handleViewDetails = (issue: ChatbotIssue) => {
     setSelectedIssue(issue);
     setIsDetailModalOpen(true);
+  };
+
+  const handleDeleteIssue = (issue: ChatbotIssue) => {
+    if (confirm(`Are you sure you want to delete issue #${issue.id}?`)) {
+      setIssues(prev => prev.filter(i => i.id !== issue.id));
+    }
   };
 
   const handleUpdateStatus = (issueId: string, newStatus: string) => {
@@ -221,7 +245,7 @@ const ChatbotIssuesPage: React.FC = () => {
                 placeholder="Search by user name, email, or message..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900 placeholder:text-gray-500"
               />
             </div>
           </div>
@@ -230,7 +254,7 @@ const ChatbotIssuesPage: React.FC = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900"
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
@@ -242,7 +266,7 @@ const ChatbotIssuesPage: React.FC = () => {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900"
             >
               <option value="all">All Types</option>
               <option value="human_request">Human Request</option>
@@ -253,7 +277,7 @@ const ChatbotIssuesPage: React.FC = () => {
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900"
             >
               <option value="all">All Priorities</option>
               <option value="urgent">Urgent</option>
@@ -320,17 +344,22 @@ const ChatbotIssuesPage: React.FC = () => {
                   </div>
                   
                   <div className="flex items-center space-x-2 ml-4">
+                    <Tooltip content="View details" position="top">
                     <button
                       onClick={() => handleViewDetails(issue)}
                       className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
                     >
                       <Eye className="w-4 h-4" />
                     </button>
-                    <div className="relative">
-                      <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                        <MoreVertical className="w-4 h-4" />
+                    </Tooltip>
+                    <Tooltip content="Delete issue" position="top">
+                      <button
+                        onClick={() => handleDeleteIssue(issue)}
+                        className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
-                    </div>
+                    </Tooltip>
                   </div>
                 </div>
               </div>
@@ -360,6 +389,10 @@ const ChatbotIssuesPage: React.FC = () => {
                 <h4 className="text-sm font-medium text-gray-900 mb-2">Issue Information</h4>
                 <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                   <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Issue ID:</span>
+                    <span className="text-sm font-medium text-gray-900 font-mono">{selectedIssue.id}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Type:</span>
                     <span className="text-sm font-medium text-gray-900">{getTypeLabel(selectedIssue.type)}</span>
                   </div>
@@ -376,15 +409,47 @@ const ChatbotIssuesPage: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Timestamp:</span>
+                    <span className="text-sm text-gray-600">Created:</span>
                     <span className="text-sm text-gray-900">{new Date(selectedIssue.createdAt).toLocaleString()}</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Last Updated:</span>
+                    <span className="text-sm text-gray-900">{new Date(selectedIssue.updatedAt).toLocaleString()}</span>
+                  </div>
+                  {selectedIssue.conversationId && (
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Conversation ID:</span>
+                      <span className="text-sm font-medium text-gray-900 font-mono">{selectedIssue.conversationId}</span>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {selectedIssue.botName && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-2">Bot Information</h4>
+                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Bot Name:</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedIssue.botName}</span>
+                    </div>
+                    {selectedIssue.botId && (
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Bot ID:</span>
+                        <span className="text-sm font-medium text-gray-900 font-mono">{selectedIssue.botId}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <h4 className="text-sm font-medium text-gray-900 mb-2">User Information</h4>
                 <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">User ID:</span>
+                    <span className="text-sm font-medium text-gray-900 font-mono">{selectedIssue.userId}</span>
+                  </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Name:</span>
                     <span className="text-sm font-medium text-gray-900">{selectedIssue.userName}</span>
