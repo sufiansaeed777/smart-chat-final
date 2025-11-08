@@ -11,7 +11,6 @@ import {
   Activity,
   Calendar,
   Filter,
-  Download,
   Eye,
   ArrowUp,
   ArrowDown,
@@ -186,17 +185,13 @@ const AnalyticsPage: React.FC = () => {
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white"
+            className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900"
           >
             <option value="7d">Last 7 days</option>
             <option value="30d">Last 30 days</option>
             <option value="90d">Last 90 days</option>
             <option value="1y">Last year</option>
           </select>
-          <button className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
-            <Download className="w-5 h-5" />
-            <span>Export</span>
-          </button>
         </div>
       </div>
 
@@ -530,7 +525,7 @@ const AnalyticsPage: React.FC = () => {
             </thead>
             <tbody>
               {analyticsData.recentActivity.length > 0 ? (
-                analyticsData.recentActivity.map((activity) => (
+                analyticsData.recentActivity.slice(0, 15).map((activity) => (
                   <tr key={activity.id} className="border-b border-gray-100">
                     <td className="py-3 px-4 text-sm text-gray-900">{activity.bot}</td>
                     <td className="py-3 px-4 text-sm text-gray-600">{activity.user}</td>
