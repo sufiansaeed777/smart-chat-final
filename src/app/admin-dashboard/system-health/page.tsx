@@ -20,6 +20,7 @@ import {
   Bell,
   Shield
 } from 'lucide-react';
+import { Tooltip } from '@/components/ui/tooltip';
 
 interface SystemMetric {
   name: string;
@@ -471,12 +472,16 @@ const SystemHealthPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-2">
-                      <button className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors">
-                        <Settings className="w-4 h-4" />
-                      </button>
-                      <button className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                        <Bell className="w-4 h-4" />
-                      </button>
+                      <Tooltip content="Service settings" position="top">
+                        <button className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors">
+                          <Settings className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="Notifications" position="top">
+                        <button className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                          <Bell className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
                     </div>
                   </td>
                 </tr>
