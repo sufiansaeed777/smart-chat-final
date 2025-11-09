@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import {
@@ -52,7 +52,7 @@ const ProfilePage = () => {
   // Avatar upload state
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [deactivateConfirmText, setDeactivateConfirmText] = useState('');
   const [deactivating, setDeactivating] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
