@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useReportIssue } from '@/contexts/ReportIssueContext';
 import {
   HelpCircle,
   Search,
@@ -14,16 +15,20 @@ import {
   BarChart3,
   Handshake,
   Palette,
-  Play
+  Play,
+  Plus,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import RoleGuard from '@/components/auth/RoleGuard';
+// import RoleGuard from '@/components/auth/RoleGuard';
 
 const HelpPage = () => {
   const router = useRouter();
+  const { openModal: openReportIssue } = useReportIssue();
   const [activeTab, setActiveTab] = useState('tutorials');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -137,7 +142,7 @@ const HelpPage = () => {
   };
 
   return (
-    <RoleGuard allowedRoles={['manager']}>
+    // <RoleGuard allowedRoles={['manager']}>
       <div className="p-6 space-y-6">
         {/* Header */}
         <div>
@@ -350,9 +355,9 @@ const HelpPage = () => {
                   <Button
                     variant="outline"
                     className="border-gray-300 hover:bg-gray-50 text-gray-700"
-                    asChild
+                    onClick={() => openReportIssue()}
                   >
-                    <a href="mailto:support@chatbotpro.com?subject=Issue Report">Report an Issue</a>
+                    Report an Issue
                   </Button>
                 </div>
               </div>
@@ -515,7 +520,7 @@ const HelpPage = () => {
           </div>
         )}
       </div>
-    </RoleGuard>
+    // </RoleGuard>
   );
 };
 
