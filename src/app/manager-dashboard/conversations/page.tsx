@@ -2,18 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MessageSquare, Clock, User, Search, Filter, MoreHorizontal, Loader2, SortAsc, SortDesc, Calendar, Bot, Users, Eye, Download, Trash2 } from 'lucide-react';
+import { MessageSquare, Clock, User, Search, Filter, Loader2, SortAsc, SortDesc, Calendar, Bot, Users, Eye, Download, Trash2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import RoleGuard from '@/components/auth/RoleGuard';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Tooltip } from '@/components/ui/tooltip';
+// import RoleGuard from '@/components/auth/RoleGuard';
 
 interface ConversationSession {
   id: string;
@@ -66,6 +61,9 @@ const ManagerConversationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [conversationsLoading, setConversationsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<{ id: string; userName: string; botName: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Handle conversation actions
   const handleViewConversation = (conversationId: string) => {
@@ -100,21 +98,39 @@ const ManagerConversationsPage = () => {
     }
   };
 
-  const handleDeleteConversation = async (conversationId: string) => {
-    if (!confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
-      return;
+  const handleDeleteConversation = (conversationId: string) => {
+    const conversation = conversations.find(c => c.id === conversationId);
+    if (conversation) {
+      setConversationToDelete({
+        id: conversationId,
+        userName: conversation.userName,
+        botName: conversation.botName
+      });
+      setShowDeleteModal(true);
     }
+  };
 
+  const confirmDeleteConversation = async () => {
+    if (!conversationToDelete) return;
+
+    setIsDeleting(true);
     try {
-      console.log('Deleting conversation:', conversationId);
-      const response = await fetch(`/api/manager/conversations/${conversationId}`, {
+      console.log('Deleting conversation:', conversationToDelete.id);
+      const response = await fetch(`/api/manager/conversations/${conversationToDelete.id}`, {
         method: 'DELETE',
       });
 
       if (response.ok) {
         // Refresh the conversations list
         await fetchConversations();
-        alert('Conversation deleted successfully');
+        setShowDeleteModal(false);
+        setConversationToDelete(null);
+        // Update stats after deletion
+        setStats(prev => ({
+          ...prev,
+          total: Math.max(0, prev.total - 1),
+          completed: prev.completed > 0 ? prev.completed - 1 : 0
+        }));
       } else {
         console.error('Failed to delete conversation');
         alert('Failed to delete conversation. Please try again.');
@@ -122,6 +138,8 @@ const ManagerConversationsPage = () => {
     } catch (error) {
       console.error('Error deleting conversation:', error);
       alert('Error deleting conversation. Please try again.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -176,6 +194,21 @@ const ManagerConversationsPage = () => {
       fetchConversations(false);
     }
   }, [sortBy, sortOrder, filterStatus, filterBot, filterUser, filterDateRange]);
+
+  // Handle Escape key to close delete modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showDeleteModal) {
+        setShowDeleteModal(false);
+        setConversationToDelete(null);
+      }
+    };
+
+    if (showDeleteModal) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [showDeleteModal]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -237,46 +270,41 @@ const ManagerConversationsPage = () => {
 
   if (loading) {
     return (
-      <RoleGuard allowedRoles={['manager']}>
-        <div className="p-6 space-y-6">
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-[#6566F1] mx-auto mb-4" />
-              <p className="text-gray-600">Loading conversations...</p>
-            </div>
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-[#6566F1] mx-auto mb-4" />
+            <p className="text-gray-600">Loading conversations...</p>
           </div>
         </div>
-      </RoleGuard>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <RoleGuard allowedRoles={['manager']}>
-        <div className="p-6 space-y-6">
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MessageSquare className="w-8 h-8 text-red-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Conversations</h3>
-              <p className="text-gray-600 mb-4">{error}</p>
-              <Button 
-                onClick={() => fetchConversations()}
-                className="bg-[#6566F1] hover:bg-[#5A5BD8] text-white"
-              >
-                Try Again
-              </Button>
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MessageSquare className="w-8 h-8 text-red-600" />
             </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Conversations</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Button 
+              onClick={() => fetchConversations()}
+              className="bg-[#6566F1] hover:bg-[#5A5BD8] text-white"
+            >
+              Try Again
+            </Button>
           </div>
         </div>
-      </RoleGuard>
+      </div>
     );
   }
 
   return (
-    <RoleGuard allowedRoles={['manager']}>
-      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -530,37 +558,40 @@ const ManagerConversationsPage = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="col-span-1 flex justify-center">
-                      <DropdownMenu modal={false}>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-6 w-6 p-0 border-gray-200 text-gray-600 hover:bg-gray-50">
-                            <MoreHorizontal className="w-3 h-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" side="top" sideOffset={5} onEscapeKeyDown={(e) => e.preventDefault()}>
-                          <DropdownMenuItem
-                            onClick={() => handleViewConversation(conversation.id)}
-                            className="cursor-pointer"
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleExportConversation(conversation.id)}
-                            className="cursor-pointer"
-                          >
-                            <Download className="w-4 h-4 mr-2" />
-                            Export Chat
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteConversation(conversation.id)}
-                            className="cursor-pointer text-red-600 focus:text-red-600"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <div className="col-span-1 flex justify-center items-center space-x-1">
+                      <Tooltip content="View details" position="top">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewConversation(conversation.id);
+                          }}
+                          className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="Export chat" position="top">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleExportConversation(conversation.id);
+                          }}
+                          className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="Delete" position="top">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteConversation(conversation.id);
+                          }}
+                          className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
                     </div>
                   </div>
                 </div>
@@ -568,8 +599,56 @@ const ManagerConversationsPage = () => {
             )}
           </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && conversationToDelete && (
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl max-w-md w-full mx-4 shadow-xl">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">Delete Conversation</h3>
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setConversationToDelete(null);
+                    }}
+                    className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <XCircle className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-6">
+                <p className="text-sm text-gray-600 mb-4">
+                  Are you sure you want to delete the conversation with <span className="font-medium text-gray-900">{conversationToDelete.userName}</span> on <span className="font-medium text-gray-900">{conversationToDelete.botName}</span>? This action cannot be undone.
+                </p>
+                
+                <div className="flex items-center justify-end space-x-3">
+                  <Button
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setConversationToDelete(null);
+                    }}
+                    disabled={isDeleting}
+                    variant="outline"
+                    className="px-4 py-2 text-gray-900 border-gray-300 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={confirmDeleteConversation}
+                    disabled={isDeleting}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 disabled:opacity-50"
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </RoleGuard>
   );
 };
 
