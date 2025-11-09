@@ -120,7 +120,6 @@ export default function BotsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showConversationHistory, setShowConversationHistory] = useState(false);
-  const [showInviteModal, setShowInviteModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showKnowledgeModal, setShowKnowledgeModal] = useState(false);
   const [selectedBotForKnowledge, setSelectedBotForKnowledge] = useState<{id: string; name: string} | null>(null);
@@ -164,11 +163,6 @@ export default function BotsPage() {
   });
   const [editBotKnowledge, setEditBotKnowledge] = useState<string[]>([]);
   const [knowledgeBase, setKnowledgeBase] = useState<Array<{id: string; name: string}>>([]);
-  const [inviteData, setInviteData] = useState({
-    email: "",
-    name: ""
-  });
-  const [emailError, setEmailError] = useState("");
   const [bots, setBots] = useState<Array<{
     id: string;
     name: string;
@@ -355,8 +349,6 @@ export default function BotsPage() {
           setShowAssignModal(false);
         } else if (showConversationHistory) {
           setShowConversationHistory(false);
-        } else if (showInviteModal) {
-          setShowInviteModal(false);
         } else if (showConversationDetail) {
           setShowConversationDetail(false);
         } else if (showSettingsModal) {
@@ -369,7 +361,7 @@ export default function BotsPage() {
     return () => {
       document.removeEventListener('keydown', handleEscapeKey);
     };
-  }, [showCreateModal, showEditModal, showAssignModal, showConversationHistory, showInviteModal, showConversationDetail, showSettingsModal]);
+  }, [showCreateModal, showEditModal, showAssignModal, showConversationHistory, showConversationDetail, showSettingsModal]);
 
   const filteredBots = bots.filter(bot => {
     const matchesSearch = bot.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1116,39 +1108,6 @@ export default function BotsPage() {
     return emailRegex.test(email);
   };
 
-  const handleInviteUser = async () => {
-    // Validate email format
-    if (!validateEmail(inviteData.email)) {
-      setEmailError('Please enter a valid email address');
-      return;
-    }
-    
-    setEmailError('');
-    
-    try {
-      const response = await fetch('/api/admin/invite-user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...inviteData,
-          role: 'user' // Always set role to 'user' for manager invitations
-        }),
-      });
-
-      if (response.ok) {
-        console.log('Invitation sent successfully');
-        setInviteData({ email: '', name: '' });
-        setShowInviteModal(false);
-      } else {
-        console.error('Failed to send invitation');
-      }
-    } catch (error) {
-      console.error('Error sending invitation:', error);
-    }
-  };
-
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen overflow-visible">
       {/* Header */}
@@ -1175,16 +1134,7 @@ export default function BotsPage() {
           </div>
         </div>
         <div className="flex space-x-3">
-          <Button 
-            variant="outline" 
-            className="border-[#6566F1] text-[#6566F1] hover:bg-[#6566F1] hover:text-white rounded-2xl"
-            onClick={() => setShowInviteModal(true)}
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Invite User
-          </Button>
-          
-          <Button 
+          <Button
             className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white rounded-2xl"
             onClick={() => setShowCreateModal(true)}
           >
@@ -1193,70 +1143,6 @@ export default function BotsPage() {
             </Button>
         </div>
       </div>
-
-      {/* Invite User Modal */}
-      {showInviteModal && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Invite New User</h2>
-              <button
-                onClick={() => setShowInviteModal(false)}
-                className="text-gray-900 hover:text-gray-700"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-sm text-gray-600 mb-6">Send an invitation to a new user to join your team</p>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="invite-name" className="text-gray-900 font-medium">Full Name</Label>
-                <Input
-                  id="invite-name"
-                  placeholder="Enter full name"
-                  value={inviteData.name}
-                  onChange={(e) => setInviteData({ ...inviteData, name: e.target.value })}
-                  className="mt-1 text-gray-900"
-                />
-              </div>
-              <div>
-                <Label htmlFor="invite-email" className="text-gray-900 font-medium">Email Address</Label>
-                <Input
-                  id="invite-email"
-                  type="email"
-                  placeholder="Enter email address"
-                  value={inviteData.email}
-                  onChange={(e) => {
-                    setInviteData({ ...inviteData, email: e.target.value });
-                    if (emailError) setEmailError(''); // Clear error when user types
-                  }}
-                  className={`mt-1 text-gray-900 ${emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
-                />
-                {emailError && (
-                  <p className="mt-1 text-sm text-red-600">{emailError}</p>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-end space-x-3 mt-6">
-              <Button
-                variant="outline"
-                onClick={() => setShowInviteModal(false)}
-                className="rounded-xl"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleInviteUser}
-                className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white rounded-xl"
-                disabled={!inviteData.name || !inviteData.email}
-              >
-                <Mail className="w-4 h-4 mr-2" />
-                Send Invitation
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Create Bot Modal */}
       {showCreateModal && (
@@ -1552,29 +1438,29 @@ export default function BotsPage() {
                 <Label htmlFor="edit-bot-name" className="text-sm font-medium text-gray-700 mb-2 block">
                   Bot Name
                 </Label>
-                <Input
+                <input
                   id="edit-bot-name"
                   type="text"
                   value={editBot.name}
                   onChange={(e) => setEditBot({ ...editBot, name: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] text-gray-900"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-2 focus:ring-[#6566F1]/20 text-gray-900"
                   placeholder="Enter bot name"
                   required
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="edit-bot-domain" className="text-sm font-medium text-gray-700 mb-2 block">
                   Domain
                 </Label>
                 <p className="text-xs text-gray-500 mb-1">Must be a full https:// URL (e.g., https://yoursite.com)</p>
-                <Input
+                <input
                   id="edit-bot-domain"
                   type="url"
                   pattern="https://.*"
                   value={editBot.domain}
                   onChange={(e) => setEditBot({ ...editBot, domain: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] text-gray-900"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-2 focus:ring-[#6566F1]/20 text-gray-900"
                   placeholder="e.g., https://support.yoursite.com"
                   required
                 />

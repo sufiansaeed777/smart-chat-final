@@ -321,6 +321,14 @@ const SystemHealthPage: React.FC = () => {
 
   const overallHealth = services.filter(s => s.status === 'operational').length / services.length * 100;
 
+  const handleServiceSettings = (serviceName: string) => {
+    alert(`Opening settings for ${serviceName}.\n\nThis feature allows you to:\n- Configure service parameters\n- Set monitoring thresholds\n- Adjust alert rules\n- View detailed logs\n\nComing soon!`);
+  };
+
+  const handleServiceAlerts = (serviceName: string) => {
+    alert(`Managing alerts for ${serviceName}.\n\nThis feature allows you to:\n- Enable/disable notifications\n- Set alert thresholds\n- Configure notification channels\n- View alert history\n\nComing soon!`);
+  };
+
   if (loading) {
     return (
       <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -471,10 +479,18 @@ const SystemHealthPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-2">
-                      <button className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors">
+                      <button
+                        onClick={() => handleServiceSettings(service.name)}
+                        className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors"
+                        title="Service Settings"
+                      >
                         <Settings className="w-4 h-4" />
                       </button>
-                      <button className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                      <button
+                        onClick={() => handleServiceAlerts(service.name)}
+                        className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                        title="Manage Alerts"
+                      >
                         <Bell className="w-4 h-4" />
                       </button>
                     </div>

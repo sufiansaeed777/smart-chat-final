@@ -306,7 +306,7 @@ const ManagerOverview = () => {
           // Define navigation path for each metric
           const getMetricPath = (title: string) => {
             if (title.includes('Total Users')) {
-              return '/manager-dashboard/team-management';
+              return '/manager-dashboard/human-handoff';
             } else if (title.includes('Active Chats')) {
               return '/manager-dashboard/conversations';
             } else if (title.includes('Total Conversations')) {

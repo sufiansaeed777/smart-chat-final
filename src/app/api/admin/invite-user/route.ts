@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
 import { User } from '@/entities/User';
+import { ILike } from 'typeorm';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     const userRepository = AppDataSource.getRepository("users");
     const currentUser = await userRepository.findOne({
-      where: { email: session.user.email }
+      where: { email: ILike(session.user.email) }
     });
 
     if (!currentUser || (currentUser.role !== 'manager' && currentUser.role !== 'admin')) {
@@ -39,8 +40,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'You cannot add your own email as a team member' }, { status: 400 });
     }
 
-    // Check if user already exists
-    const existingUser = await userRepository.findOne({ where: { email } });
+    // Check if user already exists (case-insensitive)
+    const existingUser = await userRepository.findOne({ where: { email: ILike(email) } });
 
     if (existingUser) {
       // If user exists and has a password, do NOT modify their account
@@ -166,7 +167,7 @@ export async function POST(request: NextRequest) {
 
     // Create user with invitation token
     const newUser = userRepository.create({
-      email,
+      email: email.toLowerCase(),
       firstName: name.split(' ')[0] || name,
       lastName: name.split(' ').slice(1).join(' ') || '',
       role: role || 'user',

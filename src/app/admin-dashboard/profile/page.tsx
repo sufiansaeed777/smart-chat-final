@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import {
@@ -48,6 +48,11 @@ const ProfilePage = () => {
 
   // Deactivate account state
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+
+  // Avatar upload state
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [deactivateConfirmText, setDeactivateConfirmText] = useState('');
   const [deactivating, setDeactivating] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
@@ -71,6 +76,11 @@ const ProfilePage = () => {
         };
         setProfileData(profile);
         setOriginalData(profile);
+
+        // Load avatar if it exists
+        if (data.profile.avatar) {
+          setAvatarPreview(data.profile.avatar);
+        }
       } else {
         console.error('Failed to load profile');
       }
@@ -208,6 +218,56 @@ const ProfilePage = () => {
     }
   };
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setErrors({ avatar: 'Please select an image file' });
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors({ avatar: 'Image size must be less than 5MB' });
+        return;
+      }
+
+      setErrors({ ...errors, avatar: '' });
+
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // Upload avatar immediately
+      try {
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        const response = await fetch('/api/admin/profile/avatar', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (response.ok) {
+          setSuccessMessage('Avatar updated successfully!');
+          setTimeout(() => setSuccessMessage(''), 3000);
+        } else {
+          const error = await response.json();
+          setErrors({ avatar: error.error || 'Failed to upload avatar' });
+          setAvatarPreview(null); // Reset preview on error
+        }
+      } catch (error) {
+        console.error('Error uploading avatar:', error);
+        setErrors({ avatar: 'Failed to upload avatar. Please try again.' });
+        setAvatarPreview(null); // Reset preview on error
+      }
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       {/* Header */}
@@ -270,17 +330,43 @@ const ProfilePage = () => {
             <CardContent className="space-y-6">
               {/* Avatar Section */}
               <div className="flex items-start space-x-4 pb-6 border-b border-gray-100">
-                <div className="w-20 h-20 bg-gradient-to-br from-[#6566F1] to-[#5A5BD9] rounded-full flex items-center justify-center">
-                  <User className="w-10 h-10 text-white" />
-                </div>
+                {avatarPreview ? (
+                  <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-[#6566F1]">
+                    <img
+                      src={avatarPreview}
+                      alt="Avatar preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 bg-gradient-to-br from-[#6566F1] to-[#5A5BD9] rounded-full flex items-center justify-center">
+                    <User className="w-10 h-10 text-white" />
+                  </div>
+                )}
                 <div className="space-y-2">
-                  <Button variant="outline" className="border-gray-300 hover:bg-gray-50 text-gray-700">
+                  <Button
+                    variant="outline"
+                    className="border-gray-300 hover:bg-gray-50 text-gray-700"
+                    onClick={() => fileInputRef.current?.click()}
+                    type="button"
+                  >
                     <Camera className="w-4 h-4 mr-2" />
                     Change Avatar
                   </Button>
-                  <p className="text-sm text-gray-500">
-                    Recommended: Square image, at least 200x200px
-                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
+                  {errors.avatar ? (
+                    <p className="text-sm text-red-600">{errors.avatar}</p>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      Recommended: Square image, at least 200x200px
+                    </p>
+                  )}
                 </div>
               </div>
 

@@ -19,6 +19,9 @@ export class User {
   @Column({ type: "varchar", nullable: true })
   lastName!: string | null;
 
+  @Column({ type: "text", nullable: true })
+  avatar!: string | null;
+
   @Column({ type: "boolean", default: false })
   isEmailVerified!: boolean;
 

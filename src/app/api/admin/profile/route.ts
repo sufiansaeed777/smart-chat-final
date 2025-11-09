@@ -36,6 +36,7 @@ export async function GET() {
         email: user.email,
         firstName: user.firstName || '',
         lastName: user.lastName || '',
+        avatar: user.avatar || null,
         role: user.role,
         isEmailVerified: user.isEmailVerified,
         lastLoginAt: user.lastLoginAt,

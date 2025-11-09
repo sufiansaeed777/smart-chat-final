@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { AppDataSource } from '@/config/database';
 import { User } from '@/entities/User';
+import { ILike } from 'typeorm';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,9 +21,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user by email - use string to avoid minification issues
+    // Find user by email - use string to avoid minification issues (case-insensitive)
     const userRepository = AppDataSource.getRepository("users");
-    const user = await userRepository.findOne({ where: { email } });
+    const user = await userRepository.findOne({ where: { email: ILike(email) } });
 
     if (!user) {
       return NextResponse.json(

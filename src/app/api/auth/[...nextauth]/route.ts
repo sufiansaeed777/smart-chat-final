@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { AppDataSource } from "@/config/database"
 import { User } from "@/entities/User"
 import { UserRole } from "@/types/UserRole"
+import { ILike } from "typeorm"
 import bcrypt from "bcryptjs"
 
 export const authOptions: NextAuthOptions = {
@@ -31,7 +32,7 @@ export const authOptions: NextAuthOptions = {
 
           const userRepository = AppDataSource.getRepository("users");
           const user = await userRepository.findOne({
-            where: { email: credentials.email }
+            where: { email: ILike(credentials.email) }
           });
 
           // Debug: Log user status for NextAuth
@@ -88,16 +89,16 @@ export const authOptions: NextAuthOptions = {
           }
 
           const userRepository = AppDataSource.getRepository("users");
-          
-          // Check if user already exists
+
+          // Check if user already exists (case-insensitive)
           const existingUser = await userRepository.findOne({
-            where: { email: user.email! }
+            where: { email: ILike(user.email!) }
           });
 
           if (!existingUser) {
             // Create new user with Google info
             const newUser = new User();
-            newUser.email = user.email!;
+            newUser.email = user.email!.toLowerCase();
             newUser.firstName = user.name?.split(' ')[0] || null;
             newUser.lastName = user.name?.split(' ').slice(1).join(' ') || null;
             newUser.isEmailVerified = true; // Google accounts are pre-verified
@@ -136,7 +137,7 @@ export const authOptions: NextAuthOptions = {
           }
           const userRepository = AppDataSource.getRepository("users");
           const dbUser = await userRepository.findOne({
-            where: { email: token.email as string }
+            where: { email: ILike(token.email as string) }
           });
           
           if (!dbUser || !dbUser.isActive || !dbUser.password) {
@@ -167,7 +168,7 @@ export const authOptions: NextAuthOptions = {
           }
           const userRepository = AppDataSource.getRepository("users");
           const dbUser = await userRepository.findOne({
-            where: { email: user.email! }
+            where: { email: ILike(user.email!) }
           });
           if (dbUser) {
             token.role = dbUser.role;

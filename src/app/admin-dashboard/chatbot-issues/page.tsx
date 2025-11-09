@@ -39,6 +39,7 @@ const ChatbotIssuesPage: React.FC = () => {
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [selectedIssue, setSelectedIssue] = useState<ChatbotIssue | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   // Fetch issues from API
   useEffect(() => {
@@ -118,9 +119,43 @@ const ChatbotIssuesPage: React.FC = () => {
   };
 
   const handleUpdateStatus = (issueId: string, newStatus: string) => {
-    setIssues(prev => prev.map(issue => 
+    setIssues(prev => prev.map(issue =>
       issue.id === issueId ? { ...issue, status: newStatus as 'pending' | 'in_progress' | 'resolved' | 'closed' } : issue
     ));
+  };
+
+  const handleDeleteIssue = async (issueId: string) => {
+    if (!confirm('Are you sure you want to delete this issue?')) return;
+
+    try {
+      const response = await fetch(`/api/chatbot/issues/${issueId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setIssues(prev => prev.filter(issue => issue.id !== issueId));
+        setOpenDropdownId(null);
+      } else {
+        alert('Failed to delete issue');
+      }
+    } catch (error) {
+      console.error('Error deleting issue:', error);
+      alert('Failed to delete issue');
+    }
+  };
+
+  const handleAssignIssue = (issueId: string) => {
+    const assignee = prompt('Enter assignee name:');
+    if (assignee) {
+      setIssues(prev => prev.map(issue =>
+        issue.id === issueId ? { ...issue, assignedTo: assignee } : issue
+      ));
+      setOpenDropdownId(null);
+    }
+  };
+
+  const toggleDropdown = (issueId: string) => {
+    setOpenDropdownId(openDropdownId === issueId ? null : issueId);
   };
 
   if (loading) {
@@ -323,13 +358,63 @@ const ChatbotIssuesPage: React.FC = () => {
                     <button
                       onClick={() => handleViewDetails(issue)}
                       className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                      title="View Details"
                     >
                       <Eye className="w-4 h-4" />
                     </button>
                     <div className="relative">
-                      <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                      <button
+                        onClick={() => toggleDropdown(issue.id)}
+                        className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                        title="More Actions"
+                      >
                         <MoreVertical className="w-4 h-4" />
                       </button>
+                      {openDropdownId === issue.id && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={() => setOpenDropdownId(null)}
+                          />
+                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                            <button
+                              onClick={() => {
+                                handleViewDetails(issue);
+                                setOpenDropdownId(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                            >
+                              <Eye className="w-4 h-4" />
+                              <span>View Details</span>
+                            </button>
+                            <button
+                              onClick={() => handleAssignIssue(issue.id)}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                            >
+                              <User className="w-4 h-4" />
+                              <span>Assign</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleUpdateStatus(issue.id, 'resolved');
+                                setOpenDropdownId(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              <span>Mark as Resolved</span>
+                            </button>
+                            <div className="border-t border-gray-200 my-1"></div>
+                            <button
+                              onClick={() => handleDeleteIssue(issue.id)}
+                              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                            >
+                              <XCircle className="w-4 h-4" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

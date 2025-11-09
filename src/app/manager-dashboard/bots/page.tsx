@@ -311,6 +311,12 @@ const BotsPage = () => {
   };
 
   const handleDocumentUpload = async (files: FileList) => {
+    // FIX: Prevent duplicate uploads by checking if already uploading
+    if (isUploadingDocument) {
+      console.log('Upload already in progress, skipping...');
+      return;
+    }
+
     setIsUploadingDocument(true);
     try {
       const formData = new FormData();
@@ -338,8 +344,9 @@ const BotsPage = () => {
     } catch (error) {
       console.error('Upload error:', error);
       alert('Upload failed: ' + error);
+    } finally {
+      setIsUploadingDocument(false);
     }
-    setIsUploadingDocument(false);
   };
 
   const handleAssignUser = (botId: string, userEmail: string) => {
