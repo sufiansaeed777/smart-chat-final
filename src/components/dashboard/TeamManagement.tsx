@@ -182,9 +182,11 @@ const TeamManagement = () => {
         setTeamMembers(membersWithStats);
       } else {
         console.error('Failed to fetch team members');
+        setTeamMembers([]);
       }
     } catch (error) {
       console.error('Error fetching team members:', error);
+      setTeamMembers([]);
     } finally {
       setLoadingMembers(false);
     }
@@ -266,6 +268,24 @@ const TeamManagement = () => {
       return;
     }
 
+    // Check if email already exists in team members
+    const emailLower = newMember.email.toLowerCase().trim();
+    const existingMember = teamMembers.find(
+      member => member.email.toLowerCase().trim() === emailLower
+    );
+
+    if (existingMember) {
+      setErrors({
+        ...errors,
+        email: 'This email is already part of the team.'
+      });
+      showToast(
+        `${existingMember.name} (${existingMember.email}) is already a team member.`,
+        'error'
+      );
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -289,12 +309,24 @@ const TeamManagement = () => {
         setIsAddModalOpen(false);
         setNewMember({ firstName: '', lastName: '', email: '', phone: '', countryCode: '+1' });
         setErrors({ firstName: '', lastName: '', email: '', phone: '' });
+        showToast('Invitation sent successfully!', 'success');
         // Refresh team members list
         fetchTeamMembers();
       } else {
         const errorData = await response.json();
         console.error('Failed to send invitation:', errorData.error || 'Unknown error');
-        showToast(errorData.error || 'Failed to send invitation', 'error');
+        const errorMessage = errorData.error || 'Failed to send invitation';
+        
+        // Check if the error is about duplicate email
+        if (errorMessage.toLowerCase().includes('already') || errorMessage.toLowerCase().includes('exists') || errorMessage.toLowerCase().includes('duplicate')) {
+          setErrors({
+            ...errors,
+            email: 'This email is already part of the team.'
+          });
+          showToast('This member is already part of the team.', 'error');
+        } else {
+          showToast(errorMessage, 'error');
+        }
       }
     } catch (error) {
       console.error('Error sending invitation:', error);
