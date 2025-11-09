@@ -74,11 +74,13 @@ const AnalyticsPage: React.FC = () => {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30d');
+  const [showAllBots, setShowAllBots] = useState(false);
 
   useEffect(() => {
     const loadAnalytics = async () => {
       try {
-        const response = await fetch('/api/admin/analytics');
+        setLoading(true);
+        const response = await fetch(`/api/admin/analytics?timeRange=${timeRange}`);
         if (response.ok) {
           const data = await response.json();
           setAnalyticsData(data);
@@ -93,7 +95,7 @@ const AnalyticsPage: React.FC = () => {
     };
 
     loadAnalytics();
-  }, []);
+  }, [timeRange]);
 
   const getGrowthIcon = (growth: number) => {
     if (growth > 0) return <ArrowUp className="w-4 h-4 text-green-600" />;
@@ -105,6 +107,46 @@ const AnalyticsPage: React.FC = () => {
     if (growth > 0) return 'text-green-600';
     if (growth < 0) return 'text-red-600';
     return 'text-gray-600';
+  };
+
+  const handleExportAnalytics = () => {
+    if (!analyticsData) return;
+
+    // Create CSV content
+    const csvContent = [
+      ['Analytics Report', `Time Range: ${timeRange}`],
+      [],
+      ['Overview Metrics'],
+      ['Total Users', analyticsData.overview.totalUsers],
+      ['Total Bots', analyticsData.overview.totalBots],
+      ['Total Conversations', analyticsData.overview.totalConversations],
+      ['Active Users (30d)', analyticsData.overview.activeUsers],
+      ['Active Bots', analyticsData.overview.activeBots],
+      ['Inactive Bots', analyticsData.overview.inactiveBots],
+      [],
+      ['Top Performing Bots'],
+      ['Bot Name', 'Conversations'],
+      ...analyticsData.topBots.map(bot => [bot.name, bot.conversationCount]),
+      [],
+      ['User Role Distribution'],
+      ['Role', 'Count', 'Percentage'],
+      ...analyticsData.distribution.userRoleDistribution.map(role => [role.role, role.count, role.percentage + '%'])
+    ].map(row => row.join(',')).join('\n');
+
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `analytics-report-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
+  const handleViewBotPerformanceDetails = () => {
+    alert('Bot performance detailed view feature coming soon.');
   };
 
   if (loading) {
@@ -193,7 +235,10 @@ const AnalyticsPage: React.FC = () => {
             <option value="90d">Last 90 days</option>
             <option value="1y">Last year</option>
           </select>
-          <button className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
+          <button
+            onClick={handleExportAnalytics}
+            className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+          >
             <Download className="w-5 h-5" />
             <span>Export</span>
           </button>
@@ -314,7 +359,11 @@ const AnalyticsPage: React.FC = () => {
             <Bot className="w-6 h-6 mr-2 text-[#6566F1]" />
             Bot Performance
           </h3>
-          <button className="text-gray-500 hover:text-gray-700">
+          <button
+            onClick={handleViewBotPerformanceDetails}
+            className="text-gray-500 hover:text-gray-700"
+            title="View detailed performance"
+          >
             <Eye className="w-5 h-5" />
           </button>
         </div>
@@ -354,22 +403,32 @@ const AnalyticsPage: React.FC = () => {
           </h3>
           <div className="space-y-4">
             {analyticsData.topBots.length > 0 ? (
-              analyticsData.topBots.slice(0, 5).map((bot, index) => (
-                <div key={bot.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                  <div>
-                    <p className="font-semibold text-gray-900">{bot.name}</p>
-                    <p className="text-sm text-gray-600">{bot.conversationCount.toLocaleString()} conversations</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div
-                      className="w-6 h-6 rounded-full text-white text-xs flex items-center justify-center font-bold"
-                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                    >
-                      {index + 1}
+              <>
+                {analyticsData.topBots.slice(0, showAllBots ? analyticsData.topBots.length : 5).map((bot, index) => (
+                  <div key={bot.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                    <div>
+                      <p className="font-semibold text-gray-900">{bot.name}</p>
+                      <p className="text-sm text-gray-600">{bot.conversationCount.toLocaleString()} conversations</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className="w-6 h-6 rounded-full text-white text-xs flex items-center justify-center font-bold"
+                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                      >
+                        {index + 1}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                ))}
+                {analyticsData.topBots.length > 5 && (
+                  <button
+                    onClick={() => setShowAllBots(!showAllBots)}
+                    className="w-full py-2 text-sm font-medium text-[#6566F1] hover:text-[#5A5BD9] transition-colors"
+                  >
+                    {showAllBots ? 'Show Less' : `See More (${analyticsData.topBots.length - 5} more)`}
+                  </button>
+                )}
+              </>
             ) : (
               <p className="text-gray-500 text-center">No bot data available</p>
             )}
