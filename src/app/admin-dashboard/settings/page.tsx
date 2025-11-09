@@ -20,6 +20,8 @@ import {
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('general');
   const [showPassword, setShowPassword] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [settings, setSettings] = useState({
     siteName: 'Smart Chat Admin',
     siteDescription: 'AI-powered chatbot platform',
@@ -45,27 +47,74 @@ const SettingsPage: React.FC = () => {
     { id: 'integrations', label: 'Integrations', icon: Globe }
   ];
 
-  const handleSave = () => {
-    // Handle save logic
-    console.log('Settings saved:', settings);
+  const handleSave = async () => {
+    setSaving(true);
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // In a real implementation, you would save to an API:
+      // const response = await fetch('/api/admin/settings', {
+      //   method: 'PUT',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(settings)
+      // });
+
+      console.log('Settings saved:', settings);
+
+      // Show success message
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
+
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      alert('Failed to save settings. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-        {/* Header */}
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
+          <div className="flex items-center space-x-2">
+            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p className="text-green-800 font-semibold">Settings saved successfully!</p>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
           <p className="text-gray-600 mt-2">Manage system configuration and preferences</p>
         </div>
-        <button 
+        <button
           onClick={handleSave}
-          className="flex items-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors shadow-lg"
+          disabled={saving}
+          className="flex items-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Save className="w-5 h-5" />
-          <span>Save Changes</span>
+          {saving ? (
+            <>
+              <RefreshCw className="w-5 h-5 animate-spin" />
+              <span>Saving...</span>
+            </>
+          ) : (
+            <>
+              <Save className="w-5 h-5" />
+              <span>Save Changes</span>
+            </>
+          )}
         </button>
-        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar */}
