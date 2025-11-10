@@ -80,8 +80,7 @@ const BotsPage: React.FC = () => {
         const response = await fetch('/api/admin/bots');
 
         if (!response.ok) {
-          console.error('Failed to fetch bots:', response.statusText);
-          setBots([]);
+          console.error('Failed to fetch bots');
           setLoading(false);
           return;
         }
@@ -90,7 +89,6 @@ const BotsPage: React.FC = () => {
         setBots(data.bots || []);
       } catch (error) {
         console.error('Error loading bots:', error);
-        setBots([]);
       } finally {
         setLoading(false);
       }
@@ -417,20 +415,20 @@ const BotsPage: React.FC = () => {
                   <span>View</span>
                 </button>
                 <Tooltip content="Edit bot" position="top">
-                  <button
+                <button
                     onClick={() => handleEditBot(bot)}
-                    className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
+                  className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                  <Edit className="w-4 h-4" />
+                </button>
                 </Tooltip>
                 <Tooltip content="Delete bot" position="top">
-                  <button
+                <button
                     onClick={() => handleDeleteBot(bot)}
-                    className="flex items-center justify-center p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  className="flex items-center justify-center p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
                 </Tooltip>
               </div>
             </div>
@@ -627,8 +625,8 @@ const BotsPage: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
-      )}
+          </div>
+        )}
       </div>
   );
 };

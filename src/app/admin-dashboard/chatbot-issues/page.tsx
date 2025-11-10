@@ -53,12 +53,10 @@ const ChatbotIssuesPage: React.FC = () => {
           const data = await response.json();
           setIssues(data.issues || []);
         } else {
-          console.error('Failed to fetch issues');
-          setIssues([]);
+          console.error('Failed to fetch chatbot issues');
         }
       } catch (error) {
         console.error('Error fetching issues:', error);
-        setIssues([]);
       } finally {
         setLoading(false);
       }

@@ -182,11 +182,9 @@ const TeamManagement = () => {
         setTeamMembers(membersWithStats);
       } else {
         console.error('Failed to fetch team members');
-        setTeamMembers([]);
       }
     } catch (error) {
       console.error('Error fetching team members:', error);
-      setTeamMembers([]);
     } finally {
       setLoadingMembers(false);
     }

@@ -65,14 +65,15 @@ const ManagerOverview = () => {
         const response = await fetch('/api/manager/overview');
         
         if (!response.ok) {
-          throw new Error('Failed to fetch overview data');
+          console.error('Failed to fetch overview data');
+          setLoading(false);
+          return;
         }
         
         const data = await response.json();
         setOverviewData(data);
       } catch (err) {
         console.error('Error fetching overview data:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch overview data');
       } finally {
         setLoading(false);
       }

@@ -15,7 +15,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-// import RoleGuard from '@/components/auth/RoleGuard';
+import RoleGuard from '@/components/auth/RoleGuard';
 import { useRouter } from 'next/navigation';
 
 interface Issue {
@@ -53,7 +53,9 @@ const ManagerIssuesPage = () => {
         const response = await fetch('/api/manager/issues');
 
         if (!response.ok) {
-          throw new Error('Failed to fetch issues');
+          console.error('Failed to fetch issues');
+          setError('Failed to fetch issues');
+          return;
         }
 
         const data = await response.json();
@@ -433,8 +435,8 @@ const ManagerIssuesPage = () => {
 
 export default function ManagerIssuesPageWrapper() {
   return (
-    // <RoleGuard allowedRoles={['manager']}>
+    <RoleGuard allowedRoles={['manager']}>
       <ManagerIssuesPage />
-    // </RoleGuard>
+    </RoleGuard>
   );
 }

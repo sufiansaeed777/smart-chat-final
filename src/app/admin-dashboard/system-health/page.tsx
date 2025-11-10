@@ -145,16 +145,10 @@ const SystemHealthPage: React.FC = () => {
             }
           ]);
         } else {
-          console.error('Failed to fetch system health');
-          // Fallback to empty state
-          setMetrics([]);
-          setServices([]);
+          console.error('Failed to fetch system health data');
         }
       } catch (error) {
         console.error('Error loading system health:', error);
-        // Fallback to empty state
-        setMetrics([]);
-        setServices([]);
       } finally {
         setLoading(false);
       }
@@ -297,15 +291,15 @@ const SystemHealthPage: React.FC = () => {
     switch (status) {
       case 'healthy':
       case 'operational':
-        return <CheckCircle className="w-5 h-5" />;
+        return <CheckCircle className="w-5 h-5 text-green-600" />;
       case 'warning':
       case 'degraded':
-        return <AlertTriangle className="w-5 h-5" />;
+        return <AlertTriangle className="w-5 h-5 text-yellow-600" />;
       case 'critical':
       case 'outage':
-        return <XCircle className="w-5 h-5" />;
+        return <XCircle className="w-5 h-5 text-red-600" />;
       default:
-        return <Clock className="w-5 h-5" />;
+        return <Clock className="w-5 h-5 text-gray-600" />;
     }
   };
 
@@ -401,7 +395,12 @@ const SystemHealthPage: React.FC = () => {
                 <p className="text-2xl font-bold text-gray-900">{metric.value}</p>
                 <div className="flex items-center mt-2">
                   {getStatusIcon(metric.status)}
-                  <span className="ml-2 text-sm font-medium capitalize">{metric.status}</span>
+                  <span className={`ml-2 text-sm font-medium capitalize ${
+                    metric.status === 'healthy' ? 'text-green-600' :
+                    metric.status === 'warning' ? 'text-yellow-600' :
+                    metric.status === 'critical' ? 'text-red-600' :
+                    'text-gray-600'
+                  }`}>{metric.status}</span>
                 </div>
               </div>
             </div>

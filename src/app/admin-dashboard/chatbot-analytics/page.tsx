@@ -46,13 +46,17 @@ const ChatbotAnalyticsPage: React.FC = () => {
         const response = await fetch('/api/admin/bots');
 
         if (!response.ok) {
-          console.error('Failed to fetch bot analytics:', response.statusText);
-          setAnalytics([]);
+          console.error('Failed to fetch bot analytics');
           return;
         }
 
         const data = await response.json();
         const bots = data.bots || [];
+
+        if (bots.length === 0) {
+          console.warn('No bots returned');
+          return;
+        }
 
         // Transform bot data to analytics format
         const botAnalytics: BotAnalytics[] = bots.map((bot: any) => {
@@ -96,7 +100,6 @@ const ChatbotAnalyticsPage: React.FC = () => {
         setAnalytics(botAnalytics);
       } catch (error) {
         console.error('Error loading bot analytics:', error);
-        setAnalytics([]);
       } finally {
         setLoading(false);
       }
