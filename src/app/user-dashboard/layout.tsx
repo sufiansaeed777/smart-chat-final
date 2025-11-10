@@ -101,6 +101,7 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
       badge: issueCounts.pending > 0 ? issueCounts.pending : null,
       subtitle: `${issueCounts.resolved}/${issueCounts.total} resolved`
     },
+    { id: 'profile', label: 'Profile', icon: User, path: '/user-dashboard/profile' },
     { id: 'help', label: 'Help', icon: HelpCircle, path: '/user-dashboard/help' },
   ];
 
@@ -124,6 +125,7 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
     if (pathname.includes('/conversations')) return 'conversations';
     if (pathname.includes('/human-handoff')) return 'human-handoff';
     if (pathname.includes('/report-issue')) return 'report-issue';
+    if (pathname.includes('/profile')) return 'profile';
     if (pathname.includes('/help')) return 'help';
     return 'overview';
   };
@@ -315,18 +317,12 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
              pathname.includes('/conversations') ? 'Conversations' :
              pathname.includes('/human-handoff') ? 'Human Handoff' :
              pathname.includes('/report-issue') ? 'Report an Issue' :
+             pathname.includes('/profile') ? 'Profile' :
              pathname.includes('/help') ? 'Help' :
              'User Dashboard'}
           </h1>
           
           <div className="flex items-center space-x-2 lg:space-x-4">
-            <button
-              onClick={() => handleNavigation('/user-dashboard/account')}
-              className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors bg-gray-50 hover:bg-gray-100 px-3 py-2 rounded-lg"
-            >
-              <User className="w-4 h-4" />
-              <span className="hidden lg:inline">Profile</span>
-            </button>
             <button
               onClick={() => handleNavigation('/')}
               className="hidden sm:flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors"

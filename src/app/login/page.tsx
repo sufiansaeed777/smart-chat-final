@@ -81,23 +81,11 @@ const LoginComponent = () => {
           password: '',
         });
         
-        // Get the session to determine user role and redirect appropriately
-        const session = await getSession();
-        if (session?.user?.email) {
-          // Get role from session
-          const userRole = 'role' in session.user ? session.user.role : 'user';
-          
-          let redirectUrl = '/user-dashboard'; // default
-          if (userRole === 'admin') {
-            redirectUrl = '/admin-dashboard';
-          } else if (userRole === 'manager') {
-            redirectUrl = '/manager-dashboard';
-          }
-          
-          setTimeout(() => {
-            router.push(redirectUrl);
-          }, 1500);
-        }
+        // Redirect based on user role
+        const redirectUrl = checkData.redirectUrl || '/user-dashboard';
+        setTimeout(() => {
+          router.push(redirectUrl);
+        }, 1500);
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Something went wrong";
