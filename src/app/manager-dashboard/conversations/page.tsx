@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip } from '@/components/ui/tooltip';
 import RoleGuard from '@/components/auth/RoleGuard';
 import {
   DropdownMenu,
@@ -582,4 +583,10 @@ const ManagerConversationsPage = () => {
   );
 };
 
-export default ManagerConversationsPage;
+export default function ManagerConversationsPageWrapper() {
+  return (
+    <RoleGuard allowedRoles={['manager']}>
+      <ManagerConversationsPage />
+    </RoleGuard>
+  );
+}

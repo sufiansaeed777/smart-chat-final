@@ -80,7 +80,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
         { id: 'human-handoff', label: 'Human Handoff', icon: HandHeart, path: `${basePath}/human-handoff` },
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: `${basePath}/analytics` },
         { id: 'issues', label: 'Issues', icon: AlertTriangle, path: `${basePath}/issues` },
-        { id: 'account', label: 'Account', icon: Settings, path: `${basePath}/account` },
+        { id: 'profile', label: 'Profile', icon: Settings, path: `${basePath}/profile` },
         { id: 'billing', label: 'Billing', icon: CreditCard, path: `${basePath}/billing` },
         { id: 'help', label: 'Help', icon: HelpCircle, path: `${basePath}/help` },
       ];
@@ -123,8 +123,8 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
     if (pathname.includes('/billing')) return 'billing';
     if (pathname.includes('/bots')) return 'bots';
     if (pathname.includes('/chatbot-analytics')) return 'chatbot-analytics';
-    if (pathname.includes('/account')) return 'account';
-    if (pathname.includes('/settings')) return 'account';
+    if (pathname.includes('/profile')) return 'profile';
+    if (pathname.includes('/settings')) return 'profile';
     if (pathname.includes('/help')) return 'help';
     return 'overview';
   };
@@ -145,8 +145,8 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
     if (pathname.includes('/issues')) return 'Issues';
     if (pathname.includes('/billing')) return 'Billing';
     if (pathname.includes('/bots')) return 'Bots';
-    if (pathname.includes('/account')) return 'Account';
-    if (pathname.includes('/settings')) return 'Account';
+    if (pathname.includes('/profile')) return 'Profile';
+    if (pathname.includes('/settings')) return 'Profile';
     if (pathname.includes('/help')) return 'Help';
     return 'Manager Dashboard';
   };

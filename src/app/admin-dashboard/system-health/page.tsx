@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Activity, 
-  Server, 
-  Database, 
+import {
+  Activity,
+  Server,
+  Database,
   Globe,
   Cpu,
   HardDrive,
@@ -20,6 +20,7 @@ import {
   Bell,
   Shield
 } from 'lucide-react';
+import { Tooltip } from '@/components/ui/tooltip';
 
 interface SystemMetric {
   name: string;
@@ -144,16 +145,10 @@ const SystemHealthPage: React.FC = () => {
             }
           ]);
         } else {
-          console.error('Failed to fetch system health');
-          // Fallback to empty state
-          setMetrics([]);
-          setServices([]);
+          console.error('Failed to fetch system health data');
         }
       } catch (error) {
         console.error('Error loading system health:', error);
-        // Fallback to empty state
-        setMetrics([]);
-        setServices([]);
       } finally {
         setLoading(false);
       }
@@ -296,15 +291,15 @@ const SystemHealthPage: React.FC = () => {
     switch (status) {
       case 'healthy':
       case 'operational':
-        return <CheckCircle className="w-5 h-5" />;
+        return <CheckCircle className="w-5 h-5 text-green-600" />;
       case 'warning':
       case 'degraded':
-        return <AlertTriangle className="w-5 h-5" />;
+        return <AlertTriangle className="w-5 h-5 text-yellow-600" />;
       case 'critical':
       case 'outage':
-        return <XCircle className="w-5 h-5" />;
+        return <XCircle className="w-5 h-5 text-red-600" />;
       default:
-        return <Clock className="w-5 h-5" />;
+        return <Clock className="w-5 h-5 text-gray-600" />;
     }
   };
 
@@ -408,7 +403,12 @@ const SystemHealthPage: React.FC = () => {
                 <p className="text-2xl font-bold text-gray-900">{metric.value}</p>
                 <div className="flex items-center mt-2">
                   {getStatusIcon(metric.status)}
-                  <span className="ml-2 text-sm font-medium capitalize">{metric.status}</span>
+                  <span className={`ml-2 text-sm font-medium capitalize ${
+                    metric.status === 'healthy' ? 'text-green-600' :
+                    metric.status === 'warning' ? 'text-yellow-600' :
+                    metric.status === 'critical' ? 'text-red-600' :
+                    'text-gray-600'
+                  }`}>{metric.status}</span>
                 </div>
               </div>
             </div>
@@ -479,20 +479,22 @@ const SystemHealthPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleServiceSettings(service.name)}
-                        className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors"
-                        title="Service Settings"
-                      >
-                        <Settings className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleServiceAlerts(service.name)}
-                        className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                        title="Manage Alerts"
-                      >
-                        <Bell className="w-4 h-4" />
-                      </button>
+                      <Tooltip content="Service settings" position="top">
+                        <button
+                          onClick={() => handleServiceSettings(service.name)}
+                          className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors"
+                        >
+                          <Settings className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="Notifications" position="top">
+                        <button
+                          onClick={() => handleServiceAlerts(service.name)}
+                          className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          <Bell className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
                     </div>
                   </td>
                 </tr>

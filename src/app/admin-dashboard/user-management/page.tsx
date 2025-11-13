@@ -22,6 +22,7 @@ import {
   Clock,
   TrendingUp
 } from 'lucide-react';
+import { Tooltip } from '@/components/ui/tooltip';
 
 interface User {
   id: string;
@@ -46,6 +47,14 @@ const UserManagementPage: React.FC = () => {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedUserForView, setSelectedUserForView] = useState<User | null>(null);
+  const [selectedUserForEdit, setSelectedUserForEdit] = useState<User | null>(null);
+  const [userToDelete, setUserToDelete] = useState<{ id: string; email: string; name: string } | null>(null);
+  const [editingUser, setEditingUser] = useState<Partial<User>>({});
+  const [updating, setUpdating] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newUser, setNewUser] = useState({
     email: '',
@@ -54,6 +63,34 @@ const UserManagementPage: React.FC = () => {
     role: 'user' as 'admin' | 'manager' | 'user',
     password: ''
   });
+
+  // Handle Escape key to close modals
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showViewModal) {
+          setShowViewModal(false);
+          setSelectedUserForView(null);
+        }
+        if (showEditModal) {
+          setShowEditModal(false);
+          setSelectedUserForEdit(null);
+          setEditingUser({});
+        }
+        if (showDeleteModal) {
+          setShowDeleteModal(false);
+          setUserToDelete(null);
+        }
+      }
+    };
+
+    if (showViewModal || showEditModal || showDeleteModal) {
+      window.addEventListener('keydown', handleEscape);
+      return () => {
+        window.removeEventListener('keydown', handleEscape);
+      };
+    }
+  }, [showViewModal, showEditModal, showDeleteModal]);
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -77,43 +114,99 @@ const UserManagementPage: React.FC = () => {
     loadUsers();
   }, []);
 
-  const handleDeleteUser = async (userId: string, userEmail: string) => {
-    if (!confirm(`Are you sure you want to delete user: ${userEmail}?`)) return;
+  const handleDeleteUser = (user: User) => {
+    setUserToDelete({
+      id: user.id,
+      email: user.email,
+      name: `${user.firstName} ${user.lastName}`
+    });
+    setShowDeleteModal(true);
+  };
 
-    setDeleting(userId);
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    setDeleting(userToDelete.id);
     try {
       const response = await fetch('/api/admin/users', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId })
+        body: JSON.stringify({ userId: userToDelete.id })
       });
 
       if (response.ok) {
-        setUsers(prev => prev.filter(u => u.id !== userId));
-        alert('User deleted successfully!');
+        setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
+        setShowDeleteModal(false);
+        setUserToDelete(null);
       } else {
         const error = await response.json();
-        alert(`Failed to delete user: ${error.error || 'Unknown error'}`);
+        throw new Error(error.error || 'Failed to delete user');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting user:', error);
-      alert('Failed to delete user. Please try again.');
+      alert(error.message || 'Failed to delete user. Please try again.');
     } finally {
       setDeleting(null);
     }
   };
 
+  const handleViewUser = (user: User) => {
+    setSelectedUserForView(user);
+    setShowViewModal(true);
+  };
+
   const handleEditUser = (user: User) => {
-    const newRole = prompt(`Change role for ${user.email}. Current: ${user.role}\nEnter new role (admin, manager, user):`, user.role);
+    setSelectedUserForEdit(user);
+    setEditingUser({
+      email: user.email,
+      status: user.status,
+      password: ''
+    });
+    setShowEditModal(true);
+  };
 
-    if (!newRole || newRole === user.role) return;
+  const handleUpdateUser = async () => {
+    if (!selectedUserForEdit) return;
 
-    if (!['admin', 'manager', 'user'].includes(newRole)) {
-      alert('Invalid role! Must be: admin, manager, or user');
+    // Validate email if changed
+    if (editingUser.email && editingUser.email !== selectedUserForEdit.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(editingUser.email)) {
+        alert('Please enter a valid email address');
+      return;
+      }
+    }
+
+    // Prepare updates - only include fields that have changed
+    const updates: Partial<User> = {};
+    if (editingUser.email && editingUser.email !== selectedUserForEdit.email) {
+      updates.email = editingUser.email;
+    }
+    if (editingUser.status && editingUser.status !== selectedUserForEdit.status) {
+      updates.status = editingUser.status;
+    }
+    // Only include password if it's been entered
+    if (editingUser.password && editingUser.password.trim() !== '') {
+      updates.password = editingUser.password;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      alert('No changes to save');
       return;
     }
 
-    updateUser(user.id, { role: newRole as 'admin' | 'manager' | 'user' });
+    setUpdating(true);
+    try {
+      await updateUser(selectedUserForEdit.id, updates);
+      setShowEditModal(false);
+      setSelectedUserForEdit(null);
+      setEditingUser({});
+    } catch (error: any) {
+      console.error('Error updating user:', error);
+      alert(error.message || 'Failed to update user. Please try again.');
+    } finally {
+      setUpdating(false);
+    }
   };
 
   const updateUser = async (userId: string, updates: Partial<User>) => {
@@ -127,14 +220,19 @@ const UserManagementPage: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
-        alert('User updated successfully!');
+        // Refresh the user list to get updated data
+        const usersResponse = await fetch('/api/admin/users');
+        if (usersResponse.ok) {
+          const usersData = await usersResponse.json();
+          setUsers(usersData.users);
+        }
       } else {
         const error = await response.json();
-        alert(`Failed to update user: ${error.error || 'Unknown error'}`);
+        throw new Error(error.error || 'Failed to update user');
       }
     } catch (error) {
       console.error('Error updating user:', error);
-      alert('Failed to update user. Please try again.');
+      throw error;
     }
   };
 
@@ -219,10 +317,10 @@ const UserManagementPage: React.FC = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'active': return <CheckCircle className="w-4 h-4" />;
-      case 'inactive': return <XCircle className="w-4 h-4" />;
-      case 'pending': return <Clock className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
+      case 'active': return <CheckCircle className="w-3 h-3 flex-shrink-0" />;
+      case 'inactive': return <XCircle className="w-3 h-3 flex-shrink-0" />;
+      case 'pending': return <Clock className="w-3 h-3 flex-shrink-0" />;
+      default: return <Clock className="w-3 h-3 flex-shrink-0" />;
     }
   };
 
@@ -387,30 +485,30 @@ const UserManagementPage: React.FC = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left">
+                <th className="px-3 py-2 text-left">
                   <input
                     type="checkbox"
                     checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
                     onChange={handleSelectAll}
-                    className="w-4 h-4 text-[#6566F1] bg-gray-100 border-gray-300 rounded focus:ring-[#6566F1] focus:ring-2"
+                    className="w-3 h-3 text-[#6566F1] bg-gray-100 border-gray-300 rounded focus:ring-[#6566F1] focus:ring-2"
                   />
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                   Manager
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                   Role
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                   Email Verified
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                   Last Login
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -418,92 +516,95 @@ const UserManagementPage: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-100">
               {filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
+                  <td className="px-3 py-2">
                     <input
                       type="checkbox"
                       checked={selectedUsers.includes(user.id)}
                       onChange={() => handleSelectUser(user.id)}
-                      className="w-4 h-4 text-[#6566F1] bg-gray-100 border-gray-300 rounded focus:ring-[#6566F1] focus:ring-2"
+                      className="w-3 h-3 text-[#6566F1] bg-gray-100 border-gray-300 rounded focus:ring-[#6566F1] focus:ring-2"
                     />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="w-12 h-12 bg-gradient-to-br from-[#6566F1] to-[#7F82F3] rounded-xl flex items-center justify-center shadow-lg">
-                        <span className="text-white font-semibold text-sm">
+                      <div className="w-8 h-8 bg-gradient-to-br from-[#6566F1] to-[#7F82F3] rounded-lg flex items-center justify-center shadow-sm">
+                        <span className="text-white font-semibold text-[10px]">
                           {user.firstName[0]}{user.lastName[0]}
                         </span>
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-semibold text-gray-900">
+                      <div className="ml-2">
+                        <div className="text-xs font-semibold text-gray-900">
                           {user.firstName} {user.lastName}
                         </div>
-                        <div className="text-sm text-gray-500 flex items-center">
-                          <Mail className="w-3 h-3 mr-1" />
+                        <div className="text-[10px] text-gray-500 flex items-center">
+                          <Mail className="w-2.5 h-2.5 mr-0.5" />
                           {user.email}
                         </div>
                         {user.phone && (
-                          <div className="text-xs text-gray-400 flex items-center">
-                            <Phone className="w-3 h-3 mr-1" />
+                          <div className="text-[10px] text-gray-400 flex items-center">
+                            <Phone className="w-2.5 h-2.5 mr-0.5" />
                             {user.phone}
                           </div>
                         )}
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${getRoleBadgeColor(user.role)}`}>
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full border ${getRoleBadgeColor(user.role)}`}>
                       {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-full border flex items-center w-fit ${getStatusBadgeColor(user.status)}`}>
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full border flex items-center w-fit ${getStatusBadgeColor(user.status)}`}>
                       {getStatusIcon(user.status)}
-                      <span className="ml-1">{user.status.charAt(0).toUpperCase() + user.status.slice(1)}</span>
+                      <span className="ml-0.5">{user.status.charAt(0).toUpperCase() + user.status.slice(1)}</span>
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap">
                     <div className="flex items-center">
                       {user.isEmailVerified ? (
-                        <span className="text-green-600 text-sm font-medium flex items-center">
-                          <CheckCircle className="w-4 h-4 mr-1" />
+                        <span className="text-green-600 text-[10px] font-medium flex items-center">
+                          <CheckCircle className="w-3 h-3 mr-0.5" />
                           Verified
                         </span>
                       ) : (
-                        <span className="text-yellow-600 text-sm font-medium flex items-center">
-                          <Clock className="w-4 h-4 mr-1" />
+                        <span className="text-yellow-600 text-[10px] font-medium flex items-center">
+                          <Clock className="w-3 h-3 mr-0.5" />
                           Pending
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 flex items-center">
-                    <Calendar className="w-3 h-3 mr-1" />
+                  <td className="px-3 py-2 whitespace-nowrap text-[10px] text-gray-500 flex items-center">
+                    <Calendar className="w-2.5 h-2.5 mr-0.5" />
                     {user.lastLoginAt}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
+                  <td className="px-3 py-2 whitespace-nowrap text-[10px] font-medium">
+                    <div className="flex items-center space-x-1">
+                      <Tooltip content="View user" position="top">
                       <button
-                        onClick={() => alert(`View user details:\n\nName: ${user.firstName} ${user.lastName}\nEmail: ${user.email}\nRole: ${user.role}\nStatus: ${user.status}`)}
-                        className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors"
-                        title="View user details"
+                        onClick={() => handleViewUser(user)}
+                          className="text-[#6566F1] hover:text-[#5A5BD9] p-1 rounded-lg hover:bg-[#6566F1]/10 transition-colors"
                       >
-                        <Eye className="w-4 h-4" />
+                          <Eye className="w-3 h-3" />
                       </button>
+                      </Tooltip>
+                      <Tooltip content="Edit user" position="top">
                       <button
                         onClick={() => handleEditUser(user)}
-                        className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                        title="Edit user"
+                          className="text-gray-600 hover:text-gray-900 p-1 rounded-lg hover:bg-gray-100 transition-colors"
                       >
-                        <Edit className="w-4 h-4" />
+                          <Edit className="w-3 h-3" />
                       </button>
+                      </Tooltip>
+                      <Tooltip content="Delete user" position="top">
                       <button
-                        onClick={() => handleDeleteUser(user.id, user.email)}
+                        onClick={() => handleDeleteUser(user)}
                         disabled={deleting === user.id}
-                        className="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Delete user"
+                          className="text-red-600 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3" />
                       </button>
+                      </Tooltip>
                     </div>
                   </td>
                 </tr>
@@ -626,6 +727,349 @@ const UserManagementPage: React.FC = () => {
                   {creating ? 'Creating...' : 'Create User'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View User Modal */}
+      {showViewModal && selectedUserForView && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-bold text-gray-900">User Details</h2>
+              <button
+                onClick={() => {
+                  setShowViewModal(false);
+                  setSelectedUserForView(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-5">
+              {/* Avatar and Basic Info */}
+              <div className="flex items-center space-x-3 pb-4 border-b border-gray-200">
+                <div className="w-14 h-14 bg-gradient-to-br from-[#6566F1] to-[#7F82F3] rounded-xl flex items-center justify-center shadow-lg">
+                  <span className="text-white font-semibold text-lg">
+                    {selectedUserForView.firstName[0]}{selectedUserForView.lastName[0]}
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {selectedUserForView.firstName} {selectedUserForView.lastName}
+                  </h3>
+                  <p className="text-xs text-gray-600 mt-0.5">{selectedUserForView.email}</p>
+                  <div className="flex items-center space-x-2 mt-1.5">
+                    <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border flex items-center ${getStatusBadgeColor(selectedUserForView.status)}`}>
+                      {getStatusIcon(selectedUserForView.status)}
+                      <span className="ml-1">{selectedUserForView.status.charAt(0).toUpperCase() + selectedUserForView.status.slice(1)}</span>
+                    </span>
+                    <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${getRoleBadgeColor(selectedUserForView.role)}`}>
+                      {selectedUserForView.role.charAt(0).toUpperCase() + selectedUserForView.role.slice(1)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* User Information Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">First Name</label>
+                  <p className="text-sm text-gray-900">{selectedUserForView.firstName}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Last Name</label>
+                  <p className="text-sm text-gray-900">{selectedUserForView.lastName}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Email Address</label>
+                  <div className="flex items-center space-x-1.5">
+                    <Mail className="w-3.5 h-3.5 text-gray-500" />
+                    <p className="text-sm text-gray-900">{selectedUserForView.email}</p>
+                  </div>
+                </div>
+                {selectedUserForView.phone && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Phone Number</label>
+                    <div className="flex items-center space-x-1.5">
+                      <Phone className="w-3.5 h-3.5 text-gray-500" />
+                      <p className="text-sm text-gray-900">{selectedUserForView.phone}</p>
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Role</label>
+                  <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border inline-block ${getRoleBadgeColor(selectedUserForView.role)}`}>
+                    {selectedUserForView.role.charAt(0).toUpperCase() + selectedUserForView.role.slice(1)}
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Status</label>
+                  <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border flex items-center w-fit ${getStatusBadgeColor(selectedUserForView.status)}`}>
+                    {getStatusIcon(selectedUserForView.status)}
+                    <span className="ml-1">{selectedUserForView.status.charAt(0).toUpperCase() + selectedUserForView.status.slice(1)}</span>
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Email Verified</label>
+                  <div className="flex items-center space-x-1.5">
+                    {selectedUserForView.isEmailVerified ? (
+                      <>
+                        <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+                        <span className="text-green-600 text-xs font-medium">Verified</span>
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="w-3.5 h-3.5 text-yellow-600" />
+                        <span className="text-yellow-600 text-xs font-medium">Pending</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Account Created</label>
+                  <div className="flex items-center space-x-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-gray-500" />
+                    <p className="text-sm text-gray-900">
+                      {new Date(selectedUserForView.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Last Login</label>
+                  <div className="flex items-center space-x-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-gray-500" />
+                    <p className="text-sm text-gray-900">
+                      {selectedUserForView.lastLoginAt === 'Never' 
+                        ? 'Never' 
+                        : new Date(selectedUserForView.lastLoginAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-4 mt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowViewModal(false);
+                  setSelectedUserForView(null);
+                }}
+                className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  const userToEdit = selectedUserForView;
+                  setShowViewModal(false);
+                  setSelectedUserForView(null);
+                  handleEditUser(userToEdit);
+                }}
+                className="px-4 py-2 text-sm bg-[#6566F1] text-white rounded-lg hover:bg-[#5A5BD9] transition-colors"
+              >
+                Edit User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && selectedUserForEdit && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-bold text-gray-900">Edit User</h2>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setSelectedUserForEdit(null);
+                  setEditingUser({});
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-5">
+              {/* User Info Display */}
+              <div className="flex items-center space-x-3 pb-4 border-b border-gray-200">
+                <div className="w-14 h-14 bg-gradient-to-br from-[#6566F1] to-[#7F82F3] rounded-xl flex items-center justify-center shadow-lg">
+                  <span className="text-white font-semibold text-lg">
+                    {selectedUserForEdit.firstName[0]}{selectedUserForEdit.lastName[0]}
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {selectedUserForEdit.firstName} {selectedUserForEdit.lastName}
+                  </h3>
+                  <p className="text-xs text-gray-600 mt-0.5">{selectedUserForEdit.email}</p>
+                </div>
+              </div>
+
+              {/* Editable Fields */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={editingUser.email || selectedUserForEdit.email}
+                    onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                    className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6566F1] focus:border-transparent placeholder:text-gray-400"
+                    placeholder="Enter email address"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Password (Leave blank to keep current)
+                  </label>
+                  <input
+                    type="password"
+                    value={editingUser.password || ''}
+                    onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value })}
+                    className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6566F1] focus:border-transparent placeholder:text-gray-400"
+                    placeholder="Enter new password"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Status <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={editingUser.status || selectedUserForEdit.status}
+                    onChange={(e) => setEditingUser({ ...editingUser, status: e.target.value as 'active' | 'inactive' | 'pending' })}
+                    className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white"
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                </div>
+
+                {/* Read-only fields for reference */}
+                <div className="pt-2 border-t border-gray-200">
+                  <p className="text-xs text-gray-500 mb-2">User Information (Read-only)</p>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <label className="block text-gray-500 mb-0.5">Name</label>
+                      <p className="text-gray-900">{selectedUserForEdit.firstName} {selectedUserForEdit.lastName}</p>
+                    </div>
+                    <div>
+                      <label className="block text-gray-500 mb-0.5">User ID</label>
+                      <p className="text-gray-900 text-[10px]">{selectedUserForEdit.id}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-4 mt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setSelectedUserForEdit(null);
+                  setEditingUser({});
+                }}
+                className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={updating}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateUser}
+                disabled={updating}
+                className="px-4 py-2 text-sm bg-[#6566F1] text-white rounded-lg hover:bg-[#5A5BD9] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {updating ? 'Updating...' : 'Update User'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete User Modal */}
+      {showDeleteModal && userToDelete && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-bold text-gray-900">Delete User</h2>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setUserToDelete(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3 pb-4 border-b border-gray-200">
+                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-900">Are you sure you want to delete this user?</p>
+                  <p className="text-xs text-gray-600 mt-0.5">This action cannot be undone.</p>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="font-semibold text-gray-700">Name:</span>
+                    <span className="ml-2 text-gray-900">{userToDelete.name}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-gray-700">Email:</span>
+                    <span className="ml-2 text-gray-900">{userToDelete.email}</span>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-3">
+                  This will permanently remove the user and all their data from the system.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-4 mt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setUserToDelete(null);
+                }}
+                className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={deleting === userToDelete.id}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteUser}
+                disabled={deleting === userToDelete.id}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {deleting === userToDelete.id ? 'Deleting...' : 'Delete User'}
+              </button>
             </div>
           </div>
         </div>

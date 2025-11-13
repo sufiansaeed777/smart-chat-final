@@ -5,8 +5,6 @@ import {
   Bot, 
   Search,
   Filter,
-  Plus,
-  MoreVertical,
   Eye,
   Edit,
   Trash2,
@@ -20,10 +18,9 @@ import {
   TrendingUp,
   CheckCircle,
   XCircle,
-  Clock,
-  Download,
-  Upload
+  Clock
 } from 'lucide-react';
+import { Tooltip } from '@/components/ui/tooltip';
 
 interface BotData {
   id: string;
@@ -46,6 +43,36 @@ const BotsPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [selectedBots, setSelectedBots] = useState<string[]>([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedBotForEdit, setSelectedBotForEdit] = useState<BotData | null>(null);
+  const [botToDelete, setBotToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [newStatus, setNewStatus] = useState<string>('');
+  const [updating, setUpdating] = useState(false);
+
+  // Handle Escape key to close modals
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showEditModal) {
+          setShowEditModal(false);
+          setSelectedBotForEdit(null);
+          setNewStatus('');
+        }
+        if (showDeleteModal) {
+          setShowDeleteModal(false);
+          setBotToDelete(null);
+        }
+      }
+    };
+
+    if (showEditModal || showDeleteModal) {
+      window.addEventListener('keydown', handleEscape);
+      return () => {
+        window.removeEventListener('keydown', handleEscape);
+      };
+    }
+  }, [showEditModal, showDeleteModal]);
 
   useEffect(() => {
     const loadBots = async () => {
@@ -53,8 +80,8 @@ const BotsPage: React.FC = () => {
         const response = await fetch('/api/admin/bots');
 
         if (!response.ok) {
-          console.error('Failed to fetch bots:', response.statusText);
-          setBots([]);
+          console.error('Failed to fetch bots');
+          setLoading(false);
           return;
         }
 
@@ -62,7 +89,6 @@ const BotsPage: React.FC = () => {
         setBots(data.bots || []);
       } catch (error) {
         console.error('Error loading bots:', error);
-        setBots([]);
       } finally {
         setLoading(false);
       }
@@ -114,47 +140,74 @@ const BotsPage: React.FC = () => {
     }
   };
 
-  const handleDeleteBot = async (botId: string, botName: string) => {
-    if (!confirm(`Are you sure you want to delete bot: ${botName}?\n\nThis action cannot be undone.`)) return;
+  const handleDeleteBot = (bot: BotData) => {
+    setBotToDelete({
+      id: bot.id,
+      name: bot.name
+    });
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteBot = async () => {
+    if (!botToDelete) return;
 
     try {
       const response = await fetch('/api/admin/bots', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ botId })
+        body: JSON.stringify({ botId: botToDelete.id })
       });
 
       if (response.ok) {
-        setBots(prev => prev.filter(b => b.id !== botId));
-        alert('Bot deleted successfully!');
+        setBots(prev => prev.filter(b => b.id !== botToDelete.id));
+        setShowDeleteModal(false);
+        setBotToDelete(null);
       } else {
         const error = await response.json();
-        alert(`Failed to delete bot: ${error.error || 'Unknown error'}`);
+        throw new Error(error.error || 'Failed to delete bot');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting bot:', error);
-      alert('Failed to delete bot. Please try again.');
+      alert(error.message || 'Failed to delete bot. Please try again.');
     }
   };
 
-  const handleUpdateBotStatus = async (botId: string, newStatus: string) => {
+  const handleEditBot = (bot: BotData) => {
+    setSelectedBotForEdit(bot);
+    setNewStatus(bot.status);
+    setShowEditModal(true);
+  };
+
+  const confirmUpdateBotStatus = async () => {
+    if (!selectedBotForEdit || !newStatus) return;
+
+    if (!['active', 'inactive', 'maintenance'].includes(newStatus)) {
+      alert('Invalid status! Must be: active, inactive, or maintenance');
+      return;
+    }
+
+    setUpdating(true);
     try {
       const response = await fetch('/api/admin/bots', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ botId, updates: { status: newStatus } })
+        body: JSON.stringify({ botId: selectedBotForEdit.id, updates: { status: newStatus } })
       });
 
       if (response.ok) {
-        setBots(prev => prev.map(b => b.id === botId ? { ...b, status: newStatus as 'active' | 'inactive' | 'maintenance' } : b));
-        alert('Bot status updated successfully!');
+        setBots(prev => prev.map(b => b.id === selectedBotForEdit.id ? { ...b, status: newStatus as 'active' | 'inactive' | 'maintenance' } : b));
+        setShowEditModal(false);
+        setSelectedBotForEdit(null);
+        setNewStatus('');
       } else {
         const error = await response.json();
-        alert(`Failed to update bot: ${error.error || 'Unknown error'}`);
+        throw new Error(error.error || 'Failed to update bot');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating bot:', error);
-      alert('Failed to update bot. Please try again.');
+      alert(error.message || 'Failed to update bot. Please try again.');
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -183,16 +236,6 @@ const BotsPage: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">All Bots</h1>
           <p className="text-gray-600 mt-2">Manage and monitor all AI chatbots in the system</p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <button className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
-            <Download className="w-5 h-5" />
-            <span>Export</span>
-          </button>
-          <button className="flex items-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors shadow-lg">
-            <Plus className="w-5 h-5" />
-            <span>Create Bot</span>
-          </button>
         </div>
       </div>
 
@@ -271,7 +314,7 @@ const BotsPage: React.FC = () => {
                 placeholder="Search bots by name or description..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-gray-50"
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-gray-50 text-gray-900 placeholder:text-gray-500"
             />
             </div>
           </div>
@@ -279,7 +322,7 @@ const BotsPage: React.FC = () => {
           <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-gray-50"
+              className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-gray-50 text-gray-900"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -289,7 +332,7 @@ const BotsPage: React.FC = () => {
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-gray-50"
+              className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-gray-50 text-gray-900"
             >
               <option value="all">All Categories</option>
               <option value="Support">Support</option>
@@ -303,10 +346,10 @@ const BotsPage: React.FC = () => {
       </div>
 
         {/* Bots Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
             {filteredBots.map((bot) => (
-          <div key={bot.id} className="bg-white rounded-2xl shadow-sm border-0 overflow-hidden hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer">
-            <div className="p-6">
+          <div key={bot.id} className="bg-white rounded-2xl shadow-sm border-0 overflow-hidden hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer flex flex-col h-full max-w-md w-full mx-auto">
+            <div className="p-6 flex flex-col flex-1">
               {/* Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
@@ -325,14 +368,11 @@ const BotsPage: React.FC = () => {
                     onChange={() => handleSelectBot(bot.id)}
                     className="w-4 h-4 text-[#6566F1] bg-gray-100 border-gray-300 rounded focus:ring-[#6566F1] focus:ring-2"
                   />
-                  <button className="text-gray-500 hover:text-gray-700">
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
 
               {/* Description */}
-              <p className="text-sm text-gray-600 mb-4">{bot.description}</p>
+              <p className="text-sm text-gray-600 mb-4 line-clamp-4">{bot.description}</p>
 
               {/* Status */}
               <div className="flex items-center mb-4">
@@ -374,27 +414,22 @@ const BotsPage: React.FC = () => {
                   <Eye className="w-4 h-4" />
                   <span>View</span>
                 </button>
+                <Tooltip content="Edit bot" position="top">
                 <button
-                  onClick={() => {
-                    const newStatus = prompt(`Change status for ${bot.name}\nCurrent: ${bot.status}\n\nEnter new status (active, inactive, or maintenance):`, bot.status);
-                    if (newStatus && ['active', 'inactive', 'maintenance'].includes(newStatus)) {
-                      handleUpdateBotStatus(bot.id, newStatus);
-                    } else if (newStatus) {
-                      alert('Invalid status! Must be: active, inactive, or maintenance');
-                    }
-                  }}
+                    onClick={() => handleEditBot(bot)}
                   className="flex items-center justify-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors"
-                  title="Edit bot status"
                 >
                   <Edit className="w-4 h-4" />
                 </button>
+                </Tooltip>
+                <Tooltip content="Delete bot" position="top">
                 <button
-                  onClick={() => handleDeleteBot(bot.id, bot.name)}
+                    onClick={() => handleDeleteBot(bot)}
                   className="flex items-center justify-center p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-colors"
-                  title="Delete bot"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
+                </Tooltip>
               </div>
             </div>
                   </div>
@@ -434,7 +469,18 @@ const BotsPage: React.FC = () => {
                     for (const botId of selectedBots) {
                       const bot = bots.find(b => b.id === botId);
                       if (bot) {
-                        await handleDeleteBot(botId, bot.name);
+                        try {
+                          const response = await fetch('/api/admin/bots', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ botId })
+                          });
+                          if (response.ok) {
+                            setBots(prev => prev.filter(b => b.id !== botId));
+                          }
+                        } catch (error) {
+                          console.error('Error deleting bot:', error);
+                        }
                       }
                     }
                     setSelectedBots([]);
@@ -444,6 +490,138 @@ const BotsPage: React.FC = () => {
               >
                 <Trash2 className="w-4 h-4 inline mr-1" />
                 Delete
+              </button>
+            </div>
+          </div>
+          </div>
+        )}
+
+      {/* Edit Bot Modal */}
+      {showEditModal && selectedBotForEdit && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-bold text-gray-900">Edit Bot Status</h2>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setSelectedBotForEdit(null);
+                  setNewStatus('');
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3 pb-4 border-b border-gray-200">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#6566F1] to-[#7F82F3] rounded-xl flex items-center justify-center shadow-lg">
+                  <Bot className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900">{selectedBotForEdit.name}</h3>
+                  <p className="text-sm text-gray-600 mt-0.5">{selectedBotForEdit.category}</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Status <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={newStatus}
+                  onChange={(e) => setNewStatus(e.target.value)}
+                  className="w-full px-4 py-3 text-sm text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="maintenance">Maintenance</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-2">Current status: <span className="font-semibold">{selectedBotForEdit.status}</span></p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-4 mt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setSelectedBotForEdit(null);
+                  setNewStatus('');
+                }}
+                className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                disabled={updating}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmUpdateBotStatus}
+                disabled={updating}
+                className="px-4 py-2 text-sm bg-[#6566F1] text-white rounded-xl hover:bg-[#5A5BD9] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {updating ? 'Updating...' : 'Update Status'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Bot Modal */}
+      {showDeleteModal && botToDelete && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-bold text-gray-900">Delete Bot</h2>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setBotToDelete(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3 pb-4 border-b border-gray-200">
+                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-900">Are you sure you want to delete this bot?</p>
+                  <p className="text-xs text-gray-600 mt-0.5">This action cannot be undone.</p>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="font-semibold text-gray-700">Bot Name:</span>
+                    <span className="ml-2 text-gray-900">{botToDelete.name}</span>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-3">
+                  This will permanently remove the bot and all its data from the system.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-4 mt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setBotToDelete(null);
+                }}
+                className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteBot}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
+              >
+                Delete Bot
               </button>
             </div>
           </div>

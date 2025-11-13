@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { Menu, X } from 'lucide-react';
 
@@ -10,6 +10,7 @@ const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const { data: session } = useSession();
 
   useEffect(() => {
@@ -110,7 +111,10 @@ const Navigation = () => {
               </>
             ) : (
               <>
-                <Link href="/login" className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg transition-colors">
+                <Link 
+                  href="/login" 
+                  className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg transition-colors"
+                >
                   Login
                 </Link>
                 <Link href="/signup" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-xl hover:shadow-lg transition-all duration-200">

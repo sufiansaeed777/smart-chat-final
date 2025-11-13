@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  MessageSquare, 
-  TrendingUp, 
+import {
+  MessageSquare,
+  TrendingUp,
   TrendingDown,
-  Users, 
-  Bot, 
+  Users,
+  Bot,
   Clock,
   CheckCircle,
   XCircle,
@@ -20,6 +20,7 @@ import {
   ArrowDown,
   Minus
 } from 'lucide-react';
+import { Tooltip } from '@/components/ui/tooltip';
 
 interface BotAnalytics {
   id: string;
@@ -45,13 +46,17 @@ const ChatbotAnalyticsPage: React.FC = () => {
         const response = await fetch('/api/admin/bots');
 
         if (!response.ok) {
-          console.error('Failed to fetch bot analytics:', response.statusText);
-          setAnalytics([]);
+          console.error('Failed to fetch bot analytics');
           return;
         }
 
         const data = await response.json();
         const bots = data.bots || [];
+
+        if (bots.length === 0) {
+          console.warn('No bots returned');
+          return;
+        }
 
         // Transform bot data to analytics format
         const botAnalytics: BotAnalytics[] = bots.map((bot: any) => {
@@ -95,7 +100,6 @@ const ChatbotAnalyticsPage: React.FC = () => {
         setAnalytics(botAnalytics);
       } catch (error) {
         console.error('Error loading bot analytics:', error);
-        setAnalytics([]);
       } finally {
         setLoading(false);
       }
@@ -263,32 +267,32 @@ const ChatbotAnalyticsPage: React.FC = () => {
           </h3>
           <p className="text-gray-600 mt-1">Detailed metrics for each chatbot</p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="overflow-x-auto overflow-y-visible w-full">
+          <table className="w-full" style={{ minWidth: '700px' }}>
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 text-left text-[9px] sm:text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-tight">
                   Bot Name
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 text-left text-[9px] sm:text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-tight">
                   Conversations
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 text-left text-[9px] sm:text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-tight">
                   Users
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 text-left text-[9px] sm:text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-tight">
                   Satisfaction
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 text-left text-[9px] sm:text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-tight">
                   Response Time
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 text-left text-[9px] sm:text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-tight">
                   Resolution Rate
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 text-left text-[9px] sm:text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-tight">
                   Trend
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 text-left text-[9px] sm:text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-tight">
                   Actions
                 </th>
               </tr>
@@ -296,32 +300,32 @@ const ChatbotAnalyticsPage: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-100">
               {analytics.map((bot) => (
                 <tr key={bot.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gradient-to-br from-[#6566F1] to-[#7F82F3] rounded-xl flex items-center justify-center">
-                        <Bot className="w-5 h-5 text-white" />
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-[#6566F1] to-[#7F82F3] rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Bot className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 lg:w-5 lg:h-5 text-white" />
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-semibold text-gray-900">{bot.name}</div>
+                      <div className="ml-0.5 sm:ml-1 md:ml-2 lg:ml-3">
+                        <div className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-semibold text-gray-900 truncate max-w-[120px] sm:max-w-none">{bot.name}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                  <td className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 whitespace-nowrap text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-semibold text-gray-900">
                     {bot.conversations.toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 whitespace-nowrap text-[9px] sm:text-[10px] md:text-xs lg:text-sm text-gray-600">
                     {bot.users.toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 whitespace-nowrap">
                     <div className="flex items-center">
-                      <span className={`text-sm font-semibold ${getSatisfactionColor(bot.satisfaction)}`}>
+                      <span className={`text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-semibold ${getSatisfactionColor(bot.satisfaction)}`}>
                         {bot.satisfaction}/5.0
                       </span>
-                      <div className="ml-2 flex">
+                      <div className="ml-0.5 sm:ml-1 md:ml-1.5 flex">
                         {[...Array(5)].map((_, i) => (
                           <div
                             key={i}
-                            className={`w-3 h-3 rounded-full ${
+                            className={`w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-2 md:h-2 lg:w-2.5 lg:h-2.5 rounded-full ${
                               i < Math.floor(bot.satisfaction) ? 'bg-yellow-400' : 'bg-gray-200'
                             }`}
                           />
@@ -329,30 +333,34 @@ const ChatbotAnalyticsPage: React.FC = () => {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 whitespace-nowrap text-[9px] sm:text-[10px] md:text-xs lg:text-sm text-gray-600">
                     {bot.responseTime}s
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`text-sm font-semibold ${getResolutionColor(bot.resolutionRate)}`}>
+                  <td className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 whitespace-nowrap">
+                    <span className={`text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-semibold ${getResolutionColor(bot.resolutionRate)}`}>
                       {bot.resolutionRate}%
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 whitespace-nowrap">
                     <div className="flex items-center">
                       {getTrendIcon(bot.trend)}
-                      <span className={`ml-1 text-sm font-medium ${getTrendColor(bot.trend)}`}>
+                      <span className={`ml-0.5 sm:ml-1 text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-medium ${getTrendColor(bot.trend)}`}>
                         {bot.change > 0 ? '+' : ''}{bot.change}%
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      <button className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                        <BarChart3 className="w-4 h-4" />
-                      </button>
+                  <td className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 whitespace-nowrap text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-medium">
+                    <div className="flex items-center space-x-0.5 sm:space-x-1 md:space-x-1.5">
+                      <Tooltip content="View" position="top">
+                        <button className="text-[#6566F1] hover:text-[#5A5BD9] p-0.5 sm:p-1 md:p-1.5 rounded-md sm:rounded-lg hover:bg-[#6566F1]/10 transition-colors flex-shrink-0">
+                          <Eye className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 lg:w-4 lg:h-4" />
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="Analytics" position="top">
+                        <button className="text-gray-600 hover:text-gray-900 p-0.5 sm:p-1 md:p-1.5 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0">
+                          <BarChart3 className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 lg:w-4 lg:h-4" />
+                        </button>
+                      </Tooltip>
                     </div>
                   </td>
                 </tr>

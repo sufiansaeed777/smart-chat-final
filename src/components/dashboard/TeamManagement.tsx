@@ -25,6 +25,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+import { Tooltip } from '@/components/ui/tooltip';
 
 const TeamManagement = () => {
   const searchParams = useSearchParams();
@@ -265,6 +266,24 @@ const TeamManagement = () => {
       return;
     }
 
+    // Check if email already exists in team members
+    const emailLower = newMember.email.toLowerCase().trim();
+    const existingMember = teamMembers.find(
+      member => member.email.toLowerCase().trim() === emailLower
+    );
+
+    if (existingMember) {
+      setErrors({
+        ...errors,
+        email: 'This email is already part of the team.'
+      });
+      showToast(
+        `${existingMember.name} (${existingMember.email}) is already a team member.`,
+        'error'
+      );
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -288,12 +307,24 @@ const TeamManagement = () => {
         setIsAddModalOpen(false);
         setNewMember({ firstName: '', lastName: '', email: '', phone: '', countryCode: '+1' });
         setErrors({ firstName: '', lastName: '', email: '', phone: '' });
+        showToast('Invitation sent successfully!', 'success');
         // Refresh team members list
         fetchTeamMembers();
       } else {
         const errorData = await response.json();
         console.error('Failed to send invitation:', errorData.error || 'Unknown error');
-        showToast(errorData.error || 'Failed to send invitation', 'error');
+        const errorMessage = errorData.error || 'Failed to send invitation';
+        
+        // Check if the error is about duplicate email
+        if (errorMessage.toLowerCase().includes('already') || errorMessage.toLowerCase().includes('exists') || errorMessage.toLowerCase().includes('duplicate')) {
+          setErrors({
+            ...errors,
+            email: 'This email is already part of the team.'
+          });
+          showToast('This member is already part of the team.', 'error');
+        } else {
+          showToast(errorMessage, 'error');
+        }
       }
     } catch (error) {
       console.error('Error sending invitation:', error);
@@ -468,84 +499,93 @@ const TeamManagement = () => {
 
                     {/* Actions */}
                     <div className="flex items-center space-x-2 ml-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedAgent(member.id);
-                          setIsDetailModalOpen(true);
-                        }}
-                        className="p-2 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 rounded-lg transition-colors duration-200"
+                      <Tooltip content="Edit user" position="top">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedAgent(member.id);
+                            setIsDetailModalOpen(true);
+                          }}
+                          className="p-2 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 rounded-lg transition-colors duration-200"
+                        >
+                          <Edit className="w-4 h-4 text-gray-600" />
+                        </Button>
+                      </Tooltip>
+                      <Tooltip 
+                        content={member.status === 'accepted' ? "Deactivate user" : "Activate user"} 
+                        position="top"
                       >
-                        <Edit className="w-4 h-4 text-gray-600" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={togglingUser === member.id}
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          setTogglingUser(member.id);
-                          try {
-                            const response = await fetch('/api/manager/toggle-user-status', {
-                              method: 'POST',
-                              headers: {
-                                'Content-Type': 'application/json',
-                              },
-                              body: JSON.stringify({
-                                userId: member.id,
-                                currentStatus: member.status
-                              }),
-                            });
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={togglingUser === member.id}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            setTogglingUser(member.id);
+                            try {
+                              const response = await fetch('/api/manager/toggle-user-status', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                  userId: member.id,
+                                  currentStatus: member.status
+                                }),
+                              });
 
-                            if (response.ok) {
-                              const data = await response.json();
-                              setTeamMembers(prevMembers =>
-                                prevMembers.map(prevMember =>
-                                  prevMember.id === member.id
-                                    ? { ...prevMember, status: data.newStatus }
-                                    : prevMember
-                                )
-                              );
-                              fetchTeamMembers();
-                            } else {
-                              const errorData = await response.json();
-                              showToast(`Failed to toggle user status: ${errorData.error}`, 'error');
+                              if (response.ok) {
+                                const data = await response.json();
+                                setTeamMembers(prevMembers =>
+                                  prevMembers.map(prevMember =>
+                                    prevMember.id === member.id
+                                      ? { ...prevMember, status: data.newStatus }
+                                      : prevMember
+                                  )
+                                );
+                                fetchTeamMembers();
+                              } else {
+                                const errorData = await response.json();
+                                showToast(`Failed to toggle user status: ${errorData.error}`, 'error');
+                              }
+                            } catch (error) {
+                              showToast('Network error. Please try again.', 'error');
+                            } finally {
+                              setTogglingUser(null);
                             }
-                          } catch (error) {
-                            showToast('Network error. Please try again.', 'error');
-                          } finally {
-                            setTogglingUser(null);
-                          }
-                        }}
-                        className={`p-2 rounded-lg transition-colors duration-200 ${
-                          togglingUser === member.id
-                            ? 'bg-red-50 text-red-600 border-red-300'
-                            : member.status === 'accepted'
-                              ? 'hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300'
-                              : 'hover:bg-green-50 hover:text-green-600 hover:border-green-300'
-                        }`}
-                      >
-                        {togglingUser === member.id ? (
-                          <Loader2 className="w-4 h-4 text-red-600 animate-spin" />
-                        ) : member.status === 'accepted' ? (
-                          <UserX className="w-4 h-4 text-orange-600" />
-                        ) : (
-                          <UserCheck2 className="w-4 h-4 text-green-600" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openDeleteModal({ id: member.id, name: member.name });
-                        }}
-                        className="p-2 hover:bg-red-50 hover:text-red-600 hover:border-red-300 rounded-lg transition-colors duration-200"
-                      >
-                        <Trash2 className="w-4 h-4 text-gray-600" />
-                      </Button>
+                          }}
+                          className={`p-2 rounded-lg transition-colors duration-200 ${
+                            togglingUser === member.id
+                              ? 'bg-red-50 text-red-600 border-red-300'
+                              : member.status === 'accepted'
+                                ? 'hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300'
+                                : 'hover:bg-green-50 hover:text-green-600 hover:border-green-300'
+                          }`}
+                        >
+                          {togglingUser === member.id ? (
+                            <Loader2 className="w-4 h-4 text-red-600 animate-spin" />
+                          ) : member.status === 'accepted' ? (
+                            <UserX className="w-4 h-4 text-orange-600" />
+                          ) : (
+                            <UserCheck2 className="w-4 h-4 text-green-600" />
+                          )}
+                        </Button>
+                      </Tooltip>
+                      <Tooltip content="Delete user" position="top">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDeleteModal({ id: member.id, name: member.name });
+                          }}
+                          className="p-2 hover:bg-red-50 hover:text-red-600 hover:border-red-300 rounded-lg transition-colors duration-200"
+                        >
+                          <Trash2 className="w-4 h-4 text-gray-600" />
+                        </Button>
+                      </Tooltip>
                     </div>
                   </div>
                 </div>

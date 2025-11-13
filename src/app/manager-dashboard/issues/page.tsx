@@ -53,12 +53,15 @@ const ManagerIssuesPage = () => {
         const response = await fetch('/api/manager/issues');
 
         if (!response.ok) {
-          throw new Error('Failed to fetch issues');
+          console.error('Failed to fetch issues');
+          setError('Failed to fetch issues');
+          return;
         }
 
         const data = await response.json();
         setIssues(data.issues || []);
       } catch (err) {
+        console.error('Error fetching issues:', err);
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
         setLoading(false);
@@ -300,17 +303,17 @@ const ManagerIssuesPage = () => {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="overflow-x-auto overflow-y-visible">
+                <table className="w-full" style={{ minWidth: '800px' }}>
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issue</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-1 sm:px-1.5 md:px-2 lg:px-3 py-1 sm:py-1.5 md:py-2 text-left text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-tight">Customer</th>
+                      <th className="px-1 sm:px-1.5 md:px-2 lg:px-3 py-1 sm:py-1.5 md:py-2 text-left text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-tight w-[120px] max-w-[120px]">Issue</th>
+                      <th className="px-1 sm:px-1.5 md:px-2 lg:px-3 py-1 sm:py-1.5 md:py-2 text-left text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-tight">Priority</th>
+                      <th className="px-1 sm:px-1.5 md:px-2 lg:px-3 py-1 sm:py-1.5 md:py-2 text-left text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-tight">Status</th>
+                      <th className="px-1 sm:px-1.5 md:px-2 lg:px-3 py-1 sm:py-1.5 md:py-2 text-left text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-tight">Type</th>
+                      <th className="px-1 sm:px-1.5 md:px-2 lg:px-3 py-1 sm:py-1.5 md:py-2 text-left text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-tight">Date</th>
+                      <th className="px-1 sm:px-1.5 md:px-2 lg:px-3 py-1 sm:py-1.5 md:py-2 text-right text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-tight">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -320,44 +323,44 @@ const ManagerIssuesPage = () => {
                         className="hover:bg-gray-50 transition-colors cursor-pointer"
                         onClick={() => handleIssueClick(issue.id)}
                       >
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-1 sm:px-1.5 md:px-2 lg:px-3 py-1 sm:py-1.5 md:py-2 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                              <span className="text-sm font-medium text-gray-600">
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-[7px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-medium text-gray-600">
                                 {issue.userName.split(' ').map(n => n[0]).join('').toUpperCase()}
                               </span>
                             </div>
-                            <div className="ml-3">
-                              <div className="text-sm font-medium text-gray-900">{issue.userName}</div>
-                              <div className="text-sm text-gray-500">{issue.userEmail}</div>
+                            <div className="ml-0.5 sm:ml-1 md:ml-1.5">
+                              <div className="text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs font-medium text-gray-900 truncate max-w-[80px] sm:max-w-[100px] md:max-w-[120px]">{issue.userName}</div>
+                              <div className="text-[7px] sm:text-[8px] md:text-[9px] lg:text-[10px] text-gray-500 truncate max-w-[80px] sm:max-w-[100px] md:max-w-[120px]">{issue.userEmail}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900 max-w-xs truncate">
+                        <td className="px-1 sm:px-1.5 md:px-2 lg:px-3 py-1 sm:py-1.5 md:py-2 w-[120px] max-w-[120px]">
+                          <div className="text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs text-gray-900 truncate" style={{ maxWidth: '120px' }}>
                             {issue.message.split(':')[0] || issue.message}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge className={`text-xs font-medium ${getPriorityColor(issue.priority)}`}>
+                        <td className="px-1 sm:px-1.5 md:px-2 lg:px-3 py-1 sm:py-1.5 md:py-2 whitespace-nowrap">
+                          <Badge className={`text-[7px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-medium ${getPriorityColor(issue.priority)}`}>
                             {issue.priority}
                           </Badge>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge className={`text-xs font-medium ${getStatusColor(issue.status)}`}>
+                        <td className="px-1 sm:px-1.5 md:px-2 lg:px-3 py-1 sm:py-1.5 md:py-2 whitespace-nowrap">
+                          <Badge className={`text-[7px] sm:text-[8px] md:text-[9px] lg:text-[10px] font-medium ${getStatusColor(issue.status)}`}>
                             {issue.status.replace('_', ' ')}
                           </Badge>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center text-sm text-gray-900">
-                            {getTypeIcon(issue.type)}
-                            <span className="ml-2">{issue.type.replace('_', ' ')}</span>
+                        <td className="px-1 sm:px-1.5 md:px-2 lg:px-3 py-1 sm:py-1.5 md:py-2 whitespace-nowrap">
+                          <div className="flex items-center text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs text-gray-900">
+                            <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 flex-shrink-0">{getTypeIcon(issue.type)}</span>
+                            <span className="ml-0.5 sm:ml-1 md:ml-1.5 truncate">{issue.type.replace('_', ' ')}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-1 sm:px-1.5 md:px-2 lg:px-3 py-1 sm:py-1.5 md:py-2 whitespace-nowrap text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs text-gray-500">
                           {new Date(issue.createdAt).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <td className="px-1 sm:px-1.5 md:px-2 lg:px-3 py-1 sm:py-1.5 md:py-2 whitespace-nowrap text-right">
                           <Button
                             variant="outline"
                             size="sm"
@@ -365,10 +368,10 @@ const ManagerIssuesPage = () => {
                               e.stopPropagation();
                               handleIssueClick(issue.id);
                             }}
-                            className="text-[#5A5BD8] hover:text-[#4A4BC8] hover:bg-[#5A5BD8]/10"
+                            className="text-[#5A5BD8] hover:text-[#4A4BC8] hover:bg-[#5A5BD8]/10 px-1 sm:px-1.5 md:px-2 py-0.5 sm:py-1 text-[7px] sm:text-[8px] md:text-[9px] lg:text-[10px]"
                           >
-                            <Eye className="w-4 h-4 mr-1" />
-                            View
+                            <Eye className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 mr-0.5" />
+                            <span className="hidden md:inline">View</span>
                           </Button>
                         </td>
                       </tr>
