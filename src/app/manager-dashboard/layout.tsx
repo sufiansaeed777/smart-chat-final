@@ -26,6 +26,7 @@ import {
   HandHeart,
   Plug
 } from 'lucide-react';
+import { ReportIssueProvider } from '@/contexts/ReportIssueContext';
 
 interface ManagerDashboardLayoutProps {
   children: React.ReactNode;
@@ -180,11 +181,12 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-40 ${
-        sidebarCollapsed ? 'w-20' : 'w-72'
-      }`}>
+    <ReportIssueProvider>
+      <div className="min-h-screen bg-gray-50">
+        {/* Sidebar */}
+        <div className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-40 ${
+          sidebarCollapsed ? 'w-20' : 'w-72'
+        }`}>
         {/* Logo */}
         <div className="flex items-center justify-center h-16 border-b border-gray-200">
           <div className="flex items-center space-x-3">
@@ -360,7 +362,8 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </ReportIssueProvider>
   );
 };
 
