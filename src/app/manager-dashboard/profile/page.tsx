@@ -65,7 +65,7 @@ const AccountPage = () => {
   const loadProfile = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/user/profile');
+      const response = await fetch('/api/manager/profile');
 
       if (response.ok) {
         const data = await response.json();
@@ -112,8 +112,8 @@ const AccountPage = () => {
       setErrors({});
       setSuccessMessage('');
 
-      const response = await fetch('/api/user/update-profile', {
-        method: 'POST',
+      const response = await fetch('/api/manager/profile', {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           firstName: profileData.firstName,
