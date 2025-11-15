@@ -23,6 +23,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate password strength
+    if (password.length < 8) {
+      return NextResponse.json(
+        { error: 'Password must be at least 8 characters long' },
+        { status: 400 }
+      );
+    }
+
+    // Check for uppercase letter
+    if (!/[A-Z]/.test(password)) {
+      return NextResponse.json(
+        { error: 'Password must contain at least one uppercase letter' },
+        { status: 400 }
+      );
+    }
+
+    // Check for lowercase letter
+    if (!/[a-z]/.test(password)) {
+      return NextResponse.json(
+        { error: 'Password must contain at least one lowercase letter' },
+        { status: 400 }
+      );
+    }
+
+    // Check for number
+    if (!/[0-9]/.test(password)) {
+      return NextResponse.json(
+        { error: 'Password must contain at least one number' },
+        { status: 400 }
+      );
+    }
+
+    // Check for special character
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      return NextResponse.json(
+        { error: 'Password must contain at least one special character (!@#$%^&*(),.?":{}|<>)' },
+        { status: 400 }
+      );
+    }
+
     // Check if user already exists (case-insensitive)
     const userRepository = AppDataSource.getRepository("users");
     const existingUser = await userRepository.findOne({ where: { email: ILike(email) } });

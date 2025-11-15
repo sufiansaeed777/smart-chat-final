@@ -47,6 +47,13 @@ interface CustomerHistoryIssue {
   updatedAt: string;
 }
 
+interface Agent {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
 const IssueDetailPage = ({ params }: { params: { id: string } }) => {
   const router = useRouter();
   const { showToast } = useToast();
@@ -58,6 +65,8 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
   const [notesText, setNotesText] = useState('');
   const [currentHistoryPage, setCurrentHistoryPage] = useState(1);
   const historyPerPage = 4;
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [selectedAgent, setSelectedAgent] = useState<string>('');
 
   useEffect(() => {
     const fetchIssueDetails = async () => {
@@ -107,6 +116,25 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
 
     fetchIssueDetails();
   }, [params.id]);
+
+  // Fetch available agents
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const response = await fetch('/api/manager/users');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.users) {
+            setAgents(data.users);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch agents:', err);
+      }
+    };
+
+    fetchAgents();
+  }, []);
 
   // Calculate pagination for customer history
   const totalHistoryPages = Math.ceil(customerHistory.length / historyPerPage);
@@ -208,19 +236,26 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
     }
   };
 
-  // Handle assign to agent (auto-assign to issue owner)
+  // Handle assign to agent (manual selection)
   const handleAssignToAgent = async () => {
-    if (!issue) return;
+    if (!issue || !selectedAgent) {
+      showToast('Please select an agent to assign', 'error');
+      return;
+    }
 
     try {
-      const assignee = issue.userName; // Auto-assign to the person whose issue it is
+      const agent = agents.find(a => a.id === selectedAgent);
+      if (!agent) {
+        showToast('Selected agent not found', 'error');
+        return;
+      }
 
       const response = await fetch(`/api/manager/issues/${params.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ assignedTo: assignee }),
+        body: JSON.stringify({ assignedTo: agent.name || agent.email }),
       });
 
       if (!response.ok) {
@@ -230,7 +265,8 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
       const data = await response.json();
       if (data.success && data.issue) {
         setIssue(data.issue);
-        showToast(`Issue automatically assigned to ${assignee}`, 'success');
+        setSelectedAgent(''); // Reset selection
+        showToast(`Issue assigned to ${agent.name || agent.email}`, 'success');
       }
     } catch (err) {
       console.error('Failed to assign agent:', err);
@@ -332,14 +368,29 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
         <Card className="bg-white rounded-xl shadow-sm border-0">
           <CardContent className="p-6">
             <h3 className="text-sm font-bold text-gray-900 mb-2">Actions Required</h3>
-            <p className="text-sm text-gray-600 mb-4">Assign an agent to handle this issue automatically.</p>
-            <Button
-              onClick={handleAssignToAgent}
-              className="bg-[#5A5BD8] hover:bg-[#4A4BC8] text-white"
-            >
-              <User className="w-4 h-4 mr-2" />
-              Assign to Agent
-            </Button>
+            <p className="text-sm text-gray-600 mb-4">Select an agent to handle this issue.</p>
+            <div className="flex items-center space-x-3">
+              <select
+                value={selectedAgent}
+                onChange={(e) => setSelectedAgent(e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A5BD8] focus:border-[#5A5BD8] text-sm text-gray-900"
+              >
+                <option value="">Select an agent...</option>
+                {agents.map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.name} ({agent.email})
+                  </option>
+                ))}
+              </select>
+              <Button
+                onClick={handleAssignToAgent}
+                disabled={!selectedAgent}
+                className="bg-[#5A5BD8] hover:bg-[#4A4BC8] text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <User className="w-4 h-4 mr-2" />
+                Assign
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -364,12 +415,46 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
         <CardContent className="p-6">
           <h3 className="text-sm font-bold text-gray-900 mb-2">Reply to Customer</h3>
           <p className="text-sm text-gray-600 mb-4">Send a response to the customer about their issue.</p>
-          <textarea
-            value={responseText}
-            onChange={(e) => setResponseText(e.target.value)}
-            placeholder="Type your reply to the customer..."
-            className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A5BD8] focus:border-[#5A5BD8] resize-none text-gray-900 placeholder-gray-500"
-          />
+          <div className="space-y-3">
+            <textarea
+              value={responseText}
+              onChange={(e) => setResponseText(e.target.value)}
+              placeholder="Type your reply to the customer..."
+              className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A5BD8] focus:border-[#5A5BD8] resize-none text-gray-900 placeholder-gray-500"
+            />
+            <div className="flex justify-end">
+              <Button
+                onClick={async () => {
+                  try {
+                    const response = await fetch(`/api/manager/issues/${params.id}`, {
+                      method: 'PATCH',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({ response: responseText }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error('Failed to send response');
+                    }
+
+                    const data = await response.json();
+                    if (data.success && data.issue) {
+                      setIssue(data.issue);
+                      showToast('Response sent successfully!', 'success');
+                    }
+                  } catch (err) {
+                    console.error('Failed to send response:', err);
+                    showToast('Failed to send response', 'error');
+                  }
+                }}
+                className="bg-[#5A5BD8] hover:bg-[#4A4BC8] text-white px-6"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Send Response
+              </Button>
+            </div>
+          </div>
           {issue.response && (
             <div className="mt-4">
               <h4 className="text-sm font-bold text-gray-900 mb-2">Previous Response</h4>

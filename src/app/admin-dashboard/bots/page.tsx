@@ -48,6 +48,9 @@ const BotsPage: React.FC = () => {
   const [selectedBotForEdit, setSelectedBotForEdit] = useState<BotData | null>(null);
   const [botToDelete, setBotToDelete] = useState<{ id: string; name: string } | null>(null);
   const [newStatus, setNewStatus] = useState<string>('');
+  const [newName, setNewName] = useState<string>('');
+  const [newDescription, setNewDescription] = useState<string>('');
+  const [newCategory, setNewCategory] = useState<string>('');
   const [updating, setUpdating] = useState(false);
 
   // Handle Escape key to close modals
@@ -58,6 +61,9 @@ const BotsPage: React.FC = () => {
           setShowEditModal(false);
           setSelectedBotForEdit(null);
           setNewStatus('');
+          setNewName('');
+          setNewDescription('');
+          setNewCategory('');
         }
         if (showDeleteModal) {
           setShowDeleteModal(false);
@@ -175,11 +181,17 @@ const BotsPage: React.FC = () => {
   const handleEditBot = (bot: BotData) => {
     setSelectedBotForEdit(bot);
     setNewStatus(bot.status);
+    setNewName(bot.name);
+    setNewDescription(bot.description);
+    setNewCategory(bot.category);
     setShowEditModal(true);
   };
 
   const confirmUpdateBotStatus = async () => {
-    if (!selectedBotForEdit || !newStatus) return;
+    if (!selectedBotForEdit || !newStatus || !newName || !newCategory) {
+      alert('Please fill in all required fields');
+      return;
+    }
 
     if (!['active', 'inactive', 'maintenance'].includes(newStatus)) {
       alert('Invalid status! Must be: active, inactive, or maintenance');
@@ -188,17 +200,33 @@ const BotsPage: React.FC = () => {
 
     setUpdating(true);
     try {
+      const updates = {
+        status: newStatus,
+        name: newName,
+        description: newDescription,
+        category: newCategory
+      };
+
       const response = await fetch('/api/admin/bots', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ botId: selectedBotForEdit.id, updates: { status: newStatus } })
+        body: JSON.stringify({ botId: selectedBotForEdit.id, updates })
       });
 
       if (response.ok) {
-        setBots(prev => prev.map(b => b.id === selectedBotForEdit.id ? { ...b, status: newStatus as 'active' | 'inactive' | 'maintenance' } : b));
+        setBots(prev => prev.map(b => b.id === selectedBotForEdit.id ? {
+          ...b,
+          status: newStatus as 'active' | 'inactive' | 'maintenance',
+          name: newName,
+          description: newDescription,
+          category: newCategory
+        } : b));
         setShowEditModal(false);
         setSelectedBotForEdit(null);
         setNewStatus('');
+        setNewName('');
+        setNewDescription('');
+        setNewCategory('');
       } else {
         const error = await response.json();
         throw new Error(error.error || 'Failed to update bot');
@@ -525,20 +553,60 @@ const BotsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Status <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value)}
-                  className="w-full px-4 py-3 text-sm text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white"
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="maintenance">Maintenance</option>
-                </select>
-                <p className="text-xs text-gray-500 mt-2">Current status: <span className="font-semibold">{selectedBotForEdit.status}</span></p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Bot Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    className="w-full px-4 py-3 text-sm text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white"
+                    placeholder="Enter bot name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={newDescription}
+                    onChange={(e) => setNewDescription(e.target.value)}
+                    className="w-full px-4 py-3 text-sm text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white resize-none"
+                    rows={3}
+                    placeholder="Enter bot description"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Category <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    className="w-full px-4 py-3 text-sm text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white"
+                    placeholder="e.g., Customer Support, Sales, etc."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Status <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                    className="w-full px-4 py-3 text-sm text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white"
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="maintenance">Maintenance</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -548,6 +616,9 @@ const BotsPage: React.FC = () => {
                   setShowEditModal(false);
                   setSelectedBotForEdit(null);
                   setNewStatus('');
+                  setNewName('');
+                  setNewDescription('');
+                  setNewCategory('');
                 }}
                 className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
                 disabled={updating}
@@ -559,7 +630,7 @@ const BotsPage: React.FC = () => {
                 disabled={updating}
                 className="px-4 py-2 text-sm bg-[#6566F1] text-white rounded-xl hover:bg-[#5A5BD9] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {updating ? 'Updating...' : 'Update Status'}
+                {updating ? 'Updating...' : 'Update Bot'}
               </button>
             </div>
           </div>

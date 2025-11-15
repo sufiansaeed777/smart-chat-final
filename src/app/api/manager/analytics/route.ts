@@ -152,10 +152,59 @@ export async function GET(request: NextRequest) {
         total: questions.length,
         data: topQuestions
       });
+
+    } else if (type === 'humanMessages') {
+      // Count total human/visitor messages
+      const conversations = await queryBuilder
+        .orderBy('conversation.createdAt', 'DESC')
+        .getMany();
+
+      let humanMessageCount = 0;
+
+      conversations.forEach(conv => {
+        if (conv.messages && Array.isArray(conv.messages)) {
+          conv.messages.forEach((msg: any) => {
+            if (msg.sender === 'visitor' || msg.sender === 'user') {
+              humanMessageCount++;
+            }
+          });
+        }
+      });
+
+      return NextResponse.json({
+        type: 'humanMessages',
+        total: humanMessageCount
+      });
+
+    } else if (type === 'totalAgents') {
+      // Count total agents (users invited by this manager)
+      const invitedUsers = await userRepository
+        .createQueryBuilder('user')
+        .where('user.invitedBy = :managerId', { managerId: manager.id })
+        .andWhere('user.password IS NOT NULL') // Only count accepted invitations
+        .getCount();
+
+      return NextResponse.json({
+        type: 'totalAgents',
+        total: invitedUsers
+      });
+
+    } else if (type === 'resolvedIssues') {
+      // Count resolved issues
+      const issueRepository = AppDataSource.getRepository('chatbot_issues');
+      const resolvedCount = await issueRepository
+        .createQueryBuilder('issue')
+        .where('issue.status = :status', { status: 'resolved' })
+        .getCount();
+
+      return NextResponse.json({
+        type: 'resolvedIssues',
+        total: resolvedCount
+      });
     }
 
     return NextResponse.json({
-      error: 'Invalid analytics type. Use: languages or topQuestions'
+      error: 'Invalid analytics type. Use: languages, topQuestions, humanMessages, totalAgents, or resolvedIssues'
     }, { status: 400 });
 
   } catch (error) {

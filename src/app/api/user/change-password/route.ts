@@ -22,10 +22,38 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Validate password length
+    // Validate password strength
     if (newPassword.length < 8) {
-      return NextResponse.json({ 
-        error: 'Password must be at least 8 characters long' 
+      return NextResponse.json({
+        error: 'Password must be at least 8 characters long'
+      }, { status: 400 });
+    }
+
+    // Check for uppercase letter
+    if (!/[A-Z]/.test(newPassword)) {
+      return NextResponse.json({
+        error: 'Password must contain at least one uppercase letter'
+      }, { status: 400 });
+    }
+
+    // Check for lowercase letter
+    if (!/[a-z]/.test(newPassword)) {
+      return NextResponse.json({
+        error: 'Password must contain at least one lowercase letter'
+      }, { status: 400 });
+    }
+
+    // Check for number
+    if (!/[0-9]/.test(newPassword)) {
+      return NextResponse.json({
+        error: 'Password must contain at least one number'
+      }, { status: 400 });
+    }
+
+    // Check for special character
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+      return NextResponse.json({
+        error: 'Password must contain at least one special character (!@#$%^&*(),.?":{}|<>)'
       }, { status: 400 });
     }
 

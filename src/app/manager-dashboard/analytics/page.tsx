@@ -8,7 +8,9 @@ import {
   Clock,
   Download,
   Globe,
-  MessageCircle
+  MessageCircle,
+  CheckCircle,
+  UserCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,6 +49,9 @@ const AnalyticsPage = () => {
   const [loading, setLoading] = useState(true);
   const [languagesData, setLanguagesData] = useState<{ total: number; data: LanguageData[] }>({ total: 0, data: [] });
   const [questionsData, setQuestionsData] = useState<{ total: number; data: QuestionData[] }>({ total: 0, data: [] });
+  const [humanMessages, setHumanMessages] = useState(0);
+  const [totalAgents, setTotalAgents] = useState(0);
+  const [resolvedIssues, setResolvedIssues] = useState(0);
 
   useEffect(() => {
     loadAnalytics();
@@ -67,6 +72,27 @@ const AnalyticsPage = () => {
       if (questionsResponse.ok) {
         const questionsResult = await questionsResponse.json();
         setQuestionsData(questionsResult);
+      }
+
+      // Load human messages count
+      const humanMessagesResponse = await fetch('/api/manager/analytics?type=humanMessages');
+      if (humanMessagesResponse.ok) {
+        const humanMessagesResult = await humanMessagesResponse.json();
+        setHumanMessages(humanMessagesResult.total);
+      }
+
+      // Load total agents count
+      const totalAgentsResponse = await fetch('/api/manager/analytics?type=totalAgents');
+      if (totalAgentsResponse.ok) {
+        const totalAgentsResult = await totalAgentsResponse.json();
+        setTotalAgents(totalAgentsResult.total);
+      }
+
+      // Load resolved issues count
+      const resolvedIssuesResponse = await fetch('/api/manager/analytics?type=resolvedIssues');
+      if (resolvedIssuesResponse.ok) {
+        const resolvedIssuesResult = await resolvedIssuesResponse.json();
+        setResolvedIssues(resolvedIssuesResult.total);
       }
     } catch (error) {
       console.error('Error loading analytics:', error);
@@ -112,8 +138,8 @@ const AnalyticsPage = () => {
 
         {/* Key Metrics */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <Card key={i} className="border border-gray-200 bg-white rounded-2xl">
                 <CardContent className="p-6">
                   <div className="animate-pulse">
@@ -125,7 +151,7 @@ const AnalyticsPage = () => {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card className="border border-gray-200 bg-white rounded-2xl">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-2">
@@ -133,6 +159,42 @@ const AnalyticsPage = () => {
                   <div>
                     <p className="text-2xl font-bold">{languagesData.total}</p>
                     <p className="text-sm text-gray-600">Total Conversations</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-gray-200 bg-white rounded-2xl">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-2">
+                  <MessageCircle className="w-5 h-5 text-green-500" />
+                  <div>
+                    <p className="text-2xl font-bold">{humanMessages}</p>
+                    <p className="text-sm text-gray-600">Human Messages</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-gray-200 bg-white rounded-2xl">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-2">
+                  <UserCheck className="w-5 h-5 text-purple-500" />
+                  <div>
+                    <p className="text-2xl font-bold">{totalAgents}</p>
+                    <p className="text-sm text-gray-600">Total Agents</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-gray-200 bg-white rounded-2xl">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="w-5 h-5 text-emerald-500" />
+                  <div>
+                    <p className="text-2xl font-bold">{resolvedIssues}</p>
+                    <p className="text-sm text-gray-600">Resolved Issues</p>
                   </div>
                 </div>
               </CardContent>
@@ -153,7 +215,7 @@ const AnalyticsPage = () => {
             <Card className="border border-gray-200 bg-white rounded-2xl">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-2">
-                  <MessageCircle className="w-5 h-5 text-green-500" />
+                  <MessageCircle className="w-5 h-5 text-orange-500" />
                   <div>
                     <p className="text-2xl font-bold">{questionsData.total}</p>
                     <p className="text-sm text-gray-600">Total Questions</p>
