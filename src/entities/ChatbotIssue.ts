@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Bot } from './Bot';
 
 @Entity({ name: 'chatbot_issues' })
 export class ChatbotIssue {
@@ -34,6 +35,13 @@ export class ChatbotIssue {
 
   @Column({ type: 'text', nullable: true })
   response?: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  botId?: string;
+
+  @ManyToOne(() => Bot, { nullable: true })
+  @JoinColumn({ name: 'botId' })
+  bot?: Bot;
 
   @CreateDateColumn()
   createdAt!: Date;

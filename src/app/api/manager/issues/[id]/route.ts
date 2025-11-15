@@ -39,11 +39,13 @@ export async function PATCH(
     const body = await request.json();
     const { status, notes, response, assignedTo } = body;
 
-    // Get the issue
+    // Get the issue with bot information
     const issueRepository = AppDataSource.getRepository("chatbot_issues");
-    const issue = await issueRepository.findOne({
-      where: { id: params.id }
-    });
+    const issue = await issueRepository
+      .createQueryBuilder('issue')
+      .leftJoinAndSelect('issue.bot', 'bot')
+      .where('issue.id = :id', { id: params.id })
+      .getOne();
 
     if (!issue) {
       return NextResponse.json({ error: 'Issue not found' }, { status: 404 });
@@ -57,22 +59,35 @@ export async function PATCH(
 
     const updatedIssue = await issueRepository.save(issue);
 
-    return NextResponse.json({ 
+    // Fetch updated issue with bot info
+    const finalIssue = await issueRepository
+      .createQueryBuilder('issue')
+      .leftJoinAndSelect('issue.bot', 'bot')
+      .where('issue.id = :id', { id: params.id })
+      .getOne();
+
+    return NextResponse.json({
       success: true,
       issue: {
-        id: updatedIssue.id,
-        type: updatedIssue.type,
-        userId: updatedIssue.userId,
-        userEmail: updatedIssue.userEmail,
-        userName: updatedIssue.userName,
-        message: updatedIssue.message,
-        status: updatedIssue.status,
-        priority: updatedIssue.priority,
-        assignedTo: updatedIssue.assignedTo,
-        notes: updatedIssue.notes,
-        response: updatedIssue.response,
-        createdAt: updatedIssue.createdAt.toISOString(),
-        updatedAt: updatedIssue.updatedAt.toISOString()
+        id: finalIssue!.id,
+        type: finalIssue!.type,
+        userId: finalIssue!.userId,
+        userEmail: finalIssue!.userEmail,
+        userName: finalIssue!.userName,
+        message: finalIssue!.message,
+        status: finalIssue!.status,
+        priority: finalIssue!.priority,
+        assignedTo: finalIssue!.assignedTo,
+        notes: finalIssue!.notes,
+        response: finalIssue!.response,
+        botId: finalIssue!.botId,
+        bot: finalIssue!.bot ? {
+          id: finalIssue!.bot.id,
+          name: finalIssue!.bot.name,
+          description: finalIssue!.bot.description
+        } : null,
+        createdAt: finalIssue!.createdAt.toISOString(),
+        updatedAt: finalIssue!.updatedAt.toISOString()
       }
     }, { status: 200 });
 
@@ -115,17 +130,19 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied. Manager role required.' }, { status: 403 });
     }
 
-    // Get the specific issue
+    // Get the specific issue with bot information
     const issueRepository = AppDataSource.getRepository("chatbot_issues");
-    const issue = await issueRepository.findOne({
-      where: { id: params.id }
-    });
+    const issue = await issueRepository
+      .createQueryBuilder('issue')
+      .leftJoinAndSelect('issue.bot', 'bot')
+      .where('issue.id = :id', { id: params.id })
+      .getOne();
 
     if (!issue) {
       return NextResponse.json({ error: 'Issue not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       issue: {
         id: issue.id,
@@ -139,6 +156,12 @@ export async function GET(
         assignedTo: issue.assignedTo,
         notes: issue.notes,
         response: issue.response,
+        botId: issue.botId,
+        bot: issue.bot ? {
+          id: issue.bot.id,
+          name: issue.bot.name,
+          description: issue.bot.description
+        } : null,
         createdAt: issue.createdAt.toISOString(),
         updatedAt: issue.updatedAt.toISOString()
       }

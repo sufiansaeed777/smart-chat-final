@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { type, userId, userEmail, userName, message, priority = 'medium' } = body;
+    const { type, userId, userEmail, userName, message, priority = 'medium', botId } = body;
 
     if (!type || !userId || !userEmail || !userName || !message) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     const issueRepository = AppDataSource.getRepository("chatbot_issues");
-    
+
     const newIssue = issueRepository.create({
       type,
       userId,
@@ -59,7 +59,8 @@ export async function POST(request: NextRequest) {
       userName,
       message,
       priority,
-      status: 'pending'
+      status: 'pending',
+      botId: botId || null
     });
 
     const savedIssue = await issueRepository.save(newIssue);

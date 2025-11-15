@@ -16,7 +16,8 @@ import {
   Send,
   ArrowLeft,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Bot
 } from 'lucide-react';
 import RoleGuard from '@/components/auth/RoleGuard';
 import { useRouter } from 'next/navigation';
@@ -35,6 +36,12 @@ interface Issue {
   response?: string;
   createdAt: string;
   updatedAt: string;
+  botId?: string;
+  bot?: {
+    id: string;
+    name: string;
+    description?: string;
+  };
 }
 
 interface CustomerHistoryIssue {
@@ -353,6 +360,12 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
               <Calendar className="w-4 h-4" />
               <span>Updated: {new Date(issue.updatedAt).toLocaleString()}</span>
             </span>
+            {issue.bot && (
+              <span className="flex items-center space-x-2">
+                <Bot className="w-4 h-4" />
+                <span>Bot: {issue.bot.name}</span>
+              </span>
+            )}
             {issue.assignedTo && (
               <span className="flex items-center space-x-2">
                 <User className="w-4 h-4" />

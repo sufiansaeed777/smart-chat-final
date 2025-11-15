@@ -33,11 +33,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Access denied. Manager role required.' }, { status: 403 });
     }
 
-    // Get all issues
+    // Get all issues with bot information
     const issueRepository = AppDataSource.getRepository("chatbot_issues");
-    const issues = await issueRepository.find({
-      order: { createdAt: 'DESC' }
-    });
+    const issues = await issueRepository
+      .createQueryBuilder('issue')
+      .leftJoinAndSelect('issue.bot', 'bot')
+      .orderBy('issue.createdAt', 'DESC')
+      .getMany();
 
     // Format issues for frontend
     const formattedIssues = issues.map(issue => ({
@@ -52,6 +54,12 @@ export async function GET(request: NextRequest) {
       assignedTo: issue.assignedTo,
       notes: issue.notes,
       response: issue.response,
+      botId: issue.botId,
+      bot: issue.bot ? {
+        id: issue.bot.id,
+        name: issue.bot.name,
+        description: issue.bot.description
+      } : null,
       createdAt: issue.createdAt.toISOString(),
       updatedAt: issue.updatedAt.toISOString()
     }));
