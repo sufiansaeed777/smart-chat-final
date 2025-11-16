@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
+import bcrypt from 'bcryptjs';
 
 export async function GET(request: NextRequest) {
   try {
@@ -116,6 +117,12 @@ export async function PATCH(request: NextRequest) {
     if (updates.status) {
       dbUpdates.isActive = updates.status === 'active';
       delete dbUpdates.status;
+    }
+
+    // Hash password if provided
+    if (updates.password) {
+      const hashedPassword = await bcrypt.hash(updates.password, 10);
+      dbUpdates.password = hashedPassword;
     }
 
     await userRepository.update(userId, dbUpdates);

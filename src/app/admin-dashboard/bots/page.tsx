@@ -438,7 +438,10 @@ const BotsPage: React.FC = () => {
 
               {/* Actions */}
               <div className="flex items-center space-x-2">
-                <button className="flex-1 flex items-center justify-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors">
+                <button
+                  onClick={() => window.open(`/manager-dashboard/bots?botId=${bot.id}`, '_blank')}
+                  className="flex-1 flex items-center justify-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors"
+                >
                   <Eye className="w-4 h-4" />
                   <span>View</span>
                 </button>
@@ -483,11 +486,53 @@ const BotsPage: React.FC = () => {
               {selectedBots.length} bot{selectedBots.length > 1 ? 's' : ''} selected
             </span>
             <div className="flex items-center space-x-2">
-              <button className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors">
+              <button
+                onClick={async () => {
+                  if (confirm(`Activate ${selectedBots.length} bot(s)?`)) {
+                    for (const botId of selectedBots) {
+                      try {
+                        const response = await fetch('/api/admin/bots', {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ botId, updates: { status: 'active' } })
+                        });
+                        if (response.ok) {
+                          setBots(prev => prev.map(b => b.id === botId ? { ...b, status: 'active' } : b));
+                        }
+                      } catch (error) {
+                        console.error('Error activating bot:', error);
+                      }
+                    }
+                    setSelectedBots([]);
+                  }
+                }}
+                className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+              >
                 <Play className="w-4 h-4 inline mr-1" />
                 Activate
               </button>
-              <button className="px-3 py-1 text-sm bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors">
+              <button
+                onClick={async () => {
+                  if (confirm(`Pause ${selectedBots.length} bot(s)?`)) {
+                    for (const botId of selectedBots) {
+                      try {
+                        const response = await fetch('/api/admin/bots', {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ botId, updates: { status: 'inactive' } })
+                        });
+                        if (response.ok) {
+                          setBots(prev => prev.map(b => b.id === botId ? { ...b, status: 'inactive' } : b));
+                        }
+                      } catch (error) {
+                        console.error('Error pausing bot:', error);
+                      }
+                    }
+                    setSelectedBots([]);
+                  }
+                }}
+                className="px-3 py-1 text-sm bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors"
+              >
                 <Pause className="w-4 h-4 inline mr-1" />
                 Pause
               </button>
