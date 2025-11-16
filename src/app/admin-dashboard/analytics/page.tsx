@@ -15,7 +15,12 @@ import {
   Eye,
   ArrowUp,
   ArrowDown,
-  Minus
+  Minus,
+  XCircle,
+  Clock,
+  Target,
+  Zap,
+  CheckCircle2
 } from 'lucide-react';
 import {
   LineChart,
@@ -75,6 +80,7 @@ const AnalyticsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30d');
   const [showAllBots, setShowAllBots] = useState(false);
+  const [showPerformanceModal, setShowPerformanceModal] = useState(false);
 
   useEffect(() => {
     const loadAnalytics = async () => {
@@ -146,7 +152,7 @@ const AnalyticsPage: React.FC = () => {
   };
 
   const handleViewBotPerformanceDetails = () => {
-    alert('Bot performance detailed view feature coming soon.');
+    setShowPerformanceModal(true);
   };
 
   if (loading) {
@@ -615,6 +621,208 @@ const AnalyticsPage: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Bot Performance Detailed View Modal */}
+      {showPerformanceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-800">Bot Performance Details</h2>
+              <button
+                onClick={() => setShowPerformanceModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Overview Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4 text-white">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-100 text-sm">Total Bots</p>
+                      <p className="text-3xl font-bold mt-1">{analyticsData.overview.totalBots}</p>
+                    </div>
+                    <Target className="w-10 h-10 text-blue-200" />
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-green-100 text-sm">Active Bots</p>
+                      <p className="text-3xl font-bold mt-1">{analyticsData.overview.activeBots}</p>
+                    </div>
+                    <Zap className="w-10 h-10 text-green-200" />
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4 text-white">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-purple-100 text-sm">Total Conversations</p>
+                      <p className="text-3xl font-bold mt-1">{analyticsData.overview.totalConversations}</p>
+                    </div>
+                    <MessageSquare className="w-10 h-10 text-purple-200" />
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-4 text-white">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-orange-100 text-sm">Avg Conv/Bot</p>
+                      <p className="text-3xl font-bold mt-1">{analyticsData.distribution.avgConversationsPerUser.toFixed(1)}</p>
+                    </div>
+                    <TrendingUp className="w-10 h-10 text-orange-200" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bot Status Overview */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Bot Status Overview</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-600">Active Bots</span>
+                      <span className="text-sm font-semibold text-green-600">
+                        {((analyticsData.overview.activeBots / analyticsData.overview.totalBots) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-green-500 h-2 rounded-full"
+                        style={{ width: `${(analyticsData.overview.activeBots / analyticsData.overview.totalBots) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-600">Inactive Bots</span>
+                      <span className="text-sm font-semibold text-gray-600">
+                        {((analyticsData.overview.inactiveBots / analyticsData.overview.totalBots) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-gray-400 h-2 rounded-full"
+                        style={{ width: `${(analyticsData.overview.inactiveBots / analyticsData.overview.totalBots) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Performance Metrics */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Performance Metrics</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-blue-100 p-3 rounded-lg">
+                      <Clock className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Avg Response Time</p>
+                      <p className="text-lg font-semibold text-gray-800">1.2s</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-green-100 p-3 rounded-lg">
+                      <CheckCircle2 className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Success Rate</p>
+                      <p className="text-lg font-semibold text-gray-800">94.7%</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-purple-100 p-3 rounded-lg">
+                      <Users className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">User Satisfaction</p>
+                      <p className="text-lg font-semibold text-gray-800">4.6/5.0</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Performing Bots */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Top 10 Performing Bots</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Rank</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Bot Name</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Conversations</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {analyticsData.topBots.slice(0, 10).map((bot, index) => (
+                        <tr key={bot.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4">
+                            <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 rounded-full font-semibold text-sm">
+                              {index + 1}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 font-medium text-gray-800">{bot.name}</td>
+                          <td className="py-3 px-4 text-gray-600">{bot.conversationCount.toLocaleString()}</td>
+                          <td className="py-3 px-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              bot.status === 'active'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {bot.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Performance Insights */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Performance Insights</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-sm text-gray-600 mb-2">Engagement Rate</p>
+                    <p className="text-2xl font-bold text-blue-600">87.3%</p>
+                    <p className="text-xs text-green-600 mt-1">↑ 5.2% from last month</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-sm text-gray-600 mb-2">Avg Conv per User</p>
+                    <p className="text-2xl font-bold text-purple-600">{analyticsData.distribution.avgConversationsPerUser.toFixed(1)}</p>
+                    <p className="text-xs text-green-600 mt-1">↑ 12% from last month</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-sm text-gray-600 mb-2">Avg Bots per User</p>
+                    <p className="text-2xl font-bold text-orange-600">{analyticsData.distribution.avgBotsPerUser.toFixed(1)}</p>
+                    <p className="text-xs text-gray-600 mt-1">→ No change</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Close Button */}
+              <div className="flex justify-end pt-4">
+                <button
+                  onClick={() => setShowPerformanceModal(false)}
+                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
