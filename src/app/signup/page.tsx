@@ -317,18 +317,18 @@ const SignupComponent = () => {
                   </svg>
                 )}
               </button>
-              <label 
-                htmlFor="terms" 
+              <label
+                htmlFor="terms"
                 className="text-sm font-medium text-gray-600 leading-5"
               >
                 I agree to the{' '}
-                <a href="/terms" className="hover:underline font-semibold" style={{ color: '#6566F1' }}>
+                <Link href="/terms-of-service" className="hover:underline font-semibold" style={{ color: '#6566F1' }}>
                   Terms of Service
-                </a>{' '}
+                </Link>{' '}
                 and{' '}
-                <a href="/privacy" className="hover:underline font-semibold" style={{ color: '#6566F1' }}>
+                <Link href="/privacy-policy" className="hover:underline font-semibold" style={{ color: '#6566F1' }}>
                   Privacy Policy
-                </a>
+                </Link>
               </label>
             </div>
             

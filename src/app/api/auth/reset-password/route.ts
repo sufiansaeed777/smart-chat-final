@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AppDataSource } from '@/config/database';
+import { User } from '@/entities/User';
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository('users');
+    const userRepository = AppDataSource.getRepository(User);
 
     // Find user by reset token
     const user = await userRepository.findOne({
