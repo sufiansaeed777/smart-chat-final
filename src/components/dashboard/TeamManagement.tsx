@@ -34,6 +34,7 @@ const TeamManagement = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [userToDelete, setUserToDelete] = useState<{id: string; name: string} | null>(null);
   const [newMember, setNewMember] = useState({
     firstName: '',
@@ -42,8 +43,16 @@ const TeamManagement = () => {
     phone: '',
     countryCode: '+1'
   });
+  const [editingMember, setEditingMember] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    role: 'user'
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [togglingUser, setTogglingUser] = useState<string | null>(null);
   const [errors, setErrors] = useState({
     firstName: '',
@@ -374,6 +383,90 @@ const TeamManagement = () => {
   const openDeleteModal = (member: {id: string; name: string}) => {
     setUserToDelete(member);
     setIsDeleteModalOpen(true);
+  };
+
+  const handleEditClick = () => {
+    if (selectedAgentData) {
+      const nameParts = selectedAgentData.name.split(' ');
+      setEditingMember({
+        firstName: nameParts[0] || '',
+        lastName: nameParts.slice(1).join(' ') || '',
+        email: selectedAgentData.email,
+        phone: '', // Phone not available in current data
+        role: selectedAgentData.role
+      });
+      setIsEditMode(true);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setEditingMember({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      role: 'user'
+    });
+    setErrors({ firstName: '', lastName: '', email: '', phone: '' });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedAgent) return;
+
+    // Validate fields
+    const newErrors = {
+      firstName: validateField('firstName', editingMember.firstName),
+      lastName: validateField('lastName', editingMember.lastName),
+      email: validateField('email', editingMember.email),
+      phone: ''
+    };
+
+    setErrors(newErrors);
+    if (Object.values(newErrors).some(error => error !== '')) {
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const response = await fetch('/api/manager/update-user', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: selectedAgent,
+          firstName: editingMember.firstName,
+          lastName: editingMember.lastName,
+          email: editingMember.email,
+          role: editingMember.role
+        }),
+      });
+
+      if (response.ok) {
+        showToast('User updated successfully!', 'success');
+        setIsEditMode(false);
+        setEditingMember({
+          firstName: '',
+          lastName: '',
+          email: '',
+          phone: '',
+          role: 'user'
+        });
+        setErrors({ firstName: '', lastName: '', email: '', phone: '' });
+        // Refresh team members list
+        fetchTeamMembers();
+      } else {
+        const errorData = await response.json();
+        showToast(errorData.error || 'Failed to update user', 'error');
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      showToast('Network error. Please try again.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -727,11 +820,22 @@ const TeamManagement = () => {
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">{selectedAgentData.name}</h2>
+              <h2 className="text-xl font-bold text-gray-900">
+                {isEditMode ? 'Edit Member' : selectedAgentData.name}
+              </h2>
               <button
                 onClick={() => {
                   setIsDetailModalOpen(false);
                   setSelectedAgent(null);
+                  setIsEditMode(false);
+                  setEditingMember({
+                    firstName: '',
+                    lastName: '',
+                    email: '',
+                    phone: '',
+                    role: 'user'
+                  });
+                  setErrors({ firstName: '', lastName: '', email: '', phone: '' });
                 }}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
@@ -742,24 +846,93 @@ const TeamManagement = () => {
             <div className="space-y-4">
               {/* Avatar and Basic Info */}
               <div className="flex items-center space-x-4 pb-4 border-b border-gray-200">
-                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
+                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-lg font-medium text-gray-600">
-                    {selectedAgentData.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    {isEditMode
+                      ? `${editingMember.firstName[0] || ''}${editingMember.lastName[0] || ''}`.toUpperCase()
+                      : selectedAgentData.name.split(' ').map(n => n[0]).join('').toUpperCase()
+                    }
                   </span>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900">{selectedAgentData.name}</h3>
-                  <p className="text-sm text-gray-600">{selectedAgentData.email}</p>
-                  <div className="flex items-center space-x-2 mt-2">
-                    {getOnlineStatusIcon(selectedAgentData.onlineStatus)}
-                    <Badge className={`text-xs font-medium px-2 py-1 ${
-                      selectedAgentData.onlineStatus === 'online'
-                        ? 'bg-green-500 text-white border-green-600'
-                        : 'bg-gray-400 text-white border-gray-500'
-                    }`}>
-                      {selectedAgentData.onlineStatus}
-                    </Badge>
-                  </div>
+                  {isEditMode ? (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">First Name</label>
+                          <input
+                            type="text"
+                            value={editingMember.firstName}
+                            onChange={(e) => {
+                              setEditingMember({...editingMember, firstName: e.target.value});
+                              const error = validateField('firstName', e.target.value);
+                              setErrors({...errors, firstName: error});
+                            }}
+                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6566F1] text-sm ${
+                              errors.firstName ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            placeholder="First name"
+                          />
+                          {errors.firstName && (
+                            <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Last Name</label>
+                          <input
+                            type="text"
+                            value={editingMember.lastName}
+                            onChange={(e) => {
+                              setEditingMember({...editingMember, lastName: e.target.value});
+                              const error = validateField('lastName', e.target.value);
+                              setErrors({...errors, lastName: error});
+                            }}
+                            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6566F1] text-sm ${
+                              errors.lastName ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            placeholder="Last name"
+                          />
+                          {errors.lastName && (
+                            <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={editingMember.email}
+                          onChange={(e) => {
+                            setEditingMember({...editingMember, email: e.target.value});
+                            const error = validateField('email', e.target.value);
+                            setErrors({...errors, email: error});
+                          }}
+                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6566F1] text-sm ${
+                            errors.email ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          placeholder="Email address"
+                        />
+                        {errors.email && (
+                          <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h3 className="text-lg font-semibold text-gray-900">{selectedAgentData.name}</h3>
+                      <p className="text-sm text-gray-600">{selectedAgentData.email}</p>
+                      <div className="flex items-center space-x-2 mt-2">
+                        {getOnlineStatusIcon(selectedAgentData.onlineStatus)}
+                        <Badge className={`text-xs font-medium px-2 py-1 ${
+                          selectedAgentData.onlineStatus === 'online'
+                            ? 'bg-green-500 text-white border-green-600'
+                            : 'bg-gray-400 text-white border-gray-500'
+                        }`}>
+                          {selectedAgentData.onlineStatus}
+                        </Badge>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -783,8 +956,20 @@ const TeamManagement = () => {
 
               {/* Role */}
               <div>
-                <p className="text-sm font-medium text-gray-600">Role</p>
-                <p className="text-gray-900 capitalize">{selectedAgentData.role}</p>
+                <label className="block text-sm font-medium text-gray-600 mb-2">Role</label>
+                {isEditMode ? (
+                  <select
+                    value={editingMember.role}
+                    onChange={(e) => setEditingMember({...editingMember, role: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6566F1] text-gray-900"
+                  >
+                    <option value="user">User</option>
+                    <option value="manager">Manager</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900 capitalize">{selectedAgentData.role}</p>
+                )}
               </div>
 
               {/* Contact Info */}
@@ -872,16 +1057,53 @@ const TeamManagement = () => {
             </div>
 
             <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsDetailModalOpen(false);
-                  setSelectedAgent(null);
-                }}
-                className="px-4 py-2 text-gray-700 border-gray-300 hover:bg-gray-50"
-              >
-                Close
-              </Button>
+              {isEditMode ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    disabled={isSaving}
+                    className="px-4 py-2 text-gray-700 border-gray-300 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSaveEdit}
+                    disabled={isSaving}
+                    className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white px-4 py-2 disabled:opacity-50"
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin inline" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Changes'
+                    )}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={handleEditClick}
+                    className="px-4 py-2 text-gray-700 border-gray-300 hover:bg-gray-50"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsDetailModalOpen(false);
+                      setSelectedAgent(null);
+                    }}
+                    className="px-4 py-2 text-gray-700 border-gray-300 hover:bg-gray-50"
+                  >
+                    Close
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
