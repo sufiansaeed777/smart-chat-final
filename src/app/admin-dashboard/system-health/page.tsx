@@ -44,6 +44,9 @@ const SystemHealthPage: React.FC = () => {
   const [services, setServices] = useState<ServiceStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showAlertsModal, setShowAlertsModal] = useState(false);
+  const [selectedService, setSelectedService] = useState<string>('');
 
   useEffect(() => {
     const loadSystemHealth = async () => {
@@ -317,11 +320,13 @@ const SystemHealthPage: React.FC = () => {
   const overallHealth = services.filter(s => s.status === 'operational').length / services.length * 100;
 
   const handleServiceSettings = (serviceName: string) => {
-    alert(`Opening settings for ${serviceName}.\n\nThis feature allows you to:\n- Configure service parameters\n- Set monitoring thresholds\n- Adjust alert rules\n- View detailed logs\n\nComing soon!`);
+    setSelectedService(serviceName);
+    setShowSettingsModal(true);
   };
 
   const handleServiceAlerts = (serviceName: string) => {
-    alert(`Managing alerts for ${serviceName}.\n\nThis feature allows you to:\n- Enable/disable notifications\n- Set alert thresholds\n- Configure notification channels\n- View alert history\n\nComing soon!`);
+    setSelectedService(serviceName);
+    setShowAlertsModal(true);
   };
 
   if (loading) {
@@ -549,6 +554,214 @@ const SystemHealthPage: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* Service Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowSettingsModal(false)}>
+          <div className="bg-white rounded-2xl p-6 w-[600px] max-w-[90vw] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-[#6566F1] rounded-xl flex items-center justify-center">
+                  <Settings className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Service Settings</h3>
+                  <p className="text-sm text-gray-600">{selectedService}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Monitoring Interval */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Monitoring Interval
+                </label>
+                <select className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-[#6566F1] text-gray-900">
+                  <option>Every 10 seconds</option>
+                  <option selected>Every 30 seconds</option>
+                  <option>Every 1 minute</option>
+                  <option>Every 5 minutes</option>
+                </select>
+              </div>
+
+              {/* Response Time Threshold */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Response Time Threshold (ms)
+                </label>
+                <input
+                  type="number"
+                  defaultValue="1000"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-[#6566F1] text-gray-900"
+                />
+                <p className="text-xs text-gray-500 mt-1">Alert if response time exceeds this value</p>
+              </div>
+
+              {/* Enable Monitoring */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div>
+                  <p className="font-semibold text-gray-900">Enable Monitoring</p>
+                  <p className="text-sm text-gray-600">Monitor this service continuously</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" className="sr-only peer" defaultChecked />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#6566F1]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#6566F1]"></div>
+                </label>
+              </div>
+
+              {/* Auto-restart on failure */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div>
+                  <p className="font-semibold text-gray-900">Auto-restart on Failure</p>
+                  <p className="text-sm text-gray-600">Automatically attempt to restart service if it fails</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" className="sr-only peer" defaultChecked />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#6566F1]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#6566F1]"></div>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  alert('Settings saved successfully!');
+                  setShowSettingsModal(false);
+                }}
+                className="flex-1 bg-[#6566F1] text-white py-3 px-6 rounded-xl hover:bg-[#5A5BD9] transition-colors font-semibold"
+              >
+                Save Settings
+              </button>
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors font-medium border border-gray-300 rounded-xl hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Service Alerts Modal */}
+      {showAlertsModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowAlertsModal(false)}>
+          <div className="bg-white rounded-2xl p-6 w-[600px] max-w-[90vw] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-yellow-500 rounded-xl flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Alert Settings</h3>
+                  <p className="text-sm text-gray-600">{selectedService}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAlertsModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Enable Alerts */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div>
+                  <p className="font-semibold text-gray-900">Enable Alerts</p>
+                  <p className="text-sm text-gray-600">Receive notifications for this service</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" className="sr-only peer" defaultChecked />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#6566F1]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#6566F1]"></div>
+                </label>
+              </div>
+
+              {/* Alert Channels */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Notification Channels
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                    <input type="checkbox" defaultChecked className="w-4 h-4 text-[#6566F1] rounded focus:ring-[#6566F1]" />
+                    <span className="text-sm font-medium text-gray-900">Email Notifications</span>
+                  </label>
+                  <label className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                    <input type="checkbox" className="w-4 h-4 text-[#6566F1] rounded focus:ring-[#6566F1]" />
+                    <span className="text-sm font-medium text-gray-900">SMS Alerts</span>
+                  </label>
+                  <label className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                    <input type="checkbox" defaultChecked className="w-4 h-4 text-[#6566F1] rounded focus:ring-[#6566F1]" />
+                    <span className="text-sm font-medium text-gray-900">In-App Notifications</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Alert Severity */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Alert Severity Levels
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-3 p-3 bg-red-50 rounded-lg cursor-pointer hover:bg-red-100 transition-colors">
+                    <input type="checkbox" defaultChecked className="w-4 h-4 text-red-600 rounded focus:ring-red-500" />
+                    <span className="text-sm font-medium text-red-900">Critical Alerts</span>
+                  </label>
+                  <label className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg cursor-pointer hover:bg-yellow-100 transition-colors">
+                    <input type="checkbox" defaultChecked className="w-4 h-4 text-yellow-600 rounded focus:ring-yellow-500" />
+                    <span className="text-sm font-medium text-yellow-900">Warning Alerts</span>
+                  </label>
+                  <label className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors">
+                    <input type="checkbox" className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
+                    <span className="text-sm font-medium text-blue-900">Info Alerts</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Alert Frequency */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Alert Frequency Limit
+                </label>
+                <select className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-[#6566F1] text-gray-900">
+                  <option>Immediate (no limit)</option>
+                  <option selected>Maximum 1 per minute</option>
+                  <option>Maximum 1 per 5 minutes</option>
+                  <option>Maximum 1 per hour</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Prevent alert spam for repeated issues</p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  alert('Alert settings saved successfully!');
+                  setShowAlertsModal(false);
+                }}
+                className="flex-1 bg-[#6566F1] text-white py-3 px-6 rounded-xl hover:bg-[#5A5BD9] transition-colors font-semibold"
+              >
+                Save Alert Settings
+              </button>
+              <button
+                onClick={() => setShowAlertsModal(false)}
+                className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors font-medium border border-gray-300 rounded-xl hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
