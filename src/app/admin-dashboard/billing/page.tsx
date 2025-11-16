@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  CreditCard, 
-  Download, 
+import {
+  CreditCard,
+  Download,
   Calendar,
   TrendingUp,
   DollarSign,
@@ -14,7 +14,10 @@ import {
   AlertTriangle,
   Clock,
   FileText,
-  Plus
+  Plus,
+  XCircle,
+  Mail,
+  Phone
 } from 'lucide-react';
 
 const BillingPage: React.FC = () => {
@@ -22,6 +25,15 @@ const BillingPage: React.FC = () => {
   const [analytics, setAnalytics] = useState<any>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [paymentMethod, setPaymentMethod] = useState({
+    cardNumber: '',
+    expiryDate: '',
+    cvv: '',
+    cardholderName: ''
+  });
 
   useEffect(() => {
     const loadBillingData = async () => {
@@ -106,6 +118,73 @@ const BillingPage: React.FC = () => {
       default:
         return <Clock className="w-4 h-4" />;
     }
+  };
+
+  const handleViewInvoice = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setShowInvoiceModal(true);
+  };
+
+  const handleDownloadInvoice = (invoice: any) => {
+    // Create a simple invoice text file
+    const invoiceContent = `
+INVOICE
+=======
+
+Invoice Number: ${invoice.invoiceNumber || invoice.id}
+Date: ${new Date(invoice.createdAt).toLocaleDateString()}
+Status: ${invoice.status.toUpperCase()}
+
+${invoice.managerName ? `Manager: ${invoice.managerName}\nEmail: ${invoice.managerEmail}\n` : ''}
+Description: ${invoice.planName || invoice.notes || 'Subscription Payment'}
+
+AMOUNT BREAKDOWN
+================
+Subtotal:  $${(invoice.amount || 0).toFixed(2)}
+Tax:       $${(invoice.tax || 0).toFixed(2)}
+Discount:  -$${(invoice.discount || 0).toFixed(2)}
+-----------------------------------
+Total:     $${(invoice.total || invoice.amount || 0).toFixed(2)}
+
+${invoice.paidAt ? `Paid On: ${new Date(invoice.paidAt).toLocaleDateString()}` : `Due Date: ${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'N/A'}`}
+
+${invoice.notes ? `Notes: ${invoice.notes}` : ''}
+
+Thank you for your business!
+    `.trim();
+
+    // Create and download the file
+    const blob = new Blob([invoiceContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `invoice-${invoice.invoiceNumber || invoice.id}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
+  const handleUpdatePaymentMethod = () => {
+    setShowPaymentModal(true);
+  };
+
+  const handleSavePaymentMethod = () => {
+    // Validate payment method
+    if (!paymentMethod.cardNumber || !paymentMethod.expiryDate || !paymentMethod.cvv || !paymentMethod.cardholderName) {
+      alert('Please fill in all payment method fields');
+      return;
+    }
+
+    // In a real app, this would integrate with Stripe or another payment processor
+    alert('Payment method updated successfully! In production, this would integrate with your payment processor.');
+    setShowPaymentModal(false);
+    setPaymentMethod({
+      cardNumber: '',
+      expiryDate: '',
+      cvv: '',
+      cardholderName: ''
+    });
   };
 
   if (loading) {
@@ -341,14 +420,14 @@ const BillingPage: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => alert(`Download invoice ${invoice.invoiceId || invoice.id} feature coming soon.`)}
+                          onClick={() => handleDownloadInvoice(invoice)}
                           className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors"
                           title="Download Invoice"
                         >
                           <Download className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => alert(`View invoice ${invoice.invoiceId || invoice.id} details feature coming soon.`)}
+                          onClick={() => handleViewInvoice(invoice)}
                           className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors"
                           title="View Invoice Details"
                         >
@@ -382,13 +461,292 @@ const BillingPage: React.FC = () => {
             </div>
           </div>
           <button
-            onClick={() => alert('Payment method update feature coming soon. Please contact support to update payment method.')}
+            onClick={handleUpdatePaymentMethod}
             className="text-[#6566F1] hover:text-[#5A5BD9] font-medium"
           >
             Update
           </button>
         </div>
       </div>
+
+      {/* Invoice Details Modal */}
+      {showInvoiceModal && selectedInvoice && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5 border-b border-gray-200 pb-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Invoice Details</h2>
+                <p className="text-sm text-gray-600 mt-1">Invoice #{selectedInvoice.invoiceNumber || selectedInvoice.id}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowInvoiceModal(false);
+                  setSelectedInvoice(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Invoice Status */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    selectedInvoice.status === 'paid' ? 'bg-green-100' :
+                    selectedInvoice.status === 'pending' ? 'bg-yellow-100' : 'bg-red-100'
+                  }`}>
+                    {getStatusIcon(selectedInvoice.status)}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Status</p>
+                    <p className="text-lg font-semibold text-gray-900 capitalize">{selectedInvoice.status}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-600">Amount</p>
+                  <p className="text-2xl font-bold text-gray-900">${(selectedInvoice.total || selectedInvoice.amount || 0).toFixed(2)}</p>
+                </div>
+              </div>
+
+              {/* Customer Information */}
+              {selectedInvoice.managerName && (
+                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Customer Information</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Users className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm text-gray-900">{selectedInvoice.managerName}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Mail className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm text-gray-600">{selectedInvoice.managerEmail}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Invoice Information */}
+              <div className="bg-white border border-gray-200 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Invoice Information</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-600 mb-1">Invoice Number</p>
+                    <p className="text-gray-900 font-medium">{selectedInvoice.invoiceNumber || selectedInvoice.id}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600 mb-1">Issue Date</p>
+                    <p className="text-gray-900 font-medium">{new Date(selectedInvoice.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600 mb-1">Due Date</p>
+                    <p className="text-gray-900 font-medium">
+                      {selectedInvoice.dueDate ? new Date(selectedInvoice.dueDate).toLocaleDateString() : 'N/A'}
+                    </p>
+                  </div>
+                  {selectedInvoice.paidAt && (
+                    <div>
+                      <p className="text-gray-600 mb-1">Paid On</p>
+                      <p className="text-gray-900 font-medium">{new Date(selectedInvoice.paidAt).toLocaleDateString()}</p>
+                    </div>
+                  )}
+                  <div className="col-span-2">
+                    <p className="text-gray-600 mb-1">Description</p>
+                    <p className="text-gray-900 font-medium">{selectedInvoice.planName || selectedInvoice.notes || 'Subscription Payment'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Amount Breakdown */}
+              <div className="bg-white border border-gray-200 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Amount Breakdown</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Subtotal</span>
+                    <span className="text-gray-900 font-medium">${(selectedInvoice.amount || 0).toFixed(2)}</span>
+                  </div>
+                  {selectedInvoice.tax > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Tax</span>
+                      <span className="text-gray-900 font-medium">${(selectedInvoice.tax || 0).toFixed(2)}</span>
+                    </div>
+                  )}
+                  {selectedInvoice.discount > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Discount</span>
+                      <span className="text-green-600 font-medium">-${(selectedInvoice.discount || 0).toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="border-t border-gray-200 pt-2 mt-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-900 font-semibold">Total</span>
+                      <span className="text-gray-900 font-bold text-lg">${(selectedInvoice.total || selectedInvoice.amount || 0).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              {selectedInvoice.notes && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Notes</h3>
+                  <p className="text-sm text-gray-700">{selectedInvoice.notes}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end space-x-3 pt-6 mt-6 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowInvoiceModal(false);
+                  setSelectedInvoice(null);
+                }}
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  handleDownloadInvoice(selectedInvoice);
+                  setShowInvoiceModal(false);
+                  setSelectedInvoice(null);
+                }}
+                className="px-6 py-2 bg-[#6566F1] text-white rounded-xl hover:bg-[#5A5BD9] transition-colors flex items-center space-x-2"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Method Update Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-bold text-gray-900">Update Payment Method</h2>
+              <button
+                onClick={() => {
+                  setShowPaymentModal(false);
+                  setPaymentMethod({
+                    cardNumber: '',
+                    expiryDate: '',
+                    cvv: '',
+                    cardholderName: ''
+                  });
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Cardholder Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={paymentMethod.cardholderName}
+                  onChange={(e) => setPaymentMethod({ ...paymentMethod, cardholderName: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
+                  placeholder="John Doe"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Card Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={paymentMethod.cardNumber}
+                  onChange={(e) => {
+                    // Format card number with spaces
+                    const value = e.target.value.replace(/\s/g, '').replace(/(\d{4})/g, '$1 ').trim();
+                    setPaymentMethod({ ...paymentMethod, cardNumber: value });
+                  }}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
+                  placeholder="1234 5678 9012 3456"
+                  maxLength={19}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Expiry Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentMethod.expiryDate}
+                    onChange={(e) => {
+                      // Format as MM/YY
+                      const value = e.target.value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '$1/$2');
+                      setPaymentMethod({ ...paymentMethod, expiryDate: value });
+                    }}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
+                    placeholder="MM/YY"
+                    maxLength={5}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    CVV <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentMethod.cvv}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      setPaymentMethod({ ...paymentMethod, cvv: value });
+                    }}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
+                    placeholder="123"
+                    maxLength={4}
+                  />
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p className="text-xs text-blue-800">
+                  <strong>Note:</strong> In production, this would integrate with Stripe or another secure payment processor.
+                  Your card information would be encrypted and handled securely.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-3 pt-6 mt-6 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowPaymentModal(false);
+                  setPaymentMethod({
+                    cardNumber: '',
+                    expiryDate: '',
+                    cvv: '',
+                    cardholderName: ''
+                  });
+                }}
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSavePaymentMethod}
+                className="px-6 py-2 bg-[#6566F1] text-white rounded-xl hover:bg-[#5A5BD9] transition-colors"
+              >
+                Save Payment Method
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
