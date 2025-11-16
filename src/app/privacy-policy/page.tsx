@@ -1,21 +1,39 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { Shield } from 'lucide-react';
+import Navigation from '@/components/Navigation';
+import Footer from '@/components/Footer';
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="mb-8">
-          <Link href="/" className="inline-flex items-center text-[#6566F1] hover:text-[#5A5BD9] mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Link>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Privacy Policy</h1>
-          <p className="text-gray-600">Last updated: January 2025</p>
-        </div>
+    <div className="min-h-screen bg-white">
+      <Navigation />
 
-        <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 prose max-w-none">
+      {/* Header */}
+      <header className="pt-24 pb-20 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="max-w-6xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-8 leading-tight">
+              <Shield className="inline w-12 h-12 text-blue-600 mr-4 align-middle" />
+              Privacy Policy
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-medium">
+              Your privacy and data security are our top priorities
+            </p>
+            <p className="text-gray-500 mt-4">Last updated: January 2025</p>
+            <div className="mt-12 flex justify-center">
+              <div className="w-24 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="py-16">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white border border-gray-200 rounded-3xl p-10 shadow-xl prose max-w-none">
           <h2>1. Information We Collect</h2>
           <p>We collect information that you provide directly to us, including:</p>
           <ul>
@@ -97,8 +115,12 @@ export default function PrivacyPolicyPage() {
             <br />
             <a href="mailto:privacy@smartchat.com" className="text-[#6566F1]">privacy@smartchat.com</a>
           </p>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }

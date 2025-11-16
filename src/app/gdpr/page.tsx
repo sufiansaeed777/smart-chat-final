@@ -1,23 +1,38 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Shield, Check } from 'lucide-react';
+import { Shield, Check } from 'lucide-react';
+import Navigation from '@/components/Navigation';
+import Footer from '@/components/Footer';
 
 export default function GDPRPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="mb-8">
-          <Link href="/" className="inline-flex items-center text-[#6566F1] hover:text-[#5A5BD9] mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Link>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">GDPR Compliance</h1>
-          <p className="text-xl text-gray-600">
-            Our commitment to data protection and privacy rights under GDPR.
-          </p>
-        </div>
+    <div className="min-h-screen bg-white">
+      <Navigation />
 
-        <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 mb-8">
+      {/* Header */}
+      <header className="pt-24 pb-20 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="max-w-6xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-8 leading-tight">
+              <Shield className="inline w-12 h-12 text-blue-600 mr-4 align-middle" />
+              GDPR Compliance
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-medium">
+              Our commitment to data protection and privacy rights under GDPR
+            </p>
+            <div className="mt-12 flex justify-center">
+              <div className="w-24 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="py-16">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white border border-gray-200 rounded-3xl p-10 shadow-xl mb-8">
           <div className="flex items-start mb-6">
             <Shield className="w-12 h-12 text-[#6566F1] mr-4 flex-shrink-0" />
             <div>
@@ -31,7 +46,7 @@ export default function GDPRPage() {
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 mb-8">
+            <div className="bg-white border border-gray-200 rounded-3xl p-10 shadow-xl mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Rights Under GDPR</h2>
           
           <div className="space-y-4">
@@ -93,7 +108,7 @@ export default function GDPRPage() {
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 mb-8 prose max-w-none">
+            <div className="bg-white border border-gray-200 rounded-3xl p-10 shadow-xl mb-8 prose max-w-none">
           <h2>How We Comply with GDPR</h2>
 
           <h3>Lawful Basis for Processing</h3>
@@ -132,7 +147,7 @@ export default function GDPRPage() {
           </p>
         </div>
 
-        <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
+            <div className="bg-white border border-gray-200 rounded-3xl p-10 shadow-xl">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Exercise Your Rights</h2>
           <p className="text-gray-600 mb-4">
             To exercise any of your GDPR rights or if you have questions about how we handle your data:
@@ -155,8 +170,12 @@ export default function GDPRPage() {
             We will respond to your request within one month. If you are not satisfied with our response, you have
             the right to lodge a complaint with your local supervisory authority.
           </p>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }
