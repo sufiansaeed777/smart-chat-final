@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useReportIssue } from '@/contexts/ReportIssueContext';
 import {
   HelpCircle,
   Search,
@@ -16,7 +15,6 @@ import {
   Handshake,
   Palette,
   Play,
-  Plus,
   X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,7 +26,6 @@ import RoleGuard from '@/components/auth/RoleGuard';
 
 const HelpPage = () => {
   const router = useRouter();
-  const { openModal: openReportIssue } = useReportIssue();
   const [activeTab, setActiveTab] = useState('tutorials');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -189,13 +186,7 @@ const HelpPage = () => {
         {/* Tutorials Tab Content */}
         {activeTab === 'tutorials' && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-gray-900">Video Tutorials</h2>
-              <Button onClick={() => setShowAddModal(true)} className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Video Link
-              </Button>
-            </div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Video Tutorials</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {tutorials.map((tutorial) => {
                 const Icon = tutorial.icon;
@@ -252,20 +243,14 @@ const HelpPage = () => {
         {/* Articles Tab Content */}
         {activeTab === 'articles' && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-gray-900">Help Articles</h2>
-              <Button onClick={() => setShowAddModal(true)} className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Article
-              </Button>
-            </div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Help Articles</h2>
             {articles.length === 0 ? (
               <Card className="border border-gray-200 bg-white">
                 <CardContent className="py-12">
                   <div className="text-center">
                     <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Articles Yet</h3>
-                    <p className="text-gray-600">Click "Add Article" to create your first help article</p>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Articles Available</h3>
+                    <p className="text-gray-600">Check back later for helpful articles and guides</p>
                   </div>
                 </CardContent>
               </Card>
@@ -292,20 +277,14 @@ const HelpPage = () => {
         {/* FAQ Tab Content */}
         {activeTab === 'faq' && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-gray-900">Frequently Asked Questions</h2>
-              <Button onClick={() => setShowAddModal(true)} className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                Add FAQ
-              </Button>
-            </div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Frequently Asked Questions</h2>
             {faqs.length === 0 ? (
               <Card className="border border-gray-200 bg-white">
                 <CardContent className="py-12">
                   <div className="text-center">
                     <HelpCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No FAQs Yet</h3>
-                    <p className="text-gray-600">Click "Add FAQ" to create your first FAQ entry</p>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No FAQs Available</h3>
+                    <p className="text-gray-600">Check back later for frequently asked questions</p>
                   </div>
                 </CardContent>
               </Card>
@@ -355,7 +334,7 @@ const HelpPage = () => {
                   <Button
                     variant="outline"
                     className="border-gray-300 hover:bg-gray-50 text-gray-700"
-                    onClick={() => openReportIssue()}
+                    onClick={() => router.push('/manager-dashboard/issues')}
                   >
                     Report an Issue
                   </Button>
