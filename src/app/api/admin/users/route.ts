@@ -121,6 +121,9 @@ export async function PATCH(request: NextRequest) {
 
     // Hash password if provided
     if (updates.password) {
+      // Remove plain text password from updates object
+      delete dbUpdates.password;
+      // Hash and set the new password
       const hashedPassword = await bcrypt.hash(updates.password, 10);
       dbUpdates.password = hashedPassword;
     }

@@ -145,6 +145,7 @@ export async function PATCH(request: NextRequest) {
     if (updates.description !== undefined) bot.description = updates.description;
     if (updates.domain !== undefined) bot.domain = updates.domain;
     if (updates.status !== undefined) bot.status = updates.status;
+    if (updates.category !== undefined) bot.category = updates.category;
 
     await botRepository.save(bot);
 
