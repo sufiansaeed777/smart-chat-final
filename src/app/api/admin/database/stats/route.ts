@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
+import { User } from '@/entities/User';
 
 export async function GET() {
   try {
@@ -16,7 +17,7 @@ export async function GET() {
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository('users');
+    const userRepository = AppDataSource.getRepository(User);
     const user = await userRepository.findOne({
       where: { email: session.user.email }
     });

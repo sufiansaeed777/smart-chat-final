@@ -2,17 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
+import { User } from '@/entities/User';
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
+    }
+
+    // Check if user is admin
+    const userRepository = AppDataSource.getRepository(User);
+    const currentUser = await userRepository.findOne({
+      where: { email: session.user.email }
+    });
+
+    if (!currentUser || currentUser.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
 
     // Run VACUUM ANALYZE on all tables for PostgreSQL optimization
