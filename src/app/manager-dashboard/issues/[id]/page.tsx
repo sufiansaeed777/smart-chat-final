@@ -124,11 +124,16 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
     fetchIssueDetails();
   }, [params.id]);
 
-  // Fetch available agents
+  // Fetch available agents (bot-specific if issue has a botId)
   useEffect(() => {
     const fetchAgents = async () => {
       try {
-        const response = await fetch('/api/manager/users');
+        // If issue has a botId, fetch only agents assigned to that bot
+        const url = issue?.botId
+          ? `/api/manager/users?botId=${issue.botId}`
+          : '/api/manager/users';
+
+        const response = await fetch(url);
         if (response.ok) {
           const data = await response.json();
           if (data.users) {
@@ -140,8 +145,11 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
       }
     };
 
-    fetchAgents();
-  }, []);
+    // Only fetch agents if issue is loaded
+    if (issue) {
+      fetchAgents();
+    }
+  }, [issue]);
 
   // Calculate pagination for customer history
   const totalHistoryPages = Math.ceil(customerHistory.length / historyPerPage);
@@ -461,7 +469,8 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
                     showToast('Failed to send response', 'error');
                   }
                 }}
-                className="bg-[#5A5BD8] hover:bg-[#4A4BC8] text-white px-6"
+                disabled={!responseText.trim()}
+                className="bg-[#5A5BD8] hover:bg-[#4A4BC8] text-white px-6 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="w-4 h-4 mr-2" />
                 Send Response
