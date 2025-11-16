@@ -18,7 +18,9 @@ import {
   Eye,
   ArrowUp,
   ArrowDown,
-  Minus
+  Minus,
+  Star,
+  Activity
 } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
 
@@ -39,6 +41,9 @@ const ChatbotAnalyticsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30d');
   const [selectedBot, setSelectedBot] = useState<string>('all');
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  const [selectedBotData, setSelectedBotData] = useState<BotAnalytics | null>(null);
 
   useEffect(() => {
     const loadAnalytics = async () => {
@@ -142,6 +147,44 @@ const ChatbotAnalyticsPage: React.FC = () => {
     return 'text-red-600';
   };
 
+  const handleViewBot = (bot: BotAnalytics) => {
+    setSelectedBotData(bot);
+    setShowViewModal(true);
+  };
+
+  const handleViewAnalytics = (bot: BotAnalytics) => {
+    setSelectedBotData(bot);
+    setShowAnalyticsModal(true);
+  };
+
+  const handleExport = () => {
+    // Create CSV content
+    const csvContent = [
+      ['Bot Name', 'Conversations', 'Users', 'Satisfaction', 'Response Time', 'Resolution Rate', 'Trend', 'Change'].join(','),
+      ...analytics.map(bot => [
+        bot.name,
+        bot.conversations,
+        bot.users,
+        bot.satisfaction,
+        `${bot.responseTime}s`,
+        `${bot.resolutionRate}%`,
+        bot.trend,
+        `${bot.change}%`
+      ].join(','))
+    ].join('\n');
+
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chatbot-analytics-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
   const totalConversations = analytics.reduce((sum, bot) => sum + bot.conversations, 0);
   const totalUsers = analytics.reduce((sum, bot) => sum + bot.users, 0);
   const avgSatisfaction = analytics.reduce((sum, bot) => sum + bot.satisfaction, 0) / analytics.length;
@@ -184,7 +227,10 @@ const ChatbotAnalyticsPage: React.FC = () => {
             <option value="90d">Last 90 days</option>
             <option value="1y">Last year</option>
           </select>
-          <button className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
+          <button
+            onClick={handleExport}
+            className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+          >
             <Download className="w-5 h-5" />
             <span>Export</span>
           </button>
@@ -352,12 +398,18 @@ const ChatbotAnalyticsPage: React.FC = () => {
                   <td className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 whitespace-nowrap text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-medium">
                     <div className="flex items-center space-x-0.5 sm:space-x-1 md:space-x-1.5">
                       <Tooltip content="View" position="top">
-                        <button className="text-[#6566F1] hover:text-[#5A5BD9] p-0.5 sm:p-1 md:p-1.5 rounded-md sm:rounded-lg hover:bg-[#6566F1]/10 transition-colors flex-shrink-0">
+                        <button
+                          onClick={() => handleViewBot(bot)}
+                          className="text-[#6566F1] hover:text-[#5A5BD9] p-0.5 sm:p-1 md:p-1.5 rounded-md sm:rounded-lg hover:bg-[#6566F1]/10 transition-colors flex-shrink-0"
+                        >
                           <Eye className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 lg:w-4 lg:h-4" />
                         </button>
                       </Tooltip>
                       <Tooltip content="Analytics" position="top">
-                        <button className="text-gray-600 hover:text-gray-900 p-0.5 sm:p-1 md:p-1.5 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0">
+                        <button
+                          onClick={() => handleViewAnalytics(bot)}
+                          className="text-gray-600 hover:text-gray-900 p-0.5 sm:p-1 md:p-1.5 rounded-md sm:rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
+                        >
                           <BarChart3 className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 lg:w-4 lg:h-4" />
                         </button>
                       </Tooltip>
@@ -429,6 +481,380 @@ const ChatbotAnalyticsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* View Bot Details Modal */}
+      {showViewModal && selectedBotData && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5 border-b border-gray-200 pb-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">{selectedBotData.name}</h2>
+                <p className="text-sm text-gray-600 mt-1">Chatbot Performance Overview</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowViewModal(false);
+                  setSelectedBotData(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Quick Stats */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-blue-600 font-medium">Total Conversations</p>
+                      <p className="text-2xl font-bold text-blue-900 mt-1">{selectedBotData.conversations.toLocaleString()}</p>
+                    </div>
+                    <MessageSquare className="w-8 h-8 text-blue-600" />
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-green-600 font-medium">Total Users</p>
+                      <p className="text-2xl font-bold text-green-900 mt-1">{selectedBotData.users.toLocaleString()}</p>
+                    </div>
+                    <Users className="w-8 h-8 text-green-600" />
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-purple-600 font-medium">Response Time</p>
+                      <p className="text-2xl font-bold text-purple-900 mt-1">{selectedBotData.responseTime}s</p>
+                    </div>
+                    <Clock className="w-8 h-8 text-purple-600" />
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-orange-600 font-medium">Resolution Rate</p>
+                      <p className="text-2xl font-bold text-orange-900 mt-1">{selectedBotData.resolutionRate}%</p>
+                    </div>
+                    <CheckCircle className="w-8 h-8 text-orange-600" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Satisfaction Rating */}
+              <div className="bg-white border border-gray-200 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">User Satisfaction</h3>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-3xl font-bold text-gray-900">{selectedBotData.satisfaction}</span>
+                    <span className="text-gray-600">/5.0</span>
+                  </div>
+                  <div className="flex space-x-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-6 h-6 ${
+                          i < Math.floor(selectedBotData.satisfaction)
+                            ? 'text-yellow-400 fill-yellow-400'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-3 bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-yellow-400 h-2 rounded-full"
+                    style={{ width: `${(selectedBotData.satisfaction / 5) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Trend Information */}
+              <div className="bg-white border border-gray-200 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Performance Trend</h3>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                      selectedBotData.trend === 'up' ? 'bg-green-100' :
+                      selectedBotData.trend === 'down' ? 'bg-red-100' : 'bg-gray-100'
+                    }`}>
+                      {getTrendIcon(selectedBotData.trend)}
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Trend Direction</p>
+                      <p className={`text-lg font-semibold capitalize ${getTrendColor(selectedBotData.trend)}`}>
+                        {selectedBotData.trend}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600">Change</p>
+                    <p className={`text-2xl font-bold ${getTrendColor(selectedBotData.trend)}`}>
+                      {selectedBotData.change > 0 ? '+' : ''}{selectedBotData.change}%
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">Summary</h3>
+                <p className="text-sm text-gray-700">
+                  {selectedBotData.name} has handled {selectedBotData.conversations.toLocaleString()} conversations
+                  with {selectedBotData.users.toLocaleString()} users. The bot maintains a {selectedBotData.satisfaction}/5.0
+                  satisfaction rating with an average response time of {selectedBotData.responseTime}s and a {selectedBotData.resolutionRate}%
+                  resolution rate.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-3 pt-6 mt-6 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowViewModal(false);
+                  setSelectedBotData(null);
+                }}
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  setShowViewModal(false);
+                  handleViewAnalytics(selectedBotData);
+                }}
+                className="px-6 py-2 bg-[#6566F1] text-white rounded-xl hover:bg-[#5A5BD9] transition-colors flex items-center space-x-2"
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>View Analytics</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Analytics Details Modal */}
+      {showAnalyticsModal && selectedBotData && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5 border-b border-gray-200 pb-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h2>
+                <p className="text-sm text-gray-600 mt-1">{selectedBotData.name} - Detailed Performance Metrics</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowAnalyticsModal(false);
+                  setSelectedBotData(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Key Metrics Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-gray-600">Engagement Rate</p>
+                    <Activity className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {((selectedBotData.conversations / (selectedBotData.users || 1)) * 100).toFixed(1)}%
+                  </p>
+                  <div className="mt-2 bg-gray-200 rounded-full h-1.5">
+                    <div
+                      className="bg-blue-500 h-1.5 rounded-full"
+                      style={{ width: `${Math.min(((selectedBotData.conversations / (selectedBotData.users || 1)) * 100), 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-gray-600">Avg Conv per User</p>
+                    <MessageSquare className="w-5 h-5 text-green-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {(selectedBotData.conversations / (selectedBotData.users || 1)).toFixed(1)}
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">Above average</p>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-gray-600">Success Rate</p>
+                    <CheckCircle className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{selectedBotData.resolutionRate}%</p>
+                  <div className="mt-2 bg-gray-200 rounded-full h-1.5">
+                    <div
+                      className="bg-purple-500 h-1.5 rounded-full"
+                      style={{ width: `${selectedBotData.resolutionRate}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Performance Breakdown */}
+              <div className="bg-white border border-gray-200 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4">Performance Breakdown</h3>
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-600">Satisfaction Score</span>
+                      <span className="font-semibold text-gray-900">{selectedBotData.satisfaction}/5.0</span>
+                    </div>
+                    <div className="bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-yellow-400 h-2 rounded-full"
+                        style={{ width: `${(selectedBotData.satisfaction / 5) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-600">Response Time</span>
+                      <span className="font-semibold text-gray-900">{selectedBotData.responseTime}s</span>
+                    </div>
+                    <div className="bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-500 h-2 rounded-full"
+                        style={{ width: `${Math.max(0, 100 - (selectedBotData.responseTime * 20))}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-600">Resolution Rate</span>
+                      <span className="font-semibold text-gray-900">{selectedBotData.resolutionRate}%</span>
+                    </div>
+                    <div className="bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-green-500 h-2 rounded-full"
+                        style={{ width: `${selectedBotData.resolutionRate}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Usage Statistics */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-blue-900 mb-3">Conversation Stats</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-blue-700">Total Conversations</span>
+                      <span className="font-bold text-blue-900">{selectedBotData.conversations.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-blue-700">Active Users</span>
+                      <span className="font-bold text-blue-900">{selectedBotData.users.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-blue-700">Avg per User</span>
+                      <span className="font-bold text-blue-900">
+                        {(selectedBotData.conversations / (selectedBotData.users || 1)).toFixed(1)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-green-900 mb-3">Quality Metrics</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-green-700">Satisfaction</span>
+                      <span className="font-bold text-green-900">{selectedBotData.satisfaction}/5.0</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-green-700">Response Time</span>
+                      <span className="font-bold text-green-900">{selectedBotData.responseTime}s</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-green-700">Resolution Rate</span>
+                      <span className="font-bold text-green-900">{selectedBotData.resolutionRate}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Insights */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-purple-900 mb-2">Performance Insights</h3>
+                <div className="space-y-2 text-sm text-purple-800">
+                  <p>
+                    • {selectedBotData.trend === 'up' ? 'Improving' : selectedBotData.trend === 'down' ? 'Declining' : 'Stable'} performance
+                    with {Math.abs(selectedBotData.change)}% change
+                  </p>
+                  <p>
+                    • {selectedBotData.satisfaction >= 4.5 ? 'Excellent' : selectedBotData.satisfaction >= 4.0 ? 'Good' : 'Needs improvement'} user satisfaction rating
+                  </p>
+                  <p>
+                    • {selectedBotData.responseTime < 2 ? 'Fast' : selectedBotData.responseTime < 3 ? 'Moderate' : 'Slow'} response time
+                  </p>
+                  <p>
+                    • {selectedBotData.resolutionRate >= 90 ? 'High' : selectedBotData.resolutionRate >= 80 ? 'Moderate' : 'Low'} resolution rate
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-3 pt-6 mt-6 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowAnalyticsModal(false);
+                  setSelectedBotData(null);
+                }}
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  // Export individual bot analytics
+                  const csvContent = [
+                    ['Metric', 'Value'],
+                    ['Bot Name', selectedBotData.name],
+                    ['Conversations', selectedBotData.conversations],
+                    ['Users', selectedBotData.users],
+                    ['Satisfaction', `${selectedBotData.satisfaction}/5.0`],
+                    ['Response Time', `${selectedBotData.responseTime}s`],
+                    ['Resolution Rate', `${selectedBotData.resolutionRate}%`],
+                    ['Trend', selectedBotData.trend],
+                    ['Change', `${selectedBotData.change}%`]
+                  ].map(row => row.join(',')).join('\n');
+
+                  const blob = new Blob([csvContent], { type: 'text/csv' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `${selectedBotData.name}-analytics-${new Date().toISOString().split('T')[0]}.csv`;
+                  document.body.appendChild(a);
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  document.body.removeChild(a);
+                }}
+                className="px-6 py-2 bg-[#6566F1] text-white rounded-xl hover:bg-[#5A5BD9] transition-colors flex items-center space-x-2"
+              >
+                <Download className="w-4 h-4" />
+                <span>Export Data</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
