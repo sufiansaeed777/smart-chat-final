@@ -167,6 +167,12 @@ const BotsPage = () => {
     documentIds: [] as string[],
     newDocuments: [] as any[]
   });
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showAssignKnowledgeModal, setShowAssignKnowledgeModal] = useState(false);
+  const [editingBot, setEditingBot] = useState<any>(null);
+  const [assigningKnowledgeBot, setAssigningKnowledgeBot] = useState<any>(null);
+  const [selectedKnowledgeIds, setSelectedKnowledgeIds] = useState<string[]>([]);
+  const [isTraining, setIsTraining] = useState(false);
 
   const statusOptions = [
     { value: 'all', label: 'All Status', icon: '📊' },
@@ -268,6 +274,26 @@ const BotsPage = () => {
 
   const handleCreateBot = async () => {
     try {
+      // Validate domain format (must be valid https:// URL)
+      if (!newBot.domain || newBot.domain.trim() === '') {
+        alert('Please enter a domain URL');
+        return;
+      }
+
+      // Check if domain starts with https://
+      if (!newBot.domain.startsWith('https://')) {
+        alert('Domain must start with https:// (e.g., https://yoursite.com)');
+        return;
+      }
+
+      // Validate URL format
+      try {
+        new URL(newBot.domain);
+      } catch (urlError) {
+        alert('Please enter a valid URL (e.g., https://yoursite.com)');
+        return;
+      }
+
       const response = await fetch('/api/manager/create-bot', {
         method: 'POST',
         headers: {
@@ -280,10 +306,10 @@ const BotsPage = () => {
         const data = await response.json();
         console.log('Bot created successfully:', data);
         setShowCreateModal(false);
-        setNewBot({ 
-          name: "", 
-          description: "", 
-          domain: "", 
+        setNewBot({
+          name: "",
+          description: "",
+          domain: "",
           status: "active",
           documentIds: [],
           newDocuments: []
@@ -370,6 +396,129 @@ const BotsPage = () => {
 
   const formatTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const handleEditBot = (bot: any) => {
+    setEditingBot({...bot});
+    // Pre-load assigned knowledge IDs
+    const assignedIds = bot.documents?.map((doc: any) => doc.id) || [];
+    setSelectedKnowledgeIds(assignedIds);
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      // Validate domain
+      if (editingBot.domain && !editingBot.domain.startsWith('https://')) {
+        alert('Domain must start with https://');
+        return;
+      }
+
+      const response = await fetch('/api/manager/update-bot', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingBot.id,
+          name: editingBot.name,
+          description: editingBot.description,
+          domain: editingBot.domain,
+          status: editingBot.status,
+          knowledgeIds: selectedKnowledgeIds
+        })
+      });
+
+      if (response.ok) {
+        alert('Bot updated successfully!');
+        setShowEditModal(false);
+        setEditingBot(null);
+        setSelectedKnowledgeIds([]);
+        loadBots();
+      } else {
+        const error = await response.json();
+        alert('Error updating bot: ' + error.error);
+      }
+    } catch (error) {
+      console.error('Error updating bot:', error);
+      alert('Error updating bot: ' + error);
+    }
+  };
+
+  const handleAssignKnowledge = async (bot: any) => {
+    setAssigningKnowledgeBot(bot);
+    // Fetch bot's current documents and pre-check them
+    const assignedIds = bot.documents?.map((doc: any) => doc.id) || [];
+    setSelectedKnowledgeIds(assignedIds);
+    setShowAssignKnowledgeModal(true);
+  };
+
+  const handleSaveKnowledge = async () => {
+    try {
+      const response = await fetch('/api/manager/assign-knowledge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          botId: assigningKnowledgeBot.id,
+          documentIds: selectedKnowledgeIds
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(data.message);
+        setShowAssignKnowledgeModal(false);
+        setAssigningKnowledgeBot(null);
+        setSelectedKnowledgeIds([]);
+        loadBots();
+      } else {
+        const error = await response.json();
+        alert('Error assigning knowledge: ' + error.error);
+      }
+    } catch (error) {
+      console.error('Error assigning knowledge:', error);
+      alert('Error assigning knowledge: ' + error);
+    }
+  };
+
+  const handleTrainBot = async (bot: any) => {
+    if (!bot.documents || bot.documents.length === 0) {
+      alert('Please assign documents to this bot before training.');
+      return;
+    }
+
+    if (!confirm(`Train ${bot.name}? This may take a few minutes.`)) {
+      return;
+    }
+
+    try {
+      setIsTraining(true);
+      const response = await fetch('/api/manager/train-bot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ botId: bot.id })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        alert(`✅ ${data.message}\n\nDocuments: ${data.summary.successfulDocuments}/${data.summary.totalDocuments}\nEmbeddings: ${data.summary.totalEmbeddings}`);
+        loadBots();
+      } else {
+        alert(`❌ Training failed: ${data.error || data.message || 'Unknown error'}\n\n${data.details || ''}`);
+      }
+    } catch (error) {
+      console.error('Training error:', error);
+      alert('Training failed: ' + error);
+    } finally {
+      setIsTraining(false);
+    }
+  };
+
+  const handleToggleKnowledge = (docId: string) => {
+    setSelectedKnowledgeIds(prev =>
+      prev.includes(docId)
+        ? prev.filter(id => id !== docId)
+        : [...prev, docId]
+    );
   };
 
   return (
@@ -680,17 +829,17 @@ const BotsPage = () => {
                       <Users className="w-4 h-4 mr-2" />
                       Manage Users
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleAssignKnowledge(bot)}>
+                          <Settings className="w-4 h-4 mr-2" />
+                          Assign Knowledge to Bot
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditBot(bot)}>
                           <Edit className="w-4 h-4 mr-2" />
                           Edit Bot
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleTrainBot(bot)} disabled={isTraining}>
                           <PlayCircle className="w-4 h-4 mr-2" />
-                          Test Bot
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Settings className="w-4 h-4 mr-2" />
-                          Settings
+                          {isTraining ? 'Training...' : 'Train Bot'}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem className="text-red-600">
@@ -898,6 +1047,183 @@ const BotsPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Bot Modal */}
+      {showEditModal && editingBot && (
+        <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Bot</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Bot Name</label>
+                <Input
+                  value={editingBot.name}
+                  onChange={(e) => setEditingBot({...editingBot, name: e.target.value})}
+                  placeholder="Enter bot name"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Description / Instructions</label>
+                <textarea
+                  value={editingBot.description}
+                  onChange={(e) => setEditingBot({...editingBot, description: e.target.value})}
+                  placeholder="Bot instructions and personality"
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  rows={5}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Domain</label>
+                <Input
+                  value={editingBot.domain}
+                  onChange={(e) => setEditingBot({...editingBot, domain: e.target.value})}
+                  placeholder="e.g., https://yoursite.com"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Status</label>
+                <Select value={editingBot.status} onValueChange={(value) => setEditingBot({...editingBot, status: value})}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="paused">Paused</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Knowledge Base Selection */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Knowledge Base Documents ({selectedKnowledgeIds.length} selected)
+                </label>
+                <div className="max-h-60 overflow-y-auto border rounded-lg p-2 space-y-2">
+                  {availableDocuments.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className={`flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                        selectedKnowledgeIds.includes(doc.id)
+                          ? 'bg-blue-50 border border-blue-200'
+                          : 'hover:bg-gray-50'
+                      }`}
+                      onClick={() => handleToggleKnowledge(doc.id)}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedKnowledgeIds.includes(doc.id)}
+                        onChange={() => handleToggleKnowledge(doc.id)}
+                        className="rounded"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{doc.name}</p>
+                        <p className="text-xs text-gray-500">{doc.type.toUpperCase()} • {Math.round(doc.size / 1024)} KB</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  {selectedKnowledgeIds.length} document(s) assigned (uncheck to remove)
+                </p>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={() => {
+                  setShowEditModal(false);
+                  setEditingBot(null);
+                  setSelectedKnowledgeIds([]);
+                }}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveEdit} className="bg-[#6566F1] hover:bg-[#5A5BD9]">
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Assign Knowledge Modal */}
+      {showAssignKnowledgeModal && assigningKnowledgeBot && (
+        <Dialog open={showAssignKnowledgeModal} onOpenChange={setShowAssignKnowledgeModal}>
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Assign Knowledge to {assigningKnowledgeBot.name}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  Select documents to train this bot. Checked documents are currently assigned.
+                </p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Available Documents
+                  </label>
+                  <span className="text-sm text-gray-600">
+                    {selectedKnowledgeIds.length} selected
+                  </span>
+                </div>
+                <div className="max-h-96 overflow-y-auto border rounded-lg p-2 space-y-2">
+                  {availableDocuments.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                        selectedKnowledgeIds.includes(doc.id)
+                          ? 'bg-green-50 border border-green-200'
+                          : 'hover:bg-gray-50 border border-transparent'
+                      }`}
+                      onClick={() => handleToggleKnowledge(doc.id)}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedKnowledgeIds.includes(doc.id)}
+                        onChange={() => handleToggleKnowledge(doc.id)}
+                        className="rounded"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{doc.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {doc.type.toUpperCase()} • {Math.round(doc.size / 1024)} KB
+                        </p>
+                      </div>
+                      {selectedKnowledgeIds.includes(doc.id) && (
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                      )}
+                    </div>
+                  ))}
+                  {availableDocuments.length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-8">
+                      No documents available. Upload documents in the Knowledge Base first.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={() => {
+                  setShowAssignKnowledgeModal(false);
+                  setAssigningKnowledgeBot(null);
+                  setSelectedKnowledgeIds([]);
+                }}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveKnowledge} className="bg-[#6566F1] hover:bg-[#5A5BD9]">
+                  Assign {selectedKnowledgeIds.length} Document(s)
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
       </div>
   );
 };
