@@ -674,7 +674,7 @@ export default function BotsPage() {
     }
   };
 
-  const handleEditBot = async (bot: {id: string; name: string; description: string; domain: string; status: string}) => {
+  const handleEditBot = async (bot: {id: string; name: string; description: string; domain: string; status: string; documents?: Array<{id: string; name: string; type: string; size: number}>}) => {
     setEditBot({
       id: bot.id,
       name: bot.name,
@@ -683,18 +683,11 @@ export default function BotsPage() {
       status: bot.status
     });
 
-    // Load bot's current knowledge documents
-    try {
-      const response = await fetch(`/api/manager/bot-documents?botId=${bot.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        const docIds = (data.documents || []).map((doc: any) => doc.documentId);
-        setEditBotKnowledge(docIds);
-      } else {
-        setEditBotKnowledge([]);
-      }
-    } catch (error) {
-      console.error('Error loading bot documents:', error);
+    // Load bot's current knowledge documents from the bot object
+    if (bot.documents && bot.documents.length > 0) {
+      const docIds = bot.documents.map((doc) => doc.id);
+      setEditBotKnowledge(docIds);
+    } else {
       setEditBotKnowledge([]);
     }
 
@@ -1228,14 +1221,17 @@ export default function BotsPage() {
                 <Label htmlFor="bot-domain" className="text-sm font-semibold text-gray-700 block mb-2">
                   Domain *
                 </Label>
-                <Input
+                <p className="text-xs text-gray-500 mb-1">Must be a full https:// URL (e.g., https://yoursite.com)</p>
+                <input
                   id="bot-domain"
+                  type="url"
+                  pattern="https://.*"
                   value={newBot.domain}
                   onChange={(e) => setNewBot({...newBot, domain: e.target.value})}
-                  placeholder="e.g., support.yoursite.com"
+                  placeholder="e.g., https://support.yoursite.com"
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-2 focus:ring-[#6566F1]/20 text-gray-900 placeholder-gray-500"
+                  required
                 />
-                <p className="text-xs text-gray-500 mt-1">This will be the domain where your bot will be deployed</p>
               </div>
               
               <div>
