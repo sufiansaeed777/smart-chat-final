@@ -819,6 +819,18 @@ export default function BotsPage() {
   const handleSaveKnowledge = async () => {
     if (!selectedBotForKnowledge) return;
 
+    // Prevent removing all knowledge when 0 files are selected
+    if (botKnowledgeIds.length === 0) {
+      const confirmRemove = confirm(
+        '⚠️ Warning: You have not selected any documents.\n\n' +
+        'Saving with 0 documents will remove all knowledge from this bot.\n\n' +
+        'Are you sure you want to continue?'
+      );
+      if (!confirmRemove) {
+        return;
+      }
+    }
+
     try {
       const response = await fetch('/api/manager/update-bot', {
         method: 'PUT',
@@ -2467,23 +2479,34 @@ export default function BotsPage() {
                   </div>
                 ) : (
                   <div className="p-2 space-y-1">
-                    {knowledgeBase.map((doc) => (
-                      <label key={doc.id} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={botKnowledgeIds.includes(doc.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setBotKnowledgeIds([...botKnowledgeIds, doc.id]);
-                            } else {
-                              setBotKnowledgeIds(botKnowledgeIds.filter(id => id !== doc.id));
-                            }
-                          }}
-                          className="w-4 h-4 text-[#6566F1] border-gray-300 rounded focus:ring-[#6566F1]"
-                        />
-                        <span className="text-sm text-gray-700">{doc.name}</span>
-                      </label>
-                    ))}
+                    {knowledgeBase.map((doc) => {
+                      const isChecked = botKnowledgeIds.includes(doc.id);
+                      return (
+                        <label
+                          key={doc.id}
+                          className={`flex items-center space-x-2 p-2 rounded cursor-pointer transition-colors ${
+                            isChecked ? 'bg-green-50 hover:bg-green-100' : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setBotKnowledgeIds([...botKnowledgeIds, doc.id]);
+                              } else {
+                                setBotKnowledgeIds(botKnowledgeIds.filter(id => id !== doc.id));
+                              }
+                            }}
+                            className="w-4 h-4 text-[#6566F1] border-gray-300 rounded focus:ring-[#6566F1]"
+                          />
+                          <span className="text-sm text-gray-700 flex-1">{doc.name}</span>
+                          {isChecked && (
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                          )}
+                        </label>
+                      );
+                    })}
                   </div>
                 )}
               </div>
