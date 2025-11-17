@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useReportIssue } from '@/contexts/ReportIssueContext';
 import {
   HelpCircle,
   Search,
@@ -26,6 +27,7 @@ import RoleGuard from '@/components/auth/RoleGuard';
 
 const HelpPage = () => {
   const router = useRouter();
+  const { openModal } = useReportIssue();
   const [activeTab, setActiveTab] = useState('tutorials');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -334,7 +336,7 @@ const HelpPage = () => {
                   <Button
                     variant="outline"
                     className="border-gray-300 hover:bg-gray-50 text-gray-700"
-                    onClick={() => router.push('/manager-dashboard/issues')}
+                    onClick={openModal}
                   >
                     Report an Issue
                   </Button>

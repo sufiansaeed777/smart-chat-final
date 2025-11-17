@@ -27,6 +27,7 @@ import {
   Plug
 } from 'lucide-react';
 import { ReportIssueProvider } from '@/contexts/ReportIssueContext';
+import ReportIssueModal from '@/components/ReportIssueModal';
 
 interface ManagerDashboardLayoutProps {
   children: React.ReactNode;
@@ -363,6 +364,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
         </div>
       )}
       </div>
+      <ReportIssueModal />
     </ReportIssueProvider>
   );
 };
