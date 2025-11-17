@@ -41,8 +41,24 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!name || !description || !domain) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: name, description, and domain are required' 
+      return NextResponse.json({
+        error: 'Missing required fields: name, description, and domain are required'
+      }, { status: 400 });
+    }
+
+    // Validate domain format (must be valid https:// URL)
+    if (!domain.startsWith('https://')) {
+      return NextResponse.json({
+        error: 'Domain must start with https:// (e.g., https://yoursite.com)'
+      }, { status: 400 });
+    }
+
+    // Validate URL format
+    try {
+      new URL(domain);
+    } catch (error) {
+      return NextResponse.json({
+        error: 'Invalid domain URL format. Please provide a valid URL (e.g., https://yoursite.com)'
       }, { status: 400 });
     }
 

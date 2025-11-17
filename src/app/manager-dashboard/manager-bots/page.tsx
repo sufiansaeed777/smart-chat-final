@@ -520,17 +520,31 @@ export default function BotsPage() {
   const handleCreateBot = async () => {
     // Validate required fields
     if (!newBot.name.trim()) {
-      console.error('Bot name is required');
+      alert('Please enter a bot name');
       return;
     }
 
     if (!newBot.description.trim()) {
-      console.error('Bot description is required');
+      alert('Please enter a bot description');
       return;
     }
 
-    if (!newBot.domain.trim()) {
-      console.error('Bot domain is required');
+    // Validate domain format (must be valid https:// URL)
+    if (!newBot.domain || newBot.domain.trim() === '') {
+      alert('Please enter a domain URL');
+      return;
+    }
+
+    if (!newBot.domain.startsWith('https://')) {
+      alert('Domain must start with https:// (e.g., https://yoursite.com)');
+      return;
+    }
+
+    // Validate URL format
+    try {
+      new URL(newBot.domain);
+    } catch (urlError) {
+      alert('Please enter a valid URL (e.g., https://yoursite.com)');
       return;
     }
 
