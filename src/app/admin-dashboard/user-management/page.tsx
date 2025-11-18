@@ -158,6 +158,8 @@ const UserManagementPage: React.FC = () => {
   const handleEditUser = (user: User) => {
     setSelectedUserForEdit(user);
     setEditingUser({
+      firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
       status: user.status,
       password: ''
@@ -167,6 +169,16 @@ const UserManagementPage: React.FC = () => {
 
   const handleUpdateUser = async () => {
     if (!selectedUserForEdit) return;
+
+    // Validate first name and last name
+    if (editingUser.firstName && editingUser.firstName.trim() === '') {
+      alert('First name cannot be empty');
+      return;
+    }
+    if (editingUser.lastName && editingUser.lastName.trim() === '') {
+      alert('Last name cannot be empty');
+      return;
+    }
 
     // Validate email if changed
     if (editingUser.email && editingUser.email !== selectedUserForEdit.email) {
@@ -179,6 +191,12 @@ const UserManagementPage: React.FC = () => {
 
     // Prepare updates - only include fields that have changed
     const updates: Partial<User> = {};
+    if (editingUser.firstName && editingUser.firstName !== selectedUserForEdit.firstName) {
+      updates.firstName = editingUser.firstName;
+    }
+    if (editingUser.lastName && editingUser.lastName !== selectedUserForEdit.lastName) {
+      updates.lastName = editingUser.lastName;
+    }
     if (editingUser.email && editingUser.email !== selectedUserForEdit.email) {
       updates.email = editingUser.email;
     }
@@ -925,6 +943,33 @@ const UserManagementPage: React.FC = () => {
 
               {/* Editable Fields */}
               <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                      First Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editingUser.firstName || selectedUserForEdit.firstName}
+                      onChange={(e) => setEditingUser({ ...editingUser, firstName: e.target.value })}
+                      className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6566F1] focus:border-transparent placeholder:text-gray-400"
+                      placeholder="Enter first name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                      Last Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editingUser.lastName || selectedUserForEdit.lastName}
+                      onChange={(e) => setEditingUser({ ...editingUser, lastName: e.target.value })}
+                      className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6566F1] focus:border-transparent placeholder:text-gray-400"
+                      placeholder="Enter last name"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                     Email Address <span className="text-red-500">*</span>
@@ -969,11 +1014,7 @@ const UserManagementPage: React.FC = () => {
                 {/* Read-only fields for reference */}
                 <div className="pt-2 border-t border-gray-200">
                   <p className="text-xs text-gray-500 mb-2">User Information (Read-only)</p>
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div>
-                      <label className="block text-gray-500 mb-0.5">Name</label>
-                      <p className="text-gray-900">{selectedUserForEdit.firstName} {selectedUserForEdit.lastName}</p>
-                    </div>
+                  <div className="grid grid-cols-1 gap-3 text-xs">
                     <div>
                       <label className="block text-gray-500 mb-0.5">User ID</label>
                       <p className="text-gray-900 text-[10px]">{selectedUserForEdit.id}</p>
