@@ -26,6 +26,7 @@ interface BotData {
   id: string;
   name: string;
   description: string;
+  domain: string;
   status: 'active' | 'inactive' | 'maintenance';
   category: string;
   conversations: number;
@@ -50,6 +51,7 @@ const BotsPage: React.FC = () => {
   const [newStatus, setNewStatus] = useState<string>('');
   const [newName, setNewName] = useState<string>('');
   const [newDescription, setNewDescription] = useState<string>('');
+  const [newDomain, setNewDomain] = useState<string>('');
   const [newCategory, setNewCategory] = useState<string>('');
   const [updating, setUpdating] = useState(false);
 
@@ -63,6 +65,7 @@ const BotsPage: React.FC = () => {
           setNewStatus('');
           setNewName('');
           setNewDescription('');
+          setNewDomain('');
           setNewCategory('');
         }
         if (showDeleteModal) {
@@ -183,13 +186,27 @@ const BotsPage: React.FC = () => {
     setNewStatus(bot.status);
     setNewName(bot.name);
     setNewDescription(bot.description);
+    setNewDomain(bot.domain);
     setNewCategory(bot.category);
     setShowEditModal(true);
   };
 
   const confirmUpdateBotStatus = async () => {
-    if (!selectedBotForEdit || !newStatus || !newName || !newCategory) {
+    if (!selectedBotForEdit || !newStatus || !newName || !newCategory || !newDomain) {
       alert('Please fill in all required fields');
+      return;
+    }
+
+    // Validate domain format
+    if (!newDomain.startsWith('https://')) {
+      alert('Domain must start with https:// (e.g., https://yoursite.com)');
+      return;
+    }
+
+    try {
+      new URL(newDomain);
+    } catch (error) {
+      alert('Please enter a valid URL (e.g., https://yoursite.com)');
       return;
     }
 
@@ -204,6 +221,7 @@ const BotsPage: React.FC = () => {
         status: newStatus,
         name: newName,
         description: newDescription,
+        domain: newDomain,
         category: newCategory
       };
 
@@ -219,6 +237,7 @@ const BotsPage: React.FC = () => {
           status: newStatus as 'active' | 'inactive' | 'maintenance',
           name: newName,
           description: newDescription,
+          domain: newDomain,
           category: newCategory
         } : b));
         setShowEditModal(false);
@@ -226,6 +245,7 @@ const BotsPage: React.FC = () => {
         setNewStatus('');
         setNewName('');
         setNewDescription('');
+        setNewDomain('');
         setNewCategory('');
       } else {
         const error = await response.json();
@@ -574,12 +594,16 @@ const BotsPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-xl font-bold text-gray-900">Edit Bot Status</h2>
+              <h2 className="text-xl font-bold text-gray-900">Edit Bot</h2>
               <button
                 onClick={() => {
                   setShowEditModal(false);
                   setSelectedBotForEdit(null);
                   setNewStatus('');
+                  setNewName('');
+                  setNewDescription('');
+                  setNewDomain('');
+                  setNewCategory('');
                 }}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -627,6 +651,20 @@ const BotsPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Domain <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={newDomain}
+                    onChange={(e) => setNewDomain(e.target.value)}
+                    className="w-full px-4 py-3 text-sm text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white"
+                    placeholder="https://yoursite.com"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Must be a valid HTTPS URL</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Category <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -663,6 +701,7 @@ const BotsPage: React.FC = () => {
                   setNewStatus('');
                   setNewName('');
                   setNewDescription('');
+                  setNewDomain('');
                   setNewCategory('');
                 }}
                 className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
