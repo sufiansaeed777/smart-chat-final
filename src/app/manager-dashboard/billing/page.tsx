@@ -28,6 +28,7 @@ const BillingPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [invoiceFilter, setInvoiceFilter] = useState('all');
   const invoicesPerPage = 10;
+  const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
 
   const [currentPlan] = useState({
     name: 'Professional',
@@ -305,6 +306,44 @@ const BillingPage: React.FC = () => {
     router.push(`/manager-dashboard/billing/invoice/${invoiceId}`);
   };
 
+  // Handle update payment method
+  const handleUpdatePaymentMethod = async () => {
+    setIsUpdatingPayment(true);
+    try {
+      const response = await fetch('/api/billing/customer-portal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          returnUrl: `${window.location.origin}/manager-dashboard/billing`,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        if (data.url) {
+          // Redirect to Stripe Customer Portal or payment update page
+          window.location.href = data.url;
+        } else {
+          alert('Payment portal URL not available. Please try again.');
+        }
+      } else {
+        if (data.needsSetup) {
+          alert('Payment provider not configured.\n\nPlease contact support to update your payment method.\n\nEmail: support@smartchat.com');
+        } else {
+          alert(data.error || 'Failed to open payment portal. Please try again.');
+        }
+      }
+    } catch (error) {
+      console.error('Error opening payment portal:', error);
+      alert('An error occurred while opening the payment portal. Please try again.');
+    } finally {
+      setIsUpdatingPayment(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       {/* Header */}
@@ -389,10 +428,11 @@ const BillingPage: React.FC = () => {
               </div>
             </div>
             <button
-              onClick={() => alert('Payment method update feature coming soon. Please contact support to update your payment method.')}
-              className="w-full px-4 py-2 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 text-[#6566F1] hover:text-[#5A5BD9] font-medium transition-colors"
+              onClick={handleUpdatePaymentMethod}
+              disabled={isUpdatingPayment}
+              className="w-full px-4 py-2 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 text-[#6566F1] hover:text-[#5A5BD9] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Update Payment Method
+              {isUpdatingPayment ? 'Loading...' : 'Update Payment Method'}
             </button>
           </div>
         </div>
