@@ -35,10 +35,26 @@ export async function POST(request: NextRequest) {
     const { type } = await request.json();
     const backupType = type || 'full';
 
+    // Determine backup directory based on environment
+    // In serverless environments (Vercel, Lambda), use /tmp (only writable directory)
+    // In traditional hosting, use process.cwd()/backups
+    const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+    const backupDir = isServerless
+      ? path.join('/tmp', 'backups')
+      : path.join(process.cwd(), 'backups');
+
     // Create backups directory if it doesn't exist
-    const backupDir = path.join(process.cwd(), 'backups');
-    if (!fs.existsSync(backupDir)) {
-      fs.mkdirSync(backupDir, { recursive: true });
+    try {
+      if (!fs.existsSync(backupDir)) {
+        fs.mkdirSync(backupDir, { recursive: true });
+      }
+    } catch (dirError) {
+      console.error('Error creating backup directory:', dirError);
+      return NextResponse.json({
+        error: 'Cannot create backup directory. This may be a serverless environment limitation.',
+        details: dirError instanceof Error ? dirError.message : 'Unknown error',
+        suggestion: 'Consider using an external backup service or database provider backups.'
+      }, { status: 500 });
     }
 
     // Generate backup filename with timestamp
@@ -125,7 +141,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
 
-    const backupDir = path.join(process.cwd(), 'backups');
+    // Use same directory logic as POST
+    const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+    const backupDir = isServerless
+      ? path.join('/tmp', 'backups')
+      : path.join(process.cwd(), 'backups');
 
     if (!fs.existsSync(backupDir)) {
       return NextResponse.json({
@@ -200,7 +220,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Backup ID is required' }, { status: 400 });
     }
 
-    const backupDir = path.join(process.cwd(), 'backups');
+    // Use same directory logic as POST
+    const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+    const backupDir = isServerless
+      ? path.join('/tmp', 'backups')
+      : path.join(process.cwd(), 'backups');
 
     // Find the backup file
     const files = fs.readdirSync(backupDir);
