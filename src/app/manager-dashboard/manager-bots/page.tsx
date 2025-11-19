@@ -893,11 +893,39 @@ export default function BotsPage() {
           setBots(refreshData.bots || []);
         }
       } else {
-        alert(`❌ Training failed: ${result.error || 'Unknown error'}`);
+        // Provide detailed error message
+        console.error('Training failed:', result);
+
+        let errorMessage = `❌ Training failed for "${bot.name}"\n\n`;
+
+        if (result.error) {
+          errorMessage += `Error: ${result.error}\n`;
+        }
+
+        if (result.details) {
+          errorMessage += `\nDetails: ${result.details}\n`;
+        }
+
+        if (response.status) {
+          errorMessage += `\nStatus Code: ${response.status}`;
+        }
+
+        // If still no useful info, provide generic guidance
+        if (!result.error && !result.details) {
+          errorMessage += 'No specific error details provided.\n\n';
+          errorMessage += 'Common causes:\n';
+          errorMessage += '• Bot has no documents assigned\n';
+          errorMessage += '• Document processing failed\n';
+          errorMessage += '• OpenAI API connection issue\n';
+          errorMessage += '\nPlease check that your bot has valid documents assigned and try again.';
+        }
+
+        alert(errorMessage);
       }
     } catch (error) {
       console.error('Error training bot:', error);
-      alert('Network error while initiating training. Please try again.');
+      const errorMsg = error instanceof Error ? error.message : 'Unknown network error';
+      alert(`❌ Network error while initiating training.\n\nError: ${errorMsg}\n\nPlease check your connection and try again.`);
     } finally {
       setTrainingBot(null);
     }
@@ -1285,19 +1313,21 @@ export default function BotsPage() {
                       
                       return (
                         <>
-                          {docsToShow.map((doc) => (
+                          {docsToShow.map((doc) => {
+                            const isChecked = newBot.documentIds.includes(doc.id);
+                            return (
                         <div
                           key={doc.id}
                           className={`flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-colors ${
-                            newBot.documentIds.includes(doc.id)
-                              ? 'bg-blue-50 border border-blue-200'
+                            isChecked
+                              ? 'bg-green-50 border border-green-200 hover:bg-green-100'
                               : 'hover:bg-gray-50'
                           }`}
                           onClick={() => handleDocumentSelect(doc.id)}
                         >
                           <input
                             type="checkbox"
-                            checked={newBot.documentIds.includes(doc.id)}
+                            checked={isChecked}
                             onChange={() => handleDocumentSelect(doc.id)}
                             className="rounded"
                           />
@@ -1312,8 +1342,12 @@ export default function BotsPage() {
                               </p>
                             </div>
                           </div>
+                          {isChecked && (
+                            <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                          )}
                         </div>
-                          ))}
+                            );
+                          })}
                           {hasMore && !showAllDocuments && (
                             <button
                               onClick={() => setShowAllDocuments(true)}
@@ -1544,23 +1578,34 @@ export default function BotsPage() {
                     </div>
                   ) : (
                     <div className="p-2 space-y-1">
-                      {knowledgeBase.map((doc) => (
-                        <label key={doc.id} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={editBotKnowledge.includes(doc.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setEditBotKnowledge([...editBotKnowledge, doc.id]);
-                              } else {
-                                setEditBotKnowledge(editBotKnowledge.filter(id => id !== doc.id));
-                              }
-                            }}
-                            className="w-4 h-4 text-[#6566F1] border-gray-300 rounded focus:ring-[#6566F1]"
-                          />
-                          <span className="text-sm text-gray-700">{doc.name}</span>
-                        </label>
-                      ))}
+                      {knowledgeBase.map((doc) => {
+                        const isChecked = editBotKnowledge.includes(doc.id);
+                        return (
+                          <label
+                            key={doc.id}
+                            className={`flex items-center space-x-2 p-2 rounded cursor-pointer transition-colors ${
+                              isChecked ? 'bg-green-50 hover:bg-green-100' : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setEditBotKnowledge([...editBotKnowledge, doc.id]);
+                                } else {
+                                  setEditBotKnowledge(editBotKnowledge.filter(id => id !== doc.id));
+                                }
+                              }}
+                              className="w-4 h-4 text-[#6566F1] border-gray-300 rounded focus:ring-[#6566F1]"
+                            />
+                            <span className="text-sm text-gray-700 flex-1">{doc.name}</span>
+                            {isChecked && (
+                              <CheckCircle className="w-4 h-4 text-green-600" />
+                            )}
+                          </label>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
