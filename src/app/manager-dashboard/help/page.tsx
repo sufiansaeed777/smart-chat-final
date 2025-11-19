@@ -36,6 +36,9 @@ const HelpPage = () => {
   const [newArticle, setNewArticle] = useState({title: '', content: '', category: ''});
   const [newVideo, setNewVideo] = useState({title: '', url: '', description: '', difficulty: 'Beginner'});
   const [newFaq, setNewFaq] = useState({question: '', answer: ''});
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [contactForm, setContactForm] = useState({name: '', email: '', subject: '', message: ''});
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   const tabs = [
     { id: 'articles', label: 'Articles', icon: BookOpen },
@@ -137,6 +140,35 @@ const HelpPage = () => {
       setFaqs([...faqs, { id: Date.now(), ...newFaq }]);
       setNewFaq({question: '', answer: ''});
       setShowAddModal(false);
+    }
+  };
+
+  const handleSendEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSendingEmail(true);
+
+    try {
+      const response = await fetch('/api/support/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(contactForm),
+      });
+
+      if (response.ok) {
+        alert('✅ Message sent successfully!\n\nWe\'ll get back to you within 24 hours.');
+        setContactForm({name: '', email: '', subject: '', message: ''});
+        setShowContactForm(false);
+      } else {
+        const error = await response.json();
+        alert(`Failed to send message: ${error.error || 'Please try again.'}`);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('An error occurred while sending your message. Please try again or email us directly at support@smartchat.com');
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -325,9 +357,9 @@ const HelpPage = () => {
                   <Button
                     variant="outline"
                     className="border-gray-300 hover:bg-gray-50 text-gray-700"
-                    asChild
+                    onClick={() => setShowContactForm(true)}
                   >
-                    <a href="mailto:support@chatbotpro.com">Send Email</a>
+                    Send Email
                   </Button>
                 </div>
                 <div className="p-4 border border-gray-200 rounded-lg">
@@ -497,6 +529,105 @@ const HelpPage = () => {
                   </div>
                 </form>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Contact Form Modal */}
+        {showContactForm && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-2xl shadow-2xl">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Contact Support</h2>
+                <button onClick={() => setShowContactForm(false)} className="text-gray-500 hover:text-gray-700">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSendEmail} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="contact-name" className="text-sm font-medium text-gray-700 mb-2 block">
+                      Name <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="contact-name"
+                      value={contactForm.name}
+                      onChange={(e) => setContactForm({...contactForm, name: e.target.value})}
+                      placeholder="Your name"
+                      required
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="contact-email" className="text-sm font-medium text-gray-700 mb-2 block">
+                      Email <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="contact-email"
+                      type="email"
+                      value={contactForm.email}
+                      onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
+                      placeholder="your@email.com"
+                      required
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="contact-subject" className="text-sm font-medium text-gray-700 mb-2 block">
+                    Subject <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="contact-subject"
+                    value={contactForm.subject}
+                    onChange={(e) => setContactForm({...contactForm, subject: e.target.value})}
+                    placeholder="How can we help you?"
+                    required
+                    className="w-full"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="contact-message" className="text-sm font-medium text-gray-700 mb-2 block">
+                    Message <span className="text-red-500">*</span>
+                  </Label>
+                  <textarea
+                    id="contact-message"
+                    value={contactForm.message}
+                    onChange={(e) => setContactForm({...contactForm, message: e.target.value})}
+                    placeholder="Please describe your issue or question in detail..."
+                    required
+                    rows={6}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-2 focus:ring-[#6566F1]/20 text-gray-900 resize-none"
+                  />
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    <strong>Response Time:</strong> We typically respond within 2-4 hours during business hours (Mon-Fri, 9am-5pm EST).
+                  </p>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowContactForm(false)}
+                    disabled={isSendingEmail}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white disabled:opacity-50"
+                    disabled={isSendingEmail}
+                  >
+                    {isSendingEmail ? 'Sending...' : 'Send Message'}
+                  </Button>
+                </div>
+              </form>
             </div>
           </div>
         )}
