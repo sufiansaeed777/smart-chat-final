@@ -30,13 +30,6 @@ const BillingPage: React.FC = () => {
   const [invoiceFilter, setInvoiceFilter] = useState('all');
   const invoicesPerPage = 10;
   const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentForm, setPaymentForm] = useState({
-    cardNumber: '',
-    cardName: '',
-    expiryDate: '',
-    cvv: ''
-  });
 
   const [currentPlan] = useState({
     name: 'Professional',
@@ -314,70 +307,28 @@ const BillingPage: React.FC = () => {
     router.push(`/manager-dashboard/billing/invoice/${invoiceId}`);
   };
 
-  // Handle update payment method - open modal
-  const handleUpdatePaymentMethod = () => {
-    setShowPaymentModal(true);
-  };
-
-  // Format card number with spaces
-  const formatCardNumber = (value: string) => {
-    const digits = value.replace(/\D/g, '');
-    const groups = digits.match(/.{1,4}/g);
-    return groups ? groups.join(' ') : digits;
-  };
-
-  // Format expiry date as MM/YY
-  const formatExpiryDate = (value: string) => {
-    const digits = value.replace(/\D/g, '');
-    if (digits.length >= 2) {
-      return digits.slice(0, 2) + '/' + digits.slice(2, 4);
-    }
-    return digits;
-  };
-
-  // Handle payment form submission
-  const handlePaymentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Handle update payment method - use existing Stripe Customer Portal
+  const handleUpdatePaymentMethod = async () => {
     setIsUpdatingPayment(true);
-
     try {
-      // Validate card number (basic validation)
-      const cardNumberDigits = paymentForm.cardNumber.replace(/\s/g, '');
-      if (cardNumberDigits.length < 13 || cardNumberDigits.length > 19) {
-        alert('Please enter a valid card number');
-        setIsUpdatingPayment(false);
-        return;
-      }
-
-      // Validate expiry date format (MM/YY)
-      if (!/^\d{2}\/\d{2}$/.test(paymentForm.expiryDate)) {
-        alert('Please enter expiry date in MM/YY format');
-        setIsUpdatingPayment(false);
-        return;
-      }
-
-      // Validate CVV
-      if (paymentForm.cvv.length < 3 || paymentForm.cvv.length > 4) {
-        alert('Please enter a valid CVV');
-        setIsUpdatingPayment(false);
-        return;
-      }
-
-      // In production, this would send to Stripe or payment processor
-      // For now, simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      alert('✅ Payment method updated successfully!');
-      setShowPaymentModal(false);
-      setPaymentForm({
-        cardNumber: '',
-        cardName: '',
-        expiryDate: '',
-        cvv: ''
+      const response = await fetch('/api/stripe/create-portal-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
+
+      const data = await response.json();
+
+      if (response.ok && data.url) {
+        // Redirect to Stripe Customer Portal
+        window.location.href = data.url;
+      } else {
+        alert(data.error || 'Failed to open payment portal. Please try again.');
+      }
     } catch (error) {
-      console.error('Error updating payment method:', error);
-      alert('Failed to update payment method. Please try again.');
+      console.error('Error opening payment portal:', error);
+      alert('An error occurred while opening the payment portal. Please try again.');
     } finally {
       setIsUpdatingPayment(false);
     }
@@ -731,141 +682,6 @@ const BillingPage: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Update Payment Method Modal */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Update Payment Method</h2>
-              <button
-                onClick={() => setShowPaymentModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <form onSubmit={handlePaymentSubmit} className="space-y-4">
-              {/* Card Number */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Card Number <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={paymentForm.cardNumber}
-                    onChange={(e) => {
-                      const formatted = formatCardNumber(e.target.value);
-                      if (formatted.replace(/\s/g, '').length <= 19) {
-                        setPaymentForm({ ...paymentForm, cardNumber: formatted });
-                      }
-                    }}
-                    placeholder="1234 5678 9012 3456"
-                    required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-2 focus:ring-[#6566F1]/20 text-gray-900"
-                  />
-                </div>
-              </div>
-
-              {/* Cardholder Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cardholder Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={paymentForm.cardName}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, cardName: e.target.value })}
-                  placeholder="John Doe"
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-2 focus:ring-[#6566F1]/20 text-gray-900"
-                />
-              </div>
-
-              {/* Expiry Date & CVV */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Expiry Date <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      value={paymentForm.expiryDate}
-                      onChange={(e) => {
-                        const formatted = formatExpiryDate(e.target.value);
-                        if (formatted.length <= 5) {
-                          setPaymentForm({ ...paymentForm, expiryDate: formatted });
-                        }
-                      }}
-                      placeholder="MM/YY"
-                      required
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-2 focus:ring-[#6566F1]/20 text-gray-900"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    CVV <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={paymentForm.cvv}
-                    onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, '');
-                      if (digits.length <= 4) {
-                        setPaymentForm({ ...paymentForm, cvv: digits });
-                      }
-                    }}
-                    placeholder="123"
-                    required
-                    maxLength={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-2 focus:ring-[#6566F1]/20 text-gray-900"
-                  />
-                </div>
-              </div>
-
-              {/* Security Notice */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-800">
-                  🔒 Your payment information is encrypted and secure.
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowPaymentModal(false)}
-                  disabled={isUpdatingPayment}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isUpdatingPayment}
-                  className="px-6 py-2 bg-[#6566F1] text-white rounded-xl hover:bg-[#5A5BD9] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                >
-                  {isUpdatingPayment ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Updating...</span>
-                    </>
-                  ) : (
-                    <span>Update Payment Method</span>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
     </div>
   );
