@@ -462,11 +462,25 @@ export default function BotsPage() {
                     content: uploadedDoc.content || '',
                     mimeType: file.type
                   };
-                  
-                  setNewBot(prev => ({
-                    ...prev,
-                    newDocuments: [...prev.newDocuments, newDoc]
-                  }));
+
+                  setNewBot(prev => {
+                    // Check if file with same name already exists
+                    const existingFileIndex = prev.newDocuments.findIndex(
+                      doc => doc.name === newDoc.name
+                    );
+
+                    if (existingFileIndex !== -1) {
+                      // File exists - show alert and don't add duplicate
+                      alert(`⚠️ File "${newDoc.name}" is already selected.\n\nPlease choose a different file or remove the existing one first.`);
+                      return prev; // Return unchanged state
+                    }
+
+                    // File doesn't exist - add it
+                    return {
+                      ...prev,
+                      newDocuments: [...prev.newDocuments, newDoc]
+                    };
+                  });
                 }
                 resolve();
               } catch (error) {
