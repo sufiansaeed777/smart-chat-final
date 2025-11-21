@@ -32,6 +32,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
 
+    // Check if running on Vercel/serverless - psql won't be available
+    const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+    if (isServerless) {
+      return NextResponse.json({
+        error: 'Database import is not supported in serverless environments',
+        details: 'psql command-line tool is not available on Vercel',
+        suggestion: 'Please use your database provider\'s import features or connect directly to your database using a PostgreSQL client.'
+      }, { status: 501 });
+    }
+
     // Get the uploaded SQL file from form data
     const formData = await request.formData();
     const file = formData.get('file') as File;

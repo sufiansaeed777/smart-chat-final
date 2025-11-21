@@ -39,6 +39,15 @@ export async function POST(request: NextRequest) {
     // In serverless environments (Vercel, Lambda), use /tmp (only writable directory)
     // In traditional hosting, use process.cwd()/backups
     const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+    // Check if running on Vercel/serverless - pg_dump won't be available
+    if (isServerless) {
+      return NextResponse.json({
+        error: 'Database backups are not supported in serverless environments',
+        details: 'pg_dump command-line tool is not available on Vercel',
+        suggestion: 'Please use your database provider\'s backup features (e.g., Supabase, Neon, or Railway automated backups) or run backups from a traditional server environment.'
+      }, { status: 501 });
+    }
     const backupDir = isServerless
       ? path.join('/tmp', 'backups')
       : path.join(process.cwd(), 'backups');
@@ -225,6 +234,11 @@ export async function DELETE(request: NextRequest) {
     const backupDir = isServerless
       ? path.join('/tmp', 'backups')
       : path.join(process.cwd(), 'backups');
+
+    // Check if backup directory exists
+    if (!fs.existsSync(backupDir)) {
+      return NextResponse.json({ error: 'No backups directory found' }, { status: 404 });
+    }
 
     // Find the backup file
     const files = fs.readdirSync(backupDir);
