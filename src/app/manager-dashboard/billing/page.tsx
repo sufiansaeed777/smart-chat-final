@@ -1,235 +1,74 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   CreditCard,
-  Download,
-  Calendar,
   TrendingUp,
-  DollarSign,
   Users,
   Bot,
   MessageSquare,
   CheckCircle,
-  AlertTriangle,
-  Clock,
-  FileText,
-  Plus,
   Loader2,
-  ChevronLeft,
-  ChevronRight,
-  X
+  Plus,
+  AlertCircle,
+  Package
 } from 'lucide-react';
+
+interface SubscriptionData {
+  hasSubscription: boolean;
+  plan: {
+    name: string;
+    price: number;
+    period: string;
+    features: string[];
+    status: string;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+  };
+  usage: {
+    users: number;
+    usersLimit: number;
+    bots: number;
+    botsLimit: number;
+    conversations: number;
+    conversationsLimit: number;
+    storage: number;
+    storageLimit: number;
+  };
+}
 
 const BillingPage: React.FC = () => {
   const router = useRouter();
-  const [isExporting, setIsExporting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(null);
   const [isUpgrading, setIsUpgrading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [invoiceFilter, setInvoiceFilter] = useState('all');
-  const invoicesPerPage = 10;
   const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [currentPlan] = useState({
-    name: 'Professional',
-    price: 99,
-    period: 'month',
-    features: ['Up to 50 Users', 'Up to 10 Bots', 'Priority Support', 'Advanced Analytics'],
-    usage: {
-      users: 25,
-      usersLimit: 50,
-      bots: 5,
-      botsLimit: 10,
-      conversations: 1234,
-      conversationsLimit: 5000,
-      storage: 1.2,
-      storageLimit: 50
-    }
-  });
+  // Fetch subscription data on mount
+  useEffect(() => {
+    fetchSubscriptionData();
+  }, []);
 
-  const [invoices] = useState([
-    {
-      id: 'INV-001',
-      date: '2024-01-01',
-      amount: 99,
-      status: 'paid',
-      description: 'Professional Plan - January 2024'
-    },
-    {
-      id: 'INV-002',
-      date: '2023-12-01',
-      amount: 99,
-      status: 'paid',
-      description: 'Professional Plan - December 2023'
-    },
-    {
-      id: 'INV-003',
-      date: '2023-11-01',
-      amount: 99,
-      status: 'paid',
-      description: 'Professional Plan - November 2023'
-    },
-    {
-      id: 'INV-004',
-      date: '2023-10-01',
-      amount: 99,
-      status: 'paid',
-      description: 'Professional Plan - October 2023'
-    },
-    {
-      id: 'INV-005',
-      date: '2023-09-01',
-      amount: 99,
-      status: 'paid',
-      description: 'Professional Plan - September 2023'
-    },
-    {
-      id: 'INV-006',
-      date: '2023-08-01',
-      amount: 99,
-      status: 'paid',
-      description: 'Professional Plan - August 2023'
-    },
-    {
-      id: 'INV-007',
-      date: '2023-07-01',
-      amount: 99,
-      status: 'paid',
-      description: 'Professional Plan - July 2023'
-    },
-    {
-      id: 'INV-008',
-      date: '2023-06-01',
-      amount: 99,
-      status: 'paid',
-      description: 'Professional Plan - June 2023'
-    },
-    {
-      id: 'INV-009',
-      date: '2023-05-01',
-      amount: 99,
-      status: 'paid',
-      description: 'Professional Plan - May 2023'
-    },
-    {
-      id: 'INV-010',
-      date: '2023-04-01',
-      amount: 99,
-      status: 'paid',
-      description: 'Professional Plan - April 2023'
-    },
-    {
-      id: 'INV-011',
-      date: '2023-03-01',
-      amount: 99,
-      status: 'paid',
-      description: 'Professional Plan - March 2023'
-    },
-    {
-      id: 'INV-012',
-      date: '2023-02-01',
-      amount: 99,
-      status: 'paid',
-      description: 'Professional Plan - February 2023'
-    }
-  ]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'overdue':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return <CheckCircle className="w-4 h-4" />;
-      case 'pending':
-        return <Clock className="w-4 h-4" />;
-      case 'overdue':
-        return <AlertTriangle className="w-4 h-4" />;
-      default:
-        return <Clock className="w-4 h-4" />;
-    }
-  };
-
-  // Filter and sort invoices
-  const getFilteredInvoices = () => {
-    let filtered = [...invoices];
-
-    switch (invoiceFilter) {
-      case 'new':
-        filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        break;
-      case 'old':
-        filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        break;
-      case 'high':
-        filtered.sort((a, b) => b.amount - a.amount);
-        break;
-      case 'low':
-        filtered.sort((a, b) => a.amount - b.amount);
-        break;
-      default:
-        // Keep original order for 'all'
-        break;
-    }
-
-    return filtered;
-  };
-
-  // Pagination logic
-  const filteredInvoices = getFilteredInvoices();
-  const totalPages = Math.ceil(filteredInvoices.length / invoicesPerPage);
-  const startIndex = (currentPage - 1) * invoicesPerPage;
-  const endIndex = startIndex + invoicesPerPage;
-  const currentInvoices = filteredInvoices.slice(startIndex, endIndex);
-
-  // Calculate usage percentages
-  const usersPercentage = (currentPlan.usage.users / currentPlan.usage.usersLimit) * 100;
-  const botsPercentage = (currentPlan.usage.bots / currentPlan.usage.botsLimit) * 100;
-  const conversationsPercentage = (currentPlan.usage.conversations / currentPlan.usage.conversationsLimit) * 100;
-  const storagePercentage = (currentPlan.usage.storage / currentPlan.usage.storageLimit) * 100;
-
-  // Handle export billing data
-  const handleExport = async () => {
+  const fetchSubscriptionData = async () => {
     try {
-      setIsExporting(true);
+      setIsLoading(true);
+      setError(null);
 
-      const response = await fetch('/api/billing/export', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch('/api/billing/subscription');
 
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `billing-export-${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      } else {
-        console.error('Failed to export billing data');
-        alert('Failed to export billing data. Please try again.');
+      if (!response.ok) {
+        throw new Error('Failed to fetch subscription data');
       }
-    } catch (error) {
-      console.error('Error exporting:', error);
-      alert('An error occurred while exporting. Please try again.');
+
+      const data = await response.json();
+      setSubscriptionData(data);
+    } catch (err) {
+      console.error('Error fetching subscription:', err);
+      setError('Failed to load billing information. Please refresh the page.');
     } finally {
-      setIsExporting(false);
+      setIsLoading(false);
     }
   };
 
@@ -258,7 +97,6 @@ const BillingPage: React.FC = () => {
         if (data.url) {
           window.location.href = data.url;
         } else {
-          console.error('No checkout URL received');
           alert('Failed to create checkout session. Please try again.');
         }
       } else {
@@ -274,37 +112,50 @@ const BillingPage: React.FC = () => {
     }
   };
 
-  // Handle download invoice
-  const handleDownloadInvoice = async (invoiceId: string) => {
+  // Handle subscribe (for users without subscription)
+  const handleSubscribe = async (planType: string, price: number) => {
     try {
-      const response = await fetch(`/api/billing/invoice/${invoiceId}/download`, {
-        method: 'GET',
+      setIsUpgrading(true);
+
+      const planDescriptions: Record<string, string> = {
+        starter: 'Starter Plan - Up to 20 Users & 5 Bots',
+        professional: 'Professional Plan - Up to 50 Users & 10 Bots',
+        enterprise: 'Enterprise Plan - Unlimited Users & Bots'
+      };
+
+      const planData = {
+        planType,
+        amount: price,
+        currency: 'USD',
+        description: planDescriptions[planType] || 'Subscription Plan',
+      };
+
+      const response = await fetch('/api/payment/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(planData),
       });
 
       if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `invoice-${invoiceId}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        const data = await response.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          alert('Failed to create checkout session. Please try again.');
+        }
       } else {
-        console.error('Failed to download invoice');
-        alert('Failed to download invoice. Please try again.');
+        const error = await response.json();
+        console.error('Failed to create checkout session:', error);
+        alert('Failed to start subscription. Please try again.');
       }
     } catch (error) {
-      console.error('Error downloading invoice:', error);
-      alert('An error occurred while downloading. Please try again.');
+      console.error('Error subscribing:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setIsUpgrading(false);
     }
-  };
-
-  // Handle view invoice
-  const handleViewInvoice = (invoiceId: string) => {
-    // Navigate to invoice detail page or open modal
-    router.push(`/manager-dashboard/billing/invoice/${invoiceId}`);
   };
 
   // Handle update payment method - use existing Stripe Customer Portal
@@ -321,7 +172,6 @@ const BillingPage: React.FC = () => {
       const data = await response.json();
 
       if (response.ok && data.url) {
-        // Redirect to Stripe Customer Portal
         window.location.href = data.url;
       } else {
         alert(data.error || 'Failed to open payment portal. Please try again.');
@@ -334,6 +184,210 @@ const BillingPage: React.FC = () => {
     }
   };
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="p-6 min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-[#6566F1] mx-auto mb-4" />
+          <p className="text-gray-600">Loading billing information...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="p-6 min-h-screen bg-gray-50">
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 max-w-2xl mx-auto mt-12">
+          <div className="flex items-start space-x-3">
+            <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-lg font-semibold text-red-900 mb-1">Error Loading Billing Data</h3>
+              <p className="text-red-700 mb-4">{error}</p>
+              <button
+                onClick={fetchSubscriptionData}
+                className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No subscription state - Show pricing plans
+  if (!subscriptionData?.hasSubscription) {
+    return (
+      <div className="p-6 min-h-screen bg-gray-50">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Choose Your Plan</h1>
+            <p className="text-xl text-gray-600">Get started with a subscription to unlock all features</p>
+          </div>
+
+          {/* Pricing Plans */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            {/* Starter Plan */}
+            <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 p-8 hover:shadow-lg transition-all">
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Starter</h3>
+                <div className="flex items-baseline mb-4">
+                  <span className="text-4xl font-bold text-gray-900">$29</span>
+                  <span className="text-gray-600 ml-2">/month</span>
+                </div>
+                <ul className="space-y-3">
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-gray-700">Up to 20 Users</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-gray-700">Up to 5 Bots</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-gray-700">Email Support</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-gray-700">1,000 Conversations</span>
+                  </li>
+                </ul>
+              </div>
+              <button
+                onClick={() => handleSubscribe('starter', 29)}
+                disabled={isUpgrading}
+                className="w-full py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium disabled:opacity-50"
+              >
+                {isUpgrading ? 'Processing...' : 'Get Started'}
+              </button>
+            </div>
+
+            {/* Professional Plan */}
+            <div className="bg-white rounded-2xl shadow-lg border-2 border-[#6566F1] p-8 hover:shadow-xl transition-all relative">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <span className="bg-[#6566F1] text-white px-4 py-1 rounded-full text-sm font-semibold">
+                  Most Popular
+                </span>
+              </div>
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Professional</h3>
+                <div className="flex items-baseline mb-4">
+                  <span className="text-4xl font-bold text-gray-900">$99</span>
+                  <span className="text-gray-600 ml-2">/month</span>
+                </div>
+                <ul className="space-y-3">
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-gray-700">Up to 50 Users</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-gray-700">Up to 10 Bots</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-gray-700">Priority Support</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-gray-700">Advanced Analytics</span>
+                  </li>
+                </ul>
+              </div>
+              <button
+                onClick={() => handleSubscribe('professional', 99)}
+                disabled={isUpgrading}
+                className="w-full py-3 bg-[#6566F1] text-white rounded-xl hover:bg-[#5A5BD9] transition-colors font-medium disabled:opacity-50"
+              >
+                {isUpgrading ? 'Processing...' : 'Get Started'}
+              </button>
+            </div>
+
+            {/* Enterprise Plan */}
+            <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 p-8 hover:shadow-lg transition-all">
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Enterprise</h3>
+                <div className="flex items-baseline mb-4">
+                  <span className="text-4xl font-bold text-gray-900">$299</span>
+                  <span className="text-gray-600 ml-2">/month</span>
+                </div>
+                <ul className="space-y-3">
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-gray-700">Unlimited Users</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-gray-700">Unlimited Bots</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-gray-700">24/7 Support</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-gray-700">Custom Integrations</span>
+                  </li>
+                </ul>
+              </div>
+              <button
+                onClick={() => handleSubscribe('enterprise', 299)}
+                disabled={isUpgrading}
+                className="w-full py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium disabled:opacity-50"
+              >
+                {isUpgrading ? 'Processing...' : 'Get Started'}
+              </button>
+            </div>
+          </div>
+
+          {/* Current Plan (Free) */}
+          {subscriptionData && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                    <Package className="w-6 h-6 text-gray-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Current Plan: {subscriptionData.plan.name}</h3>
+                    <p className="text-gray-600">Limited features. Upgrade to unlock full potential.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Has subscription - Show billing dashboard
+  const { plan, usage } = subscriptionData;
+
+  // Calculate usage percentages
+  const usersPercentage = (usage.users / usage.usersLimit) * 100;
+  const botsPercentage = (usage.bots / usage.botsLimit) * 100;
+  const conversationsPercentage = (usage.conversations / usage.conversationsLimit) * 100;
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'past_due':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       {/* Header */}
@@ -343,30 +397,20 @@ const BillingPage: React.FC = () => {
           <p className="text-gray-600 mt-2">Manage your subscription and view usage statistics</p>
         </div>
         <div className="flex items-center space-x-3">
-          <button
-            onClick={handleExport}
-            disabled={isExporting}
-            className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isExporting ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Download className="w-5 h-5" />
-            )}
-            <span>{isExporting ? 'Exporting...' : 'Export'}</span>
-          </button>
-          <button
-            onClick={handleUpgrade}
-            disabled={isUpgrading}
-            className="flex items-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isUpgrading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Plus className="w-5 h-5" />
-            )}
-            <span>{isUpgrading ? 'Processing...' : 'Upgrade Plan'}</span>
-          </button>
+          {plan.name !== 'Enterprise' && (
+            <button
+              onClick={handleUpgrade}
+              disabled={isUpgrading}
+              className="flex items-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isUpgrading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Plus className="w-5 h-5" />
+              )}
+              <span>{isUpgrading ? 'Processing...' : 'Upgrade Plan'}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -374,11 +418,11 @@ const BillingPage: React.FC = () => {
       <div className="bg-white p-6 rounded-2xl shadow-sm border-0">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">Current Plan</h2>
-          <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
-            Active
+          <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(plan.status)}`}>
+            {plan.status.charAt(0).toUpperCase() + plan.status.slice(1)}
           </span>
         </div>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-4 mb-4">
@@ -386,13 +430,13 @@ const BillingPage: React.FC = () => {
                 <CreditCard className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-gray-900">{currentPlan.name}</h3>
-                <p className="text-gray-600">${currentPlan.price}/{currentPlan.period}</p>
+                <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
+                <p className="text-gray-600">${plan.price}/{plan.period}</p>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
-              {currentPlan.features.map((feature, index) => (
+              {plan.features.map((feature, index) => (
                 <div key={index} className="flex items-center space-x-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
                   <span className="text-sm text-gray-700">{feature}</span>
@@ -400,289 +444,127 @@ const BillingPage: React.FC = () => {
               ))}
             </div>
           </div>
-          
+
           <div className="bg-gray-50 p-4 rounded-xl">
-            <h4 className="font-semibold text-gray-900 mb-3">Plan Details</h4>
+            <h4 className="font-semibold text-gray-900 mb-3">Manage Subscription</h4>
             <div className="space-y-2 text-sm mb-4">
               <div className="flex justify-between">
                 <span className="text-gray-600">Billing Cycle:</span>
-                <span className="font-medium">Monthly</span>
+                <span className="font-medium capitalize">{plan.period}ly</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Next Billing:</span>
-                <span className="font-medium">Feb 1, 2024</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Payment Method:</span>
-                <span className="font-medium">**** 4242</span>
-              </div>
+              {plan.stripeCustomerId && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Customer ID:</span>
+                  <span className="font-medium text-xs">{plan.stripeCustomerId.slice(-8)}</span>
+                </div>
+              )}
             </div>
             <button
               onClick={handleUpdatePaymentMethod}
               disabled={isUpdatingPayment}
               className="w-full px-4 py-2 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 text-[#6566F1] hover:text-[#5A5BD9] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isUpdatingPayment ? 'Loading...' : 'Update Payment Method'}
+              {isUpdatingPayment ? 'Loading...' : 'Manage Subscription'}
             </button>
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              Update payment method, view invoices, or cancel subscription
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Usage Statistics with Progress Bars */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Usage Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Active Users */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-sm font-medium text-gray-600">Active Users</p>
-              <p className="text-3xl font-bold text-gray-900">{currentPlan.usage.users}</p>
+              <p className="text-sm text-gray-600 mb-1">Active Users</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {usage.users}
+                <span className="text-base text-gray-500 font-normal"> / {usage.usersLimit}</span>
+              </p>
             </div>
-            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-              <Users className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+              <Users className="w-6 h-6 text-white" />
             </div>
           </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">{currentPlan.usage.users} of {currentPlan.usage.usersLimit} used</span>
-              <span className="font-semibold text-blue-600">{usersPercentage.toFixed(0)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div
-                className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
-                style={{ width: `${usersPercentage}%` }}
-              ></div>
-            </div>
-            <p className="text-xs text-gray-500">{currentPlan.usage.usersLimit - currentPlan.usage.users} users remaining</p>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(usersPercentage, 100)}%` }}
+            />
           </div>
+          <p className="text-xs text-gray-500 mt-2">{usersPercentage.toFixed(1)}% used</p>
         </div>
 
-        {/* Total Bots */}
+        {/* Active Bots */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Bots</p>
-              <p className="text-3xl font-bold text-gray-900">{currentPlan.usage.bots}</p>
+              <p className="text-sm text-gray-600 mb-1">Active Bots</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {usage.bots}
+                <span className="text-base text-gray-500 font-normal"> / {usage.botsLimit}</span>
+              </p>
             </div>
-            <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
-              <Bot className="w-6 h-6 text-green-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+              <Bot className="w-6 h-6 text-white" />
             </div>
           </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">{currentPlan.usage.bots} of {currentPlan.usage.botsLimit} used</span>
-              <span className="font-semibold text-green-600">{botsPercentage.toFixed(0)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div
-                className="bg-green-600 h-2.5 rounded-full transition-all duration-500"
-                style={{ width: `${botsPercentage}%` }}
-              ></div>
-            </div>
-            <p className="text-xs text-gray-500">{currentPlan.usage.botsLimit - currentPlan.usage.bots} bots remaining</p>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(botsPercentage, 100)}%` }}
+            />
           </div>
+          <p className="text-xs text-gray-500 mt-2">{botsPercentage.toFixed(1)}% used</p>
         </div>
 
         {/* Conversations */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg transition-all duration-200">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-sm font-medium text-gray-600">Conversations</p>
-              <p className="text-3xl font-bold text-gray-900">{currentPlan.usage.conversations.toLocaleString()}</p>
+              <p className="text-sm text-gray-600 mb-1">Conversations</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {usage.conversations}
+                <span className="text-base text-gray-500 font-normal"> / {usage.conversationsLimit}</span>
+              </p>
             </div>
-            <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
-              <MessageSquare className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">{currentPlan.usage.conversations.toLocaleString()} of {currentPlan.usage.conversationsLimit.toLocaleString()} used</span>
-              <span className="font-semibold text-purple-600">{conversationsPercentage.toFixed(0)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div
-                className="bg-purple-600 h-2.5 rounded-full transition-all duration-500"
-                style={{ width: `${conversationsPercentage}%` }}
-              ></div>
-            </div>
-            <p className="text-xs text-gray-500">{(currentPlan.usage.conversationsLimit - currentPlan.usage.conversations).toLocaleString()} remaining</p>
-          </div>
-        </div>
-
-        {/* Storage Used */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg transition-all duration-200">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Storage Used</p>
-              <p className="text-3xl font-bold text-gray-900">{currentPlan.usage.storage} GB</p>
-            </div>
-            <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-orange-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+              <MessageSquare className="w-6 h-6 text-white" />
             </div>
           </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">{currentPlan.usage.storage} GB of {currentPlan.usage.storageLimit} GB used</span>
-              <span className="font-semibold text-orange-600">{storagePercentage.toFixed(1)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div
-                className="bg-orange-600 h-2.5 rounded-full transition-all duration-500"
-                style={{ width: `${storagePercentage}%` }}
-              ></div>
-            </div>
-            <p className="text-xs text-gray-500">{(currentPlan.usage.storageLimit - currentPlan.usage.storage).toFixed(1)} GB remaining</p>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(conversationsPercentage, 100)}%` }}
+            />
           </div>
+          <p className="text-xs text-gray-500 mt-2">{conversationsPercentage.toFixed(1)}% used</p>
         </div>
       </div>
 
-      {/* Billing History */}
-      <div className="bg-white rounded-2xl shadow-sm border-0 overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-bold text-gray-900 flex items-center">
-                <FileText className="w-6 h-6 mr-2 text-[#6566F1]" />
-                Billing History
-              </h3>
-              <p className="text-gray-600 mt-1">View and download your invoices</p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <select
-                value={invoiceFilter}
-                onChange={(e) => {
-                  setInvoiceFilter(e.target.value);
-                  setCurrentPage(1); // Reset to first page when filter changes
-                }}
-                className="px-4 py-2 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-[#6566F1] bg-white text-sm font-medium"
+      {/* Upgrade Notice */}
+      {(usersPercentage > 80 || botsPercentage > 80 || conversationsPercentage > 80) && plan.name !== 'Enterprise' && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">
+          <div className="flex items-start space-x-3">
+            <AlertCircle className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-yellow-900 mb-1">Approaching Usage Limits</h3>
+              <p className="text-yellow-700 mb-3">
+                You're close to reaching your plan limits. Consider upgrading to avoid service interruption.
+              </p>
+              <button
+                onClick={handleUpgrade}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-xl hover:bg-yellow-700 transition-colors font-medium"
               >
-                <option value="all">All Invoices</option>
-                <option value="new">Newest First</option>
-                <option value="old">Oldest First</option>
-                <option value="high">High to Low</option>
-                <option value="low">Low to High</option>
-              </select>
+                Upgrade Now
+              </button>
             </div>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Invoice
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Description
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
-              {currentInvoices.map((invoice) => (
-                <tr key={invoice.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
-                        <FileText className="w-5 h-5 text-gray-600" />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-semibold text-gray-900">{invoice.id}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {new Date(invoice.date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {invoice.description}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                    ${invoice.amount}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-full border flex items-center w-fit ${getStatusColor(invoice.status)}`}>
-                      {getStatusIcon(invoice.status)}
-                      <span className="ml-1 capitalize">{invoice.status}</span>
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleDownloadInvoice(invoice.id)}
-                        className="text-[#6566F1] hover:text-[#5A5BD9] p-2 rounded-lg hover:bg-[#6566F1]/10 transition-colors"
-                        title="Download Invoice"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleViewInvoice(invoice.id)}
-                        className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                        title="View Invoice Details"
-                      >
-                        <FileText className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                Showing {startIndex + 1} to {Math.min(endIndex, filteredInvoices.length)} of {filteredInvoices.length} invoices
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  className="p-2 rounded-lg border border-gray-300 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      currentPage === page
-                        ? 'bg-[#6566F1] text-white'
-                        : 'border border-gray-300 hover:bg-white text-gray-700'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                  className="p-2 rounded-lg border border-gray-300 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
+      )}
     </div>
   );
 };
