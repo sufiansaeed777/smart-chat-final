@@ -46,7 +46,9 @@ const BotsPage: React.FC = () => {
   const [selectedBots, setSelectedBots] = useState<string[]>([]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedBotForEdit, setSelectedBotForEdit] = useState<BotData | null>(null);
+  const [selectedBotForView, setSelectedBotForView] = useState<BotData | null>(null);
   const [botToDelete, setBotToDelete] = useState<{ id: string; name: string } | null>(null);
   const [newStatus, setNewStatus] = useState<string>('');
   const [newName, setNewName] = useState<string>('');
@@ -72,16 +74,20 @@ const BotsPage: React.FC = () => {
           setShowDeleteModal(false);
           setBotToDelete(null);
         }
+        if (showViewModal) {
+          setShowViewModal(false);
+          setSelectedBotForView(null);
+        }
       }
     };
 
-    if (showEditModal || showDeleteModal) {
+    if (showEditModal || showDeleteModal || showViewModal) {
       window.addEventListener('keydown', handleEscape);
       return () => {
         window.removeEventListener('keydown', handleEscape);
       };
     }
-  }, [showEditModal, showDeleteModal]);
+  }, [showEditModal, showDeleteModal, showViewModal]);
 
   useEffect(() => {
     const loadBots = async () => {
@@ -179,6 +185,11 @@ const BotsPage: React.FC = () => {
       console.error('Error deleting bot:', error);
       alert(error.message || 'Failed to delete bot. Please try again.');
     }
+  };
+
+  const handleViewBot = (bot: BotData) => {
+    setSelectedBotForView(bot);
+    setShowViewModal(true);
   };
 
   const handleEditBot = (bot: BotData) => {
@@ -459,7 +470,7 @@ const BotsPage: React.FC = () => {
               {/* Actions */}
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => window.open(`/manager-dashboard/bots?botId=${bot.id}`, '_blank')}
+                  onClick={() => handleViewBot(bot)}
                   className="flex-1 flex items-center justify-center space-x-2 bg-[#6566F1] text-white px-4 py-2 rounded-xl hover:bg-[#5A5BD9] transition-colors"
                 >
                   <Eye className="w-4 h-4" />
@@ -782,6 +793,166 @@ const BotsPage: React.FC = () => {
           </div>
           </div>
         )}
+
+      {/* View Bot Modal */}
+      {showViewModal && selectedBotForView && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Bot Details</h2>
+              <button
+                onClick={() => {
+                  setShowViewModal(false);
+                  setSelectedBotForView(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Bot Header */}
+            <div className="flex items-center space-x-4 pb-6 border-b border-gray-200">
+              <div className="w-16 h-16 bg-gradient-to-br from-[#6566F1] to-[#7F82F3] rounded-2xl flex items-center justify-center shadow-lg">
+                <Bot className="w-8 h-8 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-2xl font-bold text-gray-900">{selectedBotForView.name}</h3>
+                <p className="text-sm text-gray-600 mt-1">{selectedBotForView.category}</p>
+              </div>
+              <span className={`px-4 py-2 text-sm font-semibold rounded-full border flex items-center ${getStatusBadgeColor(selectedBotForView.status)}`}>
+                {getStatusIcon(selectedBotForView.status)}
+                <span className="ml-2">{selectedBotForView.status.charAt(0).toUpperCase() + selectedBotForView.status.slice(1)}</span>
+              </span>
+            </div>
+
+            {/* Bot Stats */}
+            <div className="grid grid-cols-2 gap-4 py-6 border-b border-gray-200">
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-purple-700">Conversations</p>
+                    <p className="text-3xl font-bold text-purple-900 mt-1">{selectedBotForView.conversations.toLocaleString()}</p>
+                  </div>
+                  <MessageSquare className="w-10 h-10 text-purple-600 opacity-50" />
+                </div>
+              </div>
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-700">Users</p>
+                    <p className="text-3xl font-bold text-blue-900 mt-1">{selectedBotForView.users.toLocaleString()}</p>
+                  </div>
+                  <Users className="w-10 h-10 text-blue-600 opacity-50" />
+                </div>
+              </div>
+            </div>
+
+            {/* Bot Details */}
+            <div className="space-y-4 py-6 border-b border-gray-200">
+              <h4 className="text-lg font-semibold text-gray-900">Bot Information</h4>
+
+              <div className="space-y-3">
+                <div className="flex items-start">
+                  <span className="text-sm font-semibold text-gray-600 w-32">Bot ID:</span>
+                  <span className="text-sm text-gray-900 font-mono bg-gray-100 px-2 py-1 rounded">{selectedBotForView.id}</span>
+                </div>
+
+                <div className="flex items-start">
+                  <span className="text-sm font-semibold text-gray-600 w-32">Description:</span>
+                  <span className="text-sm text-gray-900 flex-1">{selectedBotForView.description || 'No description provided'}</span>
+                </div>
+
+                <div className="flex items-start">
+                  <span className="text-sm font-semibold text-gray-600 w-32">Domain:</span>
+                  <a
+                    href={selectedBotForView.domain}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-[#6566F1] hover:underline flex items-center"
+                  >
+                    {selectedBotForView.domain}
+                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </div>
+
+                <div className="flex items-start">
+                  <span className="text-sm font-semibold text-gray-600 w-32">Category:</span>
+                  <span className="text-sm text-gray-900">{selectedBotForView.category}</span>
+                </div>
+
+                {selectedBotForView.createdBy && (
+                  <div className="flex items-start">
+                    <span className="text-sm font-semibold text-gray-600 w-32">Created By:</span>
+                    <span className="text-sm text-gray-900">{selectedBotForView.createdBy}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Activity Information */}
+            <div className="space-y-4 py-6">
+              <h4 className="text-lg font-semibold text-gray-900">Activity</h4>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <div className="flex items-center text-gray-600 mb-2">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    <span className="text-sm font-medium">Created</span>
+                  </div>
+                  <p className="text-sm text-gray-900 font-semibold">
+                    {new Date(selectedBotForView.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    {new Date(selectedBotForView.createdAt).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <div className="flex items-center text-gray-600 mb-2">
+                    <Activity className="w-4 h-4 mr-2" />
+                    <span className="text-sm font-medium">Last Active</span>
+                  </div>
+                  <p className="text-sm text-gray-900 font-semibold">{selectedBotForView.lastActive}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowViewModal(false);
+                  setSelectedBotForView(null);
+                  handleEditBot(selectedBotForView);
+                }}
+                className="px-6 py-2.5 text-sm bg-[#6566F1] text-white rounded-xl hover:bg-[#5A5BD9] transition-colors flex items-center"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Bot
+              </button>
+              <button
+                onClick={() => {
+                  setShowViewModal(false);
+                  setSelectedBotForView(null);
+                }}
+                className="px-6 py-2.5 text-sm border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
   );
 };
