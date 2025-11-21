@@ -164,7 +164,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ apiKey, externalTrigger, onTriggered 
           userEmail: 'guest@example.com',
           userName: 'Guest User',
           message: 'User ended chat session',
-          priority: 'low'
+          priority: 'low',
+          botId: 'general-assistant'
         }),
       });
     } catch (error) {
@@ -222,7 +223,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ apiKey, externalTrigger, onTriggered 
           userEmail: 'guest@example.com',
           userName: 'Guest User',
           message: description,
-          priority: 'high'
+          priority: 'high',
+          botId: 'general-assistant'
         }),
       });
 
@@ -249,7 +251,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ apiKey, externalTrigger, onTriggered 
           userEmail: email || 'guest@example.com',
           userName: 'Guest User',
           message: `${issueType}: ${description}`,
-          priority: 'medium'
+          priority: 'medium',
+          botId: 'general-assistant'
         }),
       });
       setShowReportIssue(false);

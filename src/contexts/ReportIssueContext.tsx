@@ -4,7 +4,8 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface ReportIssueContextType {
   isOpen: boolean;
-  openModal: () => void;
+  botId: string | null;
+  openModal: (botId?: string) => void;
   closeModal: () => void;
 }
 
@@ -24,17 +25,20 @@ interface ReportIssueProviderProps {
 
 export const ReportIssueProvider: React.FC<ReportIssueProviderProps> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [botId, setBotId] = useState<string | null>(null);
 
-  const openModal = () => {
+  const openModal = (newBotId?: string) => {
+    setBotId(newBotId || null);
     setIsOpen(true);
   };
 
   const closeModal = () => {
     setIsOpen(false);
+    setBotId(null);
   };
 
   return (
-    <ReportIssueContext.Provider value={{ isOpen, openModal, closeModal }}>
+    <ReportIssueContext.Provider value={{ isOpen, botId, openModal, closeModal }}>
       {children}
     </ReportIssueContext.Provider>
   );

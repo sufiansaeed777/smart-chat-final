@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 
 const ReportIssueModal = () => {
   const { data: session } = useSession();
-  const { isOpen, closeModal } = useReportIssue();
+  const { isOpen, botId, closeModal } = useReportIssue();
   const [formData, setFormData] = useState({
     type: 'issue_report',
     message: '',
@@ -42,7 +42,8 @@ const ReportIssueModal = () => {
           userEmail: session.user.email || '',
           userName: session.user.name || session.user.email || 'Unknown User',
           message: formData.message,
-          priority: formData.priority
+          priority: formData.priority,
+          botId: botId || null
         }),
       });
 
