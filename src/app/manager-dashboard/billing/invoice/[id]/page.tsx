@@ -297,14 +297,73 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
       {/* Print Styles */}
       <style jsx global>{`
         @media print {
+          /* Hide everything except the invoice */
+          body > *:not(.print-container) {
+            display: none !important;
+          }
+
+          /* Hide header actions and back button */
           .no-print {
             display: none !important;
           }
+
+          /* Reset page styles for printing */
           body {
             background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
-          .bg-gray-50 {
+
+          /* Remove page wrapper styling */
+          .min-h-screen {
+            min-height: auto !important;
             background: white !important;
+            padding: 0 !important;
+          }
+
+          /* Center and style invoice for print */
+          .max-w-5xl {
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 20px !important;
+          }
+
+          /* Remove shadows and borders for clean print */
+          .shadow-sm,
+          .shadow-lg {
+            box-shadow: none !important;
+          }
+
+          /* Ensure backgrounds print correctly */
+          .bg-gray-50,
+          .bg-gray-100 {
+            background: #f9fafb !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          .bg-gradient-to-br {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          /* Keep status badge colors */
+          .bg-green-100,
+          .bg-yellow-100,
+          .bg-red-100 {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          /* Page breaks */
+          .invoice-section {
+            page-break-inside: avoid;
+          }
+
+          /* Fit invoice on one page */
+          @page {
+            size: auto;
+            margin: 15mm;
           }
         }
       `}</style>
