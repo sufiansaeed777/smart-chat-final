@@ -173,6 +173,7 @@ export async function PATCH(request: NextRequest) {
 // DELETE /api/admin/bots - Delete a bot
 export async function DELETE(request: NextRequest) {
   try {
+    console.log('[Delete Bot] API called');
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
@@ -193,6 +194,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { botId } = await request.json();
+    console.log('[Delete Bot] Bot ID:', botId);
 
     if (!botId) {
       return NextResponse.json({ error: 'Bot ID is required' }, { status: 400 });
@@ -205,18 +207,48 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Bot not found' }, { status: 404 });
     }
 
-    // Delete the bot
-    await botRepository.delete(botId);
+    console.log('[Delete Bot] Found bot:', bot.name);
+
+    // Delete related data first to avoid foreign key constraint errors
+
+    // 1. Delete bot assignments
+    const assignmentRepository = AppDataSource.getRepository("bot_assignments");
+    const deletedAssignments = await assignmentRepository.delete({ botId });
+    console.log('[Delete Bot] Deleted bot assignments:', deletedAssignments.affected);
+
+    // 2. Delete bot documents
+    const botDocumentRepository = AppDataSource.getRepository("bot_documents");
+    const deletedBotDocs = await botDocumentRepository.delete({ botId });
+    console.log('[Delete Bot] Deleted bot documents:', deletedBotDocs.affected);
+
+    // 3. Delete conversations
+    const conversationRepository = AppDataSource.getRepository("conversations");
+    const deletedConversations = await conversationRepository.delete({ botId });
+    console.log('[Delete Bot] Deleted conversations:', deletedConversations.affected);
+
+    // 4. Delete document embeddings (if any specific to this bot)
+    // Note: We're not deleting from document_embeddings table as documents might be shared
+
+    // 5. Finally, delete the bot itself
+    const deletedBot = await botRepository.delete(botId);
+    console.log('[Delete Bot] Deleted bot:', deletedBot.affected);
 
     return NextResponse.json({
       success: true,
-      message: 'Bot deleted successfully'
+      message: 'Bot and all related data deleted successfully',
+      deletedData: {
+        bot: deletedBot.affected,
+        assignments: deletedAssignments.affected,
+        documents: deletedBotDocs.affected,
+        conversations: deletedConversations.affected
+      }
     });
 
   } catch (error) {
-    console.error('Error deleting bot:', error);
+    console.error('[Delete Bot] Error:', error);
+    console.error('[Delete Bot] Error details:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
