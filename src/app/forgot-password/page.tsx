@@ -16,24 +16,31 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted with email:', email);
     setLoading(true);
     setError('');
 
     try {
+      console.log('Calling forgot-password API...');
       const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
 
+      console.log('API response status:', response.status);
       const data = await response.json();
+      console.log('API response data:', data);
 
       if (response.ok) {
+        console.log('Success! Setting success state...');
         setSuccess(true);
       } else {
+        console.log('API returned error:', data.error);
         setError(data.error || 'Failed to send reset email');
       }
     } catch (err) {
+      console.error('Caught error:', err);
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);

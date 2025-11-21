@@ -7,40 +7,64 @@ import nodemailer from 'nodemailer';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('[Forgot Password] API called');
     const { email } = await request.json();
+    console.log('[Forgot Password] Email received:', email);
 
     if (!email) {
+      console.log('[Forgot Password] No email provided');
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    }
+
+    // Check if email environment variables are set
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD) {
+      console.error('[Forgot Password] Email configuration missing!');
+      console.error('EMAIL_USER:', process.env.EMAIL_USER ? 'SET' : 'MISSING');
+      console.error('EMAIL_APP_PASSWORD:', process.env.EMAIL_APP_PASSWORD ? 'SET' : 'MISSING');
+      return NextResponse.json({
+        error: 'Email service is not configured. Please contact support.'
+      }, { status: 500 });
     }
 
     // Initialize database
     if (!AppDataSource.isInitialized) {
+      console.log('[Forgot Password] Initializing database...');
       await AppDataSource.initialize();
     }
 
     const userRepository = AppDataSource.getRepository(User);
+    console.log('[Forgot Password] User repository initialized');
 
     // Find user by email (case-insensitive)
+    console.log('[Forgot Password] Looking up user with email:', email);
     const user = await userRepository.findOne({ where: { email: ILike(email) } });
 
     // Always return success to prevent email enumeration
     if (!user) {
+      console.log('[Forgot Password] User not found, returning success message anyway');
       return NextResponse.json({
         message: 'If an account exists with this email, you will receive a password reset link.'
       });
     }
 
+    console.log('[Forgot Password] User found:', user.id);
+
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetExpires = new Date(Date.now() + 3600000); // 1 hour from now
+
+    console.log('[Forgot Password] Generated reset token, expires:', resetExpires);
 
     // Save reset token and expiry
     user.passwordResetToken = resetToken;
     user.passwordResetExpires = resetExpires;
     await userRepository.save(user);
 
+    console.log('[Forgot Password] Reset token saved to database');
+
     // Create reset URL
     const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/reset-password?token=${resetToken}`;
+    console.log('[Forgot Password] Reset URL:', resetUrl);
 
     // Send email
     const transporter = nodemailer.createTransporter({
@@ -105,6 +129,7 @@ export async function POST(request: NextRequest) {
       </html>
     `;
 
+    console.log('[Forgot Password] Sending email to:', email);
     await transporter.sendMail({
       from: `"ChatBot Pro" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -112,14 +137,17 @@ export async function POST(request: NextRequest) {
       html: emailHtml,
     });
 
+    console.log('[Forgot Password] Email sent successfully!');
+
     return NextResponse.json({
       message: 'If an account exists with this email, you will receive a password reset link.'
     });
 
   } catch (error) {
-    console.error('Forgot password error:', error);
+    console.error('[Forgot Password] ERROR:', error);
+    console.error('[Forgot Password] Error details:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
-      { error: 'Failed to process request' },
+      { error: 'Failed to process request. Please try again or contact support.' },
       { status: 500 }
     );
   }
