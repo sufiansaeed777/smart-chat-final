@@ -31,11 +31,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Get search parameter
+    // Get search and botId parameters
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
+    const botId = searchParams.get('botId');
 
-    // Build query
+    // If botId is provided, return documents assigned to that bot
+    if (botId) {
+      const botDocumentRepository = AppDataSource.getRepository("bot_documents");
+
+      // Get assigned bot-document relationships
+      const botDocuments = await botDocumentRepository
+        .createQueryBuilder('bd')
+        .where('bd.botId = :botId', { botId })
+        .andWhere('bd.status = :status', { status: 'active' })
+        .getMany();
+
+      // Extract document IDs
+      const assignedDocIds = botDocuments.map((bd: any) => bd.documentId);
+
+      return NextResponse.json({
+        documents: assignedDocIds.map((docId: string) => ({ documentId: docId }))
+      });
+    }
+
+    // Build query for all documents (when no botId provided)
     let query = documentRepository
       .createQueryBuilder('document')
       .where('document.userId = :userId', { userId: user.id })
