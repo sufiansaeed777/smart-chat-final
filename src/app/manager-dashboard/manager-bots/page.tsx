@@ -1294,9 +1294,38 @@ export default function BotsPage() {
 
               {/* Document Selection */}
               <div>
-                <Label className="text-sm font-semibold text-gray-700 block mb-3">
-                  Knowledge Base Documents
-                </Label>
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-sm font-semibold text-gray-700">
+                    Knowledge Base Documents
+                  </Label>
+                  <button
+                    onClick={async () => {
+                      if (!confirm('This will remove all duplicate documents from your knowledge base. The oldest copy of each document will be kept. Continue?')) {
+                        return;
+                      }
+                      try {
+                        const response = await fetch('/api/manager/cleanup-duplicates', {
+                          method: 'POST',
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                          alert(`✅ Successfully removed ${data.totalDuplicatesRemoved} duplicate documents.\n\n${Object.entries(data.duplicateGroups).map(([name, count]) => `• ${name}: ${count} duplicates removed`).join('\n')}`);
+                          // Refresh documents list
+                          fetchAvailableDocuments();
+                          fetchKnowledgeBase();
+                        } else {
+                          alert(`❌ Error: ${data.error}`);
+                        }
+                      } catch (error) {
+                        console.error('Error cleaning duplicates:', error);
+                        alert('❌ Failed to cleanup duplicates. Please try again.');
+                      }
+                    }}
+                    className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                  >
+                    🧹 Remove Duplicates
+                  </button>
+                </div>
                 <div className="space-y-3">
                   {/* Search Documents */}
                   <div className="relative">
