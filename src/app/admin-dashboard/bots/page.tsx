@@ -510,64 +510,135 @@ const BotsPage: React.FC = () => {
       )}
 
       {/* Bulk Actions */}
-      {selectedBots.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-xl shadow-lg border border-gray-200 p-4">
-          <div className="flex items-center space-x-4">
-            <span className="text-sm font-medium text-gray-700">
-              {selectedBots.length} bot{selectedBots.length > 1 ? 's' : ''} selected
-            </span>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={async () => {
-                  if (confirm(`Activate ${selectedBots.length} bot(s)?`)) {
-                    for (const botId of selectedBots) {
-                      try {
-                        const response = await fetch('/api/admin/bots', {
-                          method: 'PATCH',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ botId, updates: { status: 'active' } })
-                        });
-                        if (response.ok) {
-                          setBots(prev => prev.map(b => b.id === botId ? { ...b, status: 'active' } : b));
+      {selectedBots.length > 0 && (() => {
+        // Determine the status of selected bots
+        const selectedBotsData = bots.filter(bot => selectedBots.includes(bot.id));
+        const allActive = selectedBotsData.every(bot => bot.status === 'active');
+        const allInactive = selectedBotsData.every(bot => bot.status === 'inactive' || bot.status === 'maintenance');
+
+        return (
+          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-xl shadow-lg border border-gray-200 p-4">
+            <div className="flex items-center space-x-4">
+              <span className="text-sm font-medium text-gray-700">
+                {selectedBots.length} bot{selectedBots.length > 1 ? 's' : ''} selected
+              </span>
+              <div className="flex items-center space-x-2">
+                {/* Show Activate button only if all selected bots are inactive/maintenance */}
+                {allInactive && (
+                  <button
+                    onClick={async () => {
+                      if (confirm(`Activate ${selectedBots.length} bot(s)?`)) {
+                        for (const botId of selectedBots) {
+                          try {
+                            const response = await fetch('/api/admin/bots', {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ botId, updates: { status: 'active' } })
+                            });
+                            if (response.ok) {
+                              setBots(prev => prev.map(b => b.id === botId ? { ...b, status: 'active' } : b));
+                            }
+                          } catch (error) {
+                            console.error('Error activating bot:', error);
+                          }
                         }
-                      } catch (error) {
-                        console.error('Error activating bot:', error);
+                        setSelectedBots([]);
                       }
-                    }
-                    setSelectedBots([]);
-                  }
-                }}
-                className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
-              >
-                <Play className="w-4 h-4 inline mr-1" />
-                Activate
-              </button>
-              <button
-                onClick={async () => {
-                  if (confirm(`Pause ${selectedBots.length} bot(s)?`)) {
-                    for (const botId of selectedBots) {
-                      try {
-                        const response = await fetch('/api/admin/bots', {
-                          method: 'PATCH',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ botId, updates: { status: 'inactive' } })
-                        });
-                        if (response.ok) {
-                          setBots(prev => prev.map(b => b.id === botId ? { ...b, status: 'inactive' } : b));
+                    }}
+                    className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                  >
+                    <Play className="w-4 h-4 inline mr-1" />
+                    Activate
+                  </button>
+                )}
+
+                {/* Show Pause button only if all selected bots are active */}
+                {allActive && (
+                  <button
+                    onClick={async () => {
+                      if (confirm(`Pause ${selectedBots.length} bot(s)?`)) {
+                        for (const botId of selectedBots) {
+                          try {
+                            const response = await fetch('/api/admin/bots', {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ botId, updates: { status: 'inactive' } })
+                            });
+                            if (response.ok) {
+                              setBots(prev => prev.map(b => b.id === botId ? { ...b, status: 'inactive' } : b));
+                            }
+                          } catch (error) {
+                            console.error('Error pausing bot:', error);
+                          }
                         }
-                      } catch (error) {
-                        console.error('Error pausing bot:', error);
+                        setSelectedBots([]);
                       }
-                    }
-                    setSelectedBots([]);
-                  }
-                }}
-                className="px-3 py-1 text-sm bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors"
-              >
-                <Pause className="w-4 h-4 inline mr-1" />
-                Pause
-              </button>
-              <button
+                    }}
+                    className="px-3 py-1 text-sm bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors"
+                  >
+                    <Pause className="w-4 h-4 inline mr-1" />
+                    Pause
+                  </button>
+                )}
+
+                {/* Show both buttons if mixed statuses - activate only inactive ones, pause only active ones */}
+                {!allActive && !allInactive && (
+                  <>
+                    <button
+                      onClick={async () => {
+                        const inactiveBots = selectedBotsData.filter(b => b.status === 'inactive' || b.status === 'maintenance');
+                        if (inactiveBots.length > 0 && confirm(`Activate ${inactiveBots.length} inactive bot(s)?`)) {
+                          for (const bot of inactiveBots) {
+                            try {
+                              const response = await fetch('/api/admin/bots', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ botId: bot.id, updates: { status: 'active' } })
+                              });
+                              if (response.ok) {
+                                setBots(prev => prev.map(b => b.id === bot.id ? { ...b, status: 'active' } : b));
+                              }
+                            } catch (error) {
+                              console.error('Error activating bot:', error);
+                            }
+                          }
+                          setSelectedBots([]);
+                        }
+                      }}
+                      className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                    >
+                      <Play className="w-4 h-4 inline mr-1" />
+                      Activate ({selectedBotsData.filter(b => b.status === 'inactive' || b.status === 'maintenance').length})
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const activeBots = selectedBotsData.filter(b => b.status === 'active');
+                        if (activeBots.length > 0 && confirm(`Pause ${activeBots.length} active bot(s)?`)) {
+                          for (const bot of activeBots) {
+                            try {
+                              const response = await fetch('/api/admin/bots', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ botId: bot.id, updates: { status: 'inactive' } })
+                              });
+                              if (response.ok) {
+                                setBots(prev => prev.map(b => b.id === bot.id ? { ...b, status: 'inactive' } : b));
+                              }
+                            } catch (error) {
+                              console.error('Error pausing bot:', error);
+                            }
+                          }
+                          setSelectedBots([]);
+                        }
+                      }}
+                      className="px-3 py-1 text-sm bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors"
+                    >
+                      <Pause className="w-4 h-4 inline mr-1" />
+                      Pause ({selectedBotsData.filter(b => b.status === 'active').length})
+                    </button>
+                  </>
+                )}
+                <button
                 onClick={async () => {
                   if (confirm(`Delete ${selectedBots.length} bot(s)?\n\nThis action cannot be undone.`)) {
                     for (const botId of selectedBots) {
@@ -597,8 +668,8 @@ const BotsPage: React.FC = () => {
               </button>
             </div>
           </div>
-          </div>
-        )}
+        );
+      })()}
 
       {/* Edit Bot Modal */}
       {showEditModal && selectedBotForEdit && (
