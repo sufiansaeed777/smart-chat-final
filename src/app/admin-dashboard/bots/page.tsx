@@ -510,19 +510,21 @@ const BotsPage: React.FC = () => {
       )}
 
       {/* Bulk Actions */}
-      {selectedBots.length > 0 && (() => {
-        // Determine the status of selected bots
-        const selectedBotsData = bots.filter(bot => selectedBots.includes(bot.id));
-        const allActive = selectedBotsData.every(bot => bot.status === 'active');
-        const allInactive = selectedBotsData.every(bot => bot.status === 'inactive' || bot.status === 'maintenance');
+      {selectedBots.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-xl shadow-lg border border-gray-200 p-4">
+          <div className="flex items-center space-x-4">
+            <span className="text-sm font-medium text-gray-700">
+              {selectedBots.length} bot{selectedBots.length > 1 ? 's' : ''} selected
+            </span>
+            <div className="flex items-center space-x-2">
+              {/* Determine the status of selected bots */}
+              {(() => {
+                const selectedBotsData = bots.filter(bot => selectedBots.includes(bot.id));
+                const allActive = selectedBotsData.every(bot => bot.status === 'active');
+                const allInactive = selectedBotsData.every(bot => bot.status === 'inactive' || bot.status === 'maintenance');
 
-        return (
-          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-xl shadow-lg border border-gray-200 p-4">
-            <div className="flex items-center space-x-4">
-              <span className="text-sm font-medium text-gray-700">
-                {selectedBots.length} bot{selectedBots.length > 1 ? 's' : ''} selected
-              </span>
-              <div className="flex items-center space-x-2">
+                return (
+                  <>
                 {/* Show Activate button only if all selected bots are inactive/maintenance */}
                 {allInactive && (
                   <button
@@ -666,10 +668,13 @@ const BotsPage: React.FC = () => {
                 <Trash2 className="w-4 h-4 inline mr-1" />
                 Delete
               </button>
+                  </>
+                );
+              })()}
             </div>
           </div>
-        );
-      })()}
+        </div>
+      )}
 
       {/* Edit Bot Modal */}
       {showEditModal && selectedBotForEdit && (
