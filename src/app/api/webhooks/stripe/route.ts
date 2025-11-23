@@ -69,9 +69,43 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   const planType = session.metadata?.planType;
   const botName = session.metadata?.botName;
 
-  // Validate required metadata
-  if (!userId || !botName) {
-    console.error('Missing required metadata in checkout session');
+  // Get user
+  if (!userId) {
+    console.error('Missing userId in metadata');
+    return;
+  }
+
+  const user = await userRepository.findOne({ where: { id: userId } });
+  if (!user) {
+    console.error('User not found:', userId);
+    return;
+  }
+
+  // Handle subscription plan purchases (starter, professional, enterprise)
+  if (planType === 'starter' || planType === 'professional' || planType === 'enterprise') {
+    console.log(`Processing ${planType} subscription for user:`, userId);
+
+    const now = new Date();
+    const billingCycleEnd = new Date(now);
+    billingCycleEnd.setMonth(billingCycleEnd.getMonth() + 1); // 1 month billing cycle
+
+    // Update user subscription information
+    user.subscriptionPlan = planType as 'starter' | 'professional' | 'enterprise';
+    user.subscriptionStatus = 'active';
+    user.stripeCustomerId = session.customer as string;
+    user.stripeSubscriptionId = session.subscription as string || null;
+    user.subscriptionStartedAt = now;
+    user.billingCycleStart = now;
+    user.billingCycleEnd = billingCycleEnd;
+
+    await userRepository.save(user);
+    console.log(`User subscription updated to ${planType}:`, user.id);
+    return;
+  }
+
+  // Handle bot creation (for individual bot purchases)
+  if (!botName) {
+    console.error('Missing botName in metadata for bot creation');
     return;
   }
 
