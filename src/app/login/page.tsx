@@ -209,6 +209,7 @@ const LoginComponent = () => {
                   href="/forgot-password"
                   className="text-xs hover:underline"
                   style={{ color: '#6566F1' }}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   Forgot password?
                 </Link>
