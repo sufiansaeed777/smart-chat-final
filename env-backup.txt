@@ -34,7 +34,7 @@ NEXTAUTH_SECRET=213e23fr2D@EDFWW@ERWE
 NEXTAUTH_URL=https://smart-chat-finale.vercel.app
 
 # OpenAI Configuration (REQUIRED for embeddings and chat)
-OPENAI_API_KEY=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
+OPENAI_API_KEY=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
 
 # Supabase Configuration (REQUIRED for document training with pgvector)
 # Using chatapp project: aucvnpwyrbefzfiqnrvd
