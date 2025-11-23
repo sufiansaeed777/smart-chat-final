@@ -120,13 +120,6 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     return;
   }
 
-  // Get user
-  const user = await userRepository.findOne({ where: { id: userId } });
-  if (!user) {
-    console.error('User not found:', userId);
-    return;
-  }
-
   // Check if bot already exists
   const existingBot = await botRepository.findOne({
     where: { 
