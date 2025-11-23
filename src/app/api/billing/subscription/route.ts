@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     const [totalBots, totalConversations, totalAgents] = await Promise.all([
       botRepository.count({ where: { createdBy: user.id, status: 'active' } }),
       conversationRepository.count({ where: { userId: user.id } }),
-      agentRepository.count({ where: { role: 'agent' } })
+      agentRepository.count({ where: { invitedBy: user.id } })
     ]);
 
     // Define plan limits based on subscription plan
