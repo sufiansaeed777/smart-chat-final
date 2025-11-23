@@ -22,8 +22,7 @@ export async function GET(request: NextRequest) {
 
     const userRepository = AppDataSource.getRepository(User);
     const user = await userRepository.findOne({
-      where: { email: session.user.email },
-      relations: ['bots']
+      where: { email: session.user.email }
     });
 
     if (!user) {
