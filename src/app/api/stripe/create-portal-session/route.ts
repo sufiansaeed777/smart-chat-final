@@ -44,18 +44,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Check if user has a Stripe customer ID
-    if (!user.stripeCustomerId) {
-      return NextResponse.json(
-        { error: 'No active subscription found. Please subscribe to a plan first.' },
-        { status: 400 }
-      );
+    // Check if user has a Stripe customer ID, create one if they don't
+    let customerId = user.stripeCustomerId;
+
+    if (!customerId) {
+      console.log('Creating Stripe customer for user:', user.email);
+
+      // Create a new Stripe customer
+      const customer = await stripe.customers.create({
+        email: user.email,
+        name: user.firstName && user.lastName
+          ? `${user.firstName} ${user.lastName}`.trim()
+          : user.email.split('@')[0],
+        metadata: {
+          userId: user.id,
+          subscriptionPlan: user.subscriptionPlan || 'free',
+        },
+      });
+
+      // Save customer ID to database
+      user.stripeCustomerId = customer.id;
+      await userRepository.save(user);
+
+      customerId = customer.id;
+      console.log('Stripe customer created:', customerId);
     }
 
     // Create portal session
     const portalSession = await stripe.billingPortal.sessions.create({
-      customer: user.stripeCustomerId,
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/manager-dashboard/settings?tab=billing`,
+      customer: customerId,
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/manager-dashboard/billing`,
     });
 
     return NextResponse.json({
