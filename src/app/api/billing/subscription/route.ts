@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
 
     // Build response with real data
     const subscriptionData = {
-      hasSubscription: !!user.stripeCustomerId,
+      hasSubscription: user.subscriptionPlan !== 'free',
       plan: {
         name: planConfig.name,
         price: planConfig.price,
