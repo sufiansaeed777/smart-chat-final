@@ -545,6 +545,51 @@ const BillingPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Billing History / Invoices */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border-0">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900">Billing History</h2>
+          <span className="text-sm text-gray-600">Recent invoices and payments</span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Invoice</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Description</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Amount</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {/* Sample invoice - will be replaced with real data */}
+              <tr className="hover:bg-gray-50 transition-colors">
+                <td className="px-6 py-4 text-sm font-medium text-gray-900">#INV-2024-001</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{new Date().toLocaleDateString()}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{plan.name} Plan - Monthly</td>
+                <td className="px-6 py-4 text-sm font-semibold text-gray-900">${plan.price}.00</td>
+                <td className="px-6 py-4">
+                  <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                    Paid
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <button
+                    onClick={() => router.push('/manager-dashboard/billing/invoice/INV-2024-001')}
+                    className="text-[#6566F1] hover:text-[#5A5BD9] text-sm font-medium transition-colors"
+                  >
+                    View Invoice
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Upgrade Notice */}
       {(usersPercentage > 80 || botsPercentage > 80 || conversationsPercentage > 80) && plan.name !== 'Enterprise' && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">

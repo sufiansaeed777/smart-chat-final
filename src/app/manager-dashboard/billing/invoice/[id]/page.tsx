@@ -297,21 +297,30 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
       {/* Print Styles */}
       <style jsx global>{`
         @media print {
-          /* Hide everything except the invoice */
-          body > *:not(.print-container) {
-            display: none !important;
-          }
-
-          /* Hide header actions and back button */
+          /* Hide sidebar, navigation, and all fixed elements */
+          nav,
+          aside,
+          header[class*="fixed"],
+          [class*="sidebar"],
+          [class*="Sidebar"],
+          [role="navigation"],
           .no-print {
             display: none !important;
+            visibility: hidden !important;
           }
 
           /* Reset page styles for printing */
+          html,
           body {
             background: white !important;
             margin: 0 !important;
             padding: 0 !important;
+            width: 100% !important;
+          }
+
+          /* Remove all left margins from body children */
+          body > * {
+            margin-left: 0 !important;
           }
 
           /* Remove page wrapper styling */
@@ -319,6 +328,7 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
             min-height: auto !important;
             background: white !important;
             padding: 0 !important;
+            margin-left: 0 !important;
           }
 
           /* Center and style invoice for print */
