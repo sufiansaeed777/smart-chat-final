@@ -185,10 +185,10 @@ const HelpPage = () => {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {video.videoUrl && (
+                    {video.url && (
                       <div className="aspect-video mb-4">
                         <iframe
-                          src={video.videoUrl}
+                          src={video.url}
                           className="w-full h-full rounded-lg"
                           allowFullScreen
                           title={video.title}
