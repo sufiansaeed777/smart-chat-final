@@ -439,8 +439,8 @@ const TeamManagement = () => {
           userId: selectedAgent,
           firstName: editingMember.firstName,
           lastName: editingMember.lastName,
-          email: editingMember.email,
-          role: editingMember.role
+          email: editingMember.email
+          // Role is not editable by managers
         }),
       });
 
@@ -954,22 +954,10 @@ const TeamManagement = () => {
                 </div>
               </div>
 
-              {/* Role */}
+              {/* Role - Read-only, cannot be changed by manager */}
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-2">Role</label>
-                {isEditMode ? (
-                  <select
-                    value={editingMember.role}
-                    onChange={(e) => setEditingMember({...editingMember, role: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6566F1] text-gray-900"
-                  >
-                    <option value="user">User</option>
-                    <option value="manager">Manager</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900 capitalize">{selectedAgentData.role}</p>
-                )}
+                <p className="text-gray-900 capitalize">{selectedAgentData.role}</p>
               </div>
 
               {/* Contact Info */}
