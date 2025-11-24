@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useReportIssue } from '@/contexts/ReportIssueContext';
 import {
@@ -9,12 +9,6 @@ import {
   BookOpen,
   FileText,
   MessageCircle,
-  Rocket,
-  Target,
-  Wrench,
-  BarChart3,
-  Handshake,
-  Palette,
   Play,
   X
 } from 'lucide-react';
@@ -30,15 +24,45 @@ const HelpPage = () => {
   const { openModal } = useReportIssue();
   const [activeTab, setActiveTab] = useState('tutorials');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [articles, setArticles] = useState<Array<{id: number; title: string; content: string; category: string}>>([]);
-  const [faqs, setFaqs] = useState<Array<{id: number; question: string; answer: string}>>([]);
-  const [newArticle, setNewArticle] = useState({title: '', content: '', category: ''});
-  const [newVideo, setNewVideo] = useState({title: '', url: '', description: '', difficulty: 'Beginner'});
-  const [newFaq, setNewFaq] = useState({question: '', answer: ''});
+  const [articles, setArticles] = useState<any[]>([]);
+  const [videos, setVideos] = useState<any[]>([]);
+  const [faqs, setFaqs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactForm, setContactForm] = useState({name: '', email: '', subject: '', message: ''});
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+
+  // Fetch help content from API
+  useEffect(() => {
+    const fetchHelpContent = async () => {
+      try {
+        const [articlesRes, videosRes, faqsRes] = await Promise.all([
+          fetch('/api/admin/help/articles'),
+          fetch('/api/admin/help/videos'),
+          fetch('/api/admin/help/faqs')
+        ]);
+
+        if (articlesRes.ok) {
+          const data = await articlesRes.json();
+          setArticles(data.articles || []);
+        }
+        if (videosRes.ok) {
+          const data = await videosRes.json();
+          setVideos(data.videos || []);
+        }
+        if (faqsRes.ok) {
+          const data = await faqsRes.json();
+          setFaqs(data.faqs || []);
+        }
+      } catch (error) {
+        console.error('Error fetching help content:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHelpContent();
+  }, []);
 
   const tabs = [
     { id: 'articles', label: 'Articles', icon: BookOpen },
@@ -47,100 +71,8 @@ const HelpPage = () => {
     { id: 'contact', label: 'Contact', icon: MessageCircle }
   ];
 
-  const tutorials = [
-    {
-      id: 1,
-      title: "Quick Start Guide",
-      description: "Get your first bot up and running in 5 minutes",
-      difficulty: "Beginner",
-      duration: "5:30",
-      icon: Rocket,
-      color: "text-red-600"
-    },
-    {
-      id: 2,
-      title: "Advanced Bot Training",
-      description: "Optimize your bot's responses and accuracy",
-      difficulty: "Intermediate",
-      duration: "12:45",
-      icon: Target,
-      color: "text-blue-600"
-    },
-    {
-      id: 3,
-      title: "Custom Integrations",
-      description: "Connect your bot with external services",
-      difficulty: "Advanced",
-      duration: "18:20",
-      icon: Wrench,
-      color: "text-gray-600"
-    },
-    {
-      id: 4,
-      title: "Analytics Deep Dive",
-      description: "Understanding and using conversation analytics",
-      difficulty: "Intermediate",
-      duration: "9:15",
-      icon: BarChart3,
-      color: "text-green-600"
-    },
-    {
-      id: 5,
-      title: "Handover Best Practices",
-      description: "Setting up seamless bot-to-human handovers",
-      difficulty: "Intermediate",
-      duration: "7:30",
-      icon: Handshake,
-      color: "text-purple-600"
-    },
-    {
-      id: 6,
-      title: "Widget Customization",
-      description: "Make your bot match your brand perfectly",
-      difficulty: "Beginner",
-      duration: "6:45",
-      icon: Palette,
-      color: "text-orange-600"
-    }
-  ];
-
-  const [customTutorials, setCustomTutorials] = useState<Array<{id: number; title: string; url: string; description: string; difficulty: string}>>([]);
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Beginner": return "bg-green-100 text-green-800 border-green-200";
-      case "Intermediate": return "bg-blue-100 text-blue-800 border-blue-200";
-      case "Advanced": return "bg-purple-100 text-purple-800 border-purple-200";
-      default: return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
   const handleNavigation = (path: string) => {
     router.push(path);
-  };
-
-  const handleAddArticle = () => {
-    if (newArticle.title && newArticle.content) {
-      setArticles([...articles, { id: Date.now(), ...newArticle }]);
-      setNewArticle({title: '', content: '', category: ''});
-      setShowAddModal(false);
-    }
-  };
-
-  const handleAddVideo = () => {
-    if (newVideo.title && newVideo.url) {
-      setCustomTutorials([...customTutorials, { id: Date.now(), ...newVideo }]);
-      setNewVideo({title: '', url: '', description: '', difficulty: 'Beginner'});
-      setShowAddModal(false);
-    }
-  };
-
-  const handleAddFaq = () => {
-    if (newFaq.question && newFaq.answer) {
-      setFaqs([...faqs, { id: Date.now(), ...newFaq }]);
-      setNewFaq({question: '', answer: ''});
-      setShowAddModal(false);
-    }
   };
 
   const handleSendEmail = async (e: React.FormEvent) => {
@@ -220,90 +152,101 @@ const HelpPage = () => {
         {/* Tutorials Tab Content */}
         {activeTab === 'tutorials' && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Video Tutorials</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {tutorials.map((tutorial) => {
-                const Icon = tutorial.icon;
-                return (
-                  <Card key={tutorial.id} className="border border-gray-200 bg-white hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="p-6">
-                      <div className="text-center space-y-4">
-                        <div className={`w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto`}>
-                          <Icon className={`w-8 h-8 ${tutorial.color}`} />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            {tutorial.title}
-                          </h3>
-                          <p className="text-sm text-gray-600 mb-4">
-                            {tutorial.description}
-                          </p>
-                          <div className="flex items-center justify-between">
-                            <Badge className={getDifficultyColor(tutorial.difficulty)}>
-                              {tutorial.difficulty}
-                            </Badge>
-                            <div className="flex items-center space-x-2 text-sm text-gray-500">
-                              <Play className="w-4 h-4" />
-                              <span>{tutorial.duration}</span>
-                            </div>
-                          </div>
-                        </div>
+            {loading ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600">Loading videos...</p>
+              </div>
+            ) : videos.length === 0 ? (
+              <Card className="border border-gray-200 bg-white">
+                <CardContent className="p-12">
+                  <div className="text-center">
+                    <Play className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Videos Yet</h3>
+                    <p className="text-gray-600">Tutorial videos will appear here once added</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              videos.map((video) => (
+                <Card key={video.id} className="border border-gray-200 bg-white hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{video.title}</CardTitle>
+                        {video.description && (
+                          <CardDescription className="mt-2">{video.description}</CardDescription>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-              {customTutorials.map((tutorial) => (
-                <Card key={tutorial.id} className="border border-gray-200 bg-white hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="space-y-4">
-                      <div className="flex items-start justify-between">
-                        <h3 className="text-lg font-semibold text-gray-900">{tutorial.title}</h3>
-                        <Badge className={getDifficultyColor(tutorial.difficulty)}>{tutorial.difficulty}</Badge>
-                      </div>
-                      <p className="text-sm text-gray-600">{tutorial.description}</p>
-                      <a href={tutorial.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-sm text-[#6566F1] hover:text-[#5A5BD9]">
-                        <Play className="w-4 h-4 mr-1" />
-                        Watch Video
-                      </a>
+                      {video.category && (
+                        <Badge className="bg-green-100 text-green-800 border-green-200">
+                          {video.category}
+                        </Badge>
+                      )}
                     </div>
+                  </CardHeader>
+                  <CardContent>
+                    {video.videoUrl && (
+                      <div className="aspect-video mb-4">
+                        <iframe
+                          src={video.videoUrl}
+                          className="w-full h-full rounded-lg"
+                          allowFullScreen
+                          title={video.title}
+                        />
+                      </div>
+                    )}
+                    {video.description && (
+                      <p className="text-sm text-gray-700">{video.description}</p>
+                    )}
                   </CardContent>
                 </Card>
-              ))}
-            </div>
+              ))
+            )}
           </div>
         )}
 
         {/* Articles Tab Content */}
         {activeTab === 'articles' && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Help Articles</h2>
-            {articles.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600">Loading articles...</p>
+              </div>
+            ) : articles.length === 0 ? (
               <Card className="border border-gray-200 bg-white">
-                <CardContent className="py-12">
+                <CardContent className="p-12">
                   <div className="text-center">
                     <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Articles Available</h3>
-                    <p className="text-gray-600">Check back later for helpful articles and guides</p>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Articles Yet</h3>
+                    <p className="text-gray-600">Help articles will appear here once added</p>
                   </div>
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-4">
-                {articles.map((article) => (
-                  <Card key={article.id} className="border border-gray-200 bg-white hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-3">
-                        <h3 className="text-lg font-semibold text-gray-900">{article.title}</h3>
-                        {article.category && (
-                          <Badge className="bg-gray-100 text-gray-800">{article.category}</Badge>
+              articles.map((article) => (
+                <Card key={article.id} className="border border-gray-200 bg-white hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{article.title}</CardTitle>
+                        {article.description && (
+                          <CardDescription className="mt-2">{article.description}</CardDescription>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 whitespace-pre-wrap">{article.content}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      {article.category && (
+                        <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                          {article.category}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="prose max-w-none text-sm text-gray-700">
+                      {article.content}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
             )}
           </div>
         )}
@@ -311,31 +254,38 @@ const HelpPage = () => {
         {/* FAQ Tab Content */}
         {activeTab === 'faq' && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Frequently Asked Questions</h2>
-            {faqs.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600">Loading FAQs...</p>
+              </div>
+            ) : faqs.length === 0 ? (
               <Card className="border border-gray-200 bg-white">
-                <CardContent className="py-12">
+                <CardContent className="p-12">
                   <div className="text-center">
                     <HelpCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No FAQs Available</h3>
-                    <p className="text-gray-600">Check back later for frequently asked questions</p>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No FAQs Yet</h3>
+                    <p className="text-gray-600">Frequently asked questions will appear here once added</p>
                   </div>
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-3">
-                {faqs.map((faq) => (
-                  <Card key={faq.id} className="border border-gray-200 bg-white">
-                    <CardContent className="p-6">
-                      <h3 className="text-base font-semibold text-gray-900 mb-2 flex items-start">
-                        <HelpCircle className="w-5 h-5 mr-2 text-[#6566F1] flex-shrink-0 mt-0.5" />
-                        {faq.question}
-                      </h3>
-                      <p className="text-sm text-gray-600 ml-7">{faq.answer}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              faqs.map((faq) => (
+                <Card key={faq.id} className="border border-gray-200 bg-white hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <CardTitle className="text-lg">{faq.question}</CardTitle>
+                      {faq.category && (
+                        <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                          {faq.category}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-700">{faq.answer}</p>
+                  </CardContent>
+                </Card>
+              ))
             )}
           </div>
         )}
@@ -380,157 +330,6 @@ const HelpPage = () => {
               </div>
             </CardContent>
           </Card>
-        )}
-
-        {/* Add Resource Modal */}
-        {showAddModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {activeTab === 'articles' && 'Add New Article'}
-                  {activeTab === 'tutorials' && 'Add Video Link'}
-                  {activeTab === 'faq' && 'Add FAQ'}
-                </h2>
-                <button onClick={() => setShowAddModal(false)} className="text-gray-500 hover:text-gray-700">
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              {/* Article Form */}
-              {activeTab === 'articles' && (
-                <form onSubmit={(e) => { e.preventDefault(); handleAddArticle(); }} className="space-y-4">
-                  <div>
-                    <Label htmlFor="article-title" className="text-sm font-medium text-gray-700 mb-2 block">Title</Label>
-                    <Input
-                      id="article-title"
-                      value={newArticle.title}
-                      onChange={(e) => setNewArticle({...newArticle, title: e.target.value})}
-                      placeholder="Enter article title"
-                      required
-                      className="w-full"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="article-category" className="text-sm font-medium text-gray-700 mb-2 block">Category (Optional)</Label>
-                    <Input
-                      id="article-category"
-                      value={newArticle.category}
-                      onChange={(e) => setNewArticle({...newArticle, category: e.target.value})}
-                      placeholder="e.g., Getting Started, Advanced"
-                      className="w-full"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="article-content" className="text-sm font-medium text-gray-700 mb-2 block">Content</Label>
-                    <textarea
-                      id="article-content"
-                      value={newArticle.content}
-                      onChange={(e) => setNewArticle({...newArticle, content: e.target.value})}
-                      placeholder="Enter article content..."
-                      required
-                      rows={10}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-2 focus:ring-[#6566F1]/20 text-gray-900 resize-none"
-                    />
-                  </div>
-                  <div className="flex justify-end space-x-3 pt-4">
-                    <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
-                    <Button type="submit" className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white">Add Article</Button>
-                  </div>
-                </form>
-              )}
-
-              {/* Video Link Form */}
-              {activeTab === 'tutorials' && (
-                <form onSubmit={(e) => { e.preventDefault(); handleAddVideo(); }} className="space-y-4">
-                  <div>
-                    <Label htmlFor="video-title" className="text-sm font-medium text-gray-700 mb-2 block">Video Title</Label>
-                    <Input
-                      id="video-title"
-                      value={newVideo.title}
-                      onChange={(e) => setNewVideo({...newVideo, title: e.target.value})}
-                      placeholder="Enter video title"
-                      required
-                      className="w-full"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="video-url" className="text-sm font-medium text-gray-700 mb-2 block">Video URL</Label>
-                    <Input
-                      id="video-url"
-                      type="url"
-                      value={newVideo.url}
-                      onChange={(e) => setNewVideo({...newVideo, url: e.target.value})}
-                      placeholder="https://youtube.com/... or https://vimeo.com/..."
-                      required
-                      className="w-full"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="video-description" className="text-sm font-medium text-gray-700 mb-2 block">Description</Label>
-                    <textarea
-                      id="video-description"
-                      value={newVideo.description}
-                      onChange={(e) => setNewVideo({...newVideo, description: e.target.value})}
-                      placeholder="Brief description of the video content..."
-                      rows={3}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-2 focus:ring-[#6566F1]/20 text-gray-900 resize-none"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="video-difficulty" className="text-sm font-medium text-gray-700 mb-2 block">Difficulty Level</Label>
-                    <select
-                      id="video-difficulty"
-                      value={newVideo.difficulty}
-                      onChange={(e) => setNewVideo({...newVideo, difficulty: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] text-gray-900"
-                    >
-                      <option value="Beginner">Beginner</option>
-                      <option value="Intermediate">Intermediate</option>
-                      <option value="Advanced">Advanced</option>
-                    </select>
-                  </div>
-                  <div className="flex justify-end space-x-3 pt-4">
-                    <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
-                    <Button type="submit" className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white">Add Video</Button>
-                  </div>
-                </form>
-              )}
-
-              {/* FAQ Form */}
-              {activeTab === 'faq' && (
-                <form onSubmit={(e) => { e.preventDefault(); handleAddFaq(); }} className="space-y-4">
-                  <div>
-                    <Label htmlFor="faq-question" className="text-sm font-medium text-gray-700 mb-2 block">Question</Label>
-                    <Input
-                      id="faq-question"
-                      value={newFaq.question}
-                      onChange={(e) => setNewFaq({...newFaq, question: e.target.value})}
-                      placeholder="Enter the question..."
-                      required
-                      className="w-full"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="faq-answer" className="text-sm font-medium text-gray-700 mb-2 block">Answer</Label>
-                    <textarea
-                      id="faq-answer"
-                      value={newFaq.answer}
-                      onChange={(e) => setNewFaq({...newFaq, answer: e.target.value})}
-                      placeholder="Enter the answer..."
-                      required
-                      rows={6}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-2 focus:ring-[#6566F1]/20 text-gray-900 resize-none"
-                    />
-                  </div>
-                  <div className="flex justify-end space-x-3 pt-4">
-                    <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
-                    <Button type="submit" className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white">Add FAQ</Button>
-                  </div>
-                </form>
-              )}
-            </div>
-          </div>
         )}
 
         {/* Contact Form Modal */}

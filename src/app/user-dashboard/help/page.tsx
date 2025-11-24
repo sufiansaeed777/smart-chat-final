@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   HelpCircle,
@@ -8,12 +8,6 @@ import {
   BookOpen,
   FileText,
   MessageCircle,
-  Rocket,
-  Target,
-  Wrench,
-  BarChart3,
-  Handshake,
-  Palette,
   Play
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,6 +22,42 @@ const HelpPage = () => {
   const { triggerChat } = useChatBot();
   const [activeTab, setActiveTab] = useState('tutorials');
   const [searchQuery, setSearchQuery] = useState('');
+  const [articles, setArticles] = useState<any[]>([]);
+  const [videos, setVideos] = useState<any[]>([]);
+  const [faqs, setFaqs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch help content from API
+  useEffect(() => {
+    const fetchHelpContent = async () => {
+      try {
+        const [articlesRes, videosRes, faqsRes] = await Promise.all([
+          fetch('/api/admin/help/articles'),
+          fetch('/api/admin/help/videos'),
+          fetch('/api/admin/help/faqs')
+        ]);
+
+        if (articlesRes.ok) {
+          const data = await articlesRes.json();
+          setArticles(data.articles || []);
+        }
+        if (videosRes.ok) {
+          const data = await videosRes.json();
+          setVideos(data.videos || []);
+        }
+        if (faqsRes.ok) {
+          const data = await faqsRes.json();
+          setFaqs(data.faqs || []);
+        }
+      } catch (error) {
+        console.error('Error fetching help content:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHelpContent();
+  }, []);
 
   const tabs = [
     { id: 'articles', label: 'Articles', icon: BookOpen },
@@ -35,72 +65,6 @@ const HelpPage = () => {
     { id: 'faq', label: 'FAQ', icon: HelpCircle },
     { id: 'contact', label: 'Contact', icon: MessageCircle }
   ];
-
-  const tutorials = [
-    {
-      id: 1,
-      title: "Quick Start Guide",
-      description: "Get your first bot up and running in 5 minutes",
-      difficulty: "Beginner",
-      duration: "5:30",
-      icon: Rocket,
-      color: "text-red-600"
-    },
-    {
-      id: 2,
-      title: "Advanced Bot Training",
-      description: "Optimize your bot's responses and accuracy",
-      difficulty: "Intermediate",
-      duration: "12:45",
-      icon: Target,
-      color: "text-blue-600"
-    },
-    {
-      id: 3,
-      title: "Custom Integrations",
-      description: "Connect your bot with external services",
-      difficulty: "Advanced",
-      duration: "18:20",
-      icon: Wrench,
-      color: "text-gray-600"
-    },
-    {
-      id: 4,
-      title: "Analytics Deep Dive",
-      description: "Understanding and using conversation analytics",
-      difficulty: "Intermediate",
-      duration: "9:15",
-      icon: BarChart3,
-      color: "text-green-600"
-    },
-    {
-      id: 5,
-      title: "Handover Best Practices",
-      description: "Setting up seamless bot-to-human handovers",
-      difficulty: "Intermediate",
-      duration: "7:30",
-      icon: Handshake,
-      color: "text-purple-600"
-    },
-    {
-      id: 6,
-      title: "Widget Customization",
-      description: "Make your bot match your brand perfectly",
-      difficulty: "Beginner",
-      duration: "6:45",
-      icon: Palette,
-      color: "text-orange-600"
-    }
-  ];
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Beginner": return "bg-green-100 text-green-800 border-green-200";
-      case "Intermediate": return "bg-blue-100 text-blue-800 border-blue-200";
-      case "Advanced": return "bg-purple-100 text-purple-800 border-purple-200";
-      default: return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
 
   const handleNavigation = (path: string) => {
     router.push(path);
@@ -153,77 +117,143 @@ const HelpPage = () => {
 
         {/* Tutorials Tab Content */}
         {activeTab === 'tutorials' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tutorials.map((tutorial) => {
-              const Icon = tutorial.icon;
-              return (
-                <Card key={tutorial.id} className="border border-gray-200 bg-white hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-6">
-                    <div className="text-center space-y-4">
-                      <div className={`w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto`}>
-                        <Icon className={`w-8 h-8 ${tutorial.color}`} />
-                      </div>
+          <div className="space-y-4">
+            {loading ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600">Loading videos...</p>
+              </div>
+            ) : videos.length === 0 ? (
+              <Card className="border border-gray-200 bg-white">
+                <CardContent className="p-12">
+                  <div className="text-center">
+                    <Play className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Videos Yet</h3>
+                    <p className="text-gray-600">Tutorial videos will appear here once added</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              videos.map((video) => (
+                <Card key={video.id} className="border border-gray-200 bg-white hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                          {tutorial.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 mb-4">
-                          {tutorial.description}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <Badge className={getDifficultyColor(tutorial.difficulty)}>
-                            {tutorial.difficulty}
-                          </Badge>
-                          <div className="flex items-center space-x-2 text-sm text-gray-500">
-                            <Play className="w-4 h-4" />
-                            <span>{tutorial.duration}</span>
-                          </div>
-                        </div>
+                        <CardTitle className="text-lg">{video.title}</CardTitle>
+                        {video.description && (
+                          <CardDescription className="mt-2">{video.description}</CardDescription>
+                        )}
                       </div>
+                      {video.category && (
+                        <Badge className="bg-green-100 text-green-800 border-green-200">
+                          {video.category}
+                        </Badge>
+                      )}
                     </div>
+                  </CardHeader>
+                  <CardContent>
+                    {video.videoUrl && (
+                      <div className="aspect-video mb-4">
+                        <iframe
+                          src={video.videoUrl}
+                          className="w-full h-full rounded-lg"
+                          allowFullScreen
+                          title={video.title}
+                        />
+                      </div>
+                    )}
+                    {video.description && (
+                      <p className="text-sm text-gray-700">{video.description}</p>
+                    )}
                   </CardContent>
                 </Card>
-              );
-            })}
+              ))
+            )}
           </div>
         )}
 
         {/* Articles Tab Content */}
         {activeTab === 'articles' && (
-          <Card className="border border-gray-200 bg-white">
-            <CardHeader>
-              <CardTitle className="text-lg">Help Articles</CardTitle>
-              <CardDescription>
-                Comprehensive guides and documentation
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          <div className="space-y-4">
+            {loading ? (
               <div className="text-center py-12">
-                <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Articles Coming Soon</h3>
-                <p className="text-gray-600">Detailed help articles will be available here</p>
+                <p className="text-gray-600">Loading articles...</p>
               </div>
-            </CardContent>
-          </Card>
+            ) : articles.length === 0 ? (
+              <Card className="border border-gray-200 bg-white">
+                <CardContent className="p-12">
+                  <div className="text-center">
+                    <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Articles Yet</h3>
+                    <p className="text-gray-600">Help articles will appear here once added</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              articles.map((article) => (
+                <Card key={article.id} className="border border-gray-200 bg-white hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{article.title}</CardTitle>
+                        {article.description && (
+                          <CardDescription className="mt-2">{article.description}</CardDescription>
+                        )}
+                      </div>
+                      {article.category && (
+                        <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                          {article.category}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="prose max-w-none text-sm text-gray-700">
+                      {article.content}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
         )}
 
         {/* FAQ Tab Content */}
         {activeTab === 'faq' && (
-          <Card className="border border-gray-200 bg-white">
-            <CardHeader>
-              <CardTitle className="text-lg">Frequently Asked Questions</CardTitle>
-              <CardDescription>
-                Quick answers to common questions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          <div className="space-y-4">
+            {loading ? (
               <div className="text-center py-12">
-                <HelpCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">FAQ Coming Soon</h3>
-                <p className="text-gray-600">Common questions and answers will be listed here</p>
+                <p className="text-gray-600">Loading FAQs...</p>
               </div>
-            </CardContent>
-          </Card>
+            ) : faqs.length === 0 ? (
+              <Card className="border border-gray-200 bg-white">
+                <CardContent className="p-12">
+                  <div className="text-center">
+                    <HelpCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No FAQs Yet</h3>
+                    <p className="text-gray-600">Frequently asked questions will appear here once added</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              faqs.map((faq) => (
+                <Card key={faq.id} className="border border-gray-200 bg-white hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <CardTitle className="text-lg">{faq.question}</CardTitle>
+                      {faq.category && (
+                        <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                          {faq.category}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-700">{faq.answer}</p>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
         )}
 
         {/* Contact Tab Content */}
