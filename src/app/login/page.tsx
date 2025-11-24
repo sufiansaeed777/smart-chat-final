@@ -210,9 +210,9 @@ const LoginComponent = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    router.push('/forgot-password');
+                    window.location.href = '/forgot-password';
                   }}
-                  className="text-xs hover:underline"
+                  className="text-xs hover:underline cursor-pointer bg-transparent border-none p-0"
                   style={{ color: '#6566F1' }}
                 >
                   Forgot password?
