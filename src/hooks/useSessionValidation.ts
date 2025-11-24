@@ -16,6 +16,8 @@ export function useSessionValidation() {
       '/',
       '/login',
       '/signup',
+      '/forgot-password',
+      '/reset-password',
       '/contact',
       '/pricing',
       '/product',
