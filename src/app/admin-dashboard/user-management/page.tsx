@@ -203,6 +203,12 @@ const UserManagementPage: React.FC = () => {
     if (editingUser.status && editingUser.status !== selectedUserForEdit.status) {
       updates.status = editingUser.status;
     }
+    if (editingUser.role && editingUser.role !== selectedUserForEdit.role) {
+      updates.role = editingUser.role;
+    }
+    if (editingUser.isEmailVerified !== undefined && editingUser.isEmailVerified !== selectedUserForEdit.isEmailVerified) {
+      updates.isEmailVerified = editingUser.isEmailVerified;
+    }
     // Only include password if it's been entered
     if (editingUser.password && editingUser.password.trim() !== '') {
       updates.password = editingUser.password;
@@ -1008,6 +1014,35 @@ const UserManagementPage: React.FC = () => {
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                     <option value="pending">Pending</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Role <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={editingUser.role || selectedUserForEdit.role}
+                    onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value as 'admin' | 'manager' | 'user' })}
+                    className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white"
+                  >
+                    <option value="user">User</option>
+                    <option value="manager">Manager</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Email Verification Status <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={editingUser.isEmailVerified !== undefined ? String(editingUser.isEmailVerified) : String(selectedUserForEdit.isEmailVerified)}
+                    onChange={(e) => setEditingUser({ ...editingUser, isEmailVerified: e.target.value === 'true' })}
+                    className="w-full px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white"
+                  >
+                    <option value="true">Verified</option>
+                    <option value="false">Unverified</option>
                   </select>
                 </div>
 
