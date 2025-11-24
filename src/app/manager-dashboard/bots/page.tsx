@@ -328,12 +328,36 @@ const BotsPage = () => {
   };
 
   const handleDocumentSelect = (documentId: string) => {
-    setNewBot(prev => ({
-      ...prev,
-      documentIds: prev.documentIds.includes(documentId)
-        ? prev.documentIds.filter(id => id !== documentId)
-        : [...prev.documentIds, documentId]
-    }));
+    const documentToSelect = availableDocuments.find(d => d.id === documentId);
+    if (!documentToSelect) return;
+
+    setNewBot(prev => {
+      // If document is already selected by ID, remove it
+      if (prev.documentIds.includes(documentId)) {
+        return {
+          ...prev,
+          documentIds: prev.documentIds.filter(id => id !== documentId)
+        };
+      }
+
+      // Check if a document with the same name is already selected
+      const selectedDocs = prev.documentIds
+        .map(id => availableDocuments.find(d => d.id === id))
+        .filter(Boolean);
+
+      const duplicateName = selectedDocs.some(doc => doc.name === documentToSelect.name);
+
+      if (duplicateName) {
+        alert(`⚠️ A document named "${documentToSelect.name}" is already selected.\n\nPlease remove the existing one first or choose a different file.`);
+        return prev; // Return unchanged state
+      }
+
+      // No duplicate name found, add the document
+      return {
+        ...prev,
+        documentIds: [...prev.documentIds, documentId]
+      };
+    });
   };
 
   const handleDocumentUpload = async (files: FileList) => {
