@@ -561,7 +561,7 @@ const BillingPage: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Description</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Amount</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -576,7 +576,7 @@ const BillingPage: React.FC = () => {
                     Paid
                   </span>
                 </td>
-                <td className="px-6 py-4 text-right">
+                <td className="px-6 py-4 text-left">
                   <button
                     onClick={() => router.push('/manager-dashboard/billing/invoice/INV-2024-001')}
                     className="text-[#6566F1] hover:text-[#5A5BD9] text-sm font-medium transition-colors"
