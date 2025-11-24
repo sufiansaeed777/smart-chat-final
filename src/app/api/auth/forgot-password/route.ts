@@ -129,8 +129,18 @@ export async function POST(request: NextRequest) {
       </html>
     `;
 
+    // Verify email credentials are configured
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD) {
+      console.error('[Forgot Password] ERROR: Email credentials not configured');
+      console.error('[Forgot Password] EMAIL_USER:', process.env.EMAIL_USER ? 'Set' : 'NOT SET');
+      console.error('[Forgot Password] EMAIL_APP_PASSWORD:', process.env.EMAIL_APP_PASSWORD ? 'Set' : 'NOT SET');
+      throw new Error('Email service not configured. Please contact support.');
+    }
+
     console.log('[Forgot Password] Sending email to:', email);
-    await transporter.sendMail({
+    console.log('[Forgot Password] Sending from:', process.env.EMAIL_USER);
+
+    const emailInfo = await transporter.sendMail({
       from: `"ChatBot Pro" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Reset Your Password - ChatBot Pro',
@@ -138,6 +148,8 @@ export async function POST(request: NextRequest) {
     });
 
     console.log('[Forgot Password] Email sent successfully!');
+    console.log('[Forgot Password] Email response:', emailInfo.response);
+    console.log('[Forgot Password] Message ID:', emailInfo.messageId);
 
     return NextResponse.json({
       message: 'If an account exists with this email, you will receive a password reset link.'
