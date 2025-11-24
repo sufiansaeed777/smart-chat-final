@@ -205,14 +205,18 @@ const LoginComponent = () => {
                 >
                   Password
                 </label>
-                <Link
-                  href="/forgot-password"
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    router.push('/forgot-password');
+                  }}
                   className="text-xs hover:underline"
                   style={{ color: '#6566F1' }}
-                  onClick={(e) => e.stopPropagation()}
                 >
                   Forgot password?
-                </Link>
+                </button>
               </div>
               <div className="relative">
                 <input
