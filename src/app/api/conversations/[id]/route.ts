@@ -143,6 +143,20 @@ export async function PATCH(
 
     if (status) {
       conversation.status = status;
+
+      // Add system message when conversation is completed
+      if (status === 'completed' && message) {
+        const messages = conversation.messages || [];
+        messages.push({
+          id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          sender: 'bot',
+          text: message,
+          timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        });
+        conversation.messages = messages;
+        conversation.lastMessageAt = new Date();
+        conversation.completedAt = new Date();
+      }
     }
 
     if (assignedAgentId !== undefined) {

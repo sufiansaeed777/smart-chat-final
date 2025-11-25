@@ -94,26 +94,29 @@ const HumanHandoff = () => {
     }
   };
 
-  // Fetch completed conversations
+  // Fetch completed conversations (including idle and completed statuses)
   const fetchCompletedConversations = async () => {
     try {
-      // Build URL with botId filter if available
+      // Build URL with botId filter - fetch both completed and idle conversations
       const url = selectedBotId
-        ? `/api/conversations?status=completed&botId=${selectedBotId}`
-        : '/api/conversations?status=completed';
+        ? `/api/conversations?status=completed,idle&botId=${selectedBotId}`
+        : '/api/conversations?status=completed,idle';
 
       const response = await fetch(url);
       const data = await response.json();
 
       if (data.success) {
-        setCompletedConversations(data.conversations.map((conv: any) => ({
-          id: conv.id,
-          name: conv.guestName,
-          guestId: conv.guestId,
-          note: conv.lastMessage,
-          timestamp: conv.timestamp,
-          resolved: true
-        })));
+        setCompletedConversations(data.conversations
+          .filter((conv: any) => conv.messages && conv.messages.length > 0)
+          .map((conv: any) => ({
+            id: conv.id,
+            name: conv.guestName,
+            guestId: conv.guestId,
+            note: conv.lastMessage,
+            timestamp: conv.timestamp,
+            status: conv.status,
+            resolved: conv.status === 'completed'
+          })));
       }
     } catch (error) {
       console.error('Error fetching completed conversations:', error);
@@ -272,6 +275,57 @@ const HumanHandoff = () => {
     }
   };
 
+  const handleCompleteChat = async () => {
+    if (selectedConversation) {
+      try {
+        // Pause auto-refresh during manual action
+        setPauseAutoRefresh(true);
+
+        const response = await fetch(`/api/conversations/${selectedConversation.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: 'completed',
+            message: "This conversation has been marked as complete. Thank you for chatting with us!"
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Remove from active conversations
+          setConversations(prevConversations =>
+            prevConversations.filter(conv => conv.id !== selectedConversation.id)
+          );
+
+          // Add to completed conversations
+          setCompletedConversations(prev => [{
+            id: selectedConversation.id,
+            name: selectedConversation.guestName,
+            guestId: selectedConversation.guestId,
+            note: selectedConversation.lastMessage,
+            timestamp: 'Just now',
+            status: 'completed',
+            resolved: true
+          }, ...prev]);
+
+          // Clear selection
+          setSelectedConversationId(null);
+
+          // Resume auto-refresh
+          setTimeout(() => {
+            setPauseAutoRefresh(false);
+          }, 1000);
+        } else {
+          setPauseAutoRefresh(false);
+        }
+      } catch (error) {
+        console.error('Error completing conversation:', error);
+        setPauseAutoRefresh(false);
+      }
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-gray-50">
       {/* Left Sidebar - Conversations List */}
@@ -374,34 +428,48 @@ const HumanHandoff = () => {
           {/* Completed Section */}
           <div className="p-4 border-t border-gray-200">
             <div className="mb-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-1">Completed</h3>
-              <p className="text-xs text-gray-500">Recently closed</p>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Completed / Idle</h3>
+              <p className="text-xs text-gray-500">Closed conversations ({completedConversations.length})</p>
             </div>
 
-            <div className="space-y-2">
-              {completedConversations.map((conversation) => (
-                <div
-                  key={conversation.id}
-                  className="p-3 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 cursor-pointer transition-all"
-                >
-                  <div className="flex items-start justify-between mb-1">
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <h4 className="text-sm font-semibold text-gray-900">{conversation.name}</h4>
-                        {conversation.resolved && (
-                          <CheckCircle2 className="w-3 h-3 text-green-600" />
-                        )}
+            {completedConversations.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-6 text-center">
+                <CheckCircle2 className="w-10 h-10 text-gray-300 mb-2" />
+                <p className="text-xs text-gray-500">No completed chats yet</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {completedConversations.map((conversation) => (
+                  <div
+                    key={conversation.id}
+                    className="p-3 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 cursor-pointer transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-1">
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h4 className="text-sm font-semibold text-gray-900">{conversation.name}</h4>
+                          {conversation.resolved ? (
+                            <CheckCircle2 className="w-3 h-3 text-green-600" />
+                          ) : (
+                            <Clock className="w-3 h-3 text-yellow-600" />
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500">{conversation.guestId}</p>
                       </div>
-                      <p className="text-xs text-gray-500">{conversation.guestId}</p>
+                      <Badge className={`text-xs px-2 py-0.5 ${
+                        conversation.resolved
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {conversation.resolved ? 'Completed' : 'Idle'}
+                      </Badge>
                     </div>
-                    <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded">
-                      {conversation.timestamp}
-                    </span>
+                    <p className="text-xs text-gray-600 truncate">{conversation.note}</p>
+                    <p className="text-xs text-gray-400 mt-1">{conversation.timestamp}</p>
                   </div>
-                  <p className="text-xs text-gray-600">{conversation.note}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -416,7 +484,14 @@ const HumanHandoff = () => {
                 <h2 className="text-lg font-bold text-gray-900">{selectedConversation.guestName}</h2>
                 <p className="text-xs text-gray-500">{selectedConversation.guestId}</p>
               </div>
-              <div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  onClick={handleCompleteChat}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  Complete
+                </Button>
                 {selectedConversation.mode === 'AI' ? (
                   <Button
                     onClick={handleTakeOver}

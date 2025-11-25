@@ -49,7 +49,13 @@ export async function GET(request: NextRequest) {
 
     // Apply filters
     if (status) {
-      queryBuilder.andWhere('conversation.status = :status', { status });
+      // Support comma-separated statuses (e.g., status=completed,idle)
+      const statuses = status.split(',').map(s => s.trim());
+      if (statuses.length === 1) {
+        queryBuilder.andWhere('conversation.status = :status', { status: statuses[0] });
+      } else {
+        queryBuilder.andWhere('conversation.status IN (:...statuses)', { statuses });
+      }
     }
 
     if (mode) {
