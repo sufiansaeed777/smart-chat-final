@@ -446,7 +446,7 @@ const BillingPage: React.FC = () => {
           </div>
 
           <div className="bg-gray-50 p-4 rounded-xl">
-            <h4 className="font-semibold text-gray-900 mb-3">Manage Subscription</h4>
+            <h4 className="font-semibold text-gray-900 mb-3">Subscription Settings</h4>
             <div className="space-y-2 text-sm mb-4">
               <div className="flex justify-between">
                 <span className="text-gray-600">Billing Cycle:</span>
@@ -459,15 +459,31 @@ const BillingPage: React.FC = () => {
                 </div>
               )}
             </div>
-            <button
-              onClick={handleUpdatePaymentMethod}
-              disabled={isUpdatingPayment}
-              className="w-full px-4 py-2 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 text-[#6566F1] hover:text-[#5A5BD9] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isUpdatingPayment ? 'Loading...' : 'Manage Subscription'}
-            </button>
+            <div className="space-y-2">
+              {plan.name !== 'Enterprise' && (
+                <button
+                  onClick={handleUpgrade}
+                  disabled={isUpgrading}
+                  className="w-full px-4 py-2 bg-[#6566F1] text-white rounded-xl hover:bg-[#5A5BD9] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  {isUpgrading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <TrendingUp className="w-4 h-4" />
+                  )}
+                  <span>{isUpgrading ? 'Processing...' : 'Upgrade Plan'}</span>
+                </button>
+              )}
+              <button
+                onClick={handleUpdatePaymentMethod}
+                disabled={isUpdatingPayment}
+                className="w-full px-4 py-2 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 text-gray-700 hover:text-gray-900 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isUpdatingPayment ? 'Loading...' : 'Update Method'}
+              </button>
+            </div>
             <p className="text-xs text-gray-500 mt-2 text-center">
-              Update payment method, view invoices, or cancel subscription
+              Update payment method or view invoices
             </p>
           </div>
         </div>
