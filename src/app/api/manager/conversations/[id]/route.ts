@@ -41,38 +41,108 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied. Manager role required.' }, { status: 403 });
     }
 
-    const conversationId = params.id;
+    const conversationId = (await params).id;
 
-    // Parse the session ID (format: botId-userId)
-    // Split by the last dash to separate botId and userId (UUIDs contain dashes)
-    const parts = conversationId.split('-');
-    const userId = parts.slice(-5).join('-'); // Last 5 parts = userId UUID
-    const botId = parts.slice(0, -5).join('-'); // First parts = botId UUID
+    // Check if this is a session-based conversation (WordPress/external) or old schema
+    const isSessionBased = conversationId.startsWith('session-');
 
-    // Get conversation details with messages
-    const conversations = await conversationRepository.find({
-      where: {
-        botId: botId,
-        userId: userId
-      },
-      order: { createdAt: 'ASC' }
-    });
+    let conversation: any;
 
-    if (conversations.length === 0) {
-      return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+    if (isSessionBased) {
+      // Session-based conversation - lookup by sessionId
+      const sessionId = conversationId.replace('session-', '');
+
+      const conv = await conversationRepository.findOne({
+        where: { sessionId }
+      });
+
+      if (!conv) {
+        return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+      }
+
+      // Messages are stored in JSONB array
+      const messages = conv.messages || [];
+
+      conversation = {
+        id: conversationId,
+        sessionId: conv.sessionId,
+        guestName: conv.guestName,
+        guestId: conv.guestId,
+        mode: conv.mode,
+        status: conv.status,
+        source: 'wordpress',
+        messages: messages.map((msg: any, index: number) => ({
+          id: msg.id || `msg-${index}`,
+          message: msg.text || msg.message,
+          sender: msg.sender === 'visitor' ? 'user' : msg.sender === 'bot' ? 'bot' : msg.sender,
+          timestamp: msg.timestamp || conv.createdAt,
+          isTestMessage: false
+        }))
+      };
+    } else {
+      // Check if this is a UUID (actual conversation ID from session-based)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+      if (uuidRegex.test(conversationId)) {
+        // Try to find by actual ID first
+        const conv = await conversationRepository.findOne({
+          where: { id: conversationId }
+        });
+
+        if (conv && conv.messages && Array.isArray(conv.messages)) {
+          // Session-based conversation found by ID
+          conversation = {
+            id: conversationId,
+            sessionId: conv.sessionId,
+            guestName: conv.guestName,
+            guestId: conv.guestId,
+            mode: conv.mode,
+            status: conv.status,
+            source: conv.guestId ? 'wordpress' : 'playground',
+            messages: conv.messages.map((msg: any, index: number) => ({
+              id: msg.id || `msg-${index}`,
+              message: msg.text || msg.message,
+              sender: msg.sender === 'visitor' ? 'user' : msg.sender === 'bot' ? 'bot' : msg.sender,
+              timestamp: msg.timestamp || conv.createdAt,
+              isTestMessage: false
+            }))
+          };
+        }
+      }
+
+      // Fall back to old schema parsing (botId-userId format)
+      if (!conversation) {
+        const parts = conversationId.split('-');
+        const userId = parts.slice(-5).join('-'); // Last 5 parts = userId UUID
+        const botId = parts.slice(0, -5).join('-'); // First parts = botId UUID
+
+        // Get conversation details with messages (old schema - individual records)
+        const conversations = await conversationRepository.find({
+          where: {
+            botId: botId,
+            userId: userId
+          },
+          order: { createdAt: 'ASC' }
+        });
+
+        if (conversations.length === 0) {
+          return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+        }
+
+        // Group messages by session (old schema - each record is a message)
+        conversation = {
+          id: conversationId,
+          source: 'playground',
+          messages: conversations.map(conv => ({
+            id: conv.id,
+            message: conv.message,
+            sender: conv.sender,
+            timestamp: conv.createdAt,
+            isTestMessage: conv.isTestMessage || false
+          }))
+        };
+      }
     }
-
-    // Group messages by session (assuming they have the same bot and user)
-    const conversation = {
-      id: conversationId,
-      messages: conversations.map(conv => ({
-        id: conv.id,
-        message: conv.message,
-        sender: conv.sender,
-        timestamp: conv.createdAt,
-        isTestMessage: conv.isTestMessage || false
-      }))
-    };
 
     return NextResponse.json({ success: true, conversation });
 
@@ -121,9 +191,43 @@ export async function DELETE(
       return NextResponse.json({ error: 'Access denied. Manager role required.' }, { status: 403 });
     }
 
-    const conversationId = params.id;
+    const conversationId = (await params).id;
 
-    // Parse the session ID (format: botId-userId)
+    // Check if this is a session-based conversation (WordPress/external) or old schema
+    const isSessionBased = conversationId.startsWith('session-');
+
+    if (isSessionBased) {
+      // Session-based conversation - lookup by sessionId
+      const sessionId = conversationId.replace('session-', '');
+
+      const conv = await conversationRepository.findOne({
+        where: { sessionId }
+      });
+
+      if (!conv) {
+        return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+      }
+
+      await conversationRepository.remove(conv);
+      return NextResponse.json({ success: true, message: 'Conversation deleted successfully' });
+    }
+
+    // Check if this is a UUID (actual conversation ID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    if (uuidRegex.test(conversationId)) {
+      // Try to delete by actual ID first
+      const conv = await conversationRepository.findOne({
+        where: { id: conversationId }
+      });
+
+      if (conv) {
+        await conversationRepository.remove(conv);
+        return NextResponse.json({ success: true, message: 'Conversation deleted successfully' });
+      }
+    }
+
+    // Fall back to old schema parsing (botId-userId format)
     const parts = conversationId.split('-');
     const userId = parts.slice(-5).join('-'); // Last 5 parts = userId UUID
     const botId = parts.slice(0, -5).join('-'); // First parts = botId UUID

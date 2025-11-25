@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MessageSquare, Clock, User, Search, Filter, MoreHorizontal, Loader2, SortAsc, SortDesc, Calendar, Bot, Users, Eye, Download, Trash2 } from 'lucide-react';
+import { MessageSquare, Clock, User, Search, Filter, MoreHorizontal, Loader2, SortAsc, SortDesc, Calendar, Bot, Users, Eye, Download, Trash2, Globe, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +30,9 @@ interface ConversationSession {
   messageCount: number;
   duration: string;
   satisfaction: number;
+  source?: string;
+  guestId?: string;
+  mode?: string;
 }
 
 interface ConversationStats {
@@ -479,13 +482,26 @@ const ManagerConversationsPage = () => {
                     {/* User */}
                     <div className="col-span-3">
                       <div className="flex items-center space-x-2">
-                        <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center">
-                          <span className="text-xs font-medium text-gray-600">
-                            {conversation.userName.split(' ').map(n => n[0]).join('').toUpperCase()}
-                          </span>
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center ${
+                          conversation.source === 'wordpress' ? 'bg-blue-100' : 'bg-gray-200'
+                        }`}>
+                          {conversation.source === 'wordpress' ? (
+                            <Globe className="w-3.5 h-3.5 text-blue-600" />
+                          ) : (
+                            <span className="text-xs font-medium text-gray-600">
+                              {conversation.userName.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            </span>
+                          )}
                         </div>
-                        <div>
-                          <p className="text-xs font-medium text-gray-900 truncate">{conversation.userName}</p>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-xs font-medium text-gray-900 truncate">{conversation.userName}</p>
+                            {conversation.source === 'wordpress' && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700">
+                                Website
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-gray-500 truncate">{conversation.userEmail}</p>
                         </div>
                       </div>
