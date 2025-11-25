@@ -28,6 +28,17 @@ interface ChatbotIssue {
   assignedTo?: string;
   notes?: string;
   response?: string;
+  botId?: string;
+  botName?: string;
+}
+
+interface Agent {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  name: string;
+  role: string;
 }
 
 const ChatbotIssuesPage: React.FC = () => {
@@ -40,6 +51,13 @@ const ChatbotIssuesPage: React.FC = () => {
   const [selectedIssue, setSelectedIssue] = useState<ChatbotIssue | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+
+  // Assign agent modal state
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [issueToAssign, setIssueToAssign] = useState<ChatbotIssue | null>(null);
+  const [botAgents, setBotAgents] = useState<Agent[]>([]);
+  const [loadingAgents, setLoadingAgents] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>('');
 
   // Fetch issues from API
   useEffect(() => {
@@ -142,13 +160,67 @@ const ChatbotIssuesPage: React.FC = () => {
     }
   };
 
-  const handleAssignIssue = (issueId: string) => {
-    const assignee = prompt('Enter assignee name:');
-    if (assignee) {
-      setIssues(prev => prev.map(issue =>
-        issue.id === issueId ? { ...issue, assignedTo: assignee } : issue
-      ));
-      setOpenDropdownId(null);
+  const handleAssignIssue = async (issue: ChatbotIssue) => {
+    setIssueToAssign(issue);
+    setSelectedAgentId('');
+    setOpenDropdownId(null);
+
+    if (!issue.botId) {
+      alert('This issue is not associated with a specific bot. Cannot show bot-specific agents.');
+      return;
+    }
+
+    setIsAssignModalOpen(true);
+    setLoadingAgents(true);
+
+    try {
+      const response = await fetch(`/api/bots/${issue.botId}/agents`);
+      if (response.ok) {
+        const data = await response.json();
+        setBotAgents(data.agents || []);
+      } else {
+        console.error('Failed to fetch agents');
+        setBotAgents([]);
+      }
+    } catch (error) {
+      console.error('Error fetching agents:', error);
+      setBotAgents([]);
+    } finally {
+      setLoadingAgents(false);
+    }
+  };
+
+  const handleConfirmAssign = async () => {
+    if (!issueToAssign || !selectedAgentId) return;
+
+    const selectedAgent = botAgents.find(a => a.id === selectedAgentId);
+    if (!selectedAgent) return;
+
+    try {
+      const response = await fetch(`/api/chatbot/issues/${issueToAssign.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          assignedTo: selectedAgent.name,
+          status: 'in_progress'
+        })
+      });
+
+      if (response.ok) {
+        setIssues(prev => prev.map(issue =>
+          issue.id === issueToAssign.id
+            ? { ...issue, assignedTo: selectedAgent.name, status: 'in_progress' }
+            : issue
+        ));
+        setIsAssignModalOpen(false);
+        setIssueToAssign(null);
+        setSelectedAgentId('');
+      } else {
+        alert('Failed to assign agent');
+      }
+    } catch (error) {
+      console.error('Error assigning agent:', error);
+      alert('Failed to assign agent');
     }
   };
 
@@ -329,6 +401,11 @@ const ChatbotIssuesPage: React.FC = () => {
                       <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(issue.priority)}`}>
                         {issue.priority}
                       </span>
+                      {issue.botName && (
+                        <span className="px-2 py-1 text-xs font-medium rounded-full border bg-purple-100 text-purple-800 border-purple-200">
+                          {issue.botName}
+                        </span>
+                      )}
                     </div>
                     
                     <div className="mb-2">
@@ -386,11 +463,11 @@ const ChatbotIssuesPage: React.FC = () => {
                               <span>View Details</span>
                             </button>
                             <button
-                              onClick={() => handleAssignIssue(issue.id)}
+                              onClick={() => handleAssignIssue(issue)}
                               className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
                             >
                               <User className="w-4 h-4" />
-                              <span>Assign</span>
+                              <span>Assign Agent</span>
                             </button>
                             <button
                               onClick={() => {
@@ -520,6 +597,96 @@ const ChatbotIssuesPage: React.FC = () => {
                 </select>
                 <button className="px-4 py-2 bg-[#6566F1] text-white rounded-lg hover:bg-[#5a5bd4] transition-colors">
                   Update Status
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Agent Modal */}
+      {isAssignModalOpen && issueToAssign && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl max-w-md w-full mx-4">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">Assign Agent</h3>
+                <button
+                  onClick={() => {
+                    setIsAssignModalOpen(false);
+                    setIssueToAssign(null);
+                    setSelectedAgentId('');
+                  }}
+                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Bot Info */}
+              <div className="bg-purple-50 rounded-lg p-4">
+                <p className="text-sm text-purple-600">
+                  <span className="font-medium">Bot:</span> {issueToAssign.botName || 'Unknown'}
+                </p>
+                <p className="text-xs text-purple-500 mt-1">
+                  Only agents assigned to this bot are shown below.
+                </p>
+              </div>
+
+              {/* Agent Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Select Agent
+                </label>
+                {loadingAgents ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="w-6 h-6 border-2 border-gray-200 border-t-[#6566F1] rounded-full animate-spin"></div>
+                    <span className="ml-2 text-sm text-gray-600">Loading agents...</span>
+                  </div>
+                ) : botAgents.length === 0 ? (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                    <User className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
+                    <p className="text-sm text-yellow-800 font-medium">No agents assigned</p>
+                    <p className="text-xs text-yellow-600 mt-1">
+                      No agents are currently assigned to this bot. Please assign agents first.
+                    </p>
+                  </div>
+                ) : (
+                  <select
+                    value={selectedAgentId}
+                    onChange={(e) => setSelectedAgentId(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
+                  >
+                    <option value="">Select an agent...</option>
+                    {botAgents.map((agent) => (
+                      <option key={agent.id} value={agent.id}>
+                        {agent.name} ({agent.email})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex space-x-3 pt-2">
+                <button
+                  onClick={() => {
+                    setIsAssignModalOpen(false);
+                    setIssueToAssign(null);
+                    setSelectedAgentId('');
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmAssign}
+                  disabled={!selectedAgentId || loadingAgents}
+                  className="flex-1 px-4 py-2 bg-[#6566F1] text-white rounded-lg hover:bg-[#5a5bd4] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Assign Agent
                 </button>
               </div>
             </div>

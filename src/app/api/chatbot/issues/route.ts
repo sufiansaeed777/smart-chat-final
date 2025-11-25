@@ -8,7 +8,7 @@ import { ChatbotIssue } from '@/entities/ChatbotIssue';
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -23,12 +23,20 @@ export async function GET(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const issueRepository = AppDataSource.getRepository("chatbot_issues");
+    const issueRepository = AppDataSource.getRepository(ChatbotIssue);
     const issues = await issueRepository.find({
+      relations: ['bot'],
       order: { createdAt: 'DESC' }
     });
 
-    return NextResponse.json({ issues });
+    // Format response to include bot info
+    const formattedIssues = issues.map(issue => ({
+      ...issue,
+      botId: issue.botId,
+      botName: issue.bot?.name || null
+    }));
+
+    return NextResponse.json({ issues: formattedIssues });
   } catch (error) {
     console.error('Error fetching chatbot issues:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -50,7 +58,7 @@ export async function POST(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const issueRepository = AppDataSource.getRepository("chatbot_issues");
+    const issueRepository = AppDataSource.getRepository(ChatbotIssue);
 
     const newIssue = issueRepository.create({
       type,
