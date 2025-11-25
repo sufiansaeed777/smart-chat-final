@@ -121,7 +121,9 @@ export async function POST(request: NextRequest) {
     // Validate token against wordpress_tokens table
     try {
       const tokenCheck = await pool.query(
-        `SELECT id, bot_id, user_id FROM wordpress_tokens
+        `SELECT id, bot_id, user_id, expires_at,
+                CASE WHEN expires_at IS NOT NULL AND expires_at < NOW() THEN true ELSE false END as is_expired
+         FROM wordpress_tokens
          WHERE token = $1 AND is_active = true`,
         [token]
       );
@@ -134,8 +136,22 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Verify token parts match database
+      // Check if token is expired
       const tokenData = tokenCheck.rows[0];
+      if (tokenData.is_expired) {
+        console.error('Token validation failed: Token has expired');
+        return NextResponse.json(
+          {
+            error: 'Token has expired',
+            expired: true,
+            expiredAt: tokenData.expires_at,
+            message: 'Your authentication token has expired. Please generate a new token from your dashboard.'
+          },
+          { status: 401, headers: corsHeaders }
+        );
+      }
+
+      // Verify token parts match database
       if (tokenData.bot_id !== botId || tokenData.user_id !== userId) {
         console.error('Token validation failed: Token data mismatch');
         return NextResponse.json(

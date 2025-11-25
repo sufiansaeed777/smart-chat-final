@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { botId, token, deactivateOld } = await request.json();
+    const { botId, token, deactivateOld, expiresInDays } = await request.json();
 
     if (!botId || !token) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -35,10 +35,17 @@ export async function POST(request: Request) {
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         token TEXT NOT NULL UNIQUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP,
         last_used TIMESTAMP,
         is_active BOOLEAN DEFAULT TRUE
       )
     `);
+
+    // Add expires_at column if it doesn't exist (for existing tables)
+    await pool.query(`
+      ALTER TABLE wordpress_tokens
+      ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP
+    `).catch(() => {/* Column might already exist */});
 
     // 1 bot = 1 site = 1 token model
     // DELETE all existing tokens for this bot if requested
@@ -50,18 +57,24 @@ export async function POST(request: Request) {
       );
     }
 
+    // Calculate expiration date (default 30 days, max 365 days)
+    const days = Math.min(Math.max(expiresInDays || 30, 1), 365);
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + days);
+
     // Save the token to database
     const result = await pool.query(
-      `INSERT INTO wordpress_tokens (bot_id, user_id, token)
-       VALUES ($1, $2, $3)
-       RETURNING id, created_at`,
-      [botId, session.user.id, token]
+      `INSERT INTO wordpress_tokens (bot_id, user_id, token, expires_at)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, created_at, expires_at`,
+      [botId, session.user.id, token, expiresAt.toISOString()]
     );
 
     return NextResponse.json({
       success: true,
       tokenId: result.rows[0].id,
-      createdAt: result.rows[0].created_at
+      createdAt: result.rows[0].created_at,
+      expiresAt: result.rows[0].expires_at
     });
 
   } catch (error) {
@@ -90,7 +103,8 @@ export async function GET(request: Request) {
 
     // Get the single active token for this bot (latest one)
     const result = await pool.query(
-      `SELECT token, created_at, last_used
+      `SELECT token, created_at, expires_at, last_used,
+              CASE WHEN expires_at IS NOT NULL AND expires_at < NOW() THEN true ELSE false END as is_expired
        FROM wordpress_tokens
        WHERE bot_id = $1 AND user_id = $2 AND is_active = true
        ORDER BY created_at DESC

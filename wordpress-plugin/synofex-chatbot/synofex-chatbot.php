@@ -3,7 +3,7 @@
  * Plugin Name: Synofex AI Chatbot
  * Plugin URI: https://synofex.com/
  * Description: AI-powered chatbot for WordPress with advanced features including document training, multi-language support, and human handoff.
- * Version: 1.0.2
+ * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 8.1
  * Author: Synofex (SMC-Private) Limited
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('SYNOFEX_CHATBOT_VERSION', '1.0.2');
+define('SYNOFEX_CHATBOT_VERSION', '1.1.0');
 define('SYNOFEX_CHATBOT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SYNOFEX_CHATBOT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('SYNOFEX_CHATBOT_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -155,7 +155,10 @@ class SynofexChatbot {
     private function validate_token_and_domain() {
         // Check if we validated recently (within last hour)
         $last_validated = get_transient('synofex_token_last_validated');
-        if ($last_validated && get_option('synofex_token_valid', false)) {
+        $token_expired = get_option('synofex_token_expired', false);
+
+        // Always revalidate if token was marked as expired
+        if ($last_validated && get_option('synofex_token_valid', false) && !$token_expired) {
             return; // Skip validation if recently validated and still valid
         }
 
@@ -164,12 +167,22 @@ class SynofexChatbot {
 
         if ($validation && isset($validation['valid']) && $validation['valid']) {
             update_option('synofex_token_valid', true);
+            update_option('synofex_token_expired', false);
+            delete_option('synofex_token_expires_at');
             // Sanitize and save config
             if (isset($validation['config']) && is_array($validation['config'])) {
                 update_option('synofex_bot_config', $this->sanitize_bot_config($validation['config']));
             }
             // Mark as validated for 1 hour
             set_transient('synofex_token_last_validated', time(), HOUR_IN_SECONDS);
+        } elseif ($validation && isset($validation['expired']) && $validation['expired']) {
+            // Token has expired - block completely
+            update_option('synofex_token_valid', false);
+            update_option('synofex_token_expired', true);
+            if (isset($validation['expiredAt'])) {
+                update_option('synofex_token_expires_at', $validation['expiredAt']);
+            }
+            delete_transient('synofex_token_last_validated');
         } else {
             update_option('synofex_token_valid', false);
             delete_transient('synofex_token_last_validated');
@@ -359,6 +372,11 @@ class SynofexChatbot {
             return false;
         }
 
+        // Check if token is expired - CRITICAL: Block expired tokens
+        if (get_option('synofex_token_expired', false)) {
+            return false;
+        }
+
         // Check if enabled
         if (!get_option('synofex_widget_enabled', true)) {
             return false;
@@ -399,13 +417,28 @@ class SynofexChatbot {
         if ($result && isset($result['valid']) && $result['valid']) {
             update_option('synofex_auth_token', $token);
             update_option('synofex_token_valid', true);
+            update_option('synofex_token_expired', false);
+            delete_option('synofex_token_expires_at');
             update_option('synofex_bot_config', $result['config']);
 
             wp_send_json_success([
                 'message' => 'Token validated successfully',
                 'config' => $result['config']
             ]);
+        } elseif ($result && isset($result['expired']) && $result['expired']) {
+            update_option('synofex_token_valid', false);
+            update_option('synofex_token_expired', true);
+            if (isset($result['expiredAt'])) {
+                update_option('synofex_token_expires_at', $result['expiredAt']);
+            }
+            wp_send_json_error([
+                'message' => 'Token has expired. Please generate a new token from your dashboard.',
+                'expired' => true,
+                'expiredAt' => isset($result['expiredAt']) ? $result['expiredAt'] : null
+            ]);
         } else {
+            update_option('synofex_token_valid', false);
+            update_option('synofex_token_expired', false);
             wp_send_json_error('Invalid token or domain mismatch');
         }
     }
@@ -427,6 +460,15 @@ class SynofexChatbot {
             return;
         }
 
+        // Check if token is expired - CRITICAL: Block expired tokens
+        if (get_option('synofex_token_expired', false)) {
+            wp_send_json_error([
+                'message' => 'Your authentication token has expired. Please contact the site administrator.',
+                'expired' => true
+            ]);
+            return;
+        }
+
         $message = sanitize_text_field($_POST['message']);
         $bot_id = sanitize_text_field($_POST['bot_id']);
 
@@ -439,6 +481,14 @@ class SynofexChatbot {
 
         if ($response && isset($response['response'])) {
             wp_send_json_success($response);
+        } elseif ($response && isset($response['expired']) && $response['expired']) {
+            // Token expired during the request
+            update_option('synofex_token_valid', false);
+            update_option('synofex_token_expired', true);
+            wp_send_json_error([
+                'message' => 'Your authentication token has expired. Please contact the site administrator.',
+                'expired' => true
+            ]);
         } else {
             wp_send_json_error('Failed to get response');
         }

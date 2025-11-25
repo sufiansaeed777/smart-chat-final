@@ -53,7 +53,8 @@ class Synofex_API_Client {
         $cache_key = 'token_validation_' . md5($this->auth_token . $domain);
         $cached = $this->cache->get($cache_key);
 
-        if ($cached !== false) {
+        // Don't use cache for expired tokens
+        if ($cached !== false && (!isset($cached['expired']) || !$cached['expired'])) {
             return $cached;
         }
 
@@ -61,11 +62,25 @@ class Synofex_API_Client {
         $response = $this->make_request('POST', '/api/wordpress/validate-token', [
             'token' => $this->auth_token,
             'domain' => $domain,
-        ]);
+        ], true); // Pass true to get full response including errors
 
-        if ($response && isset($response['valid'])) {
-            $this->cache->set($cache_key, $response, 3600); // Cache for 1 hour
-            return $response;
+        if ($response) {
+            // Handle expired token response
+            if (isset($response['expired']) && $response['expired']) {
+                // Clear cache and return expired response
+                $this->cache->set($cache_key, null, 1);
+                return [
+                    'valid' => false,
+                    'expired' => true,
+                    'expiredAt' => isset($response['expiredAt']) ? $response['expiredAt'] : null,
+                    'error' => isset($response['error']) ? $response['error'] : 'Token has expired'
+                ];
+            }
+
+            if (isset($response['valid'])) {
+                $this->cache->set($cache_key, $response, 3600); // Cache for 1 hour
+                return $response;
+            }
         }
 
         return false;
@@ -190,8 +205,13 @@ class Synofex_API_Client {
 
     /**
      * Make API request
+     *
+     * @param string $method HTTP method
+     * @param string $endpoint API endpoint
+     * @param array $data Request data
+     * @param bool $return_errors If true, returns parsed error responses instead of false
      */
-    private function make_request($method, $endpoint, $data = []) {
+    private function make_request($method, $endpoint, $data = [], $return_errors = false) {
         $url = $this->api_url . $endpoint;
 
         $args = [
@@ -224,9 +244,15 @@ class Synofex_API_Client {
 
         $status_code = wp_remote_retrieve_response_code($response);
         $body = wp_remote_retrieve_body($response);
+        $parsed_body = json_decode($body, true);
 
         if ($status_code >= 200 && $status_code < 300) {
-            return json_decode($body, true);
+            return $parsed_body;
+        }
+
+        // Return error response if requested (useful for handling expired tokens)
+        if ($return_errors && $parsed_body) {
+            return $parsed_body;
         }
 
         $this->log_error('API request failed with status ' . $status_code, [

@@ -37,10 +37,12 @@ export async function POST(request: NextRequest) {
     }
 
     // First check if this is a saved token in the database
-    let tokenCheck = { rows: [] };
+    let tokenCheck = { rows: [] as any[] };
     try {
       tokenCheck = await pool.query(
-        `SELECT wt.*, b.*, u.email, u."isActive" as user_active
+        `SELECT wt.*, b.*, u.email, u."isActive" as user_active,
+                wt.expires_at,
+                CASE WHEN wt.expires_at IS NOT NULL AND wt.expires_at < NOW() THEN true ELSE false END as is_expired
          FROM wordpress_tokens wt
          JOIN bots b ON wt.bot_id = b.id
          JOIN users u ON wt.user_id = u.id
@@ -61,8 +63,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Token found in database
+    // Check if token is expired
     const tokenData = tokenCheck.rows[0];
+    if (tokenData.is_expired) {
+      return NextResponse.json(
+        {
+          valid: false,
+          error: 'Token has expired',
+          expired: true,
+          expiredAt: tokenData.expires_at
+        },
+        { status: 401, headers: corsHeaders }
+      );
+    }
+
+    // Token found in database - use tokenData already declared above
     const userId = tokenData.user_id;
     const botId = tokenData.bot_id;
     const bot = tokenData;
