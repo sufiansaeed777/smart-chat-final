@@ -199,8 +199,8 @@ export class ContactEmailService {
                     <div class="message-content">${formData.message}</div>
                 </div>
 
-                                <div style=&quot;text-align: center;&quot;>
-                  <a href=&quot;mailto:${formData.email}?subject=Re: Contact Form Inquiry from ${formData.firstName} ${formData.lastName}&quot; class=&quot;cta-button&quot;>
+                <div style="text-align: center;">
+                  <a href="mailto:${formData.email}?subject=Re: Contact Form Inquiry from ${formData.firstName} ${formData.lastName}" class="cta-button">
                     Reply to ${formData.firstName}
                   </a>
                 </div>
@@ -224,9 +224,13 @@ export class ContactEmailService {
       };
 
       await transporter.sendMail(mailOptions);
+      console.log('[Contact Email] Email sent successfully to:', process.env.EMAIL_USER);
       return true;
 
-    } catch {
+    } catch (error) {
+      console.error('[Contact Email] Failed to send email:', error);
+      console.error('[Contact Email] EMAIL_USER:', process.env.EMAIL_USER ? 'Set' : 'NOT SET');
+      console.error('[Contact Email] EMAIL_APP_PASSWORD:', process.env.EMAIL_APP_PASSWORD ? 'Set' : 'NOT SET');
       return false;
     }
   }

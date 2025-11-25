@@ -28,9 +28,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user from database
-    const userRepository = AppDataSource.getRepository("users");
-    const user = await userRepository.findOne({ 
-      where: { email: session.user.email } 
+    const userRepository = AppDataSource.getRepository(User);
+    const user = await userRepository.findOne({
+      where: { email: session.user.email }
     });
 
     if (!user) {
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new issue
-    const issueRepository = AppDataSource.getRepository("chatbot_issues");
+    const issueRepository = AppDataSource.getRepository(ChatbotIssue);
     
     const newIssue = issueRepository.create({
       type: 'issue_report',
@@ -60,8 +60,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error creating user issue report:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Internal server error' }, 
+      { error: 'Failed to submit issue. Please try again.', details: errorMessage },
       { status: 500 }
     );
   }
