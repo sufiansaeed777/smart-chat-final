@@ -74,7 +74,25 @@ const TeamManagement = () => {
     currentStatus: string;
     issuesHandled?: number;
     botsAssigned?: number;
+    assignedBots?: Array<{ botId: string; botName: string }>;
   }>>([]);
+  const [botGroups, setBotGroups] = useState<Array<{
+    botId: string;
+    botName: string;
+    members: Array<{
+      id: string;
+      name: string;
+      email: string;
+      role: string;
+      status: 'accepted' | 'pending';
+      createdAt: string;
+      rating?: number;
+      totalChats?: number;
+      onlineStatus?: 'online' | 'offline';
+      issuesHandled?: number;
+    }>;
+  }>>([]);
+  const [viewMode, setViewMode] = useState<'all' | 'byBot'>('byBot');
   const [loadingMembers, setLoadingMembers] = useState(true);
 
   // Validation functions
@@ -135,60 +153,59 @@ const TeamManagement = () => {
       if (response.ok) {
         const data = await response.json();
         // Add additional stats for each team member
-        const membersWithStats = (data.users || []).map((user: {id: string; name: string; email: string; role: string; status: string; lastLoginAt: string; createdAt: string}) => {
-          // Debug: Log user data to see what we're working with
-          console.log('User data:', {
-            name: user.name,
-            status: user.status,
-            lastLoginAt: user.lastLoginAt,
-            hasLastLogin: !!user.lastLoginAt
-          });
-          
+        const membersWithStats = (data.users || []).map((user: {id: string; name: string; email: string; role: string; status: string; lastLoginAt: string; createdAt: string; assignedBots?: Array<{botId: string; botName: string}>}) => {
           // Determine online status based on actual login time
           let onlineStatus: 'online' | 'offline' = 'offline';
           if (user.status === 'accepted' && user.lastLoginAt) {
             const lastLoginTime = new Date(user.lastLoginAt).getTime();
             const now = Date.now();
             const timeDiff = now - lastLoginTime;
-            
-            console.log('Time calculation:', {
-              lastLoginTime: new Date(lastLoginTime).toISOString(),
-              now: new Date(now).toISOString(),
-              timeDiffMinutes: Math.round(timeDiff / (1000 * 60)),
-              willBeOnline: timeDiff < 2 * 60 * 60 * 1000
-            });
-            
-            // Consider online if logged in within the last 2 hours (more realistic for team management)
+
+            // Consider online if logged in within the last 2 hours
             if (timeDiff < 2 * 60 * 60 * 1000) {
               onlineStatus = 'online';
             } else {
               onlineStatus = 'offline';
             }
-          } else if (user.status === 'accepted' && !user.lastLoginAt) {
-            // If user is accepted but never logged in, show as offline
-            onlineStatus = 'offline';
           }
-          
+
           const memberData = {
             ...user,
-            rating: (4.5 + Math.random() * 0.5).toFixed(1), // Random rating between 4.5-5.0
-            totalChats: Math.floor(Math.random() * 50) + 10, // Random total chats
+            rating: (4.5 + Math.random() * 0.5).toFixed(1),
+            totalChats: Math.floor(Math.random() * 50) + 10,
             onlineStatus: onlineStatus,
-            specialties: ['Customer Service'], // Default specialty
+            specialties: ['Customer Service'],
             currentStatus: user.status === 'accepted' ? 'Available' : (user.status === 'pending' && user.lastLoginAt ? 'Deactivated' : 'Pending invitation'),
-            issuesHandled: user.status === 'accepted' ? Math.floor(Math.random() * 30) + 5 : 0, // Random issues handled for accepted users
-            botsAssigned: user.status === 'accepted' ? Math.floor(Math.random() * 5) + 1 : 0, // Random bots assigned for accepted users
+            issuesHandled: user.status === 'accepted' ? Math.floor(Math.random() * 30) + 5 : 0,
+            botsAssigned: user.assignedBots?.length || 0,
+            assignedBots: user.assignedBots || []
           };
-          
-          console.log('Final member data:', {
-            name: memberData.name,
-            onlineStatus: memberData.onlineStatus,
-            status: memberData.status
-          });
-          
+
           return memberData;
         });
         setTeamMembers(membersWithStats);
+
+        // Process bot groups with stats
+        if (data.botGroups) {
+          const groupsWithStats = data.botGroups.map((group: { botId: string; botName: string; members: Array<{ id: string; name: string; email: string; role: string; status: string; lastLoginAt: string; createdAt: string }> }) => ({
+            ...group,
+            members: group.members.map(member => {
+              let onlineStatus: 'online' | 'offline' = 'offline';
+              if (member.status === 'accepted' && member.lastLoginAt) {
+                const timeDiff = Date.now() - new Date(member.lastLoginAt).getTime();
+                if (timeDiff < 2 * 60 * 60 * 1000) onlineStatus = 'online';
+              }
+              return {
+                ...member,
+                onlineStatus,
+                rating: (4.5 + Math.random() * 0.5).toFixed(1),
+                totalChats: Math.floor(Math.random() * 50) + 10,
+                issuesHandled: member.status === 'accepted' ? Math.floor(Math.random() * 30) + 5 : 0
+              };
+            })
+          }));
+          setBotGroups(groupsWithStats);
+        }
       } else {
         console.error('Failed to fetch team members');
       }
@@ -497,13 +514,42 @@ const TeamManagement = () => {
       {/* Main Content - Full Width Team Members */}
       <Card className="bg-white rounded-2xl shadow-sm border-0">
         <CardHeader className="p-6 pb-4">
-          <div className="flex items-center space-x-2">
-            <Users className="w-5 h-5 text-gray-600" />
-            <CardTitle className="text-lg font-bold text-gray-900">
-              Team Members ({teamMembers.length})
-            </CardTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center space-x-2">
+                <Users className="w-5 h-5 text-gray-600" />
+                <CardTitle className="text-lg font-bold text-gray-900">
+                  Team Members ({teamMembers.length})
+                </CardTitle>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">Manage your support team and their assignments.</p>
+            </div>
+            {/* View Toggle */}
+            <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('byBot')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  viewMode === 'byBot'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Bot className="w-4 h-4 inline mr-1" />
+                By Bot
+              </button>
+              <button
+                onClick={() => setViewMode('all')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  viewMode === 'all'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Users className="w-4 h-4 inline mr-1" />
+                All
+              </button>
+            </div>
           </div>
-          <p className="text-sm text-gray-600">Manage your support team and their assignments.</p>
         </CardHeader>
         <CardContent className="p-6 pt-0">
           {loadingMembers ? (
@@ -517,7 +563,97 @@ const TeamManagement = () => {
               <p className="text-sm">No team members yet</p>
               <p className="text-xs text-gray-400">Invite users to get started</p>
             </div>
+          ) : viewMode === 'byBot' ? (
+            /* Grouped by Bot View */
+            <div className="space-y-6">
+              {botGroups.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Bot className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-sm">No bot assignments yet</p>
+                  <p className="text-xs text-gray-400">Assign members to bots to see them grouped here</p>
+                </div>
+              ) : (
+                botGroups.map((group) => (
+                  <div key={group.botId} className="border border-gray-200 rounded-xl overflow-hidden">
+                    {/* Bot Header */}
+                    <div className="bg-gradient-to-r from-[#6566F1] to-[#8B5CF6] px-4 py-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                            <Bot className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="text-white font-semibold">{group.botName}</h3>
+                            <p className="text-white/70 text-xs">{group.members.length} member{group.members.length !== 1 ? 's' : ''} assigned</p>
+                          </div>
+                        </div>
+                        <Badge className="bg-white/20 text-white border-white/30 text-xs">
+                          {group.members.filter(m => m.onlineStatus === 'online').length} online
+                        </Badge>
+                      </div>
+                    </div>
+                    {/* Members under this Bot */}
+                    <div className="divide-y divide-gray-100">
+                      {group.members.map((member) => (
+                        <div
+                          key={`${group.botId}-${member.id}`}
+                          className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                          onClick={() => {
+                            setSelectedAgent(member.id);
+                            setIsDetailModalOpen(true);
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              {/* Avatar */}
+                              <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span className="text-xs font-medium text-gray-600">
+                                  {member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                                </span>
+                              </div>
+                              {/* Member Info */}
+                              <div>
+                                <div className="flex items-center space-x-2">
+                                  <h4 className="text-sm font-medium text-gray-900">{member.name}</h4>
+                                  <div className={`w-2 h-2 rounded-full ${member.onlineStatus === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                                </div>
+                                <p className="text-xs text-gray-500">{member.email}</p>
+                              </div>
+                            </div>
+                            {/* Alert Details */}
+                            <div className="flex items-center space-x-4">
+                              <div className="text-center">
+                                <div className="flex items-center space-x-1">
+                                  <AlertCircle className="w-3.5 h-3.5 text-blue-600" />
+                                  <span className="text-sm font-semibold text-gray-900">{member.issuesHandled || 0}</span>
+                                </div>
+                                <p className="text-xs text-gray-500">Issues</p>
+                              </div>
+                              <div className="text-center">
+                                <div className="flex items-center space-x-1">
+                                  <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+                                  <span className="text-sm font-semibold text-gray-900">{member.totalChats || 0}</span>
+                                </div>
+                                <p className="text-xs text-gray-500">Chats</p>
+                              </div>
+                              <div className="text-center">
+                                <div className="flex items-center space-x-1">
+                                  <Star className="w-3.5 h-3.5 text-yellow-500 fill-current" />
+                                  <span className="text-sm font-semibold text-gray-900">{member.rating}</span>
+                                </div>
+                                <p className="text-xs text-gray-500">Rating</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           ) : (
+            /* All Members View */
             <div className="space-y-4">
               {teamMembers.map((member) => (
                 <div

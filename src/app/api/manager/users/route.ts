@@ -99,6 +99,32 @@ export async function GET(request: NextRequest) {
       ])
       .getMany();
 
+    // Fetch bot assignments for all users
+    const botAssignmentRepository = AppDataSource.getRepository(BotAssignment);
+    const userIds = invitedUsers.map(u => u.id);
+
+    let assignmentsWithBots: BotAssignment[] = [];
+    if (userIds.length > 0) {
+      assignmentsWithBots = await botAssignmentRepository
+        .createQueryBuilder('assignment')
+        .leftJoinAndSelect('assignment.bot', 'bot')
+        .where('assignment.userId IN (:...userIds)', { userIds })
+        .andWhere('assignment.status = :status', { status: 'active' })
+        .getMany();
+    }
+
+    // Group assignments by userId
+    const userBotAssignments: Record<string, Array<{ botId: string; botName: string }>> = {};
+    assignmentsWithBots.forEach(assignment => {
+      if (!userBotAssignments[assignment.userId]) {
+        userBotAssignments[assignment.userId] = [];
+      }
+      userBotAssignments[assignment.userId].push({
+        botId: assignment.botId,
+        botName: assignment.bot?.name || 'Unknown Bot'
+      });
+    });
+
     // Transform the data to include status based on whether they have a password
     const usersWithStatus = invitedUsers.map(user => {
       // Properly handle undefined/null values
@@ -112,11 +138,35 @@ export async function GET(request: NextRequest) {
         role: user.role,
         status: user.password ? 'accepted' : 'pending', // accepted if they have password, pending if not
         lastLoginAt: user.lastLoginAt,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
+        assignedBots: userBotAssignments[user.id] || []
       };
     });
 
-    return NextResponse.json({ users: usersWithStatus });
+    // Also create a grouped-by-bot view
+    const botGroups: Record<string, { botId: string; botName: string; members: typeof usersWithStatus }> = {};
+
+    usersWithStatus.forEach(user => {
+      if (user.assignedBots.length === 0) {
+        // Users with no bot assignments go to "Unassigned" group
+        if (!botGroups['unassigned']) {
+          botGroups['unassigned'] = { botId: 'unassigned', botName: 'Unassigned', members: [] };
+        }
+        botGroups['unassigned'].members.push(user);
+      } else {
+        user.assignedBots.forEach(bot => {
+          if (!botGroups[bot.botId]) {
+            botGroups[bot.botId] = { botId: bot.botId, botName: bot.botName, members: [] };
+          }
+          botGroups[bot.botId].members.push(user);
+        });
+      }
+    });
+
+    return NextResponse.json({
+      users: usersWithStatus,
+      botGroups: Object.values(botGroups)
+    });
 
   } catch (error) {
     console.error('Error fetching manager users:', error);
