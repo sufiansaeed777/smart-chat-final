@@ -1,16 +1,14 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  MessageCircle, 
-  X, 
-  Send, 
-  User, 
-  Bot, 
-  HelpCircle, 
-  AlertTriangle,
-  Clock,
-  CheckCircle
+import {
+  MessageCircle,
+  X,
+  Send,
+  User,
+  Bot,
+  HelpCircle,
+  AlertTriangle
 } from 'lucide-react';
 
 interface Message {
@@ -38,9 +36,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ apiKey, externalTrigger, onTriggered 
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showRequestHuman, setShowRequestHuman] = useState(false);
   const [showReportIssue, setShowReportIssue] = useState(false);
-  const [agentRequestSent, setAgentRequestSent] = useState(false);
+  const [showEndChatConfirm, setShowEndChatConfirm] = useState(false);
+  const [userMessageCount, setUserMessageCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -63,22 +61,22 @@ const ChatBot: React.FC<ChatBotProps> = ({ apiKey, externalTrigger, onTriggered 
   useEffect(() => {
     const handleEscapeKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        if (showRequestHuman) {
-          setShowRequestHuman(false);
-        }
         if (showReportIssue) {
           setShowReportIssue(false);
+        }
+        if (showEndChatConfirm) {
+          setShowEndChatConfirm(false);
         }
       }
     };
 
-    if (showRequestHuman || showReportIssue) {
+    if (showReportIssue || showEndChatConfirm) {
       document.addEventListener('keydown', handleEscapeKey);
       return () => {
         document.removeEventListener('keydown', handleEscapeKey);
       };
     }
-  }, [showRequestHuman, showReportIssue]);
+  }, [showReportIssue, showEndChatConfirm]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -91,6 +89,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ apiKey, externalTrigger, onTriggered 
     };
 
     setMessages(prev => [...prev, userMessage]);
+    setUserMessageCount(prev => prev + 1);
     setInputValue('');
     setIsLoading(true);
 
@@ -142,15 +141,15 @@ const ChatBot: React.FC<ChatBotProps> = ({ apiKey, externalTrigger, onTriggered 
     }
   };
 
-  const handleRequestHuman = async () => {
-    setShowRequestHuman(true);
-  };
-
   const handleReportIssue = () => {
     setShowReportIssue(true);
   };
 
-  const handleEndChat = async () => {
+  const handleEndChatClick = () => {
+    setShowEndChatConfirm(true);
+  };
+
+  const handleEndChatConfirm = async () => {
     try {
       // Send end chat issue to API
       await fetch('/api/chatbot/issues', {
@@ -172,6 +171,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ apiKey, externalTrigger, onTriggered 
       console.error('Error logging end chat:', error);
     }
     
+    setShowEndChatConfirm(false);
     setIsOpen(false);
     setMessages([{
       id: '1',
@@ -179,63 +179,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ apiKey, externalTrigger, onTriggered 
       sender: 'bot',
       timestamp: new Date()
     }]);
-  };
-
-  const handleAgentRequest = async () => {
-    try {
-      // Get the description from the textarea
-      const descriptionElement = document.querySelector('textarea[placeholder*="Describe your issue"]') as HTMLTextAreaElement;
-      const description = descriptionElement?.value || 'User requested human agent assistance';
-
-      // Create a conversation record for human handoff
-      const handoffResponse = await fetch('/api/conversations/create-handoff', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          botId: 'general-assistant', // Use the same bot ID as the chat
-          guestName: 'Guest Visitor',
-          guestEmail: undefined, // Could collect email in the modal
-          initialMessage: description,
-          metadata: {
-            requestedAt: new Date().toISOString(),
-            source: 'chat_widget',
-            userAgent: navigator.userAgent
-          }
-        }),
-      });
-
-      if (handoffResponse.ok) {
-        const handoffData = await handoffResponse.json();
-        console.log('✅ Human handoff conversation created:', handoffData.conversation?.id);
-      }
-
-      // Also log to chatbot issues for tracking
-      await fetch('/api/chatbot/issues', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'human_request',
-          userId: 'guest-user',
-          userEmail: 'guest@example.com',
-          userName: 'Guest User',
-          message: description,
-          priority: 'high',
-          botId: 'general-assistant'
-        }),
-      });
-
-      setAgentRequestSent(true);
-      setTimeout(() => {
-        setShowRequestHuman(false);
-        setAgentRequestSent(false);
-      }, 3000);
-    } catch (error) {
-      console.error('Error requesting agent:', error);
-    }
+    setUserMessageCount(0);
   };
 
   const handleReportSubmit = async (issueType: string, description: string, email: string) => {
@@ -350,32 +294,22 @@ const ChatBot: React.FC<ChatBotProps> = ({ apiKey, externalTrigger, onTriggered 
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Action Buttons */}
+          {/* Input Section */}
           <div className="px-4 py-2 border-t border-gray-200">
-            <div className="flex gap-2 mb-3">
-              <button
-                onClick={handleRequestHuman}
-                className="flex-1 flex items-center justify-center gap-1 px-0.5 py-2 text-xs font-bold text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap min-w-0"
-              >
-                <User className="w-3 h-3 text-gray-900 flex-shrink-0" />
-                <span className="truncate">Request Human</span>
-              </button>
-              <button
-                onClick={handleReportIssue}
-                className="flex-1 flex items-center justify-center gap-1 px-0.5 py-2 text-xs font-bold text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap min-w-0"
-              >
-                <AlertTriangle className="w-3 h-3 text-gray-900 flex-shrink-0" />
-                <span className="truncate">Report Issue</span>
-              </button>
-              <button
-                onClick={handleEndChat}
-                className="flex-1 px-0.5 py-2 text-xs font-bold text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap min-w-0"
-              >
-                <span className="truncate">End Chat</span>
-              </button>
-            </div>
+            {/* Report Issue - Only shows after 5 messages */}
+            {userMessageCount >= 5 && (
+              <div className="mb-2">
+                <button
+                  onClick={handleReportIssue}
+                  className="flex items-center justify-center gap-1 w-full px-3 py-2 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <AlertTriangle className="w-3 h-3 text-gray-500" />
+                  <span>Report an Issue</span>
+                </button>
+              </div>
+            )}
 
-            {/* Input */}
+            {/* Input with End Chat and Send buttons */}
             <div className="flex items-center space-x-2">
               <input
                 type="text"
@@ -386,6 +320,13 @@ const ChatBot: React.FC<ChatBotProps> = ({ apiKey, externalTrigger, onTriggered 
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent text-gray-900 placeholder-gray-500"
                 disabled={isLoading}
               />
+              <button
+                onClick={handleEndChatClick}
+                className="px-3 py-2 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap"
+                title="End Chat"
+              >
+                End
+              </button>
               <button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() || isLoading}
@@ -403,88 +344,31 @@ const ChatBot: React.FC<ChatBotProps> = ({ apiKey, externalTrigger, onTriggered 
         </div>
       )}
 
-                  {/* Request Human Agent Modal */}
-            {showRequestHuman && (
-              <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-60">
-                <div className="bg-white rounded-2xl p-6 w-[480px] max-w-[90vw] shadow-2xl border border-gray-100">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-[#6566F1] rounded-full flex items-center justify-center">
-                        <User className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900">Request Human Agent</h3>
-                        <p className="text-sm text-gray-600">Get personalized help from our experts</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setShowRequestHuman(false)}
-                      className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-
-            {!agentRequestSent ? (
-              <>
-                <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs font-bold">i</span>
-                    </div>
-                    <div>
-                      <p className="text-sm text-blue-800 font-medium mb-1">Why request a human agent?</p>
-                      <p className="text-sm text-blue-700">
-                        Our AI handles most questions, but sometimes you need human expertise for complex issues, personalized solutions, or sensitive matters.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-semibold text-gray-900 mb-3">
-                    What can our agent help you with?
-                  </label>
-                  <textarea
-                    placeholder="Describe your issue or question to help our agent prepare the best solution for you..."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent resize-none text-gray-900 placeholder-gray-500 transition-all duration-200"
-                    rows={4}
-                  />
-                  <p className="text-xs text-gray-500 mt-2">Optional: The more details you provide, the better we can assist you.</p>
-                </div>
-
-                <div className="flex space-x-3">
-                  <button
-                    onClick={handleAgentRequest}
-                    className="flex-1 bg-[#6566F1] text-white py-3 px-6 rounded-xl hover:bg-[#5A5BD8] transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                  >
-                    Request Agent Now
-                  </button>
-                  <button
-                    onClick={() => setShowRequestHuman(false)}
-                    className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors font-medium border border-gray-300 rounded-xl hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <CheckCircle className="w-10 h-10 text-green-600" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">Agent Request Sent!</h3>
-                <p className="text-gray-700 mb-6 max-w-sm mx-auto">
-                  We&apos;ve notified our team and an expert agent will be with you shortly. You&apos;ll receive a notification when they&apos;re ready to help.
-                </p>
+      {/* End Chat Confirmation Modal */}
+      {showEndChatConfirm && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-60">
+          <div className="bg-white rounded-2xl p-6 w-[360px] max-w-[90vw] shadow-2xl border border-gray-100">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <X className="w-6 h-6 text-gray-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">End Chat</h3>
+              <p className="text-gray-600 mb-6">Your chat will be ended.</p>
+              <div className="flex space-x-3">
                 <button
-                  onClick={() => setShowRequestHuman(false)}
-                  className="bg-[#6566F1] hover:bg-[#5A5BD8] text-white py-3 px-8 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  onClick={() => setShowEndChatConfirm(false)}
+                  className="flex-1 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors font-medium border border-gray-300 rounded-xl hover:bg-gray-50"
                 >
-                  Close
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEndChatConfirm}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-xl transition-colors font-medium"
+                >
+                  End Chat
                 </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
