@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MessageSquare, Clock, User, Search, Filter, MoreHorizontal, Loader2, SortAsc, SortDesc, Calendar, Bot, Users, Eye, Download, Trash2, Globe, Monitor } from 'lucide-react';
+import { MessageSquare, Clock, User, Search, Filter, MoreHorizontal, Loader2, SortAsc, SortDesc, Calendar, Bot, Users, Eye, Download, Trash2, Globe, Monitor, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -70,6 +70,8 @@ const ManagerConversationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [conversationsLoading, setConversationsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
 
   // Handle conversation actions
   const handleViewConversation = (conversationId: string) => {
@@ -215,6 +217,17 @@ const ManagerConversationsPage = () => {
                          conversation.botName.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredConversations.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedConversations = filteredConversations.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, filterBot, filterUser, filterDateRange]);
 
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -455,7 +468,7 @@ const ManagerConversationsPage = () => {
 
           {/* Table Body */}
           <div className="divide-y divide-gray-200">
-            {filteredConversations.length === 0 ? (
+            {paginatedConversations.length === 0 ? (
               <div className="p-8 text-center">
                 <MessageSquare className="h-10 w-10 text-gray-400 mx-auto mb-3" />
                 <h3 className="text-base font-semibold text-gray-900 mb-2">No conversations found</h3>
@@ -466,7 +479,7 @@ const ManagerConversationsPage = () => {
                 </p>
               </div>
             ) : (
-              filteredConversations.map((conversation) => (
+              paginatedConversations.map((conversation) => (
                 <div
                   key={conversation.id}
                   className="px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
@@ -593,6 +606,66 @@ const ManagerConversationsPage = () => {
               ))
             )}
           </div>
+
+          {/* Pagination Controls */}
+          {filteredConversations.length > 0 && (
+            <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Showing {startIndex + 1} to {Math.min(endIndex, filteredConversations.length)} of {filteredConversations.length} conversations
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="h-8 px-3 text-sm border-gray-200 disabled:opacity-50"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Previous
+                </Button>
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`h-8 w-8 p-0 text-sm ${
+                          currentPage === pageNum
+                            ? 'bg-[#6566F1] hover:bg-[#5A5BD8] text-white'
+                            : 'border-gray-200 text-gray-600 hover:bg-gray-100'
+                        }`}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="h-8 px-3 text-sm border-gray-200 disabled:opacity-50"
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </RoleGuard>
