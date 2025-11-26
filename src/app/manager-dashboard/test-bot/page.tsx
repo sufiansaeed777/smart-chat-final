@@ -574,17 +574,14 @@ export default function TestBotPage() {
         {/* Enhanced Sidebar */}
         <BotListSection />
 
-        {/* Enhanced Main Content */}
-        <div className="flex-1 flex flex-col bg-gradient-to-br from-slate-50/50 to-blue-50/30 h-screen overflow-hidden">
+        {/* Enhanced Main Content - Fixed Layout */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden p-2">
+          <div className="bg-white/95 backdrop-blur-xl border border-gray-200/80 shadow-2xl shadow-gray-200/40 flex flex-col flex-1 rounded-2xl overflow-hidden">
 
-        {/* Enhanced Chat Container */}
-        <div className="flex-1 flex flex-col h-screen">
-          <div className="bg-white/95 backdrop-blur-xl border border-gray-200/80 shadow-2xl shadow-gray-200/40 overflow-hidden flex flex-col h-full rounded-2xl m-2">
-
-            {/* Enhanced Messages */}
-            <div 
+            {/* Enhanced Messages - Scrollable Area */}
+            <div
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-white via-blue-50/20 to-indigo-50/30 relative min-h-0"
+              className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-white via-blue-50/20 to-indigo-50/30 relative"
             >
               {showBotSelection ? (
                 <div className="flex flex-col items-center justify-center h-full text-center p-8">
@@ -703,7 +700,7 @@ export default function TestBotPage() {
             </div>
 
             {/* Enhanced Input - Fixed at Bottom */}
-                <div className="bg-white/95 backdrop-blur-xl border-t border-gray-200/80 p-4 flex-shrink-0">
+            <div className="bg-white/95 backdrop-blur-xl border-t border-gray-200/80 p-4 flex-shrink-0">
               <div className="flex space-x-3">
                 <div className="flex-1 relative">
                   <textarea
@@ -711,20 +708,20 @@ export default function TestBotPage() {
                     onChange={(e) => setInputMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder={showBotSelection ? "Select a bot to start chatting..." : "Type your message here..."}
-                        className="w-full pl-4 pr-12 py-3 border-2 border-gray-200/60 rounded-xl focus:border-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus-visible:outline-none transition-all duration-200 bg-white/90 backdrop-blur-sm text-gray-900 placeholder-gray-500 resize-none min-h-[48px] max-h-24 shadow-lg shadow-gray-200/30 text-sm font-medium"
+                    className="w-full pl-4 pr-12 py-3 border-2 border-gray-200/60 rounded-xl focus:border-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus-visible:outline-none transition-all duration-200 bg-white/90 backdrop-blur-sm text-gray-900 placeholder-gray-500 resize-none min-h-[48px] max-h-24 shadow-lg shadow-gray-200/30 text-sm font-medium"
                     disabled={isLoading || showBotSelection}
                     rows={1}
                   />
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                          <MessageSquare className="w-4 h-4 text-white" />
+                    <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+                      <MessageSquare className="w-4 h-4 text-white" />
                     </div>
                   </div>
                 </div>
                 <Button
                   onClick={sendMessage}
                   disabled={!inputMessage.trim() || isLoading || showBotSelection}
-                      className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl shadow-lg shadow-indigo-200/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                  className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl shadow-lg shadow-indigo-200/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
                 >
                   <Send className="w-5 h-5" />
                 </Button>
@@ -733,7 +730,6 @@ export default function TestBotPage() {
           </div>
         </div>
       </div>
-    </div>
     </>
   );
 }
