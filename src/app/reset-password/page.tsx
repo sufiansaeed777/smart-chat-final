@@ -26,6 +26,16 @@ function ResetPasswordForm() {
     }
   }, [token]);
 
+  const validatePassword = (pwd: string): string[] => {
+    const errors: string[] = [];
+    if (pwd.length < 8) errors.push('at least 8 characters');
+    if (!/[A-Z]/.test(pwd)) errors.push('1 uppercase letter');
+    if (!/[a-z]/.test(pwd)) errors.push('1 lowercase letter');
+    if (!/[0-9]/.test(pwd)) errors.push('1 number');
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(pwd)) errors.push('1 special character');
+    return errors;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -34,8 +44,9 @@ function ResetPasswordForm() {
       return;
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
+    const validationErrors = validatePassword(password);
+    if (validationErrors.length > 0) {
+      setError(`Password must contain: ${validationErrors.join(', ')}.`);
       return;
     }
 
@@ -121,6 +132,9 @@ function ResetPasswordForm() {
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
+            <p className="mt-2 text-xs text-gray-500">
+              Password must be at least 8 characters long, and contain 1 uppercase, 1 lowercase, 1 number, and 1 special character.
+            </p>
           </div>
 
           <div>

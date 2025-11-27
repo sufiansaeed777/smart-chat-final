@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { HelpCircle, MessageSquare, Activity, Users, ArrowRight } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
@@ -55,13 +56,13 @@ const SupportPage = () => {
                       New to our platform? Start here with step-by-step guides to set up your account, 
                       configure your first chatbot, and understand the basics.
                     </p>
-                    <button
-                      onClick={() => window.location.href = '/help-center'}
+                    <Link
+                      href="/help-center"
                       className="inline-flex items-center text-blue-600 hover:text-blue-700 font-semibold transition-colors"
                     >
                       View Getting Started Guide
                       <ArrowRight className="w-4 h-4 ml-2" />
-                    </button>
+                    </Link>
                   </div>
                   
                   <div>
@@ -73,13 +74,13 @@ const SupportPage = () => {
                       Experiencing issues? Our troubleshooting guides cover common problems and their solutions 
                       to get you back up and running quickly.
                     </p>
-                    <button
-                      onClick={() => window.location.href = '/help-center'}
+                    <Link
+                      href="/help-center"
                       className="inline-flex items-center text-blue-600 hover:text-blue-700 font-semibold transition-colors"
                     >
                       Browse Solutions
                       <ArrowRight className="w-4 h-4 ml-2" />
-                    </button>
+                    </Link>
                   </div>
                   
                   <div className="md:col-span-2">
@@ -119,13 +120,13 @@ const SupportPage = () => {
                       Chat with our support team in real-time. Available during business hours for immediate 
                       assistance with urgent issues.
                     </p>
-                    <button
-                      onClick={() => window.location.href = '/contact-support'}
+                    <Link
+                      href="/contact-support"
                       className="inline-flex items-center text-green-600 hover:text-green-700 font-semibold transition-colors"
                     >
                       Start Chat
                       <ArrowRight className="w-4 h-4 ml-2" />
-                    </button>
+                    </Link>
                   </div>
                   
                   <div>
@@ -137,13 +138,13 @@ const SupportPage = () => {
                       Send us a detailed message and we&apos;ll respond within 24 hours. Perfect for complex 
                       issues that require thorough investigation.
                     </p>
-                    <button
-                      onClick={() => window.location.href = 'mailto:support@smartchat.com'}
+                    <a
+                      href="mailto:support@smartchat.com"
                       className="inline-flex items-center text-green-600 hover:text-green-700 font-semibold transition-colors"
                     >
                       Send Email
                       <ArrowRight className="w-4 h-4 ml-2" />
-                    </button>
+                    </a>
                   </div>
                   
                   <div className="md:col-span-2">
@@ -241,13 +242,13 @@ const SupportPage = () => {
                       Join discussions with other users, ask questions, and share your experiences. 
                       Our community is a great place to learn tips and tricks.
                     </p>
-                    <button
-                      onClick={() => window.location.href = '/community'}
+                    <Link
+                      href="/community"
                       className="inline-flex items-center text-purple-600 hover:text-purple-700 font-semibold transition-colors"
                     >
                       Join Discussion
                       <ArrowRight className="w-4 h-4 ml-2" />
-                    </button>
+                    </Link>
                   </div>
                   
                   <div>
@@ -259,13 +260,13 @@ const SupportPage = () => {
                       Access our comprehensive knowledge base with articles, tutorials, and best practices 
                       contributed by both our team and community members.
                     </p>
-                    <button
-                      onClick={() => window.location.href = '/help-center'}
+                    <Link
+                      href="/help-center"
                       className="inline-flex items-center text-purple-600 hover:text-purple-700 font-semibold transition-colors"
                     >
                       Browse Articles
                       <ArrowRight className="w-4 h-4 ml-2" />
-                    </button>
+                    </Link>
                   </div>
                   
                   <div className="md:col-span-2">
