@@ -826,123 +826,149 @@ const BotsPage = () => {
             </div>
           ) : (
             filteredBots.map((bot) => (
-              <Card key={bot.id} className="border border-gray-200 bg-white hover:shadow-md transition-shadow rounded-2xl">
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3 min-w-0 flex-1">
-                      <div className="w-10 h-10 bg-[#6566F1] rounded-lg flex items-center justify-center">
-                        <Bot className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <CardTitle className="text-lg truncate">{bot.name}</CardTitle>
-                        <p className="text-sm text-gray-500 truncate">{bot.domain}</p>
-                      </div>
+              <div key={bot.id} className="bg-white p-5 rounded-[20px] border border-gray-200 shadow-sm hover:shadow-lg transition-shadow">
+                {/* Top Section - Bot Info & Menu */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-[#6038ff] rounded-xl flex items-center justify-center text-white text-2xl">
+                      🤖
                     </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-48">
-                    <DropdownMenuItem onClick={() => handleViewConversations(bot)}>
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      View Conversations
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setShowAssignModal(true)}>
-                      <Users className="w-4 h-4 mr-2" />
-                      Manage Users
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleAssignKnowledge(bot)}>
-                          <Settings className="w-4 h-4 mr-2" />
-                          Assign Knowledge to Bot
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleEditBot(bot)}>
-                          <Edit className="w-4 h-4 mr-2" />
-                          Edit Bot
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTrainBot(bot)} disabled={isTraining}>
-                          <PlayCircle className="w-4 h-4 mr-2" />
-                          {isTraining ? 'Training...' : 'Train Bot'}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600">
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete Bot
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Badge className={getStatusColor(bot.status)}>
-                      {bot.status}
-                    </Badge>
-                    <span className="text-sm text-gray-500">{bot.lastActive}</span>
-                  </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center space-x-2">
-                    <MessageSquare className="w-4 h-4 text-gray-400" />
-                    <span>{bot.conversations} conversations</span>
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-lg text-gray-900 truncate">{bot.name}</h3>
+                      <a
+                        href={bot.domain}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-[#4c7bff] hover:underline truncate block"
+                      >
+                        {bot.domain}
+                      </a>
                     </div>
-                    <div className="flex items-center space-x-2">
-                    <Users className="w-4 h-4 text-gray-400" />
-                    <span>{bot.totalUsers} assigned</span>
                   </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="text-xl text-gray-500 hover:text-gray-700 cursor-pointer p-1">
+                        ⋯
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-48">
+                      <DropdownMenuItem onClick={() => handleViewConversations(bot)}>
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        View Conversations
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setShowAssignModal(true)}>
+                        <Users className="w-4 h-4 mr-2" />
+                        Manage Users
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleAssignKnowledge(bot)}>
+                        <Settings className="w-4 h-4 mr-2" />
+                        Assign Knowledge
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEditBot(bot)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Bot
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleTrainBot(bot)} disabled={isTraining}>
+                        <PlayCircle className="w-4 h-4 mr-2" />
+                        {isTraining ? 'Training...' : 'Train Bot'}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-red-600">
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Bot
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-                <div className="flex items-center space-x-2 text-sm">
-                  <Settings className="w-4 h-4 text-gray-400" />
-                  <span>{bot.documents?.length || 0} knowledge docs</span>
+
+                {/* Status & Timestamp Row */}
+                <div className="flex items-center justify-between mt-3">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1 ${
+                    bot.status === 'active'
+                      ? 'bg-[#d9ffe3] text-[#0c8f3c]'
+                      : bot.status === 'paused'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      bot.status === 'active' ? 'bg-[#0c8f3c]' : bot.status === 'paused' ? 'bg-yellow-600' : 'bg-gray-500'
+                    }`}></span>
+                    {bot.status}
+                  </span>
+                  <span className="bg-[#eef1f6] text-gray-600 px-3 py-1 rounded-full text-xs">
+                    {bot.lastActive || new Date(bot.updatedAt).toLocaleString()}
+                  </span>
                 </div>
-              </div>
 
-              <div className="pt-2">
-                <p className="text-sm text-gray-600 line-clamp-2">{bot.description}</p>
-              </div>
-
-              {/* Document List */}
-              {bot.documents && bot.documents.length > 0 && (
-                <div className="pt-2 border-t border-gray-100">
-                  <p className="text-xs font-medium text-gray-500 mb-2">Knowledge Base:</p>
-                  <div className="space-y-1">
-                    {bot.documents.slice(0, 3).map((doc: any) => (
-                      <div key={doc.id} className="flex items-center space-x-2 text-xs">
-                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                        <span className="text-gray-600 truncate">{doc.name}</span>
-                        <span className="text-gray-400">({doc.type.toUpperCase()})</span>
+                {/* Stats Grid - 2x2 */}
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  {/* Conversations */}
+                  <div className="bg-[#f8fcff] border border-[#e2eefa] p-3 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <div className="w-9 h-9 bg-[#00c27a] rounded-lg flex items-center justify-center text-white text-lg">
+                        💬
                       </div>
-                    ))}
-                    {bot.documents.length > 3 && (
-                      <p className="text-xs text-gray-400">+{bot.documents.length - 3} more documents</p>
-                    )}
+                      <span className="text-sm font-semibold text-gray-700">Conversations</span>
+                    </div>
+                    <p className="text-xl font-bold text-gray-900 mt-2">{bot.conversations || 0}</p>
+                  </div>
+
+                  {/* Assigned Users */}
+                  <div className="bg-[#f8fcff] border border-[#e2eefa] p-3 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <div className="w-9 h-9 bg-[#6a5cff] rounded-lg flex items-center justify-center text-white text-lg">
+                        👤
+                      </div>
+                      <span className="text-sm font-semibold text-gray-700">Assigned</span>
+                    </div>
+                    <p className="text-xl font-bold text-gray-900 mt-2">{bot.totalUsers || 0}</p>
+                  </div>
+
+                  {/* Knowledge */}
+                  <div className="bg-[#f8fcff] border border-[#e2eefa] p-3 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <div className="w-9 h-9 bg-[#ff9f3e] rounded-lg flex items-center justify-center text-white text-lg">
+                        📘
+                      </div>
+                      <span className="text-sm font-semibold text-gray-700">Knowledge</span>
+                    </div>
+                    <p className="text-xl font-bold text-gray-900 mt-2">{bot.documents?.length || 0}</p>
+                  </div>
+
+                  {/* Webpages */}
+                  <div className="bg-[#f8fcff] border border-[#e2eefa] p-3 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <div className="w-9 h-9 bg-[#29d0f2] rounded-lg flex items-center justify-center text-white text-lg">
+                        🌐
+                      </div>
+                      <span className="text-sm font-semibold text-gray-700">Webpages</span>
+                    </div>
+                    <p className="text-xl font-bold text-gray-900 mt-2">{bot.webpagesCount || 0}</p>
                   </div>
                 </div>
-              )}
 
-                  <div className="flex space-x-2 pt-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1 border-gray-300 hover:bg-gray-50 text-gray-700 rounded-2xl"
-                  onClick={() => handleViewConversations(bot)}
-                    >
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Conversations
-                    </Button>
-                    <Button 
-                      size="sm" 
-                  className="flex-1 bg-[#6566F1] hover:bg-[#5A5BD9] text-white rounded-2xl"
-                  onClick={() => setShowAssignModal(true)}
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  Manage Users
-                </Button>
+                {/* Bottom Buttons */}
+                <div className="flex gap-3 mt-5">
+                  <button
+                    onClick={() => handleViewConversations(bot)}
+                    className="flex-1 py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 bg-[#f5f5f5] border border-gray-200 text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    📄 Conversations
+                  </button>
+                  <button
+                    onClick={() => setShowAssignModal(true)}
+                    className="flex-1 py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 bg-[#003eff] text-white hover:bg-[#0035d9] transition-colors"
+                  >
+                    👥 Manage Users
+                  </button>
+                </div>
+
+                {/* Footer - Created & Last Updated */}
+                <div className="mt-4 text-xs text-gray-500">
+                  <p>Created: {new Date(bot.createdAt).toLocaleDateString()}</p>
+                  <p>Last: {new Date(bot.updatedAt).toLocaleDateString()}</p>
+                </div>
               </div>
-            </CardContent>
-          </Card>
             ))
           )}
         </div>
