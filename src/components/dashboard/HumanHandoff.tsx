@@ -327,11 +327,11 @@ const HumanHandoff = () => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-gray-50">
+    <div className="flex h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50/50 via-white to-white">
       {/* Left Sidebar - Conversations List */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-80 bg-white/80 backdrop-blur-sm border-r border-blue-100 flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-blue-100 bg-gradient-to-r from-blue-50 to-white">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold text-gray-900">Agent Console</h2>
             <div className="flex items-center space-x-2">
@@ -358,7 +358,7 @@ const HumanHandoff = () => {
               <select
                 value={selectedBotId || ''}
                 onChange={(e) => setSelectedBotId(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-300 bg-white"
               >
                 {userBots.map((bot) => (
                   <option key={bot.id} value={bot.id}>
@@ -397,8 +397,8 @@ const HumanHandoff = () => {
                   onClick={() => setSelectedConversationId(conversation.id)}
                   className={`p-3 rounded-lg border cursor-pointer transition-all ${
                     selectedConversationId === conversation.id
-                      ? 'border-[#6566F1] bg-[#6566F1]/5'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      ? 'border-blue-300 bg-blue-50/70 shadow-sm'
+                      : 'border-blue-100 hover:border-blue-200 hover:bg-blue-50/30 bg-white'
                   }`}
                 >
                   <div className="flex items-start justify-between mb-2">
@@ -426,7 +426,7 @@ const HumanHandoff = () => {
           </div>
 
           {/* Completed Section */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-blue-100 bg-gradient-to-b from-white to-blue-50/30">
             <div className="mb-4">
               <h3 className="text-sm font-semibold text-gray-900 mb-1">Completed / Idle</h3>
               <p className="text-xs text-gray-500">Closed conversations ({completedConversations.length})</p>
@@ -442,7 +442,7 @@ const HumanHandoff = () => {
                 {completedConversations.map((conversation) => (
                   <div
                     key={conversation.id}
-                    className="p-3 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 cursor-pointer transition-all"
+                    className="p-3 rounded-lg border border-blue-100 hover:border-blue-200 hover:bg-blue-50/30 bg-white cursor-pointer transition-all"
                   >
                     <div className="flex items-start justify-between mb-1">
                       <div>
@@ -479,7 +479,7 @@ const HumanHandoff = () => {
         {selectedConversation ? (
           <>
             {/* Chat Header */}
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <div className="p-4 border-b border-blue-100 bg-gradient-to-r from-white via-blue-50/30 to-white flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">{selectedConversation.guestName}</h2>
                 <p className="text-xs text-gray-500">{selectedConversation.guestId}</p>
@@ -554,7 +554,7 @@ const HumanHandoff = () => {
 
             {/* Message Input - Only show when in Human mode */}
             {selectedConversation.mode === 'Human' && (
-              <div className="p-4 border-t border-gray-200">
+              <div className="p-4 border-t border-blue-100 bg-gradient-to-t from-blue-50/20 to-white">
                 <div className="flex items-center space-x-3">
                   <input
                     type="text"
@@ -562,7 +562,7 @@ const HumanHandoff = () => {
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                     placeholder="Reply as Human agent..."
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
+                    className="flex-1 px-4 py-3 border border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-300 bg-white"
                   />
                   <Button
                     onClick={handleSendMessage}
@@ -586,13 +586,13 @@ const HumanHandoff = () => {
       </div>
 
       {/* Right Sidebar - Conversation Info */}
-      <div className="w-80 bg-white border-l border-gray-200 p-6">
+      <div className="w-80 bg-white/80 backdrop-blur-sm border-l border-blue-100 p-6 bg-gradient-to-b from-blue-50/30 via-white to-white">
         {selectedConversation ? (
           <div>
             <h3 className="text-lg font-bold text-gray-900 mb-6">Conversation Info</h3>
 
             <div className="space-y-4">
-              <div className="flex justify-between items-center py-3 border-b border-gray-200">
+              <div className="flex justify-between items-center py-3 border-b border-blue-100">
                 <span className="text-sm text-gray-600">Mode</span>
                 <Badge
                   className={`text-xs px-3 py-1 ${
@@ -605,14 +605,14 @@ const HumanHandoff = () => {
                 </Badge>
               </div>
 
-              <div className="flex justify-between items-center py-3 border-b border-gray-200">
+              <div className="flex justify-between items-center py-3 border-b border-blue-100">
                 <span className="text-sm text-gray-600">Visitor</span>
                 <span className="text-sm font-medium text-gray-900">{selectedConversation.guestName}</span>
               </div>
 
-              <div className="flex justify-between items-center py-3 border-b border-gray-200">
+              <div className="flex justify-between items-center py-3 border-b border-blue-100">
                 <span className="text-sm text-gray-600">Status</span>
-                <Badge className="bg-gray-100 text-gray-700 text-xs px-3 py-1">
+                <Badge className="bg-blue-50 text-blue-700 text-xs px-3 py-1 border border-blue-200">
                   {selectedConversation.status}
                 </Badge>
               </div>

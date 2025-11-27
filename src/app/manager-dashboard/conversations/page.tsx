@@ -54,6 +54,9 @@ const ManagerConversationsPage = () => {
   const [filterBot, setFilterBot] = useState('all');
   const [filterUser, setFilterUser] = useState('all');
   const [filterDateRange, setFilterDateRange] = useState('all');
+  const [filterMessages, setFilterMessages] = useState('all');
+  const [filterDuration, setFilterDuration] = useState('all');
+  const [filterRating, setFilterRating] = useState('all');
   const [sortBy, setSortBy] = useState('lastMessage');
   const [sortOrder, setSortOrder] = useState('desc');
   const [conversations, setConversations] = useState<ConversationSession[]>([]);
@@ -211,11 +214,59 @@ const ManagerConversationsPage = () => {
     return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
+  // Helper function to parse duration string to minutes
+  const parseDurationToMinutes = (duration: string): number => {
+    if (!duration) return 0;
+    const match = duration.match(/(\d+)\s*(min|h|hr|hour|m)/i);
+    if (!match) return 0;
+    const value = parseInt(match[1]);
+    const unit = match[2].toLowerCase();
+    if (unit === 'h' || unit === 'hr' || unit === 'hour') return value * 60;
+    return value;
+  };
+
   const filteredConversations = conversations.filter(conversation => {
     const matchesSearch = conversation.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          conversation.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          conversation.botName.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
+
+    // Messages filter
+    let matchesMessages = true;
+    if (filterMessages !== 'all') {
+      const count = conversation.messageCount || 0;
+      switch (filterMessages) {
+        case '1-5': matchesMessages = count >= 1 && count <= 5; break;
+        case '6-10': matchesMessages = count >= 6 && count <= 10; break;
+        case '11-20': matchesMessages = count >= 11 && count <= 20; break;
+        case '20+': matchesMessages = count > 20; break;
+      }
+    }
+
+    // Duration filter
+    let matchesDuration = true;
+    if (filterDuration !== 'all') {
+      const minutes = parseDurationToMinutes(conversation.duration);
+      switch (filterDuration) {
+        case '<5': matchesDuration = minutes < 5; break;
+        case '5-15': matchesDuration = minutes >= 5 && minutes <= 15; break;
+        case '15-30': matchesDuration = minutes >= 15 && minutes <= 30; break;
+        case '30+': matchesDuration = minutes > 30; break;
+      }
+    }
+
+    // Rating filter
+    let matchesRating = true;
+    if (filterRating !== 'all') {
+      const rating = conversation.satisfaction || 0;
+      switch (filterRating) {
+        case '5': matchesRating = rating === 5; break;
+        case '4+': matchesRating = rating >= 4; break;
+        case '3+': matchesRating = rating >= 3; break;
+        case '<3': matchesRating = rating < 3; break;
+      }
+    }
+
+    return matchesSearch && matchesMessages && matchesDuration && matchesRating;
   });
 
   // Pagination calculations
@@ -227,7 +278,7 @@ const ManagerConversationsPage = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterStatus, filterBot, filterUser, filterDateRange]);
+  }, [searchTerm, filterStatus, filterBot, filterUser, filterDateRange, filterMessages, filterDuration, filterRating]);
 
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -377,6 +428,7 @@ const ManagerConversationsPage = () => {
 
         {/* Filters and Search */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+          {/* First Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
             {/* Search */}
             <div className="lg:col-span-2">
@@ -440,6 +492,48 @@ const ManagerConversationsPage = () => {
               <option value="today">Today</option>
               <option value="week">This Week</option>
               <option value="month">This Month</option>
+            </select>
+          </div>
+
+          {/* Second Row - Messages, Duration, Rating Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 mt-3">
+            {/* Messages Filter */}
+            <select
+              value={filterMessages}
+              onChange={(e) => setFilterMessages(e.target.value)}
+              className="h-9 px-3 py-1 text-sm border border-gray-200 rounded-lg focus:border-[#6566F1] focus:ring-[#6566F1] bg-white text-gray-900"
+            >
+              <option value="all">All Messages</option>
+              <option value="1-5">1-5 messages</option>
+              <option value="6-10">6-10 messages</option>
+              <option value="11-20">11-20 messages</option>
+              <option value="20+">20+ messages</option>
+            </select>
+
+            {/* Duration Filter */}
+            <select
+              value={filterDuration}
+              onChange={(e) => setFilterDuration(e.target.value)}
+              className="h-9 px-3 py-1 text-sm border border-gray-200 rounded-lg focus:border-[#6566F1] focus:ring-[#6566F1] bg-white text-gray-900"
+            >
+              <option value="all">All Durations</option>
+              <option value="<5">Under 5 min</option>
+              <option value="5-15">5-15 min</option>
+              <option value="15-30">15-30 min</option>
+              <option value="30+">30+ min</option>
+            </select>
+
+            {/* Rating Filter */}
+            <select
+              value={filterRating}
+              onChange={(e) => setFilterRating(e.target.value)}
+              className="h-9 px-3 py-1 text-sm border border-gray-200 rounded-lg focus:border-[#6566F1] focus:ring-[#6566F1] bg-white text-gray-900"
+            >
+              <option value="all">All Ratings</option>
+              <option value="5">5 stars</option>
+              <option value="4+">4+ stars</option>
+              <option value="3+">3+ stars</option>
+              <option value="<3">Below 3 stars</option>
             </select>
           </div>
         </div>

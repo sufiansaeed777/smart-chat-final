@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Bot, 
+  Bot,
   Search,
   Filter,
   Eye,
@@ -18,7 +18,10 @@ import {
   TrendingUp,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsUpDown
 } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
 
@@ -56,6 +59,10 @@ const BotsPage: React.FC = () => {
   const [newDomain, setNewDomain] = useState<string>('');
   const [newCategory, setNewCategory] = useState<string>('');
   const [updating, setUpdating] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
 
   // Handle Escape key to close modals
   useEffect(() => {
@@ -117,9 +124,20 @@ const BotsPage: React.FC = () => {
                          bot.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || bot.status === statusFilter;
     const matchesCategory = categoryFilter === 'all' || bot.category === categoryFilter;
-    
+
     return matchesSearch && matchesStatus && matchesCategory;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredBots.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedBots = filteredBots.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, categoryFilter]);
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
@@ -406,7 +424,7 @@ const BotsPage: React.FC = () => {
 
         {/* Bots Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-            {filteredBots.map((bot) => (
+            {paginatedBots.map((bot) => (
           <div key={bot.id} className="bg-white rounded-2xl shadow-sm border-0 overflow-hidden hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer flex flex-col h-full max-w-md w-full mx-auto">
             <div className="p-6 flex flex-col flex-1">
               {/* Header */}
@@ -497,6 +515,78 @@ const BotsPage: React.FC = () => {
                   </div>
         ))}
       </div>
+
+      {/* Pagination Controls */}
+      {filteredBots.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border-0 p-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Showing {startIndex + 1} to {Math.min(endIndex, filteredBots.length)} of {filteredBots.length} bots
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="First page"
+              >
+                <ChevronsUpDown className="w-4 h-4 text-gray-600 rotate-90" />
+              </button>
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Previous page"
+              >
+                <ChevronLeft className="w-4 h-4 text-gray-600" />
+              </button>
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                        currentPage === pageNum
+                          ? 'bg-[#6566F1] text-white'
+                          : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Next page"
+              >
+                <ChevronRight className="w-4 h-4 text-gray-600" />
+              </button>
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Last page"
+              >
+                <ChevronsUpDown className="w-4 h-4 text-gray-600 -rotate-90" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {filteredBots.length === 0 && (
         <div className="text-center py-12 bg-white rounded-2xl shadow-sm border-0">

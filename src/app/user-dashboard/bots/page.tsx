@@ -82,10 +82,10 @@ const BotsPage = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active": return "bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200 hover:text-emerald-900 hover:border-emerald-300";
-      case "paused": return "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200 hover:text-amber-900 hover:border-amber-300";
-      case "inactive": return "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200 hover:text-gray-900 hover:border-gray-300";
-      default: return "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200 hover:text-gray-900 hover:border-gray-300";
+      case "active": return "bg-green-100 text-green-800 border-green-200";
+      case "paused": return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "inactive": return "bg-gray-100 text-gray-800 border-gray-200";
+      default: return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
@@ -94,33 +94,33 @@ const BotsPage = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Assigned Bots</h1>
-            <p className="text-gray-600 mt-1 text-sm sm:text-base">
+            <h1 className="text-3xl font-bold text-gray-900">My Assigned Bots</h1>
+            <p className="text-gray-600 mt-1">
               View and interact with bots assigned to you by your manager
             </p>
           </div>
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white rounded-2xl border border-gray-300 p-4 sm:p-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 placeholder="Search your assigned bots by name or domain..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 border-gray-300 focus:border-[#6566F1] focus:ring-[#6566F1] rounded-xl bg-gray-50 focus:bg-white transition-colors"
+                className="pl-10 h-9 text-sm border-gray-200 focus:border-[#6566F1] focus:ring-[#6566F1] bg-white rounded-lg"
               />
             </div>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-xl focus:border-[#6566F1] focus:ring-[#6566F1] bg-white text-black font-medium"
+              className="h-9 px-3 py-1 text-sm border border-gray-200 rounded-lg focus:border-[#6566F1] focus:ring-[#6566F1] bg-white text-gray-900"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -161,16 +161,16 @@ const BotsPage = () => {
 
         {/* Empty State */}
         {!loading && !error && filteredBots.length === 0 && searchTerm === "" && (
-          <Card className="border border-gray-300 bg-white rounded-2xl shadow-sm">
+          <Card className="border border-gray-200 bg-white rounded-xl shadow-sm">
             <CardContent className="p-12 text-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-[#6566F1]/10 to-[#5A5BD8]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Bot className="h-10 w-10 text-[#6566F1]" />
+              <div className="w-16 h-16 bg-gradient-to-br from-[#6566F1]/10 to-[#5A5BD8]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Bot className="h-8 w-8 text-[#6566F1]" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">No Bots Assigned Yet</h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto leading-relaxed">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Bots Assigned Yet</h3>
+              <p className="text-gray-600 mb-4 max-w-md mx-auto">
                 Your manager hasn&apos;t assigned any bots to you yet. Contact your manager to get started with bot assignments.
               </p>
-              <div className="bg-blue-50 rounded-lg p-4 max-w-sm mx-auto">
+              <div className="bg-blue-50 rounded-lg p-4 max-w-sm mx-auto border border-blue-100">
                 <p className="text-sm text-blue-800">
                   💡 <strong>Tip:</strong> Once assigned, you&apos;ll be able to test bots and view your conversation history here.
                 </p>
@@ -181,94 +181,73 @@ const BotsPage = () => {
 
         {/* Bots Grid */}
         {filteredBots.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredBots.map((bot) => (
-              <Card key={bot.id} className="group relative bg-white/80 backdrop-blur-sm border border-gray-200/50 hover:border-[#6566F1]/30 hover:shadow-2xl hover:shadow-[#6566F1]/20 transition-all duration-500 rounded-3xl overflow-hidden hover:-translate-y-2 z-10">
-                {/* Modern Gradient Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-[#6566F1]/8 via-transparent to-[#5A5BD9]/5 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                
-                
-                <CardHeader className="pb-3 relative z-10">
+              <Card key={bot.id} className="border border-gray-200 bg-white hover:shadow-md transition-shadow rounded-2xl">
+                <CardHeader className="pb-4">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-4 min-w-0 flex-1">
-                      <div className="relative">
-                        <div className="w-16 h-16 bg-gradient-to-br from-[#6566F1] to-[#5A5BD9] rounded-2xl flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:scale-110 transition-all duration-300">
-                          <Bot className="h-8 w-8 text-white" />
-                        </div>
-                        {/* Subtle glow effect */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#6566F1] to-[#5A5BD9] rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-300"></div>
+                    <div className="flex items-center space-x-3 min-w-0 flex-1">
+                      <div className="w-10 h-10 bg-[#6566F1] rounded-lg flex items-center justify-center">
+                        <Bot className="h-5 w-5 text-white" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <CardTitle className="text-xl font-bold truncate group-hover:text-[#6566F1] transition-colors duration-300 mb-1">{bot.name}</CardTitle>
-                        <p className="text-sm font-medium text-gray-600 truncate mb-1">{bot.domain}</p>
-                        <p className="text-xs text-gray-500 truncate">Assigned by: {bot.assignedBy}</p>
+                        <CardTitle className="text-lg truncate">{bot.name}</CardTitle>
+                        <p className="text-sm text-gray-500 truncate">{bot.domain}</p>
                       </div>
                     </div>
                   </div>
                 </CardHeader>
-                
-                <CardContent className="space-y-3 relative z-10">
+
+                <CardContent className="space-y-4">
                   {/* Status and Last Active */}
                   <div className="flex items-center justify-between">
-                    <Badge className={`${getStatusColor(bot.status)} font-semibold px-4 py-2 rounded-full shadow-sm`}>
-                      <div className={`w-2 h-2 rounded-full mr-2 ${
-                        bot.status === 'active' ? 'bg-emerald-400' : 
-                        bot.status === 'paused' ? 'bg-amber-400' : 'bg-gray-400'
-                      }`}></div>
+                    <Badge className={`${getStatusColor(bot.status)} text-xs`}>
                       {bot.status}
                     </Badge>
-                    <span className="text-sm text-gray-500 font-medium bg-gray-100/80 px-3 py-1 rounded-full">{bot.lastActive}</span>
+                    <span className="text-sm text-gray-500">{bot.lastActive}</span>
                   </div>
 
                   {/* Bot Statistics */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gradient-to-br from-blue-50 via-blue-100/30 to-indigo-50 rounded-2xl p-4 border border-blue-200/40 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 text-center group">
-                      <div className="flex items-center justify-center space-x-3 mb-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                          <Bot className="w-5 h-5 text-white" />
-                        </div>
-                        <span className="text-sm font-bold text-blue-800">Chats</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center space-x-2">
+                        <MessageSquare className="w-4 h-4 text-gray-400" />
+                        <span>{bot.conversations} conversations</span>
                       </div>
-                      <p className="text-3xl font-black text-blue-900 group-hover:text-blue-700 transition-colors duration-300">{bot.conversations}</p>
                     </div>
-                    <div className="bg-gradient-to-br from-amber-50 via-yellow-100/30 to-orange-50 rounded-2xl p-4 border border-amber-200/40 hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-300 text-center group">
-                      <div className="flex items-center justify-center space-x-3 mb-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-yellow-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                          <Star className="w-5 h-5 text-white" />
-                        </div>
-                        <span className="text-sm font-bold text-amber-800">Rating</span>
-                      </div>
-                      <p className="text-3xl font-black text-amber-900 group-hover:text-amber-700 transition-colors duration-300">{(4.5 + Math.random() * 0.5).toFixed(1)}</p>
+                    <div className="flex items-center space-x-2 text-sm">
+                      <Star className="w-4 h-4 text-yellow-400" />
+                      <span>{(4.5 + Math.random() * 0.5).toFixed(1)} rating</span>
                     </div>
                   </div>
 
                   {/* Description */}
-                  <div className="bg-gradient-to-r from-[#6566F1]/5 to-[#5A5BD9]/5 rounded-2xl p-3 border border-[#6566F1]/10">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-6 h-6 bg-[#6566F1]/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <MessageSquare className="w-3 h-3 text-[#6566F1]" />
-                      </div>
-                      <p className="text-sm text-gray-700 leading-relaxed font-medium">{bot.description}</p>
-                    </div>
+                  <div className="pt-2">
+                    <p className="text-sm text-gray-600 line-clamp-2">{bot.description}</p>
+                  </div>
+
+                  {/* Assigned By */}
+                  <div className="text-xs text-gray-500 border-t border-gray-100 pt-2">
+                    Assigned by: {bot.assignedBy}
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex space-x-3 pt-1">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1 h-12 border-2 border-gray-200 hover:border-[#6566F1]/30 hover:bg-[#6566F1]/5 text-gray-700 rounded-2xl font-semibold transition-all duration-300 group"
+                  <div className="flex space-x-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 border-gray-300 hover:bg-gray-50 text-gray-700 rounded-2xl"
                       onClick={() => handleNavigation(`/user-dashboard/test-bot?botId=${bot.id}`)}
                     >
-                      <PlayCircle className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" />
+                      <PlayCircle className="w-4 h-4 mr-2" />
                       Test Bot
                     </Button>
-                    <Button 
-                      size="sm" 
-                      className="flex-1 h-12 bg-gradient-to-r from-[#6566F1] to-[#5A5BD9] hover:from-[#5A5BD9] hover:to-[#4A4BC7] text-white rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 group"
+                    <Button
+                      size="sm"
+                      className="flex-1 bg-[#6566F1] hover:bg-[#5A5BD9] text-white rounded-2xl"
                       onClick={() => handleNavigation(`/user-dashboard/conversations?botId=${bot.id}`)}
                     >
-                      <Eye className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" />
+                      <Eye className="w-4 h-4 mr-2" />
                       View Chats
                     </Button>
                   </div>

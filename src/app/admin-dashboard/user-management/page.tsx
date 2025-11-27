@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  Search, 
-  MoreVertical, 
-  UserPlus, 
+import {
+  Users,
+  Search,
+  MoreVertical,
+  UserPlus,
   Shield,
   UserCheck,
   UserX,
@@ -20,7 +20,12 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  TrendingUp
+  TrendingUp,
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsUpDown
 } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
 
@@ -63,6 +68,14 @@ const UserManagementPage: React.FC = () => {
     role: 'user' as 'admin' | 'manager' | 'user',
     password: ''
   });
+
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
 
   // Handle Escape key to close modals
   useEffect(() => {
@@ -312,14 +325,95 @@ const UserManagementPage: React.FC = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  // Handle column sort
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1); // Reset to first page when sorting
+  };
+
+  // Get sort icon for column header
+  const getSortIcon = (column: string) => {
+    if (sortColumn !== column) {
+      return <ChevronsUpDown className="w-3 h-3 ml-1 text-gray-400" />;
+    }
+    return sortDirection === 'asc'
+      ? <ChevronUp className="w-3 h-3 ml-1 text-[#6566F1]" />
+      : <ChevronDown className="w-3 h-3 ml-1 text-[#6566F1]" />;
+  };
+
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
     const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-    
+
     return matchesSearch && matchesRole && matchesStatus;
   });
+
+  // Sort users
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    if (!sortColumn) return 0;
+
+    let aValue: string | boolean | Date;
+    let bValue: string | boolean | Date;
+
+    switch (sortColumn) {
+      case 'role':
+        aValue = a.role;
+        bValue = b.role;
+        break;
+      case 'status':
+        aValue = a.status;
+        bValue = b.status;
+        break;
+      case 'emailVerified':
+        aValue = a.isEmailVerified;
+        bValue = b.isEmailVerified;
+        break;
+      case 'lastLogin':
+        aValue = a.lastLoginAt === 'Never' ? new Date(0) : new Date(a.lastLoginAt);
+        bValue = b.lastLoginAt === 'Never' ? new Date(0) : new Date(b.lastLoginAt);
+        break;
+      default:
+        return 0;
+    }
+
+    if (typeof aValue === 'boolean') {
+      return sortDirection === 'asc'
+        ? (aValue === bValue ? 0 : aValue ? -1 : 1)
+        : (aValue === bValue ? 0 : aValue ? 1 : -1);
+    }
+
+    if (aValue instanceof Date && bValue instanceof Date) {
+      return sortDirection === 'asc'
+        ? aValue.getTime() - bValue.getTime()
+        : bValue.getTime() - aValue.getTime();
+    }
+
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      return sortDirection === 'asc'
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
+    }
+
+    return 0;
+  });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(sortedUsers.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedUsers = sortedUsers.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, roleFilter, statusFilter]);
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -520,17 +614,41 @@ const UserManagementPage: React.FC = () => {
                 <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                   Manager
                 </th>
-                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
-                  Role
+                <th
+                  className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                  onClick={() => handleSort('role')}
+                >
+                  <div className="flex items-center">
+                    Role
+                    {getSortIcon('role')}
+                  </div>
                 </th>
-                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
+                <th
+                  className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                  onClick={() => handleSort('status')}
+                >
+                  <div className="flex items-center">
+                    Status
+                    {getSortIcon('status')}
+                  </div>
                 </th>
-                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
-                  Email Verified
+                <th
+                  className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                  onClick={() => handleSort('emailVerified')}
+                >
+                  <div className="flex items-center">
+                    Email Verified
+                    {getSortIcon('emailVerified')}
+                  </div>
                 </th>
-                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
-                  Last Login
+                <th
+                  className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                  onClick={() => handleSort('lastLogin')}
+                >
+                  <div className="flex items-center">
+                    Last Login
+                    {getSortIcon('lastLogin')}
+                  </div>
                 </th>
                 <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                   Actions
@@ -538,7 +656,7 @@ const UserManagementPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {filteredUsers.map((user) => (
+              {paginatedUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-3 py-2">
                     <input
@@ -636,9 +754,79 @@ const UserManagementPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {sortedUsers.length > 0 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+            <div className="text-sm text-gray-600">
+              Showing {startIndex + 1} to {Math.min(endIndex, sortedUsers.length)} of {sortedUsers.length} managers
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="First page"
+              >
+                <ChevronsUpDown className="w-4 h-4 text-gray-600 rotate-90" />
+              </button>
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Previous page"
+              >
+                <ChevronLeft className="w-4 h-4 text-gray-600" />
+              </button>
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                        currentPage === pageNum
+                          ? 'bg-[#6566F1] text-white'
+                          : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Next page"
+              >
+                <ChevronRight className="w-4 h-4 text-gray-600" />
+              </button>
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Last page"
+              >
+                <ChevronsUpDown className="w-4 h-4 text-gray-600 -rotate-90" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {filteredUsers.length === 0 && (
+      {sortedUsers.length === 0 && (
         <div className="text-center py-12 bg-white rounded-2xl shadow-sm border-0">
           <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">No managers found</h3>
@@ -651,7 +839,7 @@ const UserManagementPage: React.FC = () => {
 
       {/* Create User Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Create New User</h2>

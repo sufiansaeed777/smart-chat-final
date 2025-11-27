@@ -81,6 +81,7 @@ const AnalyticsPage: React.FC = () => {
   const [timeRange, setTimeRange] = useState('30d');
   const [showAllBots, setShowAllBots] = useState(false);
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
+  const [showAllActivity, setShowAllActivity] = useState(false);
 
   useEffect(() => {
     const loadAnalytics = async () => {
@@ -289,7 +290,7 @@ const AnalyticsPage: React.FC = () => {
           </div>
           {analyticsData.growth.userGrowth.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={analyticsData.growth.userGrowth}>
+              <LineChart data={analyticsData.growth.userGrowth} style={{ outline: 'none' }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                 <XAxis dataKey="date" stroke="#6B7280" tick={{ fontSize: 12 }} />
                 <YAxis stroke="#6B7280" tick={{ fontSize: 12 }} />
@@ -297,7 +298,8 @@ const AnalyticsPage: React.FC = () => {
                   contentStyle={{
                     backgroundColor: '#FFF',
                     border: '1px solid #E5E7EB',
-                    borderRadius: '8px'
+                    borderRadius: '8px',
+                    outline: 'none'
                   }}
                 />
                 <Legend />
@@ -306,8 +308,8 @@ const AnalyticsPage: React.FC = () => {
                   dataKey="users"
                   stroke="#6566F1"
                   strokeWidth={2}
-                  dot={{ fill: '#6566F1', r: 4 }}
-                  activeDot={{ r: 6 }}
+                  dot={{ fill: '#6566F1', r: 4, strokeWidth: 0 }}
+                  activeDot={{ r: 6, stroke: 'none', strokeWidth: 0 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -328,7 +330,7 @@ const AnalyticsPage: React.FC = () => {
           </div>
           {analyticsData.growth.conversationVolume.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={analyticsData.growth.conversationVolume}>
+              <LineChart data={analyticsData.growth.conversationVolume} style={{ outline: 'none' }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                 <XAxis dataKey="date" stroke="#6B7280" tick={{ fontSize: 12 }} />
                 <YAxis stroke="#6B7280" tick={{ fontSize: 12 }} />
@@ -336,7 +338,8 @@ const AnalyticsPage: React.FC = () => {
                   contentStyle={{
                     backgroundColor: '#FFF',
                     border: '1px solid #E5E7EB',
-                    borderRadius: '8px'
+                    borderRadius: '8px',
+                    outline: 'none'
                   }}
                 />
                 <Legend />
@@ -345,8 +348,8 @@ const AnalyticsPage: React.FC = () => {
                   dataKey="conversations"
                   stroke="#10B981"
                   strokeWidth={2}
-                  dot={{ fill: '#10B981', r: 4 }}
-                  activeDot={{ r: 6 }}
+                  dot={{ fill: '#10B981', r: 4, strokeWidth: 0 }}
+                  activeDot={{ r: 6, stroke: 'none', strokeWidth: 0 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -449,23 +452,31 @@ const AnalyticsPage: React.FC = () => {
           </h3>
           {analyticsData.distribution.userRoleDistribution.length > 0 ? (
             <div className="space-y-4">
-              <ResponsiveContainer width="100%" height={150}>
-                <PieChart>
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart style={{ outline: 'none' }}>
                   <Pie
                     data={analyticsData.distribution.userRoleDistribution}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={(entry) => `${entry.role} (${entry.percentage}%)`}
-                    outerRadius={60}
+                    outerRadius={70}
                     fill="#8884d8"
                     dataKey="count"
+                    stroke="none"
                   >
                     {analyticsData.distribution.userRoleDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#FFF',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      outline: 'none'
+                    }}
+                    formatter={(value: number, name: string, props: any) => [value, props.payload.role]}
+                  />
                 </PieChart>
               </ResponsiveContainer>
               <div className="space-y-2">
@@ -478,7 +489,7 @@ const AnalyticsPage: React.FC = () => {
                       />
                       <span className="text-sm font-medium text-gray-700 capitalize">{role.role}</span>
                     </div>
-                    <span className="text-sm text-gray-600">{role.count}</span>
+                    <span className="text-sm text-gray-600">{role.count} ({role.percentage}%)</span>
                   </div>
                 ))}
               </div>
@@ -595,7 +606,7 @@ const AnalyticsPage: React.FC = () => {
             </thead>
             <tbody>
               {analyticsData.recentActivity.length > 0 ? (
-                analyticsData.recentActivity.map((activity) => (
+                analyticsData.recentActivity.slice(0, showAllActivity ? analyticsData.recentActivity.length : 10).map((activity) => (
                   <tr key={activity.id} className="border-b border-gray-100">
                     <td className="py-3 px-4 text-sm text-gray-900">{activity.bot}</td>
                     <td className="py-3 px-4 text-sm text-gray-600">{activity.user}</td>
@@ -620,6 +631,16 @@ const AnalyticsPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+        {analyticsData.recentActivity.length > 10 && (
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => setShowAllActivity(!showAllActivity)}
+              className="text-sm font-medium text-[#6566F1] hover:text-[#5A5BD9] transition-colors"
+            >
+              {showAllActivity ? 'Show Less' : `See More (${analyticsData.recentActivity.length - 10} more)`}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Bot Performance Detailed View Modal */}

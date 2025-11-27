@@ -20,7 +20,11 @@ import {
   ArrowDown,
   Minus,
   Star,
-  Activity
+  Activity,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsUpDown,
+  Search
 } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
 
@@ -44,6 +48,16 @@ const ChatbotAnalyticsPage: React.FC = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
   const [selectedBotData, setSelectedBotData] = useState<BotAnalytics | null>(null);
+
+  // Filter state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [satisfactionFilter, setSatisfactionFilter] = useState<string>('all');
+  const [trendFilter, setTrendFilter] = useState<string>('all');
+  const [resolutionFilter, setResolutionFilter] = useState<string>('all');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
 
   useEffect(() => {
     const loadAnalytics = async () => {
@@ -185,6 +199,33 @@ const ChatbotAnalyticsPage: React.FC = () => {
     document.body.removeChild(a);
   };
 
+  // Filter analytics data
+  const filteredAnalytics = analytics.filter(bot => {
+    const matchesSearch = bot.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSatisfaction = satisfactionFilter === 'all' ||
+      (satisfactionFilter === 'excellent' && bot.satisfaction >= 4.5) ||
+      (satisfactionFilter === 'good' && bot.satisfaction >= 4.0 && bot.satisfaction < 4.5) ||
+      (satisfactionFilter === 'needs_improvement' && bot.satisfaction < 4.0);
+    const matchesTrend = trendFilter === 'all' || bot.trend === trendFilter;
+    const matchesResolution = resolutionFilter === 'all' ||
+      (resolutionFilter === 'high' && bot.resolutionRate >= 90) ||
+      (resolutionFilter === 'medium' && bot.resolutionRate >= 80 && bot.resolutionRate < 90) ||
+      (resolutionFilter === 'low' && bot.resolutionRate < 80);
+
+    return matchesSearch && matchesSatisfaction && matchesTrend && matchesResolution;
+  });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredAnalytics.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedAnalytics = filteredAnalytics.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, satisfactionFilter, trendFilter, resolutionFilter]);
+
   const totalConversations = analytics.reduce((sum, bot) => sum + bot.conversations, 0);
   const totalUsers = analytics.reduce((sum, bot) => sum + bot.users, 0);
   const avgSatisfaction = analytics.reduce((sum, bot) => sum + bot.satisfaction, 0) / analytics.length;
@@ -307,11 +348,63 @@ const ChatbotAnalyticsPage: React.FC = () => {
       {/* Bot Performance Table */}
       <div className="bg-white rounded-2xl shadow-sm border-0 overflow-hidden">
         <div className="p-6 border-b border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 flex items-center">
-            <BarChart3 className="w-6 h-6 mr-2 text-[#6566F1]" />
-            Bot Performance
-          </h3>
-          <p className="text-gray-600 mt-1">Detailed metrics for each chatbot</p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 flex items-center">
+                <BarChart3 className="w-6 h-6 mr-2 text-[#6566F1]" />
+                Bot Performance
+              </h3>
+              <p className="text-gray-600 mt-1">Detailed metrics for each chatbot</p>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-col lg:flex-row gap-3">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search bots..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <select
+                value={satisfactionFilter}
+                onChange={(e) => setSatisfactionFilter(e.target.value)}
+                className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900"
+              >
+                <option value="all">All Satisfaction</option>
+                <option value="excellent">Excellent (4.5+)</option>
+                <option value="good">Good (4.0-4.4)</option>
+                <option value="needs_improvement">Needs Improvement (&lt;4.0)</option>
+              </select>
+              <select
+                value={trendFilter}
+                onChange={(e) => setTrendFilter(e.target.value)}
+                className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900"
+              >
+                <option value="all">All Trends</option>
+                <option value="up">Trending Up</option>
+                <option value="down">Trending Down</option>
+                <option value="stable">Stable</option>
+              </select>
+              <select
+                value={resolutionFilter}
+                onChange={(e) => setResolutionFilter(e.target.value)}
+                className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900"
+              >
+                <option value="all">All Resolution Rates</option>
+                <option value="high">High (90%+)</option>
+                <option value="medium">Medium (80-89%)</option>
+                <option value="low">Low (&lt;80%)</option>
+              </select>
+            </div>
+          </div>
         </div>
         <div className="overflow-x-auto overflow-y-visible w-full">
           <table className="w-full" style={{ minWidth: '700px' }}>
@@ -344,7 +437,7 @@ const ChatbotAnalyticsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {analytics.map((bot) => (
+              {paginatedAnalytics.map((bot) => (
                 <tr key={bot.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-0.5 sm:px-1 md:px-2 lg:px-3 xl:px-4 py-1.5 sm:py-2 md:py-3 whitespace-nowrap">
                     <div className="flex items-center">
@@ -420,6 +513,84 @@ const ChatbotAnalyticsPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {filteredAnalytics.length > 0 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+            <div className="text-sm text-gray-600">
+              Showing {startIndex + 1} to {Math.min(endIndex, filteredAnalytics.length)} of {filteredAnalytics.length} bots
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="First page"
+              >
+                <ChevronsUpDown className="w-4 h-4 text-gray-600 rotate-90" />
+              </button>
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Previous page"
+              >
+                <ChevronLeft className="w-4 h-4 text-gray-600" />
+              </button>
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                        currentPage === pageNum
+                          ? 'bg-[#6566F1] text-white'
+                          : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Next page"
+              >
+                <ChevronRight className="w-4 h-4 text-gray-600" />
+              </button>
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Last page"
+              >
+                <ChevronsUpDown className="w-4 h-4 text-gray-600 -rotate-90" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* No results */}
+        {filteredAnalytics.length === 0 && (
+          <div className="p-8 text-center">
+            <Bot className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500">No bots match your filters</p>
+          </div>
+        )}
       </div>
 
       {/* Performance Insights */}
