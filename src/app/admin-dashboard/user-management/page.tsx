@@ -66,7 +66,9 @@ const UserManagementPage: React.FC = () => {
     firstName: '',
     lastName: '',
     role: 'user' as 'admin' | 'manager' | 'user',
-    password: ''
+    password: '',
+    status: 'active' as 'active' | 'inactive' | 'pending',
+    isEmailVerified: false
   });
 
   // Sorting state
@@ -291,7 +293,7 @@ const UserManagementPage: React.FC = () => {
         const data = await response.json();
         alert(`User created successfully!${data.defaultPassword ? `\n\nDefault password: ${data.defaultPassword}\n\nPlease share this with the user.` : ''}`);
         setShowCreateModal(false);
-        setNewUser({ email: '', firstName: '', lastName: '', role: 'user', password: '' });
+        setNewUser({ email: '', firstName: '', lastName: '', role: 'user', password: '', status: 'active', isEmailVerified: false });
         // Refresh user list
         const usersResponse = await fetch('/api/admin/users');
         if (usersResponse.ok) {
@@ -905,6 +907,36 @@ const UserManagementPage: React.FC = () => {
                   <option value="manager">Manager</option>
                   <option value="admin">Admin</option>
                 </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Status
+                  </label>
+                  <select
+                    value={newUser.status}
+                    onChange={(e) => setNewUser({ ...newUser, status: e.target.value as 'active' | 'inactive' | 'pending' })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Email Verification
+                  </label>
+                  <select
+                    value={newUser.isEmailVerified ? 'verified' : 'unverified'}
+                    onChange={(e) => setNewUser({ ...newUser, isEmailVerified: e.target.value === 'verified' })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
+                  >
+                    <option value="verified">Verified</option>
+                    <option value="unverified">Unverified</option>
+                  </select>
+                </div>
               </div>
 
               <div>

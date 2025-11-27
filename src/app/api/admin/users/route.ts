@@ -45,21 +45,31 @@ export async function GET(request: NextRequest) {
     query = query.orderBy('user.createdAt', 'DESC');
     const users = await query.getMany();
 
-    const sanitizedUsers = users.map(user => ({
-      id: user.id,
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      email: user.email,
-      role: user.role,
-      status: user.isActive ? 'active' : 'inactive',
-      isEmailVerified: user.isEmailVerified || false,
-      lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toISOString() : 'Never',
-      subscriptionPlan: user.subscriptionPlan || 'free',
-      subscriptionStatus: user.subscriptionStatus,
-      messagesUsedThisMonth: user.messagesUsedThisMonth || 0,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt
-    }));
+    const sanitizedUsers = users.map(user => {
+      // Determine status: active (isActive=true), pending (not active + not verified), inactive (not active + verified)
+      let status = 'inactive';
+      if (user.isActive) {
+        status = 'active';
+      } else if (!user.isEmailVerified) {
+        status = 'pending';
+      }
+
+      return {
+        id: user.id,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email,
+        role: user.role,
+        status,
+        isEmailVerified: user.isEmailVerified || false,
+        lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toISOString() : 'Never',
+        subscriptionPlan: user.subscriptionPlan || 'free',
+        subscriptionStatus: user.subscriptionStatus,
+        messagesUsedThisMonth: user.messagesUsedThisMonth || 0,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -112,10 +122,19 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Cannot change your own role' }, { status: 400 });
     }
 
-    // Map status to isActive
+    // Map status to isActive and isEmailVerified
     const dbUpdates: any = { ...updates };
     if (updates.status) {
-      dbUpdates.isActive = updates.status === 'active';
+      if (updates.status === 'active') {
+        dbUpdates.isActive = true;
+      } else if (updates.status === 'pending') {
+        // Pending = not active + not verified
+        dbUpdates.isActive = false;
+        dbUpdates.isEmailVerified = false;
+      } else {
+        // Inactive = not active (keep email verification status)
+        dbUpdates.isActive = false;
+      }
       delete dbUpdates.status;
     }
 

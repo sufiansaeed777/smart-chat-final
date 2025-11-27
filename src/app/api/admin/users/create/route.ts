@@ -26,11 +26,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
 
-    const { email, firstName, lastName, role, password } = await request.json();
+    const { email, firstName, lastName, role, password, status, isEmailVerified } = await request.json();
 
     // Validate required fields
     if (!email || !firstName || !lastName || !role) {
       return NextResponse.json({ error: 'Missing required fields: email, firstName, lastName, and role are required' }, { status: 400 });
+    }
+
+    // Validate status if provided
+    const validStatuses = ['active', 'inactive', 'pending'];
+    if (status && !validStatuses.includes(status)) {
+      return NextResponse.json({ error: 'Invalid status. Must be: active, inactive, or pending' }, { status: 400 });
     }
 
     // Validate email format
@@ -58,6 +64,15 @@ export async function POST(request: NextRequest) {
     const defaultPassword = password || 'ChangeMe123!';
     const hashedPassword = await bcrypt.hash(defaultPassword, 12);
 
+    // Determine isActive and isEmailVerified based on status
+    // status: 'active' -> isActive: true
+    // status: 'inactive' -> isActive: false (keep email verification as provided)
+    // status: 'pending' -> isActive: false AND isEmailVerified: false
+    const userStatus = status || 'active';
+    const isActive = userStatus === 'active';
+    // If status is 'pending', force isEmailVerified to false
+    const emailVerified = userStatus === 'pending' ? false : (isEmailVerified === true);
+
     // Create new user
     const newUser = userRepository.create({
       email: email.toLowerCase(),
@@ -65,8 +80,8 @@ export async function POST(request: NextRequest) {
       lastName,
       role,
       password: hashedPassword,
-      isEmailVerified: false,
-      isActive: true
+      isEmailVerified: emailVerified,
+      isActive
     });
 
     const savedUser = await userRepository.save(newUser);
