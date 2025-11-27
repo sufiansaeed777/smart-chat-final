@@ -5,10 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  CreditCard, 
-  DollarSign, 
-  Users, 
+import {
+  CreditCard,
+  DollarSign,
+  Users,
   Calendar,
   Search,
   Filter,
@@ -17,7 +17,9 @@ import {
   XCircle,
   AlertTriangle,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Edit,
+  X
 } from 'lucide-react';
 
 interface Subscription {
@@ -39,12 +41,86 @@ interface Subscription {
   updatedAt: string;
 }
 
+const AVAILABLE_PLANS = [
+  { id: 'free', name: 'Free', description: 'Basic features, limited usage' },
+  { id: 'starter', name: 'Starter', description: '$29/month - For small teams' },
+  { id: 'professional', name: 'Professional', description: '$79/month - For growing businesses' },
+  { id: 'enterprise', name: 'Enterprise', description: '$199/month - For large organizations' }
+];
+
+const SUBSCRIPTION_STATUSES = [
+  { id: 'active', name: 'Active' },
+  { id: 'past_due', name: 'Past Due' },
+  { id: 'cancelled', name: 'Cancelled' },
+  { id: 'suspended', name: 'Suspended' },
+  { id: 'trialing', name: 'Trialing' }
+];
+
 export default function AdminBillingManagement() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [planFilter, setPlanFilter] = useState<string>('all');
+
+  // Plan assignment modal state
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<Subscription | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const openPlanModal = (subscription: Subscription) => {
+    setSelectedUser(subscription);
+    setSelectedPlan(subscription.planName.toLowerCase());
+    setSelectedStatus(subscription.status);
+    setShowPlanModal(true);
+  };
+
+  const closePlanModal = () => {
+    setShowPlanModal(false);
+    setSelectedUser(null);
+    setSelectedPlan('');
+    setSelectedStatus('');
+  };
+
+  const handleUpdatePlan = async () => {
+    if (!selectedUser || !selectedPlan) return;
+
+    setIsUpdating(true);
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: selectedUser.managerId,
+          updates: {
+            subscriptionPlan: selectedPlan,
+            subscriptionStatus: selectedStatus || 'active'
+          }
+        })
+      });
+
+      if (response.ok) {
+        // Update local state
+        setSubscriptions(prev => prev.map(sub =>
+          sub.id === selectedUser.id
+            ? { ...sub, planName: selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1), status: selectedStatus as any }
+            : sub
+        ));
+        closePlanModal();
+        alert('Plan updated successfully!');
+      } else {
+        const error = await response.json();
+        alert(`Failed to update plan: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Error updating plan:', error);
+      alert('An error occurred while updating the plan');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   // Fetch subscriptions from API
   useEffect(() => {
@@ -321,11 +397,14 @@ export default function AdminBillingManagement() {
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-2">
-                        <Button size="sm" variant="outline">
-                          View
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <MoreVertical className="h-4 w-4" />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openPlanModal(subscription)}
+                          className="flex items-center gap-1"
+                        >
+                          <Edit className="h-3 w-3" />
+                          Change Plan
                         </Button>
                       </div>
                     </td>
@@ -342,6 +421,108 @@ export default function AdminBillingManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Plan Assignment Modal */}
+      {showPlanModal && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Assign Plan</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  {selectedUser.managerName} ({selectedUser.managerEmail})
+                </p>
+              </div>
+              <button
+                onClick={closePlanModal}
+                className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Plan Selection */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Select Plan
+                </label>
+                <div className="space-y-2">
+                  {AVAILABLE_PLANS.map((plan) => (
+                    <label
+                      key={plan.id}
+                      className={`flex items-center p-3 border rounded-lg cursor-pointer transition-all ${
+                        selectedPlan === plan.id
+                          ? 'border-[#6566F1] bg-[#6566F1]/5 ring-2 ring-[#6566F1]/20'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="plan"
+                        value={plan.id}
+                        checked={selectedPlan === plan.id}
+                        onChange={(e) => setSelectedPlan(e.target.value)}
+                        className="sr-only"
+                      />
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{plan.name}</p>
+                        <p className="text-sm text-gray-500">{plan.description}</p>
+                      </div>
+                      {selectedPlan === plan.id && (
+                        <CheckCircle className="w-5 h-5 text-[#6566F1]" />
+                      )}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Status Selection */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Subscription Status
+                </label>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
+                >
+                  {SUBSCRIPTION_STATUSES.map((status) => (
+                    <option key={status.id} value={status.id}>
+                      {status.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Warning */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <p className="text-sm text-yellow-800">
+                  <strong>Note:</strong> This will manually override the user&apos;s subscription.
+                  This bypasses Stripe billing - use for special cases only.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 mt-6">
+              <Button
+                onClick={handleUpdatePlan}
+                disabled={isUpdating || !selectedPlan}
+                className="flex-1 bg-[#6566F1] hover:bg-[#5A5BD9] text-white"
+              >
+                {isUpdating ? 'Updating...' : 'Update Plan'}
+              </Button>
+              <Button
+                onClick={closePlanModal}
+                variant="outline"
+                disabled={isUpdating}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
