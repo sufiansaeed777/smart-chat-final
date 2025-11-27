@@ -511,20 +511,14 @@ const TeamManagement = () => {
         <p className="text-sm text-gray-600 mt-1">Manage your agents, assignments, and team structure.</p>
       </div>
 
-      {/* Main Content - Full Width Team Members */}
-      <Card className="bg-white rounded-2xl shadow-sm border-0">
-        <CardHeader className="p-6 pb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center space-x-2">
-                <Users className="w-5 h-5 text-gray-600" />
-                <CardTitle className="text-lg font-bold text-gray-900">
-                  Team Members ({teamMembers.length})
-                </CardTitle>
-              </div>
-              <p className="text-sm text-gray-600 mt-1">Manage your support team and their assignments.</p>
-            </div>
-            {/* View Toggle */}
+      {/* Main Content - Team Members Table */}
+      <div>
+        <h2 className="text-2xl font-semibold text-gray-900 mb-1">Team Members ({teamMembers.length})</h2>
+        <p className="text-[#64748b] mb-5">Manage your support team and their assignments.</p>
+
+        <div className="bg-white rounded-xl overflow-hidden shadow-md border border-gray-100">
+          {/* View Toggle - Above Table */}
+          <div className="flex items-center justify-end p-4 border-b border-gray-100">
             <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('byBot')}
@@ -550,8 +544,6 @@ const TeamManagement = () => {
               </button>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="p-6 pt-0">
           {loadingMembers ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto mb-2"></div>
@@ -653,176 +645,145 @@ const TeamManagement = () => {
               )}
             </div>
           ) : (
-            /* All Members View */
-            <div className="space-y-4">
-              {teamMembers.map((member) => (
-                <div
-                  key={member.id}
-                  className="p-4 rounded-xl border border-gray-200 bg-white hover:border-[#5A5BD8] hover:shadow-md transition-all duration-200"
-                >
-                  <div className="flex items-center justify-between">
-                    <div
-                      className="flex items-center space-x-4 flex-1 cursor-pointer"
-                      onClick={() => {
-                        setSelectedAgent(member.id);
-                        setIsDetailModalOpen(true);
-                      }}
-                    >
-                      {/* Avatar */}
-                      <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-sm font-medium text-gray-600">
+            /* All Members View - Table Layout */
+            <table className="w-full">
+              <thead className="bg-[#f8fafc]">
+                <tr>
+                  <th className="px-4 py-4 text-left text-sm font-semibold text-[#475569]">User</th>
+                  <th className="px-4 py-4 text-left text-sm font-semibold text-[#475569]">Status</th>
+                  <th className="px-4 py-4 text-left text-sm font-semibold text-[#475569]">Conv</th>
+                  <th className="px-4 py-4 text-left text-sm font-semibold text-[#475569]">CSAT</th>
+                  <th className="px-4 py-4 text-left text-sm font-semibold text-[#475569]">Issues</th>
+                  <th className="px-4 py-4 text-left text-sm font-semibold text-[#475569]">Bots</th>
+                  <th className="px-4 py-4 text-left text-sm font-semibold text-[#475569]">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {teamMembers.map((member, index) => (
+                  <tr
+                    key={member.id}
+                    className={`border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors ${
+                      index === teamMembers.length - 1 ? 'border-b-0' : ''
+                    }`}
+                  >
+                    {/* User Column */}
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-[42px] h-[42px] bg-[#e2e8f0] rounded-full flex items-center justify-center font-semibold text-[#475569] text-sm flex-shrink-0">
                           {member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                        </span>
-                      </div>
-
-                      {/* Member Info */}
-                      <div className="space-y-1 flex-1">
-                        <h3 className="text-sm font-semibold text-gray-900">{member.name}</h3>
-                        <p className="text-xs text-gray-600">{member.email}</p>
-                        <div className="flex items-center space-x-2">
-                          <Badge className={`text-xs font-medium px-2 py-1 transition-colors duration-200 shadow-sm ${
-                            member.onlineStatus === 'online'
-                              ? 'bg-green-500 text-white border-green-600'
-                              : 'bg-gray-400 text-white border-gray-500'
-                          }`}>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-[#1e293b]">{member.name}</div>
+                          <div className="text-[13px] text-[#64748b]">{member.email}</div>
+                          <span className="inline-block mt-1 px-2.5 py-0.5 bg-[#e2e8f0] text-[#475569] text-[11px] rounded-full">
                             {member.onlineStatus}
-                          </Badge>
+                          </span>
                         </div>
                       </div>
+                    </td>
 
-                      {/* Performance Stats */}
-                      <div className="text-center px-4 border-l border-gray-200">
-                        {member.status === 'accepted' ? (
-                          <>
-                            <div className="flex items-center space-x-1 justify-center">
-                              <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                              <span className="text-sm font-bold text-gray-900">{typeof member.rating === 'number' ? member.rating.toFixed(1) : member.rating}</span>
-                            </div>
-                            <p className="text-xs text-gray-600 mt-1">{member.totalChats || 0} chats</p>
-                          </>
-                        ) : (
-                          <div className="text-xs text-gray-500 italic">
-                            Pending
-                          </div>
-                        )}
-                      </div>
+                    {/* Status Column */}
+                    <td className="px-4 py-4">
+                      <span className={`inline-flex items-center gap-1 text-sm ${
+                        member.status === 'accepted'
+                          ? 'text-green-600'
+                          : member.status === 'pending'
+                          ? 'text-yellow-600'
+                          : 'text-red-600'
+                      }`}>
+                        {member.status === 'accepted' ? '🟢' : member.status === 'pending' ? '🕓' : '🔴'}
+                        <span className="capitalize">{member.status === 'accepted' ? 'active' : member.status}</span>
+                      </span>
+                    </td>
 
-                      {/* Issues Handled */}
-                      <div className="text-center px-4 border-l border-gray-200">
-                        <div className="flex items-center space-x-1 justify-center">
-                          <AlertCircle className="w-4 h-4 text-blue-600" />
-                          <span className="text-sm font-bold text-gray-900">{member.issuesHandled || 0}</span>
-                        </div>
-                        <p className="text-xs text-gray-600 mt-1">Issues</p>
-                      </div>
+                    {/* Conversations Column */}
+                    <td className="px-4 py-4">
+                      <span className="text-sm text-[#1e293b]">💬 {member.totalChats || 0}</span>
+                    </td>
 
-                      {/* Bots Assigned */}
-                      <div className="text-center px-4 border-l border-gray-200">
-                        <div className="flex items-center space-x-1 justify-center">
-                          <Bot className="w-4 h-4 text-purple-600" />
-                          <span className="text-sm font-bold text-gray-900">{member.botsAssigned || 0}</span>
-                        </div>
-                        <p className="text-xs text-gray-600 mt-1">Bots</p>
-                      </div>
-                    </div>
+                    {/* CSAT Column */}
+                    <td className="px-4 py-4">
+                      <span className="text-sm text-[#1e293b]">⭐ {typeof member.rating === 'number' ? member.rating.toFixed(1) : member.rating || '0.0'}</span>
+                    </td>
 
-                    {/* Actions */}
-                    <div className="flex items-center space-x-2 ml-4">
-                      <Tooltip content="Edit user" position="top">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
+                    {/* Issues Column */}
+                    <td className="px-4 py-4">
+                      <span className="text-sm text-[#1e293b]">🐞 {member.issuesHandled || 0}</span>
+                    </td>
+
+                    {/* Bots Column */}
+                    <td className="px-4 py-4">
+                      <span className="text-sm text-[#1e293b]">🤖 {member.botsAssigned || 0}</span>
+                    </td>
+
+                    {/* Actions Column */}
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-1.5">
+                        {/* Edit Button */}
+                        <button
+                          onClick={() => {
                             setSelectedAgent(member.id);
                             setIsDetailModalOpen(true);
                           }}
-                          className="p-2 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 rounded-lg transition-colors duration-200"
+                          className="w-[34px] h-[34px] rounded-lg border border-[#e2e8f0] bg-white flex items-center justify-center hover:bg-[#f1f5f9] transition-colors"
+                          title="Edit"
                         >
-                          <Edit className="w-4 h-4 text-gray-600" />
-                        </Button>
-                      </Tooltip>
-                      <Tooltip 
-                        content={member.status === 'accepted' ? "Deactivate user" : "Activate user"} 
-                        position="top"
-                      >
-                        <Button
-                          variant="outline"
-                          size="sm"
+                          ✏️
+                        </button>
+
+                        {/* View/Toggle Button */}
+                        <button
                           disabled={togglingUser === member.id}
-                          onClick={async (e) => {
-                            e.stopPropagation();
+                          onClick={async () => {
                             setTogglingUser(member.id);
                             try {
                               const response = await fetch('/api/manager/toggle-user-status', {
                                 method: 'POST',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                },
+                                headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                   userId: member.id,
                                   currentStatus: member.status
                                 }),
                               });
-
                               if (response.ok) {
-                                const data = await response.json();
-                                setTeamMembers(prevMembers =>
-                                  prevMembers.map(prevMember =>
-                                    prevMember.id === member.id
-                                      ? { ...prevMember, status: data.newStatus }
-                                      : prevMember
-                                  )
-                                );
                                 fetchTeamMembers();
                               } else {
                                 const errorData = await response.json();
-                                showToast(`Failed to toggle user status: ${errorData.error}`, 'error');
+                                showToast(`Failed: ${errorData.error}`, 'error');
                               }
-                            } catch (error) {
-                              showToast('Network error. Please try again.', 'error');
+                            } catch {
+                              showToast('Network error', 'error');
                             } finally {
                               setTogglingUser(null);
                             }
                           }}
-                          className={`p-2 rounded-lg transition-colors duration-200 ${
-                            togglingUser === member.id
-                              ? 'bg-red-50 text-red-600 border-red-300'
-                              : member.status === 'accepted'
-                                ? 'hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300'
-                                : 'hover:bg-green-50 hover:text-green-600 hover:border-green-300'
-                          }`}
+                          className="w-[34px] h-[34px] rounded-lg border border-[#e2e8f0] bg-white flex items-center justify-center hover:bg-[#f1f5f9] transition-colors disabled:opacity-50"
+                          title={member.status === 'accepted' ? 'Deactivate' : 'Activate'}
                         >
                           {togglingUser === member.id ? (
-                            <Loader2 className="w-4 h-4 text-red-600 animate-spin" />
-                          ) : member.status === 'accepted' ? (
-                            <UserX className="w-4 h-4 text-orange-600" />
+                            <Loader2 className="w-4 h-4 animate-spin text-gray-500" />
                           ) : (
-                            <UserCheck2 className="w-4 h-4 text-green-600" />
+                            '👤'
                           )}
-                        </Button>
-                      </Tooltip>
-                      <Tooltip content="Delete user" position="top">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDeleteModal({ id: member.id, name: member.name });
-                          }}
-                          className="p-2 hover:bg-red-50 hover:text-red-600 hover:border-red-300 rounded-lg transition-colors duration-200"
+                        </button>
+
+                        {/* Delete Button */}
+                        <button
+                          onClick={() => openDeleteModal({ id: member.id, name: member.name })}
+                          className="w-[34px] h-[34px] rounded-lg border border-[#e2e8f0] bg-white flex items-center justify-center hover:bg-[#f1f5f9] transition-colors"
+                          title="Delete"
                         >
-                          <Trash2 className="w-4 h-4 text-gray-600" />
-                        </Button>
-                      </Tooltip>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                          🗑️
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Add New Member Modal */}
       {isAddModalOpen && (
