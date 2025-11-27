@@ -1,119 +1,201 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Navigation from '@/components/Navigation';
-import Footer from '@/components/Footer';
 
 export default function CookiePolicyPage() {
+  const [showBanner, setShowBanner] = useState(false);
+
+  useEffect(() => {
+    // Check if cookies already accepted
+    const accepted = document.cookie.includes('sc_cookies_accepted=yes');
+    if (!accepted) {
+      setShowBanner(true);
+    }
+  }, []);
+
+  const handleAccept = () => {
+    // Set cookie for 1 year
+    const d = new Date();
+    d.setTime(d.getTime() + 365 * 24 * 60 * 60 * 1000);
+    document.cookie = `sc_cookies_accepted=yes; expires=${d.toUTCString()}; path=/; SameSite=Lax`;
+    setShowBanner(false);
+  };
+
+  const handleManage = () => {
+    window.location.href = '/contact#cookie-settings';
+  };
+
   return (
-    <div className="min-h-screen bg-white">
-      <Navigation />
-
-      <main className="py-16 mt-16">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Cookie Policy</h1>
-            <p className="text-gray-600 mb-8">Last updated: January 2025</p>
-
-            <div className="prose max-w-none">
-              <h2>1. What Are Cookies</h2>
-              <p>
-                Cookies are small text files that are stored on your device when you visit a website. They help the
-                website remember information about your visit, such as your preferences and login status.
-              </p>
-
-              <h2>2. How We Use Cookies</h2>
-              <p>We use cookies for the following purposes:</p>
-              <ul>
-                <li><strong>Authentication:</strong> To keep you logged in across sessions</li>
-                <li><strong>Preferences:</strong> To remember your settings and preferences</li>
-                <li><strong>Analytics:</strong> To understand how users interact with our service</li>
-                <li><strong>Security:</strong> To protect against fraudulent activity</li>
-                <li><strong>Performance:</strong> To optimize loading times and user experience</li>
-              </ul>
-
-              <h2>3. Types of Cookies We Use</h2>
-
-              <h3>Essential Cookies</h3>
-              <p>
-                These cookies are necessary for the website to function properly. They enable core functionality such
-                as security, authentication, and load balancing.
-              </p>
-
-              <h3>Performance Cookies</h3>
-              <p>
-                These cookies collect information about how you use our website, such as which pages you visit most often.
-                This data helps us improve how our website works.
-              </p>
-
-              <h3>Functionality Cookies</h3>
-              <p>
-                These cookies allow our website to remember choices you make (such as your username, language, or region)
-                and provide enhanced, personalized features.
-              </p>
-
-              <h3>Analytics Cookies</h3>
-              <p>
-                We use analytics cookies to collect information about visitor behavior. This helps us understand which
-                pages are popular and identify areas for improvement.
-              </p>
-
-              <h2>4. Third-Party Cookies</h2>
-              <p>
-                We may use third-party services that set cookies on your device. These include:
-              </p>
-              <ul>
-                <li><strong>Google Analytics:</strong> For website analytics</li>
-                <li><strong>Stripe:</strong> For payment processing</li>
-                <li><strong>OpenAI:</strong> For AI chat functionality</li>
-              </ul>
-
-              <h2>5. Managing Cookies</h2>
-              <p>
-                Most web browsers allow you to control cookies through their settings. You can typically:
-              </p>
-              <ul>
-                <li>View what cookies are stored</li>
-                <li>Delete existing cookies</li>
-                <li>Block cookies from being set</li>
-                <li>Block third-party cookies</li>
-              </ul>
-              <p>
-                Note that blocking or deleting cookies may impact the functionality of our service. Some features may
-                not work properly without cookies enabled.
-              </p>
-
-              <h2>6. Cookie Consent</h2>
-              <p>
-                When you first visit our website, you will see a cookie consent banner. By clicking "Accept" or continuing
-                to use the site, you consent to our use of cookies as described in this policy.
-              </p>
-
-              <h2>7. Do Not Track Signals</h2>
-              <p>
-                Some browsers have a "Do Not Track" feature. We currently do not respond to Do Not Track signals, but
-                we respect your right to control your data through browser settings.
-              </p>
-
-              <h2>8. Updates to This Policy</h2>
-              <p>
-                We may update this Cookie Policy from time to time. Any changes will be posted on this page with an
-                updated revision date.
-              </p>
-
-              <h2>9. Contact Us</h2>
-              <p>
-                If you have questions about our use of cookies, contact us at:
-                <br />
-                <a href="mailto:privacy@smartchat.com" className="text-blue-600 hover:underline">privacy@smartchat.com</a>
+    <div className="min-h-screen" style={{ background: '#f8fafc', fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}>
+      {/* Header */}
+      <header
+        className="border-b"
+        style={{
+          background: 'linear-gradient(90deg, rgba(37,99,235,0.06), transparent)',
+          borderColor: 'rgba(15,23,42,0.04)',
+          padding: '36px 18px'
+        }}
+      >
+        <div className="max-w-[980px] mx-auto px-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-[52px] h-[52px] rounded-[10px] flex items-center justify-center text-white font-bold text-lg"
+              style={{ background: 'linear-gradient(135deg, #2563eb, #7c3aed)' }}
+            >
+              SC
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-[28px] font-bold text-[#0f172a] mb-1">Cookie Policy</h1>
+              <p className="text-[#6b7280] text-sm md:text-base">
+                This Cookie Policy explains how <strong>Smart Chat</strong> uses cookies and similar technologies on{' '}
+                <Link href="/" className="text-[#2563eb] hover:underline no-underline">
+                  smart-chat.vercel.app
+                </Link>.
               </p>
             </div>
           </div>
         </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-[980px] mx-auto px-4 py-7">
+        <article
+          className="bg-white rounded-xl p-6 md:p-9"
+          style={{
+            boxShadow: '0 6px 18px rgba(2,6,23,0.06)',
+            border: '1px solid rgba(2,6,23,0.04)'
+          }}
+        >
+          {/* Section 1 */}
+          <section className="mb-5">
+            <h2 className="text-xl font-semibold text-[#0f172a] mb-3">1. What are cookies?</h2>
+            <p className="text-[#6b7280] leading-relaxed">
+              Cookies are small text files placed on your device (computer, smartphone, or other) when you visit a website.
+              They help websites remember information about your visit, which can make your next visit easier and the site more useful.
+            </p>
+          </section>
+
+          {/* Section 2 */}
+          <section className="mb-5">
+            <h2 className="text-xl font-semibold text-[#0f172a] mb-3">2. Which cookies do we use?</h2>
+            <p className="text-[#6b7280] leading-relaxed mb-3">We use the following types of cookies:</p>
+            <ul className="list-disc pl-5 text-[#6b7280] space-y-2">
+              <li><strong className="text-[#0f172a]">Strictly necessary:</strong> Required for basic site functionality (e.g., session, authentication). These cannot be turned off in our systems.</li>
+              <li><strong className="text-[#0f172a]">Performance & analytics:</strong> Help us understand how visitors interact with the site (page views, error reporting, performance). Example: Google Analytics cookies.</li>
+              <li><strong className="text-[#0f172a]">Functional:</strong> Remember user choices (language, preferences) to improve your experience.</li>
+              <li><strong className="text-[#0f172a]">Advertising & targeting:</strong> Used to deliver relevant advertisements and limit ad frequency. These may be set by third parties.</li>
+            </ul>
+          </section>
+
+          {/* Section 3 */}
+          <section className="mb-5">
+            <h2 className="text-xl font-semibold text-[#0f172a] mb-3">3. Third-party cookies</h2>
+            <p className="text-[#6b7280] leading-relaxed">
+              We may allow third-party services (such as analytics or advertising providers) to set cookies on our site.
+              These services have their own cookie policies and may use the data they collect in accordance with their terms.
+            </p>
+          </section>
+
+          {/* Section 4 */}
+          <section className="mb-5">
+            <h2 className="text-xl font-semibold text-[#0f172a] mb-3">4. How long do cookies last?</h2>
+            <p className="text-[#6b7280] leading-relaxed">
+              Some cookies expire when you close your browser (session cookies). Others remain on your device for a set period (persistent cookies).
+              The lifetime depends on the cookie — typically from a few minutes to up to 2 years for certain advertising cookies.
+            </p>
+          </section>
+
+          {/* Section 5 */}
+          <section className="mb-5">
+            <h2 className="text-xl font-semibold text-[#0f172a] mb-3">5. How to control or delete cookies</h2>
+            <p className="text-[#6b7280] leading-relaxed mb-3">
+              You can control cookies through your browser settings. You may delete cookies, block cookies, or receive warnings before a cookie is stored.
+              Note that blocking or deleting cookies may cause some parts of the site to stop working correctly.
+            </p>
+            <p className="text-[#6b7280] leading-relaxed mb-2">Common browser cookie settings:</p>
+            <ul className="list-disc pl-5 text-[#6b7280] space-y-1">
+              <li>Chrome: Settings → Privacy and security → Cookies and other site data</li>
+              <li>Firefox: Options → Privacy & Security → Cookies and Site Data</li>
+              <li>Edge: Settings → Cookies and site permissions</li>
+              <li>Safari: Preferences → Privacy</li>
+            </ul>
+          </section>
+
+          {/* Section 6 */}
+          <section className="mb-5">
+            <h2 className="text-xl font-semibold text-[#0f172a] mb-3">6. Your choices</h2>
+            <p className="text-[#6b7280] leading-relaxed">
+              When you first visit the site, a cookie banner allows you to accept or decline non-essential cookies.
+              You can change your consent at any time by clearing cookies or using the controls in this page (or the browser settings).
+            </p>
+          </section>
+
+          {/* Section 7 */}
+          <section className="mb-5">
+            <h2 className="text-xl font-semibold text-[#0f172a] mb-3">7. Changes to this policy</h2>
+            <p className="text-[#6b7280] leading-relaxed">
+              We may update this Cookie Policy from time to time. The "Last updated" date at the top of this page indicates when the policy was last revised.
+            </p>
+          </section>
+
+          {/* Section 8 */}
+          <section className="mb-0">
+            <h2 className="text-xl font-semibold text-[#0f172a] mb-3">8. Contact us</h2>
+            <p className="text-[#6b7280] leading-relaxed">
+              If you have questions about our cookie practices, contact us at{' '}
+              <a href="mailto:hello@smartchat.com" className="text-[#2563eb] hover:underline no-underline">
+                hello@smartchat.com
+              </a>{' '}
+              or visit our{' '}
+              <Link href="/contact" className="text-[#2563eb] hover:underline no-underline">
+                Contact page
+              </Link>.
+            </p>
+          </section>
+        </article>
       </main>
 
-      <Footer />
+      {/* Cookie Banner */}
+      {showBanner && (
+        <div
+          className="fixed left-4 right-4 bottom-4 md:left-[18px] md:right-[18px] md:bottom-[18px] p-4 rounded-xl flex flex-col md:flex-row items-start md:items-center gap-3"
+          style={{
+            background: 'linear-gradient(90deg, #fff, #fbfdff)',
+            boxShadow: '0 10px 30px rgba(2,6,23,0.12)',
+            border: '1px solid rgba(2,6,23,0.06)'
+          }}
+          role="region"
+          aria-live="polite"
+        >
+          <div className="flex-1">
+            <p className="text-sm text-[#6b7280] m-0">
+              <strong className="text-[#0f172a]">We use cookies</strong> — to personalize content, analyze traffic, and improve the site.
+              By clicking "Accept", you consent to our use of non-essential cookies.
+            </p>
+          </div>
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={handleManage}
+              className="px-4 py-2 rounded-lg font-semibold text-sm text-[#6b7280] bg-transparent border cursor-pointer hover:bg-gray-50 transition-colors"
+              style={{ borderColor: 'rgba(2,6,23,0.06)' }}
+            >
+              Manage
+            </button>
+            <button
+              onClick={handleAccept}
+              className="px-4 py-2 rounded-lg font-semibold text-sm text-white bg-[#2563eb] border-0 cursor-pointer hover:bg-[#1d4ed8] transition-colors"
+            >
+              Accept
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <footer className="max-w-[980px] mx-auto px-4 py-7 text-[#6b7280] text-sm">
+        Last updated: November 2025 &nbsp;•&nbsp; Smart Chat
+      </footer>
     </div>
   );
 }
