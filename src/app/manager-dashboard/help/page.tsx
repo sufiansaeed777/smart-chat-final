@@ -19,6 +19,38 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import RoleGuard from '@/components/auth/RoleGuard';
 
+// Convert YouTube URL to embed format
+const getYouTubeEmbedUrl = (url: string): string => {
+  if (!url) return '';
+
+  // Already an embed URL
+  if (url.includes('youtube.com/embed/')) {
+    return url;
+  }
+
+  // Extract video ID from various YouTube URL formats
+  let videoId = '';
+
+  // Format: youtube.com/watch?v=VIDEO_ID
+  const watchMatch = url.match(/[?&]v=([^&]+)/);
+  if (watchMatch) {
+    videoId = watchMatch[1];
+  }
+
+  // Format: youtu.be/VIDEO_ID
+  const shortMatch = url.match(/youtu\.be\/([^?&]+)/);
+  if (shortMatch) {
+    videoId = shortMatch[1];
+  }
+
+  if (videoId) {
+    return `https://www.youtube.com/embed/${videoId}`;
+  }
+
+  // Return original URL if not a YouTube URL
+  return url;
+};
+
 const HelpPage = () => {
   const router = useRouter();
   const { openModal } = useReportIssue();
@@ -188,9 +220,10 @@ const HelpPage = () => {
                     {video.url && (
                       <div className="aspect-video mb-4">
                         <iframe
-                          src={video.url}
+                          src={getYouTubeEmbedUrl(video.url)}
                           className="w-full h-full rounded-lg"
                           allowFullScreen
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           title={video.title}
                         />
                       </div>
