@@ -154,10 +154,11 @@ export class N8nService {
 
       if (Array.isArray(result) && result.length > 0) {
         // Handle array format - take first item
-        responseText = result[0].Response || result[0].response || result[0].output || result[0].text;
+        // Also handle OpenAI raw response format: { message: { content: "..." } }
+        responseText = result[0].Response || result[0].response || result[0].output || result[0].text || result[0].message?.content;
       } else {
         // Handle object format
-        responseText = result.Response || result.response || result.output || result.text;
+        responseText = result.Response || result.response || result.output || result.text || result.message?.content;
       }
 
       if (!responseText) {

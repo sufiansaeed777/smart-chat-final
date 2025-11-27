@@ -43,8 +43,8 @@ NEXT_PUBLIC_SUPABASE_URL=https://aucvnpwyrbefzfiqnrvd.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1Y3ZucHd5cmJlZnpmaXFucnZkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTg2ODc0MCwiZXhwIjoyMDcxNDQ0NzQwfQ.AYmWHDmBqv_bS0_9gu_DH3C-9wIogf5JivffCZqvANg
 
 # N8N Webhook Configuration (FOR BOTH TRAINING AND CHAT - per ROADMAP)
-# FROM: Saas_AI_Chatbot_Keys.pdf - PRODUCTION N8N
-N8N_WEBHOOK_URL=https://synofexai.app.n8n.cloud/webhook/fde2d74a-6ddd-4ed2-b54a-83edbc619b31
+# Self-hosted n8n at synofex.org - AI_Chatbot workflow
+N8N_WEBHOOK_URL=https://n8n.synofex.org/webhook/fde2d74a-6ddd-4ed2-b54a-83edbc619b31
 # Workflow ID: New Simple RAG Workflow
 # Message Structure for Chat: { "chat_id": "c123", "message": "Give me a summary of my document" }
 
