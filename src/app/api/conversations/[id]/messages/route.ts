@@ -67,8 +67,8 @@ export async function POST(
     conversation.messages = messages;
     conversation.lastMessageAt = new Date();
 
-    // Update status to active if message is sent
-    if (conversation.status === 'idle' || conversation.status === 'waiting') {
+    // Update status to active if message is sent (including completed conversations that restart)
+    if (conversation.status === 'idle' || conversation.status === 'waiting' || conversation.status === 'completed') {
       conversation.status = 'active';
     }
 

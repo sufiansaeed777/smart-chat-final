@@ -298,7 +298,14 @@ export async function POST(request: NextRequest) {
 
       console.log(`✅ [CREATED] New conversation: ${conversation.id} | Guest: ${conversation.guestName} | Mode: ${conversation.mode}`);
     } else {
-      console.log(`♻️  [EXISTING] Found conversation: ${conversation.id} | Mode: "${conversation.mode}" | Messages: ${conversation.messages?.length || 0}`);
+      console.log(`♻️  [EXISTING] Found conversation: ${conversation.id} | Mode: "${conversation.mode}" | Status: "${conversation.status}" | Messages: ${conversation.messages?.length || 0}`);
+
+      // Reactivate completed or idle conversations when new messages come in
+      if (conversation.status === 'completed' || conversation.status === 'idle') {
+        console.log(`🔄 [REACTIVATE] Conversation ${conversation.id} was "${conversation.status}", reactivating to "active"`);
+        conversation.status = 'active';
+        await conversationRepository.save(conversation);
+      }
     }
 
     // CRITICAL FIX: Check if conversation is in Human mode - if yes, skip ALL AI processing
