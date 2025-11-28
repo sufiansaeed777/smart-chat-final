@@ -53,6 +53,25 @@ class Synofex_AJAX_Handler {
                 exit;
             }
 
+            // CRITICAL: Check if token is expired - block completely
+            if (get_option('synofex_token_expired', false)) {
+                wp_send_json_error([
+                    'message' => 'Your authentication token has expired. Please contact the site administrator.',
+                    'expired' => true,
+                    'code' => 'TOKEN_EXPIRED'
+                ]);
+                exit;
+            }
+
+            // Check if token is valid
+            if (!get_option('synofex_token_valid', false)) {
+                wp_send_json_error([
+                    'message' => 'Authentication token is invalid. Please check your settings.',
+                    'code' => 'TOKEN_INVALID'
+                ]);
+                exit;
+            }
+
             require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-api-client.php';
             require_once SYNOFEX_CHATBOT_PLUGIN_DIR . 'includes/class-cache.php';
             $this->api_client = new Synofex_API_Client($auth_token);

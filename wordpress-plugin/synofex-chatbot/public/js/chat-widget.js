@@ -194,9 +194,25 @@
                             this.addMessage(response.data.response, 'bot');
                         }
                     } else {
+                        // Handle error responses
+                        const errorData = response.data || {};
+                        let errorMessage = 'Sorry, I encountered an error. Please try again.';
+
+                        // Check for expired token
+                        if (errorData.expired || errorData.code === 'TOKEN_EXPIRED') {
+                            errorMessage = '⚠️ This chatbot is currently unavailable. Please contact the site administrator.';
+                            // Disable input to prevent further attempts
+                            this.disableChat('Token expired');
+                        } else if (errorData.code === 'TOKEN_INVALID') {
+                            errorMessage = '⚠️ Chatbot configuration error. Please contact the site administrator.';
+                            this.disableChat('Invalid token');
+                        } else if (errorData.message) {
+                            errorMessage = errorData.message;
+                        }
+
                         const errorMessageId = `bot-error-${Date.now()}`;
                         this.displayedMessageIds.add(errorMessageId);
-                        this.addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+                        this.addMessage(errorMessage, 'bot');
                     }
                 },
                 error: (xhr, status, error) => {
@@ -608,6 +624,23 @@
                 clearInterval(this.modePollInterval);
                 this.modePollInterval = null;
             }
+        },
+
+        // Disable chat when token is expired or invalid
+        disableChat: function(reason) {
+            console.warn('Synofex Chat: Disabled -', reason);
+
+            // Disable input field
+            $('#synofex-chat-input').prop('disabled', true).attr('placeholder', 'Chat unavailable');
+
+            // Disable send button
+            $('.synofex-send-button').prop('disabled', true).css('opacity', '0.5');
+
+            // Stop polling
+            this.stopModePolling();
+
+            // Update status indicator
+            $('.synofex-status-indicator').removeClass('synofex-status-online').addClass('synofex-status-offline').text('Offline');
         },
 
         // Download chat transcript

@@ -382,3 +382,183 @@
 .synofex-chat-messages::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
+
+/* Avatar styling */
+.synofex-message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.synofex-avatar-placeholder {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.synofex-message {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.synofex-message-user {
+    flex-direction: row-reverse;
+}
+
+.synofex-message-bubble {
+    padding: 12px 16px;
+    border-radius: 18px;
+    max-width: 280px;
+    word-wrap: break-word;
+    line-height: 1.4;
+}
+
+.synofex-bot-message .synofex-message-bubble {
+    background: white;
+    color: #333;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.synofex-user-message .synofex-message-bubble {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+/* Agent messages (human handoff) */
+.synofex-agent-message .synofex-message-bubble {
+    background: #ecfdf5;
+    color: #065f46;
+    border-bottom-left-radius: 4px;
+    border: 1px solid #a7f3d0;
+}
+
+.synofex-agent-message .synofex-avatar-placeholder {
+    background: #10b981;
+    color: white;
+}
+
+/* System messages */
+.synofex-system-message {
+    text-align: center;
+    margin: 16px 0;
+    padding: 8px 16px;
+}
+
+.synofex-system-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f3f4f6;
+    color: #6b7280;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+}
+
+.synofex-system-icon {
+    font-size: 14px;
+}
+
+/* Mode indicator in header */
+.synofex-mode-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+.synofex-mode-indicator.mode-ai {
+    background: rgba(255,255,255,0.2);
+    color: white;
+}
+
+.synofex-mode-indicator.mode-human {
+    background: #10b981;
+    color: white;
+}
+
+.synofex-mode-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+/* Offline status */
+.synofex-status-indicator.synofex-status-offline::before {
+    background: #ef4444;
+}
+
+/* Disabled chat state */
+.synofex-chat-input:disabled {
+    background: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.synofex-chat-input:disabled::placeholder {
+    color: #9ca3af;
+}
+
+/* Typing indicator with avatar */
+.synofex-typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+}
+
+.synofex-typing-avatar {
+    width: 32px;
+    height: 32px;
+}
+
+.synofex-typing-dots {
+    display: flex;
+    gap: 4px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 18px;
+    border-bottom-left-radius: 4px;
+}
+
+.synofex-typing-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #9ca3af;
+    animation: typing 1.4s infinite;
+}
+
+/* Dark theme additions */
+.synofex-theme-dark .synofex-system-content {
+    background: #374151;
+    color: #d1d5db;
+}
+
+.synofex-theme-dark .synofex-agent-message .synofex-message-bubble {
+    background: #064e3b;
+    color: #a7f3d0;
+    border-color: #065f46;
+}
+
+.synofex-theme-dark .synofex-typing-dots {
+    background: #2a2a2a;
+}
+
+.synofex-theme-dark .synofex-avatar-placeholder {
+    background: #374151;
+}
