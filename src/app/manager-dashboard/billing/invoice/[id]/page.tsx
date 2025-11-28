@@ -294,10 +294,30 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
         </div>
       </div>
 
+      {/* Simple Print Version - Hidden on screen, shown only when printing */}
+      <div className="print-only hidden print:block">
+        <div style={{ fontFamily: 'Arial, sans-serif', padding: '40px', maxWidth: '600px', margin: '0 auto' }}>
+          <h1 style={{ fontSize: '32px', fontWeight: 'normal', marginBottom: '24px' }}>INVOICE</h1>
+
+          <p style={{ margin: '8px 0', fontSize: '14px' }}>Invoice #: {invoice.number}</p>
+          <p style={{ margin: '8px 0 24px 0', fontSize: '14px' }}>Date: {new Date(invoice.date).toLocaleDateString()}</p>
+
+          <p style={{ margin: '24px 0 8px 0', fontSize: '14px' }}>{invoice.items[0]?.description || 'Professional Plan Subscription'}</p>
+          <p style={{ margin: '8px 0', fontSize: '14px' }}>Amount: ${invoice.amount.toFixed(2)}</p>
+
+          <p style={{ margin: '24px 0', fontSize: '14px' }}>Status: {invoice.status.toUpperCase()}</p>
+
+          <div style={{ marginTop: '48px' }}>
+            <p style={{ margin: '8px 0', fontSize: '14px' }}>Thank you for your business!</p>
+            <p style={{ margin: '8px 0', fontSize: '14px' }}>For questions, contact: {invoice.company.email}</p>
+          </div>
+        </div>
+      </div>
+
       {/* Print Styles */}
       <style jsx global>{`
         @media print {
-          /* Hide sidebar, navigation, and all fixed elements */
+          /* Hide everything except print-only section */
           nav,
           aside,
           header[class*="fixed"],
@@ -309,6 +329,16 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
             visibility: hidden !important;
           }
 
+          /* Hide the detailed invoice view when printing */
+          .min-h-screen > .max-w-5xl {
+            display: none !important;
+          }
+
+          /* Show the simple print version */
+          .print-only {
+            display: block !important;
+          }
+
           /* Reset page styles for printing */
           html,
           body {
@@ -316,11 +346,6 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
             margin: 0 !important;
             padding: 0 !important;
             width: 100% !important;
-          }
-
-          /* Remove all left margins from body children */
-          body > * {
-            margin-left: 0 !important;
           }
 
           /* Remove page wrapper styling */
@@ -331,49 +356,21 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
             margin-left: 0 !important;
           }
 
-          /* Center and style invoice for print */
-          .max-w-5xl {
-            max-width: 100% !important;
-            margin: 0 !important;
-            padding: 20px !important;
-          }
-
-          /* Remove shadows and borders for clean print */
-          .shadow-sm,
-          .shadow-lg {
-            box-shadow: none !important;
-          }
-
-          /* Ensure backgrounds print correctly */
-          .bg-gray-50,
-          .bg-gray-100 {
-            background: #f9fafb !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-
-          .bg-gradient-to-br {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-
-          /* Keep status badge colors */
-          .bg-green-100,
-          .bg-yellow-100,
-          .bg-red-100 {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-
-          /* Page breaks */
-          .invoice-section {
-            page-break-inside: avoid;
-          }
-
-          /* Fit invoice on one page */
+          /* Page settings */
           @page {
             size: auto;
             margin: 15mm;
+          }
+        }
+
+        /* Ensure print-only is hidden on screen */
+        .print-only {
+          display: none;
+        }
+
+        @media print {
+          .print-only {
+            display: block !important;
           }
         }
       `}</style>
