@@ -24,34 +24,35 @@ const ReportIssueModal = () => {
     setIsSubmitting(true);
 
     try {
-      if (!session?.user) {
-        setError('You must be logged in to report an issue');
-        setIsSubmitting(false);
-        return;
-      }
+      // Prepare user data - handle case where session might not have all fields
+      const userData = {
+        type: formData.type,
+        userId: (session?.user as any)?.id || session?.user?.email || 'anonymous',
+        userEmail: session?.user?.email || 'unknown@example.com',
+        userName: session?.user?.name || session?.user?.email || 'Anonymous User',
+        message: formData.message,
+        priority: formData.priority,
+        botId: botId || null
+      };
 
-      // Get user info from session
+      console.log('Submitting issue:', userData);
+
       const response = await fetch('/api/chatbot/issues', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          type: formData.type,
-          userId: session.user.id || 'unknown',
-          userEmail: session.user.email || '',
-          userName: session.user.name || session.user.email || 'Unknown User',
-          message: formData.message,
-          priority: formData.priority,
-          botId: botId || null
-        }),
+        body: JSON.stringify(userData),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to submit issue');
+        console.error('Issue submission failed:', data);
+        throw new Error(data.error || data.details || 'Failed to submit issue');
       }
 
+      console.log('Issue submitted successfully:', data);
       setSuccess(true);
       setFormData({ type: 'issue_report', message: '', priority: 'medium' });
 
@@ -61,7 +62,8 @@ const ReportIssueModal = () => {
         closeModal();
       }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to submit issue');
+      console.error('Issue submission error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to submit issue. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

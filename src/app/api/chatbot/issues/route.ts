@@ -49,9 +49,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { type, userId, userEmail, userName, message, priority = 'medium', botId } = body;
 
-    if (!type || !userId || !userEmail || !userName || !message) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    // Validate required fields
+    if (!message || !message.trim()) {
+      return NextResponse.json({ error: 'Message is required' }, { status: 400 });
     }
+
+    // Use defaults for optional fields
+    const issueType = type || 'issue_report';
+    const issueUserId = userId || 'anonymous';
+    const issueUserEmail = userEmail || 'unknown@example.com';
+    const issueUserName = userName || 'Anonymous User';
 
     // Initialize database connection
     if (!AppDataSource.isInitialized) {
@@ -60,22 +67,47 @@ export async function POST(request: NextRequest) {
 
     const issueRepository = AppDataSource.getRepository(ChatbotIssue);
 
+    // Validate botId if provided - check if it's a valid UUID and exists
+    let validBotId: string | null = null;
+    if (botId && typeof botId === 'string' && botId.length > 0) {
+      // Check if it's a valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(botId)) {
+        // Optionally verify bot exists (commented out to avoid extra query)
+        // const botRepository = AppDataSource.getRepository('bots');
+        // const botExists = await botRepository.findOne({ where: { id: botId } });
+        // if (botExists) validBotId = botId;
+        validBotId = botId;
+      }
+    }
+
     const newIssue = issueRepository.create({
-      type,
-      userId,
-      userEmail,
-      userName,
-      message,
-      priority,
+      type: issueType,
+      userId: issueUserId,
+      userEmail: issueUserEmail,
+      userName: issueUserName,
+      message: message.trim(),
+      priority: priority || 'medium',
       status: 'pending',
-      botId: botId || null
+      botId: validBotId
     });
 
     const savedIssue = await issueRepository.save(newIssue);
 
-    return NextResponse.json({ issue: savedIssue }, { status: 201 });
+    console.log('Issue created successfully:', savedIssue.id);
+
+    return NextResponse.json({
+      success: true,
+      issue: savedIssue
+    }, { status: 201 });
   } catch (error) {
     console.error('Error creating chatbot issue:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+
+    // Provide more detailed error message
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return NextResponse.json({
+      error: 'Failed to create issue',
+      details: errorMessage
+    }, { status: 500 });
   }
 }
