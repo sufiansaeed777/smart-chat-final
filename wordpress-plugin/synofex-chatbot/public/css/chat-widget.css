@@ -1,6 +1,7 @@
 /**
  * Synofex Chatbot Widget Styles
- * Version: 1.0.0
+ * Version: 2.0.0
+ * Matches website ChatBot styling exactly
  */
 
 /* Base widget styles */
@@ -12,25 +13,25 @@
 
 /* Position variations */
 .synofex-widget-bottom-right {
-    bottom: 20px;
-    right: 20px;
+    bottom: 24px;
+    right: 24px;
 }
 
 .synofex-widget-bottom-left {
-    bottom: 20px;
-    left: 20px;
+    bottom: 24px;
+    left: 24px;
 }
 
-/* Chat toggle button */
+/* Chat toggle button - Match website styling */
 .synofex-chat-toggle {
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #6566F1;
     color: white;
     border: none;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(101, 102, 241, 0.4);
     position: relative;
     transition: all 0.3s ease;
     display: flex;
@@ -39,12 +40,19 @@
 }
 
 .synofex-chat-toggle:hover {
+    background: #5A5BD8;
     transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    box-shadow: 0 6px 20px rgba(101, 102, 241, 0.5);
 }
 
 .synofex-chat-toggle:active {
     transform: scale(0.95);
+}
+
+.synofex-chat-icon,
+.synofex-close-icon {
+    width: 24px;
+    height: 24px;
 }
 
 /* Unread indicator */
@@ -52,7 +60,7 @@
     position: absolute;
     top: -4px;
     right: -4px;
-    background: #ff4757;
+    background: #ef4444;
     color: white;
     border-radius: 10px;
     padding: 2px 6px;
@@ -62,14 +70,15 @@
     text-align: center;
 }
 
-/* Chat window */
+/* Chat window - Match website styling */
 .synofex-chat-window {
     position: absolute;
-    width: 380px;
+    width: 420px;
     height: 600px;
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 5px 40px rgba(0,0,0,0.16);
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid #e5e7eb;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -97,14 +106,15 @@
     left: 0;
 }
 
-/* Chat header */
+/* Chat header - Match website styling */
 .synofex-chat-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #6566F1;
     color: white;
     padding: 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-radius: 16px 16px 0 0;
 }
 
 .synofex-chat-header-info {
@@ -113,11 +123,26 @@
     gap: 12px;
 }
 
+.synofex-bot-avatar-container {
+    width: 32px;
+    height: 32px;
+    background: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.synofex-bot-avatar-container svg {
+    width: 20px;
+    height: 20px;
+    color: #6566F1;
+}
+
 .synofex-bot-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.3);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
 }
 
 .synofex-chat-header-text h3 {
@@ -126,21 +151,33 @@
     font-weight: 600;
 }
 
-.synofex-status-indicator {
+.synofex-chat-header-text p {
+    margin: 0;
     font-size: 12px;
-    opacity: 0.9;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.synofex-header-actions {
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
-.synofex-status-indicator::before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #4ade80;
-    display: inline-block;
+.synofex-header-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.synofex-header-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .synofex-chat-close {
@@ -149,23 +186,29 @@
     color: white;
     cursor: pointer;
     padding: 4px;
-    transition: opacity 0.2s;
+    border-radius: 4px;
+    transition: background 0.2s;
 }
 
 .synofex-chat-close:hover {
-    opacity: 0.8;
+    background: rgba(255, 255, 255, 0.1);
 }
 
-/* Chat messages */
+/* Chat messages - Match website styling */
 .synofex-chat-messages {
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
-    background: #f8f9fa;
+    padding: 16px;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 .synofex-message {
-    margin-bottom: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
     animation: fadeIn 0.3s ease;
 }
 
@@ -180,82 +223,242 @@
     }
 }
 
-.synofex-message-content {
-    padding: 12px 16px;
-    border-radius: 18px;
-    max-width: 70%;
-    word-wrap: break-word;
-    position: relative;
+.synofex-message-user {
+    flex-direction: row-reverse;
 }
 
-.synofex-message-bot .synofex-message-content {
+.synofex-message-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.synofex-avatar-placeholder {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.synofex-bot-message .synofex-avatar-placeholder {
     background: white;
-    color: #333;
-    margin-right: auto;
+    border: 1px solid #e5e7eb;
+    color: #6566F1;
+}
+
+.synofex-user-message .synofex-avatar-placeholder {
+    background: #d1d5db;
+    color: #4b5563;
+}
+
+.synofex-agent-message .synofex-avatar-placeholder {
+    background: #10b981;
+    color: white;
+}
+
+.synofex-message-content {
+    max-width: 80%;
+    display: flex;
+    flex-direction: column;
+}
+
+.synofex-message-bubble {
+    padding: 8px 12px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.synofex-bot-message .synofex-message-bubble {
+    background: #f3f4f6;
+    color: #111827;
     border-bottom-left-radius: 4px;
 }
 
-.synofex-message-user .synofex-message-content {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.synofex-user-message .synofex-message-bubble {
+    background: #6566F1;
     color: white;
-    margin-left: auto;
     border-bottom-right-radius: 4px;
+}
+
+.synofex-agent-message .synofex-message-bubble {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+    border-bottom-left-radius: 4px;
 }
 
 .synofex-message-time {
     font-size: 11px;
-    color: #999;
+    color: #9ca3af;
     margin-top: 4px;
-    display: block;
 }
 
 .synofex-message-user .synofex-message-time {
     text-align: right;
 }
 
-/* Typing indicator */
+/* Typing indicator - Match website styling */
 .synofex-typing-indicator {
-    padding: 0 20px;
     display: flex;
-    align-items: center;
-    gap: 4px;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 0;
 }
 
-.synofex-typing-indicator span {
+.synofex-typing-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: white;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.synofex-typing-dots {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px;
+    background: #f3f4f6;
+    border-radius: 16px;
+    border-bottom-left-radius: 4px;
+}
+
+.synofex-typing-dots span {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #999;
-    animation: typing 1.4s infinite;
+    background: #4b5563;
+    animation: bounce 1.4s infinite;
 }
 
-.synofex-typing-indicator span:nth-child(2) {
+.synofex-typing-dots span:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.synofex-typing-dots span:nth-child(3) {
     animation-delay: 0.2s;
 }
 
-.synofex-typing-indicator span:nth-child(3) {
-    animation-delay: 0.4s;
-}
-
-@keyframes typing {
+@keyframes bounce {
     0%, 60%, 100% {
         transform: translateY(0);
-        opacity: 0.5;
     }
     30% {
-        transform: translateY(-10px);
-        opacity: 1;
+        transform: translateY(-4px);
     }
 }
 
-/* Chat input */
+/* System notifications - Small style */
+.synofex-system-notification {
+    text-align: center;
+    padding: 8px 0;
+}
+
+.synofex-notification-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f3f4f6;
+    color: #6b7280;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.synofex-notification-content.notification-human {
+    background: #ecfdf5;
+    color: #059669;
+}
+
+.synofex-notification-content.notification-ai {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+/* Chat input section - Match website styling */
 .synofex-chat-input-container {
-    padding: 16px;
+    padding: 12px 16px;
     background: white;
     border-top: 1px solid #e5e7eb;
 }
 
+/* Action buttons - Appear after 5 messages */
+.synofex-action-buttons {
+    display: none;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.synofex-action-buttons.visible {
+    display: flex;
+}
+
+.synofex-action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #4b5563;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.synofex-action-btn:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.synofex-action-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.synofex-action-btn.request-human {
+    color: #059669;
+}
+
+.synofex-action-btn.request-human:hover {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+}
+
+.synofex-action-btn.report-issue {
+    color: #dc2626;
+}
+
+.synofex-action-btn.report-issue:hover {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+/* Input row with End and Send buttons */
+.synofex-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .synofex-chat-form {
+    flex: 1;
     margin: 0;
 }
 
@@ -267,33 +470,60 @@
 
 .synofex-chat-input {
     width: 100%;
-    border: 1px solid #e5e7eb;
-    border-radius: 24px;
-    padding: 10px 48px 10px 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 8px 12px;
     resize: none;
     font-family: inherit;
     font-size: 14px;
     outline: none;
     transition: border-color 0.2s;
+    color: #111827;
+}
+
+.synofex-chat-input::placeholder {
+    color: #9ca3af;
 }
 
 .synofex-chat-input:focus {
-    border-color: #667eea;
+    border-color: #6566F1;
+    box-shadow: 0 0 0 2px rgba(101, 102, 241, 0.1);
+}
+
+.synofex-end-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #4b5563;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.synofex-end-btn:hover {
+    background: #e5e7eb;
 }
 
 .synofex-send-button {
-    position: absolute;
-    right: 8px;
-    background: transparent;
+    width: 40px;
+    height: 40px;
+    background: #6566F1;
     border: none;
-    color: #667eea;
+    border-radius: 8px;
+    color: white;
     cursor: pointer;
-    padding: 8px;
-    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    flex-shrink: 0;
 }
 
 .synofex-send-button:hover {
-    color: #764ba2;
+    background: #5A5BD8;
 }
 
 .synofex-send-button:disabled {
@@ -301,50 +531,111 @@
     cursor: not-allowed;
 }
 
-/* Powered by */
-.synofex-powered-by {
+.synofex-send-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Footer */
+.synofex-footer {
     text-align: center;
     margin-top: 8px;
     font-size: 11px;
+    color: #9ca3af;
 }
 
-.synofex-powered-by a {
-    color: #999;
+.synofex-footer a {
+    color: #9ca3af;
     text-decoration: none;
-    transition: color 0.2s;
 }
 
-.synofex-powered-by a:hover {
-    color: #667eea;
+.synofex-footer a:hover {
+    color: #6566F1;
+}
+
+/* Mode indicator in header */
+.synofex-mode-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+.synofex-mode-indicator.mode-ai {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.synofex-mode-indicator.mode-human {
+    background: #10b981;
+    color: white;
+}
+
+.synofex-mode-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
 }
 
 /* Dark theme */
 .synofex-theme-dark .synofex-chat-window {
-    background: #1a1a1a;
+    background: #1f2937;
+    border-color: #374151;
 }
 
 .synofex-theme-dark .synofex-chat-messages {
-    background: #0d0d0d;
+    background: #111827;
 }
 
-.synofex-theme-dark .synofex-message-bot .synofex-message-content {
-    background: #2a2a2a;
-    color: #e5e5e5;
+.synofex-theme-dark .synofex-bot-message .synofex-message-bubble {
+    background: #374151;
+    color: #f3f4f6;
 }
 
 .synofex-theme-dark .synofex-chat-input-container {
-    background: #1a1a1a;
-    border-top-color: #333;
+    background: #1f2937;
+    border-top-color: #374151;
 }
 
 .synofex-theme-dark .synofex-chat-input {
-    background: #2a2a2a;
-    color: #e5e5e5;
-    border-color: #333;
+    background: #374151;
+    color: #f3f4f6;
+    border-color: #4b5563;
 }
 
 .synofex-theme-dark .synofex-chat-input:focus {
-    border-color: #667eea;
+    border-color: #6566F1;
+}
+
+.synofex-theme-dark .synofex-action-btn {
+    background: #374151;
+    border-color: #4b5563;
+    color: #d1d5db;
+}
+
+.synofex-theme-dark .synofex-end-btn {
+    background: #374151;
+    border-color: #4b5563;
+    color: #d1d5db;
+}
+
+.synofex-theme-dark .synofex-notification-content {
+    background: #374151;
+    color: #d1d5db;
+}
+
+.synofex-theme-dark .synofex-typing-dots {
+    background: #374151;
+}
+
+.synofex-theme-dark .synofex-avatar-placeholder {
+    background: #374151;
+    border-color: #4b5563;
 }
 
 /* Responsive design */
@@ -357,6 +648,10 @@
         left: 0 !important;
         border-radius: 0;
         max-height: 100vh;
+    }
+
+    .synofex-chat-header {
+        border-radius: 0;
     }
 
     .synofex-chat-toggle {
@@ -375,126 +670,12 @@
 }
 
 .synofex-chat-messages::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: #d1d5db;
     border-radius: 3px;
 }
 
 .synofex-chat-messages::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-}
-
-/* Avatar styling */
-.synofex-message-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.synofex-avatar-placeholder {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: #e5e7eb;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-}
-
-.synofex-message {
-    display: flex;
-    gap: 8px;
-    align-items: flex-start;
-}
-
-.synofex-message-user {
-    flex-direction: row-reverse;
-}
-
-.synofex-message-bubble {
-    padding: 12px 16px;
-    border-radius: 18px;
-    max-width: 280px;
-    word-wrap: break-word;
-    line-height: 1.4;
-}
-
-.synofex-bot-message .synofex-message-bubble {
-    background: white;
-    color: #333;
-    border-bottom-left-radius: 4px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}
-
-.synofex-user-message .synofex-message-bubble {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-bottom-right-radius: 4px;
-}
-
-/* Agent messages (human handoff) */
-.synofex-agent-message .synofex-message-bubble {
-    background: #ecfdf5;
-    color: #065f46;
-    border-bottom-left-radius: 4px;
-    border: 1px solid #a7f3d0;
-}
-
-.synofex-agent-message .synofex-avatar-placeholder {
-    background: #10b981;
-    color: white;
-}
-
-/* System messages */
-.synofex-system-message {
-    text-align: center;
-    margin: 16px 0;
-    padding: 8px 16px;
-}
-
-.synofex-system-content {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #f3f4f6;
-    color: #6b7280;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 13px;
-}
-
-.synofex-system-icon {
-    font-size: 14px;
-}
-
-/* Mode indicator in header */
-.synofex-mode-indicator {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 500;
-    margin-left: 8px;
-}
-
-.synofex-mode-indicator.mode-ai {
-    background: rgba(255,255,255,0.2);
-    color: white;
-}
-
-.synofex-mode-indicator.mode-human {
-    background: #10b981;
-    color: white;
-}
-
-.synofex-mode-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: currentColor;
+    background: #9ca3af;
 }
 
 /* Offline status */
@@ -513,52 +694,62 @@
     color: #9ca3af;
 }
 
-/* Typing indicator with avatar */
-.synofex-typing-indicator {
+/* Small notification style for handoff events */
+.synofex-notification {
+    display: flex;
+    justify-content: center;
+    padding: 4px 0;
+    animation: fadeIn 0.3s ease;
+}
+
+.synofex-notification-text {
+    display: inline-block;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    color: #0369a1;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid #bae6fd;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* System message style (larger than notification) */
+.synofex-system-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+    animation: fadeIn 0.3s ease;
+}
+
+.synofex-system-content {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 20px;
+    gap: 6px;
+    background: #f3f4f6;
+    color: #6b7280;
+    padding: 8px 16px;
+    border-radius: 16px;
+    font-size: 13px;
 }
 
-.synofex-typing-avatar {
-    width: 32px;
-    height: 32px;
+.synofex-system-icon {
+    font-size: 14px;
 }
 
-.synofex-typing-dots {
-    display: flex;
-    gap: 4px;
-    padding: 12px 16px;
-    background: white;
-    border-radius: 18px;
-    border-bottom-left-radius: 4px;
+.synofex-system-text {
+    font-weight: 500;
 }
 
-.synofex-typing-dots span {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #9ca3af;
-    animation: typing 1.4s infinite;
+/* Dark theme for notifications */
+.synofex-theme-dark .synofex-notification-text {
+    background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+    color: #93c5fd;
+    border-color: #3b82f6;
 }
 
-/* Dark theme additions */
 .synofex-theme-dark .synofex-system-content {
     background: #374151;
     color: #d1d5db;
-}
-
-.synofex-theme-dark .synofex-agent-message .synofex-message-bubble {
-    background: #064e3b;
-    color: #a7f3d0;
-    border-color: #065f46;
-}
-
-.synofex-theme-dark .synofex-typing-dots {
-    background: #2a2a2a;
-}
-
-.synofex-theme-dark .synofex-avatar-placeholder {
-    background: #374151;
 }

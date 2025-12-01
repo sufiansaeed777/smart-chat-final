@@ -274,12 +274,11 @@ export async function GET(request: NextRequest) {
 
     // Convert to array and format
     const formattedSessions = Array.from(conversationSessions.values()).map(session => {
-      // For external conversations, use stored status; for internal, calculate based on time
-      let sessionStatus = session.status;
-      if (session.source === 'playground') {
-        const isActive = session.endTime > new Date(Date.now() - 24 * 60 * 60 * 1000);
-        sessionStatus = isActive ? 'active' : 'completed';
-      }
+      // Auto-complete: If no message for 30 minutes, mark as completed
+      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+      const lastMessageTime = session.lastMessageAt || session.endTime;
+      const isActive = lastMessageTime > thirtyMinutesAgo;
+      const sessionStatus = isActive ? 'active' : 'completed';
 
       const duration = Math.floor((session.endTime.getTime() - session.startTime.getTime()) / (1000 * 60));
 

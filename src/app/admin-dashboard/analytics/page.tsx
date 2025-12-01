@@ -45,6 +45,9 @@ interface AnalyticsData {
     activeConversations: number;
     activeBots: number;
     inactiveBots: number;
+    dailyActiveUsers: number;
+    weeklyActiveUsers: number;
+    newRegistrations: number;
   };
   growth: {
     userWeeklyGrowth: number;
@@ -289,30 +292,32 @@ const AnalyticsPage: React.FC = () => {
             </h3>
           </div>
           {analyticsData.growth.userGrowth.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={analyticsData.growth.userGrowth} style={{ outline: 'none' }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis dataKey="date" stroke="#6B7280" tick={{ fontSize: 12 }} />
-                <YAxis stroke="#6B7280" tick={{ fontSize: 12 }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#FFF',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '8px',
-                    outline: 'none'
-                  }}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="users"
-                  stroke="#6566F1"
-                  strokeWidth={2}
-                  dot={{ fill: '#6566F1', r: 4, strokeWidth: 0 }}
-                  activeDot={{ r: 6, stroke: 'none', strokeWidth: 0 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="[&_.recharts-wrapper]:!outline-none [&_.recharts-surface]:!outline-none">
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={analyticsData.growth.userGrowth} style={{ outline: 'none', border: 'none' }}>
+                  <XAxis dataKey="date" stroke="#6B7280" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis stroke="#6B7280" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#FFF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                      outline: 'none'
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="users"
+                    stroke="#6566F1"
+                    strokeWidth={2}
+                    dot={{ fill: '#6566F1', r: 4, strokeWidth: 0 }}
+                    activeDot={{ r: 6, stroke: 'none', strokeWidth: 0 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           ) : (
             <div className="h-64 flex items-center justify-center text-gray-400">
               <p>No user growth data available</p>
@@ -329,30 +334,32 @@ const AnalyticsPage: React.FC = () => {
             </h3>
           </div>
           {analyticsData.growth.conversationVolume.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={analyticsData.growth.conversationVolume} style={{ outline: 'none' }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis dataKey="date" stroke="#6B7280" tick={{ fontSize: 12 }} />
-                <YAxis stroke="#6B7280" tick={{ fontSize: 12 }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#FFF',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '8px',
-                    outline: 'none'
-                  }}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="conversations"
-                  stroke="#10B981"
-                  strokeWidth={2}
-                  dot={{ fill: '#10B981', r: 4, strokeWidth: 0 }}
-                  activeDot={{ r: 6, stroke: 'none', strokeWidth: 0 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="[&_.recharts-wrapper]:!outline-none [&_.recharts-surface]:!outline-none">
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={analyticsData.growth.conversationVolume} style={{ outline: 'none', border: 'none' }}>
+                  <XAxis dataKey="date" stroke="#6B7280" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis stroke="#6B7280" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#FFF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                      outline: 'none'
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="conversations"
+                    stroke="#10B981"
+                    strokeWidth={2}
+                    dot={{ fill: '#10B981', r: 4, strokeWidth: 0 }}
+                    activeDot={{ r: 6, stroke: 'none', strokeWidth: 0 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           ) : (
             <div className="h-64 flex items-center justify-center text-gray-400">
               <p>No conversation volume data available</p>
@@ -376,30 +383,61 @@ const AnalyticsPage: React.FC = () => {
             <Eye className="w-5 h-5" />
           </button>
         </div>
-        <div className="space-y-4">
-          {[
-            { month: 'Jan', bots: analyticsData ? Math.floor(analyticsData.overview.totalBots * 0.85) : 76 },
-            { month: 'Feb', bots: analyticsData ? Math.floor(analyticsData.overview.totalBots * 0.90) : 81 },
-            { month: 'Mar', bots: analyticsData ? Math.floor(analyticsData.overview.totalBots * 0.95) : 84 },
-            { month: 'Apr', bots: analyticsData ? analyticsData.overview.totalBots : 90 }
-          ].map((data, index) => (
-            <div key={index} className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-600">{data.month}</span>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">{data.bots}</span>
-                </div>
-                <div className="w-32 bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-green-500 h-2 rounded-full"
-                    style={{ width: `${(data.bots / (analyticsData ? analyticsData.overview.totalBots : 100)) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          ))}
+        {/* Column Headers */}
+        <div className="flex items-center justify-between mb-3 px-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <div className="flex items-center space-x-3 flex-1 min-w-0">
+            <span className="w-6">#</span>
+            <span>Bot Name</span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="w-24 text-right">Status</span>
+            <span className="w-20 text-right">Conversations</span>
+            <span className="w-32 text-center">Usage</span>
+          </div>
         </div>
+        <div className="space-y-3">
+          {analyticsData.topBots.length > 0 ? (
+            analyticsData.topBots.slice(0, 5).map((bot, index) => {
+              const maxConversations = Math.max(...analyticsData.topBots.map(b => b.conversationCount));
+              const percentage = maxConversations > 0 ? (bot.conversationCount / maxConversations) * 100 : 0;
+              return (
+                <div key={bot.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center space-x-3 flex-1 min-w-0">
+                    <span className="text-sm font-bold text-[#6566F1] w-6">{index + 1}</span>
+                    <span className="text-sm font-medium text-gray-800 truncate">{bot.name}</span>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="w-24 flex items-center justify-end space-x-2">
+                      <div className={`w-2 h-2 rounded-full ${bot.status === 'active' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                      <span className={`text-xs font-medium capitalize ${bot.status === 'active' ? 'text-green-600' : 'text-gray-500'}`}>
+                        {bot.status}
+                      </span>
+                    </div>
+                    <span className="text-sm font-semibold text-gray-900 w-20 text-right">{bot.conversationCount.toLocaleString()}</span>
+                    <div className="w-32 bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-[#6566F1] h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${percentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-center py-4 text-gray-500">No bot data available</div>
+          )}
+        </div>
+        {analyticsData.topBots.length > 5 && (
+          <div className="mt-4 pt-4 border-t border-gray-100 text-center">
+            <button
+              onClick={handleViewBotPerformanceDetails}
+              className="text-sm font-medium text-[#6566F1] hover:text-[#5A5BD9] transition-colors"
+            >
+              View All {analyticsData.topBots.length} Bots
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Detailed Analytics */}
@@ -446,50 +484,60 @@ const AnalyticsPage: React.FC = () => {
 
         {/* User Role Distribution */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border-0">
-          <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+          <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
             <Users className="w-6 h-6 mr-2 text-[#6566F1]" />
             User Role Distribution
           </h3>
           {analyticsData.distribution.userRoleDistribution.length > 0 ? (
-            <div className="space-y-4">
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart style={{ outline: 'none' }}>
-                  <Pie
-                    data={analyticsData.distribution.userRoleDistribution}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={70}
-                    fill="#8884d8"
-                    dataKey="count"
-                    stroke="none"
-                  >
-                    {analyticsData.distribution.userRoleDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#FFF',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '8px',
-                      outline: 'none'
-                    }}
-                    formatter={(value: number, name: string, props: any) => [value, props.payload.role]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="space-y-2">
+            <div className="flex flex-col">
+              <div className="[&_.recharts-wrapper]:!outline-none [&_.recharts-surface]:!outline-none [&_.recharts-sector]:!outline-none [&_path]:!outline-none [&_path:focus]:!outline-none">
+                <ResponsiveContainer width="100%" height={160}>
+                  <PieChart style={{ outline: 'none' }}>
+                    <Pie
+                      data={analyticsData.distribution.userRoleDistribution}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      innerRadius={35}
+                      outerRadius={60}
+                      fill="#8884d8"
+                      dataKey="count"
+                      stroke="none"
+                      style={{ outline: 'none', cursor: 'pointer' }}
+                    >
+                      {analyticsData.distribution.userRoleDistribution.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                          stroke="none"
+                          style={{ outline: 'none' }}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#FFF',
+                        border: 'none',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        outline: 'none'
+                      }}
+                      formatter={(value: number, name: string, props: any) => [value, props.payload.role]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="space-y-2 mt-2">
                 {analyticsData.distribution.userRoleDistribution.map((role, index) => (
-                  <div key={role.role} className="flex items-center justify-between">
+                  <div key={role.role} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                     <div className="flex items-center space-x-2">
                       <div
-                        className="w-3 h-3 rounded-full"
+                        className="w-3 h-3 rounded-full flex-shrink-0"
                         style={{ backgroundColor: COLORS[index % COLORS.length] }}
                       />
                       <span className="text-sm font-medium text-gray-700 capitalize">{role.role}</span>
                     </div>
-                    <span className="text-sm text-gray-600">{role.count} ({role.percentage}%)</span>
+                    <span className="text-sm font-semibold text-gray-900">{role.count} ({role.percentage}%)</span>
                   </div>
                 ))}
               </div>
@@ -538,20 +586,51 @@ const AnalyticsPage: React.FC = () => {
           </h3>
           <div className="space-y-4">
             {[
-              { label: 'Daily Active Users', value: analyticsData.overview.activeUsers, percentage: 85 },
-              { label: 'Weekly Active Users', value: Math.floor(analyticsData.overview.activeUsers * 1.3), percentage: 92 },
-              { label: 'Monthly Active Users', value: analyticsData.overview.totalUsers, percentage: 100 },
-              { label: 'New Registrations', value: Math.floor(analyticsData.overview.totalUsers * 0.04), percentage: 12 }
+              {
+                label: 'Daily Active Users',
+                value: analyticsData.overview.dailyActiveUsers,
+                percentage: analyticsData.overview.totalUsers > 0
+                  ? Math.round((analyticsData.overview.dailyActiveUsers / analyticsData.overview.totalUsers) * 100)
+                  : 0,
+                description: 'Last 24 hours'
+              },
+              {
+                label: 'Weekly Active Users',
+                value: analyticsData.overview.weeklyActiveUsers,
+                percentage: analyticsData.overview.totalUsers > 0
+                  ? Math.round((analyticsData.overview.weeklyActiveUsers / analyticsData.overview.totalUsers) * 100)
+                  : 0,
+                description: 'Last 7 days'
+              },
+              {
+                label: 'Monthly Active Users',
+                value: analyticsData.overview.activeUsers,
+                percentage: analyticsData.overview.totalUsers > 0
+                  ? Math.round((analyticsData.overview.activeUsers / analyticsData.overview.totalUsers) * 100)
+                  : 0,
+                description: 'Last 30 days'
+              },
+              {
+                label: 'New Registrations',
+                value: analyticsData.overview.newRegistrations,
+                percentage: analyticsData.overview.totalUsers > 0
+                  ? Math.round((analyticsData.overview.newRegistrations / analyticsData.overview.totalUsers) * 100)
+                  : 0,
+                description: 'Last 7 days'
+              }
             ].map((activity, index) => (
               <div key={index} className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600">{activity.label}</span>
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">{activity.label}</span>
+                    <span className="text-xs text-gray-400 ml-2">({activity.description})</span>
+                  </div>
                   <span className="text-sm font-semibold text-gray-900">{activity.value.toLocaleString()}</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
-                    className="bg-[#6566F1] h-2 rounded-full"
-                    style={{ width: `${activity.percentage}%` }}
+                    className="bg-[#6566F1] h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(activity.percentage, 100)}%` }}
                   ></div>
                 </div>
               </div>

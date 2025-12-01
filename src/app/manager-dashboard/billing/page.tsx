@@ -219,84 +219,250 @@ const BillingPage: React.FC = () => {
     );
   }
 
-  // No subscription state - Show pricing plans
-  if (!subscriptionData?.hasSubscription) {
+  // Get current plan name for comparison
+  const currentPlanName = subscriptionData?.plan?.name?.toLowerCase() || 'free';
+
+  // Check if user is on Free or Starter plan (show upgrade options)
+  const showUpgradePlans = !subscriptionData?.hasSubscription || currentPlanName === 'starter';
+
+  // No subscription or Starter plan - Show pricing plans with Current Plan indicator
+  if (showUpgradePlans) {
+    const usage = subscriptionData?.usage;
+
+    // Calculate usage percentages for free/starter users
+    const usersPercentage = usage ? (usage.users / usage.usersLimit) * 100 : 0;
+    const botsPercentage = usage ? (usage.bots / usage.botsLimit) * 100 : 0;
+    const conversationsPercentage = usage ? (usage.conversations / usage.conversationsLimit) * 100 : 0;
+
     return (
       <div className="p-6 min-h-screen bg-gray-50">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Choose Your Plan</h1>
-            <p className="text-xl text-gray-600">Get started with a subscription to unlock all features</p>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Billing & Usage</h1>
+            <p className="text-gray-600 mt-2">Manage your subscription and view usage statistics</p>
+          </div>
+
+          {/* Current Plan Usage Stats */}
+          {usage && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {/* Active Users */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg transition-all duration-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Active Users</p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {usage.users}
+                      <span className="text-base text-gray-500 font-normal"> / {usage.usersLimit}</span>
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                    <Users className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(usersPercentage, 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-2">{usersPercentage.toFixed(1)}% used</p>
+              </div>
+
+              {/* Active Bots */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg transition-all duration-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Active Bots</p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {usage.bots}
+                      <span className="text-base text-gray-500 font-normal"> / {usage.botsLimit}</span>
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+                    <Bot className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(botsPercentage, 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-2">{botsPercentage.toFixed(1)}% used</p>
+              </div>
+
+              {/* Conversations */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg transition-all duration-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Conversations</p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {usage.conversations}
+                      <span className="text-base text-gray-500 font-normal"> / {usage.conversationsLimit}</span>
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+                    <MessageSquare className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(conversationsPercentage, 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-2">{conversationsPercentage.toFixed(1)}% used</p>
+              </div>
+            </div>
+          )}
+
+          {/* Upgrade Section Header */}
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {currentPlanName === 'starter' ? 'Upgrade Your Plan' : 'Choose Your Plan'}
+            </h2>
+            <p className="text-gray-600">
+              {currentPlanName === 'starter'
+                ? 'Upgrade to unlock more features and higher limits'
+                : 'Select a plan that fits your needs'}
+            </p>
           </div>
 
           {/* Pricing Plans */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            {/* Starter Plan */}
-            <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 p-8 hover:shadow-lg transition-all">
-              <div className="mb-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Starter</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            {/* Free Plan */}
+            <div className={`bg-white rounded-2xl shadow-sm p-6 hover:shadow-lg transition-all relative ${currentPlanName === 'free' ? 'border-2 border-[#6566F1]' : 'border-2 border-gray-200'}`}>
+              {currentPlanName === 'free' && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-[#6566F1] text-white px-3 py-1 rounded-full text-xs font-semibold">
+                    Current Plan
+                  </span>
+                </div>
+              )}
+              <div className="mb-6 mt-2">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Free</h3>
                 <div className="flex items-baseline mb-4">
-                  <span className="text-4xl font-bold text-gray-900">$29</span>
+                  <span className="text-3xl font-bold text-gray-900">$0</span>
                   <span className="text-gray-600 ml-2">/month</span>
                 </div>
-                <ul className="space-y-3">
+                <ul className="space-y-2">
                   <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="text-gray-700">Up to 20 Users</span>
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">Up to 5 Users</span>
                   </li>
                   <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="text-gray-700">Up to 5 Bots</span>
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">Up to 2 Bots</span>
                   </li>
                   <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="text-gray-700">Email Support</span>
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">Basic Support</span>
                   </li>
                   <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="text-gray-700">1,000 Conversations</span>
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">100 Conversations</span>
                   </li>
                 </ul>
               </div>
-              <button
-                onClick={() => handleSubscribe('starter', 29)}
-                disabled={isUpgrading}
-                className="w-full py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium disabled:opacity-50"
-              >
-                {isUpgrading ? 'Processing...' : 'Get Started'}
-              </button>
+              {currentPlanName === 'free' ? (
+                <button
+                  disabled
+                  className="w-full py-3 bg-gray-100 text-gray-500 rounded-xl font-medium cursor-not-allowed"
+                >
+                  Current Plan
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="w-full py-3 bg-gray-200 text-gray-500 rounded-xl font-medium cursor-not-allowed"
+                >
+                  Downgrade
+                </button>
+              )}
+            </div>
+
+            {/* Starter Plan */}
+            <div className={`bg-white rounded-2xl shadow-sm p-6 hover:shadow-lg transition-all relative ${currentPlanName === 'starter' ? 'border-2 border-[#6566F1]' : 'border-2 border-gray-200'}`}>
+              {currentPlanName === 'starter' && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-[#6566F1] text-white px-3 py-1 rounded-full text-xs font-semibold">
+                    Current Plan
+                  </span>
+                </div>
+              )}
+              <div className="mb-6 mt-2">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Starter</h3>
+                <div className="flex items-baseline mb-4">
+                  <span className="text-3xl font-bold text-gray-900">$29</span>
+                  <span className="text-gray-600 ml-2">/month</span>
+                </div>
+                <ul className="space-y-2">
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">Up to 20 Users</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">Up to 5 Bots</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">Email Support</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">1,000 Conversations</span>
+                  </li>
+                </ul>
+              </div>
+              {currentPlanName === 'starter' ? (
+                <button
+                  disabled
+                  className="w-full py-3 bg-gray-100 text-gray-500 rounded-xl font-medium cursor-not-allowed"
+                >
+                  Current Plan
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleSubscribe('starter', 29)}
+                  disabled={isUpgrading}
+                  className="w-full py-3 bg-[#6566F1] text-white rounded-xl hover:bg-[#5A5BD9] transition-colors font-medium disabled:opacity-50"
+                >
+                  {isUpgrading ? 'Processing...' : 'Get Starter'}
+                </button>
+              )}
             </div>
 
             {/* Professional Plan */}
-            <div className="bg-white rounded-2xl shadow-lg border-2 border-[#6566F1] p-8 hover:shadow-xl transition-all relative">
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <span className="bg-[#6566F1] text-white px-4 py-1 rounded-full text-sm font-semibold">
+            <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 p-6 hover:shadow-xl transition-all relative">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
                   Most Popular
                 </span>
               </div>
-              <div className="mb-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Professional</h3>
+              <div className="mb-6 mt-2">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Professional</h3>
                 <div className="flex items-baseline mb-4">
-                  <span className="text-4xl font-bold text-gray-900">$99</span>
+                  <span className="text-3xl font-bold text-gray-900">$99</span>
                   <span className="text-gray-600 ml-2">/month</span>
                 </div>
-                <ul className="space-y-3">
+                <ul className="space-y-2">
                   <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="text-gray-700">Up to 50 Users</span>
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">Up to 50 Users</span>
                   </li>
                   <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="text-gray-700">Up to 10 Bots</span>
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">Up to 10 Bots</span>
                   </li>
                   <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="text-gray-700">Priority Support</span>
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">Priority Support</span>
                   </li>
                   <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="text-gray-700">Advanced Analytics</span>
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">Advanced Analytics</span>
                   </li>
                 </ul>
               </div>
@@ -305,34 +471,34 @@ const BillingPage: React.FC = () => {
                 disabled={isUpgrading}
                 className="w-full py-3 bg-[#6566F1] text-white rounded-xl hover:bg-[#5A5BD9] transition-colors font-medium disabled:opacity-50"
               >
-                {isUpgrading ? 'Processing...' : 'Get Started'}
+                {isUpgrading ? 'Processing...' : 'Get Pro'}
               </button>
             </div>
 
             {/* Enterprise Plan */}
-            <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 p-8 hover:shadow-lg transition-all">
-              <div className="mb-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Enterprise</h3>
+            <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 p-6 hover:shadow-lg transition-all">
+              <div className="mb-6 mt-2">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Enterprise</h3>
                 <div className="flex items-baseline mb-4">
-                  <span className="text-4xl font-bold text-gray-900">$299</span>
+                  <span className="text-3xl font-bold text-gray-900">$299</span>
                   <span className="text-gray-600 ml-2">/month</span>
                 </div>
-                <ul className="space-y-3">
+                <ul className="space-y-2">
                   <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="text-gray-700">Unlimited Users</span>
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">Unlimited Users</span>
                   </li>
                   <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="text-gray-700">Unlimited Bots</span>
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">Unlimited Bots</span>
                   </li>
                   <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="text-gray-700">24/7 Support</span>
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">24/7 Support</span>
                   </li>
                   <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="text-gray-700">Custom Integrations</span>
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">Custom Integrations</span>
                   </li>
                 </ul>
               </div>
@@ -341,23 +507,21 @@ const BillingPage: React.FC = () => {
                 disabled={isUpgrading}
                 className="w-full py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium disabled:opacity-50"
               >
-                {isUpgrading ? 'Processing...' : 'Get Started'}
+                {isUpgrading ? 'Processing...' : 'Get Enterprise'}
               </button>
             </div>
           </div>
 
-          {/* Current Plan (Free) */}
-          {subscriptionData && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-                    <Package className="w-6 h-6 text-gray-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900">Current Plan: {subscriptionData.plan.name}</h3>
-                    <p className="text-gray-600">Limited features. Upgrade to unlock full potential.</p>
-                  </div>
+          {/* Upgrade Notice for users approaching limits */}
+          {usage && (usersPercentage > 80 || botsPercentage > 80 || conversationsPercentage > 80) && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-yellow-900 mb-1">Approaching Usage Limits</h3>
+                  <p className="text-yellow-700">
+                    You're close to reaching your plan limits. Consider upgrading to avoid service interruption.
+                  </p>
                 </div>
               </div>
             </div>

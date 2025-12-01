@@ -49,6 +49,8 @@ const UserManagementPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [emailVerifiedFilter, setEmailVerifiedFilter] = useState<string>('all');
+  const [lastLoginFilter, setLastLoginFilter] = useState<string>('all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -107,26 +109,38 @@ const UserManagementPage: React.FC = () => {
     }
   }, [showViewModal, showEditModal, showDeleteModal]);
 
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        const response = await fetch('/api/admin/users');
-        if (response.ok) {
-          const data = await response.json();
-          setUsers(data.users);
-        } else {
-          console.error('Failed to load users');
-          setUsers([]);
-        }
-      } catch (error) {
-        console.error('Error loading users:', error);
-        setUsers([]);
-      } finally {
-        setLoading(false);
+  // Fetch users function
+  const loadUsers = async (isInitialLoad = false) => {
+    try {
+      if (isInitialLoad) setLoading(true);
+      const response = await fetch('/api/admin/users');
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data.users);
+      } else {
+        console.error('Failed to load users');
+        if (isInitialLoad) setUsers([]);
       }
-    };
+    } catch (error) {
+      console.error('Error loading users:', error);
+      if (isInitialLoad) setUsers([]);
+    } finally {
+      if (isInitialLoad) setLoading(false);
+    }
+  };
 
-    loadUsers();
+  // Initial load
+  useEffect(() => {
+    loadUsers(true);
+  }, []);
+
+  // Auto-refresh every 30 seconds for live updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadUsers(false);
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleDeleteUser = (user: User) => {
@@ -354,7 +368,47 @@ const UserManagementPage: React.FC = () => {
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
     const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
 
-    return matchesSearch && matchesRole && matchesStatus;
+    // Email Verified filter
+    let matchesEmailVerified = true;
+    if (emailVerifiedFilter === 'verified') {
+      matchesEmailVerified = user.isEmailVerified === true;
+    } else if (emailVerifiedFilter === 'unverified') {
+      matchesEmailVerified = user.isEmailVerified === false;
+    }
+
+    // Last Login filter
+    let matchesLastLogin = true;
+    if (lastLoginFilter !== 'all') {
+      const now = new Date();
+      const loginDate = user.lastLoginAt === 'Never' ? null : new Date(user.lastLoginAt);
+
+      if (lastLoginFilter === 'never') {
+        matchesLastLogin = user.lastLoginAt === 'Never' || !loginDate;
+      } else if (lastLoginFilter === 'today') {
+        if (!loginDate) {
+          matchesLastLogin = false;
+        } else {
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          matchesLastLogin = loginDate >= today;
+        }
+      } else if (lastLoginFilter === 'week') {
+        if (!loginDate) {
+          matchesLastLogin = false;
+        } else {
+          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          matchesLastLogin = loginDate >= weekAgo;
+        }
+      } else if (lastLoginFilter === 'month') {
+        if (!loginDate) {
+          matchesLastLogin = false;
+        } else {
+          const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          matchesLastLogin = loginDate >= monthAgo;
+        }
+      }
+    }
+
+    return matchesSearch && matchesRole && matchesStatus && matchesEmailVerified && matchesLastLogin;
   });
 
   // Sort users
@@ -415,7 +469,7 @@ const UserManagementPage: React.FC = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, roleFilter, statusFilter]);
+  }, [searchTerm, roleFilter, statusFilter, emailVerifiedFilter, lastLoginFilter]);
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -482,8 +536,8 @@ const UserManagementPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Manager Management</h1>
-          <p className="text-gray-600 mt-2">Manage managers and their permissions across the platform</p>
+          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+          <p className="text-gray-600 mt-2">Manage users and their permissions across the platform</p>
         </div>
         <div className="flex items-center space-x-3">
           <button onClick={handleExport} className="flex items-center space-x-2 bg-white text-gray-700 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
@@ -498,15 +552,15 @@ const UserManagementPage: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Managers</p>
+              <p className="text-sm font-medium text-gray-600">Total Users</p>
               <p className="text-3xl font-bold text-gray-900">{users.length}</p>
               <p className="text-sm text-blue-600 flex items-center mt-1">
                 <TrendingUp className="w-4 h-4 mr-1" />
-                +12% this month
+                All registered
               </p>
             </div>
             <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
@@ -517,11 +571,11 @@ const UserManagementPage: React.FC = () => {
         <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Active Managers</p>
+              <p className="text-sm font-medium text-gray-600">Active Users</p>
               <p className="text-3xl font-bold text-gray-900">{users.filter(u => u.status === 'active').length}</p>
               <p className="text-sm text-green-600 flex items-center mt-1">
                 <CheckCircle className="w-4 h-4 mr-1" />
-                {Math.round((users.filter(u => u.status === 'active').length / users.length) * 100)}% of total
+                {users.length > 0 ? Math.round((users.filter(u => u.status === 'active').length / users.length) * 100) : 0}% of total
               </p>
             </div>
             <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
@@ -533,6 +587,21 @@ const UserManagementPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Pending Managers</p>
+              <p className="text-3xl font-bold text-gray-900">{users.filter(u => u.role === 'manager' && (!u.isEmailVerified || u.status === 'pending')).length}</p>
+              <p className="text-sm text-purple-600 flex items-center mt-1">
+                <Clock className="w-4 h-4 mr-1" />
+                Awaiting approval
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
+              <Shield className="w-6 h-6 text-purple-600" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Pending Users</p>
               <p className="text-3xl font-bold text-gray-900">{users.filter(u => u.status === 'pending').length}</p>
               <p className="text-sm text-yellow-600 flex items-center mt-1">
                 <Clock className="w-4 h-4 mr-1" />
@@ -547,15 +616,15 @@ const UserManagementPage: React.FC = () => {
         <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Verified Managers</p>
+              <p className="text-sm font-medium text-gray-600">Verified Users</p>
               <p className="text-3xl font-bold text-gray-900">{users.filter(u => u.isEmailVerified).length}</p>
-              <p className="text-sm text-red-600 flex items-center mt-1">
-                <Shield className="w-4 h-4 mr-1" />
+              <p className="text-sm text-green-600 flex items-center mt-1">
+                <CheckCircle className="w-4 h-4 mr-1" />
                 Email verified
               </p>
             </div>
-            <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
-              <Shield className="w-6 h-6 text-red-600" />
+            <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-green-600" />
             </div>
           </div>
         </div>
@@ -563,37 +632,65 @@ const UserManagementPage: React.FC = () => {
 
       {/* Filters */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border-0">
-        <div className="flex flex-col lg:flex-row gap-4">
+        <div className="flex flex-col gap-4">
+          {/* Search Bar */}
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search managers by name or email..."
+                placeholder="Search users by name or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
               />
             </div>
           </div>
-          <div className="flex gap-3">
+          {/* Filter Row */}
+          <div className="flex flex-wrap gap-3">
+            {/* Role Filter */}
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900"
+              className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900 text-sm"
             >
-              <option value="all" className="text-gray-900">All Managers</option>
+              <option value="all" className="text-gray-900">All Roles</option>
+              <option value="admin" className="text-gray-900">Admin</option>
               <option value="manager" className="text-gray-900">Manager</option>
+              <option value="user" className="text-gray-900">User</option>
             </select>
+            {/* Status Filter */}
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900"
+              className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900 text-sm"
             >
               <option value="all" className="text-gray-900">All Status</option>
               <option value="active" className="text-gray-900">Active</option>
               <option value="inactive" className="text-gray-900">Inactive</option>
               <option value="pending" className="text-gray-900">Pending</option>
+            </select>
+            {/* Email Verified Filter */}
+            <select
+              value={emailVerifiedFilter}
+              onChange={(e) => setEmailVerifiedFilter(e.target.value)}
+              className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900 text-sm"
+            >
+              <option value="all" className="text-gray-900">Email Verified</option>
+              <option value="verified" className="text-gray-900">Verified</option>
+              <option value="unverified" className="text-gray-900">Unverified</option>
+            </select>
+            {/* Last Login Filter */}
+            <select
+              value={lastLoginFilter}
+              onChange={(e) => setLastLoginFilter(e.target.value)}
+              className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900 text-sm"
+            >
+              <option value="all" className="text-gray-900">Last Login</option>
+              <option value="today" className="text-gray-900">Today</option>
+              <option value="week" className="text-gray-900">This Week</option>
+              <option value="month" className="text-gray-900">This Month</option>
+              <option value="never" className="text-gray-900">Never</option>
             </select>
           </div>
         </div>
@@ -614,7 +711,7 @@ const UserManagementPage: React.FC = () => {
                   />
                 </th>
                 <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
-                  Manager
+                  User
                 </th>
                 <th
                   className="px-3 py-2 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors select-none"
@@ -761,7 +858,7 @@ const UserManagementPage: React.FC = () => {
         {sortedUsers.length > 0 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
             <div className="text-sm text-gray-600">
-              Showing {startIndex + 1} to {Math.min(endIndex, sortedUsers.length)} of {sortedUsers.length} managers
+              Showing {startIndex + 1} to {Math.min(endIndex, sortedUsers.length)} of {sortedUsers.length} users
             </div>
             <div className="flex items-center space-x-2">
               <button
@@ -831,10 +928,10 @@ const UserManagementPage: React.FC = () => {
       {sortedUsers.length === 0 && (
         <div className="text-center py-12 bg-white rounded-2xl shadow-sm border-0">
           <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No managers found</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No users found</h3>
           <p className="text-gray-600 mb-6">Try adjusting your search or filter criteria.</p>
           <button className="bg-[#6566F1] text-white px-6 py-3 rounded-xl hover:bg-[#5A5BD9] transition-colors">
-            Add New Manager
+            Add New User
           </button>
         </div>
       )}
@@ -1376,7 +1473,7 @@ const UserManagementPage: React.FC = () => {
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-xl shadow-lg border border-gray-200 p-4">
           <div className="flex items-center space-x-4">
             <span className="text-sm font-medium text-gray-700">
-              {selectedUsers.length} manager{selectedUsers.length > 1 ? 's' : ''} selected
+              {selectedUsers.length} user{selectedUsers.length > 1 ? 's' : ''} selected
             </span>
             <div className="flex items-center space-x-2">
               <button

@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { type, userId, userEmail, userName, message, priority = 'medium', botId } = body;
+    const { type, userId, userEmail, userName, message, priority = 'medium', botId, websiteUrl } = body;
 
     // Validate required fields
     if (!message || !message.trim()) {
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     const issueType = type || 'issue_report';
     const issueUserId = userId || 'anonymous';
     const issueUserEmail = userEmail || 'unknown@example.com';
-    const issueUserName = userName || 'Anonymous User';
+    const issueUserName = userName || 'Guest';
 
     // Initialize database connection
     if (!AppDataSource.isInitialized) {
@@ -73,10 +73,6 @@ export async function POST(request: NextRequest) {
       // Check if it's a valid UUID format
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (uuidRegex.test(botId)) {
-        // Optionally verify bot exists (commented out to avoid extra query)
-        // const botRepository = AppDataSource.getRepository('bots');
-        // const botExists = await botRepository.findOne({ where: { id: botId } });
-        // if (botExists) validBotId = botId;
         validBotId = botId;
       }
     }
@@ -89,7 +85,8 @@ export async function POST(request: NextRequest) {
       message: message.trim(),
       priority: priority || 'medium',
       status: 'pending',
-      botId: validBotId
+      botId: validBotId,
+      websiteUrl: websiteUrl || null
     });
 
     const savedIssue = await issueRepository.save(newIssue);

@@ -18,19 +18,9 @@ const styles = `
       transform: translateY(0);
     }
   }
-  
+
   .animate-fadeIn {
     animation: fadeIn 0.3s ease-out;
-  }
-  
-  /* Custom scroll behavior for 2-second duration */
-  html {
-    scroll-behavior: smooth;
-  }
-  
-  /* Override default smooth scroll timing */
-  * {
-    scroll-behavior: smooth;
   }
 `;
 
@@ -123,46 +113,9 @@ export default function TestBotPage() {
     }
   };
 
-  // Smooth scroll to bottom of entire page when page loads (2 seconds duration)
-  const scrollToBottomOnLoad = () => {
-    setTimeout(() => {
-      const startPosition = window.pageYOffset;
-      const targetPosition = document.documentElement.scrollHeight - window.innerHeight;
-      const distance = targetPosition - startPosition;
-      const duration = 1000; // 1 second
-      let startTime: number | null = null;
-
-      const animateScroll = (currentTime: number) => {
-        if (startTime === null) startTime = currentTime;
-        const timeElapsed = currentTime - startTime;
-        const progress = Math.min(timeElapsed / duration, 1);
-        
-        // Easing function for smooth animation
-        const easeInOutCubic = progress < 0.5 
-          ? 4 * progress * progress * progress 
-          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-        
-        window.scrollTo(0, startPosition + distance * easeInOutCubic);
-        
-        if (progress < 1) {
-          requestAnimationFrame(animateScroll);
-        }
-      };
-
-      requestAnimationFrame(animateScroll);
-    }, 100); // Small delay to ensure DOM is ready
-  };
-
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // Scroll to bottom when page first loads
-  useEffect(() => {
-    if (!isLoadingBot && bot) {
-      scrollToBottomOnLoad();
-    }
-  }, [isLoadingBot, bot]);
 
   // Load all bots for sidebar
   const loadAllBots = async () => {
@@ -422,7 +375,7 @@ export default function TestBotPage() {
   // Memoize the bot list to prevent unnecessary re-renders
   const BotListSection = React.memo(function BotListSection() {
   return (
-    <div className="w-96 h-screen bg-white/95 backdrop-blur-xl border-r border-gray-200/80 flex flex-col shadow-2xl shadow-gray-200/30 overflow-hidden">
+    <div className="w-96 bg-white/95 backdrop-blur-xl border-r border-gray-200/80 flex flex-col shadow-2xl shadow-gray-200/30 overflow-hidden">
       {/* Enhanced Sidebar Header */}
       <div className="p-6 border-b border-gray-200/80 bg-gradient-to-r from-white via-indigo-50/40 to-purple-50/40">
         <div className="flex items-center space-x-2 mb-6">
@@ -575,16 +528,16 @@ export default function TestBotPage() {
         <BotListSection />
 
         {/* Enhanced Main Content */}
-        <div className="flex-1 flex flex-col bg-gradient-to-br from-slate-50/50 to-blue-50/30 h-screen overflow-hidden">
+        <div className="flex-1 flex flex-col bg-gradient-to-br from-slate-50/50 to-blue-50/30 overflow-hidden">
 
         {/* Enhanced Chat Container */}
-        <div className="flex-1 flex flex-col h-screen">
-          <div className="bg-white/95 backdrop-blur-xl border border-gray-200/80 shadow-2xl shadow-gray-200/40 overflow-hidden flex flex-col h-full rounded-2xl m-2">
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="bg-white/95 backdrop-blur-xl border border-gray-200/80 shadow-2xl shadow-gray-200/40 overflow-hidden flex flex-col flex-1 rounded-2xl m-2 min-h-0">
 
             {/* Enhanced Messages */}
-            <div 
+            <div
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-white via-blue-50/20 to-indigo-50/30 relative min-h-0"
+              className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-white via-blue-50/20 to-indigo-50/30 relative min-h-0 max-h-full"
             >
               {showBotSelection ? (
                 <div className="flex flex-col items-center justify-center h-full text-center p-8">

@@ -180,23 +180,23 @@ class Synofex_API_Client {
     }
 
     /**
-     * Get analytics data
+     * Get analytics data from WordPress-specific endpoint
      */
-    public function get_analytics($bot_id = null, $period = '7days') {
-        $cache_key = 'analytics_' . ($bot_id ?: 'all') . '_' . $period;
+    public function get_analytics($period = '7days') {
+        $cache_key = 'analytics_' . md5($this->auth_token) . '_' . $period;
         $cached = $this->cache->get($cache_key);
 
         if ($cached !== false) {
             return $cached;
         }
 
-        $endpoint = $bot_id ? "/api/analytics/{$bot_id}" : '/api/analytics';
-        $response = $this->make_request('GET', $endpoint, [
+        // Use WordPress-specific analytics endpoint
+        $response = $this->make_request('GET', '/api/wordpress/analytics', [
             'period' => $period,
         ]);
 
-        if ($response) {
-            $this->cache->set($cache_key, $response, 3600); // Cache for 1 hour
+        if ($response && !isset($response['error'])) {
+            $this->cache->set($cache_key, $response, 300); // Cache for 5 minutes
             return $response;
         }
 

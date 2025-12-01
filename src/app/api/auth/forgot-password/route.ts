@@ -39,12 +39,12 @@ export async function POST(request: NextRequest) {
     console.log('[Forgot Password] Looking up user with email:', email);
     const user = await userRepository.findOne({ where: { email: ILike(email) } });
 
-    // Always return success to prevent email enumeration
+    // Return error if email is not registered
     if (!user) {
-      console.log('[Forgot Password] User not found, returning success message anyway');
+      console.log('[Forgot Password] User not found for email:', email);
       return NextResponse.json({
-        message: 'If an account exists with this email, you will receive a password reset link.'
-      });
+        error: 'No account found with this email address. Please check the email or sign up for a new account.'
+      }, { status: 404 });
     }
 
     console.log('[Forgot Password] User found:', user.id);

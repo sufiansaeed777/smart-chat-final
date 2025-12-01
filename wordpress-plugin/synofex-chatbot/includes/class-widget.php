@@ -1,6 +1,8 @@
 <?php
 /**
  * Chat Widget for Synofex Chatbot
+ * Version: 2.0.0
+ * Matches website ChatBot styling exactly
  *
  * @package SynofexChatbot
  */
@@ -34,9 +36,11 @@ class Synofex_Widget {
         <div id="synofex-chatbot-widget" class="synofex-chatbot-widget <?php echo esc_attr($position_class); ?> <?php echo esc_attr($theme_class); ?>" style="display:none;">
             <!-- Chat Toggle Button -->
             <button id="synofex-chat-toggle" class="synofex-chat-toggle" aria-label="<?php esc_attr_e('Open chat', 'synofex-chatbot'); ?>">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" fill="currentColor"/>
-                    <path d="M7 9H17V11H7V9ZM7 13H13V15H7V13Z" fill="white"/>
+                <svg class="synofex-chat-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 11.5C21.0034 12.8199 20.6951 14.1219 20.1 15.3C19.3944 16.7118 18.3098 17.8992 16.9674 18.7293C15.6251 19.5594 14.0782 19.9994 12.5 20C11.1801 20.0035 9.87812 19.6951 8.7 19.1L3 21L4.9 15.3C4.30493 14.1219 3.99656 12.8199 4 11.5C4.00061 9.92179 4.44061 8.37488 5.27072 7.03258C6.10083 5.69028 7.28825 4.6056 8.7 3.90003C9.87812 3.30496 11.1801 2.99659 12.5 3.00003H13C15.0843 3.11502 17.053 3.99479 18.5291 5.47089C20.0052 6.94699 20.885 8.91568 21 11V11.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg class="synofex-close-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
                 <span class="synofex-unread-indicator" style="display:none;">0</span>
             </button>
@@ -46,210 +50,96 @@ class Synofex_Widget {
                 <!-- Chat Header -->
                 <div class="synofex-chat-header">
                     <div class="synofex-chat-header-info">
-                        <?php if (!empty($bot_config['avatar'])): ?>
-                            <img src="<?php echo esc_url($bot_config['avatar']); ?>" alt="<?php esc_attr_e('Bot Avatar', 'synofex-chatbot'); ?>" class="synofex-bot-avatar">
-                        <?php endif; ?>
+                        <div class="synofex-bot-avatar-container">
+                            <?php if (!empty($bot_config['avatar'])): ?>
+                                <img src="<?php echo esc_url($bot_config['avatar']); ?>" alt="<?php esc_attr_e('Bot Avatar', 'synofex-chatbot'); ?>" class="synofex-bot-avatar">
+                            <?php else: ?>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 6C13.93 6 15.5 7.57 15.5 9.5C15.5 11.43 13.93 13 12 13C10.07 13 8.5 11.43 8.5 9.5C8.5 7.57 10.07 6 12 6ZM12 20C9.97 20 7.57 19.18 5.86 17.12C7.55 15.8 9.68 15 12 15C14.32 15 16.45 15.8 18.14 17.12C16.43 19.18 14.03 20 12 20Z" fill="#6566F1"/>
+                                </svg>
+                            <?php endif; ?>
+                        </div>
                         <div class="synofex-chat-header-text">
                             <h3><?php echo esc_html($bot_config['name'] ?? __('AI Assistant', 'synofex-chatbot')); ?></h3>
-                            <span class="synofex-status-indicator synofex-status-online">
-                                <?php _e('Online', 'synofex-chatbot'); ?>
-                            </span>
+                            <p><?php _e("We're here to help!", 'synofex-chatbot'); ?></p>
                         </div>
                     </div>
-                    <button id="synofex-chat-close" class="synofex-chat-close" aria-label="<?php esc_attr_e('Close chat', 'synofex-chatbot'); ?>">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </button>
+                    <div class="synofex-header-actions">
+                        <button class="synofex-header-btn" aria-label="<?php esc_attr_e('Help', 'synofex-chatbot'); ?>">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                                <path d="M9.09 9C9.3251 8.33167 9.78915 7.76811 10.4 7.40913C11.0108 7.05016 11.7289 6.91894 12.4272 7.03871C13.1255 7.15849 13.7588 7.52152 14.2151 8.06353C14.6713 8.60553 14.9211 9.29152 14.92 10C14.92 12 11.92 13 11.92 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="12" cy="17" r="1" fill="currentColor"/>
+                            </svg>
+                        </button>
+                        <button id="synofex-chat-close" class="synofex-chat-close" aria-label="<?php esc_attr_e('Close chat', 'synofex-chatbot'); ?>">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Chat Messages -->
                 <div id="synofex-chat-messages" class="synofex-chat-messages">
-                    <!-- Welcome message -->
-                    <?php if (!empty($bot_config['welcome_message'])): ?>
-                        <div class="synofex-message synofex-message-bot">
-                            <div class="synofex-message-content">
-                                <?php echo wp_kses_post($bot_config['welcome_message']); ?>
-                            </div>
-                            <span class="synofex-message-time"><?php echo esc_html(current_time('g:i a')); ?></span>
-                        </div>
-                    <?php else: ?>
-                        <div class="synofex-message synofex-message-bot">
-                            <div class="synofex-message-content">
-                                <?php _e('Hello! How can I help you today?', 'synofex-chatbot'); ?>
-                            </div>
-                            <span class="synofex-message-time"><?php echo esc_html(current_time('g:i a')); ?></span>
-                        </div>
-                    <?php endif; ?>
-                </div>
-
-                <!-- Typing Indicator -->
-                <div id="synofex-typing-indicator" class="synofex-typing-indicator" style="display:none;">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                    <!-- Messages will be added here dynamically -->
                 </div>
 
                 <!-- Chat Input -->
                 <div class="synofex-chat-input-container">
-                    <form id="synofex-chat-form" class="synofex-chat-form">
-                        <div class="synofex-input-group">
-                            <textarea
-                                id="synofex-chat-input"
-                                class="synofex-chat-input"
-                                placeholder="<?php esc_attr_e('Type your message...', 'synofex-chatbot'); ?>"
-                                rows="1"
-                                maxlength="1000"
-                            ></textarea>
-                            <button type="submit" class="synofex-send-button" aria-label="<?php esc_attr_e('Send message', 'synofex-chatbot'); ?>">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M2 10L18 2L14 18L10 10L2 10Z" fill="currentColor"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </form>
+                    <!-- Action Buttons - Appear after 5 messages -->
+                    <div id="synofex-action-buttons" class="synofex-action-buttons">
+                        <button type="button" class="synofex-action-btn request-human" data-action="request-human">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <?php _e('Request a Human', 'synofex-chatbot'); ?>
+                        </button>
+                        <button type="button" class="synofex-action-btn report-issue" data-action="report-issue">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10.29 3.86L1.82 18C1.64 18.3 1.55 18.65 1.55 19C1.55 19.35 1.64 19.7 1.82 20C2 20.3 2.26 20.56 2.56 20.74C2.86 20.92 3.21 21.01 3.56 21.01H20.44C20.79 21.01 21.14 20.92 21.44 20.74C21.74 20.56 22 20.3 22.18 20C22.36 19.7 22.45 19.35 22.45 19C22.45 18.65 22.36 18.3 22.18 18L13.71 3.86C13.53 3.56 13.27 3.31 12.97 3.14C12.67 2.97 12.33 2.88 11.99 2.88C11.65 2.88 11.31 2.97 11.01 3.14C10.71 3.31 10.46 3.56 10.29 3.86Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M12 9V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="12" cy="17" r="1" fill="currentColor"/>
+                            </svg>
+                            <?php _e('Report Issue', 'synofex-chatbot'); ?>
+                        </button>
+                    </div>
 
-                    <!-- Powered By -->
-                    <?php if (get_option('synofex_show_powered_by', true)): ?>
-                        <div class="synofex-powered-by">
-                            <a href="https://synofex.com" target="_blank" rel="noopener">
-                                <?php _e('Powered by Synofex', 'synofex-chatbot'); ?>
-                            </a>
-                        </div>
-                    <?php endif; ?>
+                    <!-- Input Row -->
+                    <div class="synofex-input-row">
+                        <form id="synofex-chat-form" class="synofex-chat-form">
+                            <div class="synofex-input-group">
+                                <input
+                                    type="text"
+                                    id="synofex-chat-input"
+                                    class="synofex-chat-input"
+                                    placeholder="<?php esc_attr_e('Type your message...', 'synofex-chatbot'); ?>"
+                                    maxlength="1000"
+                                    autocomplete="off"
+                                />
+                            </div>
+                        </form>
+                        <button type="button" class="synofex-end-btn" id="synofex-end-chat">
+                            <?php _e('End', 'synofex-chatbot'); ?>
+                        </button>
+                        <button type="submit" form="synofex-chat-form" class="synofex-send-button" aria-label="<?php esc_attr_e('Send message', 'synofex-chatbot'); ?>">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="synofex-footer">
+                        <?php _e('Privacy', 'synofex-chatbot'); ?> • <?php _e('GDPR', 'synofex-chatbot'); ?>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- Inline styles for critical CSS -->
-        <style>
-            .synofex-chatbot-widget {
-                position: fixed;
-                z-index: 9999;
-            }
-
-            .synofex-widget-bottom-right {
-                bottom: 20px;
-                right: 20px;
-            }
-
-            .synofex-widget-bottom-left {
-                bottom: 20px;
-                left: 20px;
-            }
-
-            .synofex-chat-toggle {
-                width: 56px;
-                height: 56px;
-                border-radius: 50%;
-                background: #0073aa;
-                color: white;
-                border: none;
-                cursor: pointer;
-                box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-                position: relative;
-                transition: transform 0.3s ease;
-            }
-
-            .synofex-chat-toggle:hover {
-                transform: scale(1.05);
-            }
-
-            .synofex-chat-window {
-                position: absolute;
-                width: 350px;
-                height: 500px;
-                background: white;
-                border-radius: 12px;
-                box-shadow: 0 5px 40px rgba(0,0,0,0.15);
-                display: flex;
-                flex-direction: column;
-                overflow: hidden;
-            }
-
-            .synofex-widget-bottom-right .synofex-chat-window {
-                bottom: 80px;
-                right: 0;
-            }
-
-            .synofex-widget-bottom-left .synofex-chat-window {
-                bottom: 80px;
-                left: 0;
-            }
-
-            .synofex-chat-header {
-                background: #0073aa;
-                color: white;
-                padding: 16px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            .synofex-chat-messages {
-                flex: 1;
-                overflow-y: auto;
-                padding: 16px;
-            }
-
-            .synofex-chat-input-container {
-                border-top: 1px solid #e0e0e0;
-                padding: 12px;
-            }
-
-            .synofex-chat-input {
-                width: 100%;
-                border: 1px solid #ddd;
-                border-radius: 20px;
-                padding: 8px 40px 8px 12px;
-                resize: none;
-                font-family: inherit;
-            }
-
-            .synofex-send-button {
-                position: absolute;
-                right: 8px;
-                top: 50%;
-                transform: translateY(-50%);
-                background: transparent;
-                border: none;
-                color: #0073aa;
-                cursor: pointer;
-                padding: 4px;
-            }
-
-            .synofex-input-group {
-                position: relative;
-            }
-
-            /* Dark theme */
-            .synofex-theme-dark .synofex-chat-window {
-                background: #1a1a1a;
-                color: #ffffff;
-            }
-
-            .synofex-theme-dark .synofex-chat-header {
-                background: #2c2c2c;
-            }
-
-            .synofex-theme-dark .synofex-chat-input {
-                background: #2c2c2c;
-                color: #ffffff;
-                border-color: #444;
-            }
-
-            /* Responsive */
-            @media (max-width: 480px) {
-                .synofex-chat-window {
-                    width: 100vw;
-                    height: 100vh;
-                    bottom: 0 !important;
-                    right: 0 !important;
-                    left: 0 !important;
-                    border-radius: 0;
-                }
-            }
-        </style>
         <?php
     }
 }

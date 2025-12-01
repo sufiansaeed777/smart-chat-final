@@ -24,11 +24,12 @@ import {
   UserCheck2,
   Loader2
 } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Tooltip } from '@/components/ui/tooltip';
 
 const TeamManagement = () => {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { showToast } = useToast();
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -491,7 +492,10 @@ const TeamManagement = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <button className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors">
+          <button
+            onClick={() => router.push('/manager-dashboard')}
+            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+          >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Dashboard</span>
           </button>

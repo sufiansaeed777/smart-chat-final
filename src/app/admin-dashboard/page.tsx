@@ -17,6 +17,15 @@ import {
   Zap
 } from 'lucide-react';
 
+interface RecentActivity {
+  type: string;
+  message: string;
+  time: string;
+  userId?: string;
+  botId?: string;
+  conversationId?: string;
+}
+
 const AdminOverview: React.FC = () => {
   const router = useRouter();
   const [stats, setStats] = useState({
@@ -27,27 +36,34 @@ const AdminOverview: React.FC = () => {
     systemHealth: 'healthy',
     databaseStatus: 'connected'
   });
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
 
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadAdminStats = async () => {
-      try {
-        const response = await fetch('/api/admin/stats');
+  // Fetch admin stats function
+  const loadAdminStats = async (isInitialLoad = false) => {
+    try {
+      if (isInitialLoad) setLoading(true);
+      const response = await fetch('/api/admin/stats');
 
-        if (response.ok) {
-          const data = await response.json();
-          setStats({
-            totalUsers: data.stats.totalUsers || 0,
-            totalBots: data.stats.totalBots || 0,
-            totalConversations: data.stats.totalConversations || 0,
-            activeUsers: data.stats.activeUsers || 0,
-            systemHealth: data.stats.systemHealth || 'healthy',
-            databaseStatus: data.stats.databaseStatus || 'connected'
-          });
-        } else {
-          // Fallback to mock data if API fails
-          console.error('Failed to fetch admin stats');
+      if (response.ok) {
+        const data = await response.json();
+        setStats({
+          totalUsers: data.stats.totalUsers || 0,
+          totalBots: data.stats.totalBots || 0,
+          totalConversations: data.stats.totalConversations || 0,
+          activeUsers: data.stats.activeUsers || 0,
+          systemHealth: data.stats.systemHealth || 'healthy',
+          databaseStatus: data.stats.databaseStatus || 'connected'
+        });
+        // Set recent activities from API
+        if (data.stats.recentActivity && data.stats.recentActivity.length > 0) {
+          setRecentActivities(data.stats.recentActivity);
+        }
+      } else {
+        // Fallback to mock data if API fails
+        console.error('Failed to fetch admin stats');
+        if (isInitialLoad) {
           setStats({
             totalUsers: 0,
             totalBots: 0,
@@ -57,9 +73,11 @@ const AdminOverview: React.FC = () => {
             databaseStatus: 'disconnected'
           });
         }
-      } catch (error) {
-        console.error('Error loading admin stats:', error);
-        // Fallback to mock data on error
+      }
+    } catch (error) {
+      console.error('Error loading admin stats:', error);
+      // Fallback to mock data on error
+      if (isInitialLoad) {
         setStats({
           totalUsers: 0,
           totalBots: 0,
@@ -68,12 +86,24 @@ const AdminOverview: React.FC = () => {
           systemHealth: 'unknown',
           databaseStatus: 'disconnected'
         });
-      } finally {
-        setLoading(false);
       }
-    };
+    } finally {
+      if (isInitialLoad) setLoading(false);
+    }
+  };
 
-    loadAdminStats();
+  // Initial load
+  useEffect(() => {
+    loadAdminStats(true);
+  }, []);
+
+  // Auto-refresh every 30 seconds for live updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadAdminStats(false);
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleNavigation = (path: string) => {
@@ -119,40 +149,23 @@ const AdminOverview: React.FC = () => {
     }
   ];
 
-  const recentActivities = [
-    {
-      type: 'user_registration',
-      message: 'New user registered: john.doe@example.com',
-      time: '2 minutes ago',
-      icon: Users,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-50'
-    },
-    {
-      type: 'bot_created',
-      message: 'New bot created: Customer Support Bot',
-      time: '15 minutes ago',
-      icon: Bot,
-      color: 'text-green-500',
-      bgColor: 'bg-green-50'
-    },
-    {
-      type: 'system_alert',
-      message: 'High memory usage detected on server-01',
-      time: '1 hour ago',
-      icon: AlertTriangle,
-      color: 'text-yellow-500',
-      bgColor: 'bg-yellow-50'
-    },
-    {
-      type: 'backup_completed',
-      message: 'Daily database backup completed successfully',
-      time: '2 hours ago',
-      icon: CheckCircle,
-      color: 'text-green-500',
-      bgColor: 'bg-green-50'
+  // Helper function to get icon and colors based on activity type
+  const getActivityStyle = (type: string) => {
+    switch (type) {
+      case 'user_registration':
+        return { icon: Users, color: 'text-blue-500', bgColor: 'bg-blue-50' };
+      case 'bot_created':
+        return { icon: Bot, color: 'text-green-500', bgColor: 'bg-green-50' };
+      case 'conversation':
+        return { icon: MessageSquare, color: 'text-purple-500', bgColor: 'bg-purple-50' };
+      case 'system_alert':
+        return { icon: AlertTriangle, color: 'text-yellow-500', bgColor: 'bg-yellow-50' };
+      case 'backup_completed':
+        return { icon: CheckCircle, color: 'text-green-500', bgColor: 'bg-green-50' };
+      default:
+        return { icon: Activity, color: 'text-gray-500', bgColor: 'bg-gray-50' };
     }
-  ];
+  };
 
   if (loading) {
     return (
@@ -348,32 +361,42 @@ const AdminOverview: React.FC = () => {
           Recent Activity
         </h3>
         <div className="space-y-4">
-          {recentActivities.map((activity, index) => {
-            const Icon = activity.icon;
-            return (
-              <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 hover:scale-[1.02] hover:shadow-purple-500/10 hover:shadow-lg transition-all duration-300 cursor-pointer group"
-                   onClick={() => {
-                     // Navigate based on activity type
-                     if (activity.type === 'user_registration') {
-                       handleNavigation('/admin-dashboard/user-management');
-                     } else if (activity.type === 'bot_created') {
-                       handleNavigation('/admin-dashboard/bots');
-                     } else if (activity.type === 'system_alert') {
-                       handleNavigation('/admin-dashboard/system-health');
-                     } else if (activity.type === 'backup_completed') {
-                       handleNavigation('/admin-dashboard/database');
-                     }
-                   }}>
-                <div className={`w-10 h-10 ${activity.bgColor} rounded-xl flex items-center justify-center`}>
-                  <Icon className={`w-6 h-6 ${activity.color}`} />
+          {recentActivities.length > 0 ? (
+            recentActivities.map((activity, index) => {
+              const style = getActivityStyle(activity.type);
+              const Icon = style.icon;
+              return (
+                <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 hover:scale-[1.02] hover:shadow-purple-500/10 hover:shadow-lg transition-all duration-300 cursor-pointer group"
+                     onClick={() => {
+                       // Navigate based on activity type
+                       if (activity.type === 'user_registration') {
+                         handleNavigation('/admin-dashboard/user-management');
+                       } else if (activity.type === 'bot_created') {
+                         handleNavigation('/admin-dashboard/bots');
+                       } else if (activity.type === 'conversation') {
+                         handleNavigation('/admin-dashboard/analytics');
+                       } else if (activity.type === 'system_alert') {
+                         handleNavigation('/admin-dashboard/system-health');
+                       } else if (activity.type === 'backup_completed') {
+                         handleNavigation('/admin-dashboard/database');
+                       }
+                     }}>
+                  <div className={`w-10 h-10 ${style.bgColor} rounded-xl flex items-center justify-center`}>
+                    <Icon className={`w-6 h-6 ${style.color}`} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-900">{activity.message}</p>
+                    <p className="text-xs text-gray-600">{activity.time}</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900">{activity.message}</p>
-                  <p className="text-xs text-gray-600">{activity.time}</p>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <Activity className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p>No recent activity</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

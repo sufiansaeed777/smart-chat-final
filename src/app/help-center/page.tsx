@@ -1,6 +1,8 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Book, MessageSquare, FileText, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Book, MessageSquare, FileText, HelpCircle, Wrench, Play } from 'lucide-react';
 
 export default function HelpCenterPage() {
   return (
@@ -57,9 +59,70 @@ export default function HelpCenterPage() {
           </div>
         </div>
 
+        {/* Getting Started Section */}
+        <div id="getting-started" className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 mb-8 scroll-mt-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <Book className="w-6 h-6 text-[#6566F1] mr-3" />
+            Getting Started Guide
+          </h2>
+
+          <div className="space-y-6">
+            <div className="border-l-4 border-[#6566F1] pl-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Step 1: Create Your Account</h3>
+              <p className="text-gray-600">
+                Sign up for a free account to get started. You'll need to verify your email address to activate your account.
+              </p>
+            </div>
+
+            <div className="border-l-4 border-[#6566F1] pl-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Step 2: Create Your First Bot</h3>
+              <p className="text-gray-600">
+                Navigate to the Bots section in your dashboard. Click "Create Bot" and give it a name and description.
+                This will be your AI-powered chatbot.
+              </p>
+            </div>
+
+            <div className="border-l-4 border-[#6566F1] pl-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Step 3: Train Your Bot</h3>
+              <p className="text-gray-600">
+                Upload documents (PDF, DOCX, TXT) or enter content directly. Your bot will learn from this content
+                to answer questions accurately.
+              </p>
+            </div>
+
+            <div className="border-l-4 border-[#6566F1] pl-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Step 4: Deploy Your Bot</h3>
+              <p className="text-gray-600">
+                Get your embed code or WordPress plugin token from the Integrations section. Add the chat widget
+                to your website and start engaging with visitors!
+              </p>
+            </div>
+          </div>
+
+          {/* Video Tutorial */}
+          <div className="mt-8 bg-gray-50 p-6 rounded-lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <Play className="w-5 h-5 text-[#6566F1] mr-2" />
+              Video Tutorial
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Watch our step-by-step video guide to set up your first chatbot in under 5 minutes.
+            </p>
+            <Link
+              href="/support#video-tutorials"
+              className="text-[#6566F1] hover:text-[#5A5BD9] font-medium"
+            >
+              Watch Video →
+            </Link>
+          </div>
+        </div>
+
         {/* FAQs Section */}
-        <div id="faqs" className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
+        <div id="faqs" className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 mb-8 scroll-mt-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <HelpCircle className="w-6 h-6 text-[#6566F1] mr-3" />
+            Frequently Asked Questions
+          </h2>
 
           <div className="space-y-6">
             <div>
@@ -100,6 +163,53 @@ export default function HelpCenterPage() {
                 Yes! You can customize colors, position, greeting message, and more from the bot settings in your dashboard.
               </p>
             </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">My bot is not responding correctly. What should I do?</h3>
+              <p className="text-gray-600">
+                First, check that your bot is trained with relevant content. Make sure the training documents are clear
+                and contain the information your visitors are asking about. You can also adjust the bot's system prompt
+                to improve responses.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">How do I enable human handoff?</h3>
+              <p className="text-gray-600">
+                Human handoff allows visitors to request a live agent. Enable it in your bot settings and configure
+                when the handoff should be triggered (e.g., on specific keywords or after a certain number of messages).
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Documentation Section */}
+        <div id="documentation" className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 mb-8 scroll-mt-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <FileText className="w-6 h-6 text-[#6566F1] mr-3" />
+            Documentation
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Link href="#getting-started" className="p-4 border border-gray-200 rounded-lg hover:border-[#6566F1] transition-colors">
+              <h3 className="font-semibold text-gray-900 mb-1">Quick Start Guide</h3>
+              <p className="text-sm text-gray-600">Get up and running in minutes</p>
+            </Link>
+
+            <Link href="#faqs" className="p-4 border border-gray-200 rounded-lg hover:border-[#6566F1] transition-colors">
+              <h3 className="font-semibold text-gray-900 mb-1">API Reference</h3>
+              <p className="text-sm text-gray-600">Integrate with our REST API</p>
+            </Link>
+
+            <Link href="#faqs" className="p-4 border border-gray-200 rounded-lg hover:border-[#6566F1] transition-colors">
+              <h3 className="font-semibold text-gray-900 mb-1">WordPress Integration</h3>
+              <p className="text-sm text-gray-600">Install and configure the WP plugin</p>
+            </Link>
+
+            <Link href="#faqs" className="p-4 border border-gray-200 rounded-lg hover:border-[#6566F1] transition-colors">
+              <h3 className="font-semibold text-gray-900 mb-1">Webhook Events</h3>
+              <p className="text-sm text-gray-600">Handle real-time notifications</p>
+            </Link>
           </div>
         </div>
 

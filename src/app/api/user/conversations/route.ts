@@ -116,9 +116,12 @@ export async function GET(request: NextRequest) {
 
     // Convert to array and format
     const formattedSessions = Array.from(conversationSessions.values()).map(session => {
-      const isActive = session.endTime > new Date(Date.now() - 24 * 60 * 60 * 1000); // Active if within last 24 hours
+      // Auto-complete: If no message for 30 minutes, mark as completed
+      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+      const lastMessageTime = session.lastMessageAt || session.endTime;
+      const isActive = lastMessageTime > thirtyMinutesAgo;
       const duration = Math.floor((session.endTime.getTime() - session.startTime.getTime()) / (1000 * 60)); // Duration in minutes
-      
+
       return {
         id: session.id,
         customerName: session.userEmail.split('@')[0] || 'Unknown User',

@@ -96,27 +96,39 @@ const BotsPage: React.FC = () => {
     }
   }, [showEditModal, showDeleteModal, showViewModal]);
 
-  useEffect(() => {
-    const loadBots = async () => {
-      try {
-        const response = await fetch('/api/admin/bots');
+  // Fetch bots function
+  const loadBots = async (isInitialLoad = false) => {
+    try {
+      if (isInitialLoad) setLoading(true);
+      const response = await fetch('/api/admin/bots');
 
-        if (!response.ok) {
-          console.error('Failed to fetch bots');
-          setLoading(false);
-          return;
-        }
-
-        const data = await response.json();
-        setBots(data.bots || []);
-      } catch (error) {
-        console.error('Error loading bots:', error);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        console.error('Failed to fetch bots');
+        if (isInitialLoad) setLoading(false);
+        return;
       }
-    };
 
-    loadBots();
+      const data = await response.json();
+      setBots(data.bots || []);
+    } catch (error) {
+      console.error('Error loading bots:', error);
+    } finally {
+      if (isInitialLoad) setLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    loadBots(true);
+  }, []);
+
+  // Auto-refresh every 30 seconds for live updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadBots(false);
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   const filteredBots = bots.filter(bot => {

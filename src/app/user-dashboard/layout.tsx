@@ -93,11 +93,11 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
       path: '/user-dashboard/human-handoff',
       badge: handoffCounts.pending > 0 ? handoffCounts.pending : null
     },
-    { 
-      id: 'report-issue', 
-      label: 'Report an Issue', 
-      icon: AlertTriangle, 
-      path: '/user-dashboard/report-issue',
+    {
+      id: 'issues',
+      label: 'Issues',
+      icon: AlertTriangle,
+      path: '/user-dashboard/issues',
       badge: issueCounts.pending > 0 ? issueCounts.pending : null,
       subtitle: `${issueCounts.resolved}/${issueCounts.total} resolved`
     },
@@ -124,7 +124,7 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
     if (pathname.includes('/analytics')) return 'analytics';
     if (pathname.includes('/conversations')) return 'conversations';
     if (pathname.includes('/human-handoff')) return 'human-handoff';
-    if (pathname.includes('/report-issue')) return 'report-issue';
+    if (pathname.includes('/issues')) return 'issues';
     if (pathname.includes('/profile')) return 'profile';
     if (pathname.includes('/help')) return 'help';
     return 'overview';
@@ -311,12 +311,12 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
           </div>
           
           <h1 className="text-lg font-bold text-gray-900">
-            {pathname.includes('/playground') ? 'AI Bot Playground' : 
+            {pathname.includes('/playground') ? 'AI Bot Playground' :
              pathname.includes('/bots') ? 'My Bots' :
              pathname.includes('/analytics') ? 'Analytics' :
              pathname.includes('/conversations') ? 'Conversations' :
              pathname.includes('/human-handoff') ? 'Human Handoff' :
-             pathname.includes('/report-issue') ? 'Report an Issue' :
+             pathname.includes('/issues') ? 'Issues' :
              pathname.includes('/profile') ? 'Profile' :
              pathname.includes('/help') ? 'Help' :
              'User Dashboard'}

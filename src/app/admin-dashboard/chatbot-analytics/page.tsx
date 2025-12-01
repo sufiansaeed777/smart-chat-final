@@ -40,6 +40,22 @@ interface BotAnalytics {
   change: number;
 }
 
+interface ChatbotIssue {
+  id: string;
+  type: 'human_request' | 'issue_report' | 'end_chat';
+  userId: string;
+  userEmail: string;
+  userName: string;
+  message: string;
+  status: 'pending' | 'in_progress' | 'resolved' | 'closed';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  botId?: string;
+  botName?: string;
+  websiteUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const ChatbotAnalyticsPage: React.FC = () => {
   const [analytics, setAnalytics] = useState<BotAnalytics[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,11 +65,19 @@ const ChatbotAnalyticsPage: React.FC = () => {
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
   const [selectedBotData, setSelectedBotData] = useState<BotAnalytics | null>(null);
 
+  // Issues state
+  const [issues, setIssues] = useState<ChatbotIssue[]>([]);
+  const [issuesLoading, setIssuesLoading] = useState(true);
+  const [showAllIssues, setShowAllIssues] = useState(false);
+
   // Filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [satisfactionFilter, setSatisfactionFilter] = useState<string>('all');
   const [trendFilter, setTrendFilter] = useState<string>('all');
   const [resolutionFilter, setResolutionFilter] = useState<string>('all');
+  const [conversationsFilter, setConversationsFilter] = useState<string>('all');
+  const [usersFilter, setUsersFilter] = useState<string>('all');
+  const [responseTimeFilter, setResponseTimeFilter] = useState<string>('all');
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -125,6 +149,30 @@ const ChatbotAnalyticsPage: React.FC = () => {
     };
 
     loadAnalytics();
+  }, []);
+
+  // Load chatbot issues
+  useEffect(() => {
+    const loadIssues = async () => {
+      try {
+        setIssuesLoading(true);
+        const response = await fetch('/api/chatbot/issues');
+
+        if (!response.ok) {
+          console.error('Failed to fetch chatbot issues');
+          return;
+        }
+
+        const data = await response.json();
+        setIssues(data.issues || []);
+      } catch (error) {
+        console.error('Error loading chatbot issues:', error);
+      } finally {
+        setIssuesLoading(false);
+      }
+    };
+
+    loadIssues();
   }, []);
 
   const getTrendIcon = (trend: string) => {
@@ -211,8 +259,20 @@ const ChatbotAnalyticsPage: React.FC = () => {
       (resolutionFilter === 'high' && bot.resolutionRate >= 90) ||
       (resolutionFilter === 'medium' && bot.resolutionRate >= 80 && bot.resolutionRate < 90) ||
       (resolutionFilter === 'low' && bot.resolutionRate < 80);
+    const matchesConversations = conversationsFilter === 'all' ||
+      (conversationsFilter === 'high' && bot.conversations >= 500) ||
+      (conversationsFilter === 'medium' && bot.conversations >= 100 && bot.conversations < 500) ||
+      (conversationsFilter === 'low' && bot.conversations < 100);
+    const matchesUsers = usersFilter === 'all' ||
+      (usersFilter === 'high' && bot.users >= 100) ||
+      (usersFilter === 'medium' && bot.users >= 20 && bot.users < 100) ||
+      (usersFilter === 'low' && bot.users < 20);
+    const matchesResponseTime = responseTimeFilter === 'all' ||
+      (responseTimeFilter === 'fast' && bot.responseTime < 1) ||
+      (responseTimeFilter === 'moderate' && bot.responseTime >= 1 && bot.responseTime < 2) ||
+      (responseTimeFilter === 'slow' && bot.responseTime >= 2);
 
-    return matchesSearch && matchesSatisfaction && matchesTrend && matchesResolution;
+    return matchesSearch && matchesSatisfaction && matchesTrend && matchesResolution && matchesConversations && matchesUsers && matchesResponseTime;
   });
 
   // Pagination calculations
@@ -224,7 +284,7 @@ const ChatbotAnalyticsPage: React.FC = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, satisfactionFilter, trendFilter, resolutionFilter]);
+  }, [searchTerm, satisfactionFilter, trendFilter, resolutionFilter, conversationsFilter, usersFilter, responseTimeFilter]);
 
   const totalConversations = analytics.reduce((sum, bot) => sum + bot.conversations, 0);
   const totalUsers = analytics.reduce((sum, bot) => sum + bot.users, 0);
@@ -374,6 +434,26 @@ const ChatbotAnalyticsPage: React.FC = () => {
             </div>
             <div className="flex flex-wrap gap-2">
               <select
+                value={conversationsFilter}
+                onChange={(e) => setConversationsFilter(e.target.value)}
+                className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900"
+              >
+                <option value="all">All Conversations</option>
+                <option value="high">High (500+)</option>
+                <option value="medium">Medium (100-499)</option>
+                <option value="low">Low (&lt;100)</option>
+              </select>
+              <select
+                value={usersFilter}
+                onChange={(e) => setUsersFilter(e.target.value)}
+                className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900"
+              >
+                <option value="all">All Users</option>
+                <option value="high">High (100+)</option>
+                <option value="medium">Medium (20-99)</option>
+                <option value="low">Low (&lt;20)</option>
+              </select>
+              <select
                 value={satisfactionFilter}
                 onChange={(e) => setSatisfactionFilter(e.target.value)}
                 className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900"
@@ -384,14 +464,14 @@ const ChatbotAnalyticsPage: React.FC = () => {
                 <option value="needs_improvement">Needs Improvement (&lt;4.0)</option>
               </select>
               <select
-                value={trendFilter}
-                onChange={(e) => setTrendFilter(e.target.value)}
+                value={responseTimeFilter}
+                onChange={(e) => setResponseTimeFilter(e.target.value)}
                 className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900"
               >
-                <option value="all">All Trends</option>
-                <option value="up">Trending Up</option>
-                <option value="down">Trending Down</option>
-                <option value="stable">Stable</option>
+                <option value="all">All Response Times</option>
+                <option value="fast">Fast (&lt;1s)</option>
+                <option value="moderate">Moderate (1-2s)</option>
+                <option value="slow">Slow (2s+)</option>
               </select>
               <select
                 value={resolutionFilter}
@@ -402,6 +482,16 @@ const ChatbotAnalyticsPage: React.FC = () => {
                 <option value="high">High (90%+)</option>
                 <option value="medium">Medium (80-89%)</option>
                 <option value="low">Low (&lt;80%)</option>
+              </select>
+              <select
+                value={trendFilter}
+                onChange={(e) => setTrendFilter(e.target.value)}
+                className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#6566F1] focus:border-transparent bg-white text-gray-900"
+              >
+                <option value="all">All Trends</option>
+                <option value="up">Trending Up</option>
+                <option value="down">Trending Down</option>
+                <option value="stable">Stable</option>
               </select>
             </div>
           </div>
@@ -651,6 +741,119 @@ const ChatbotAnalyticsPage: React.FC = () => {
               ))}
           </div>
         </div>
+      </div>
+
+      {/* Chatbot Issues & Requests Section */}
+      <div className="bg-white rounded-2xl shadow-sm border-0 overflow-hidden">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 flex items-center">
+                <AlertTriangle className="w-6 h-6 mr-2 text-[#6566F1]" />
+                Chatbot Issues & Requests
+              </h3>
+              <p className="text-gray-600 mt-1">Issues reported by users from your website</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-500">{issues.length} total issues</span>
+            </div>
+          </div>
+        </div>
+
+        {issuesLoading ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin w-8 h-8 border-4 border-[#6566F1] border-t-transparent rounded-full mx-auto mb-3"></div>
+            <p className="text-gray-500">Loading issues...</p>
+          </div>
+        ) : issues.length === 0 ? (
+          <div className="p-8 text-center">
+            <CheckCircle className="w-12 h-12 text-green-300 mx-auto mb-3" />
+            <p className="text-gray-500">No issues reported yet</p>
+            <p className="text-sm text-gray-400 mt-1">Issues reported by users will appear here</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">User</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Message</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Bot</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {(showAllIssues ? issues : issues.slice(0, 10)).map((issue) => (
+                    <tr key={issue.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          issue.type === 'issue_report' ? 'bg-red-100 text-red-800' :
+                          issue.type === 'human_request' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {issue.type === 'issue_report' ? 'Issue' :
+                           issue.type === 'human_request' ? 'Human Request' :
+                           'End Chat'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{issue.userName}</p>
+                          <p className="text-xs text-gray-500">{issue.userEmail}</p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="text-sm text-gray-900 max-w-xs truncate" title={issue.message}>
+                          {issue.message}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="text-sm text-gray-600">{issue.botName || 'Unknown'}</span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          issue.priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                          issue.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                          issue.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {issue.priority}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          issue.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          issue.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                          issue.status === 'resolved' ? 'bg-green-100 text-green-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {issue.status.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(issue.createdAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {issues.length > 10 && (
+              <div className="p-4 border-t border-gray-100 text-center">
+                <button
+                  onClick={() => setShowAllIssues(!showAllIssues)}
+                  className="text-sm font-medium text-[#6566F1] hover:text-[#5A5BD9] transition-colors"
+                >
+                  {showAllIssues ? 'Show Less' : `See More (${issues.length - 10} more)`}
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* View Bot Details Modal */}

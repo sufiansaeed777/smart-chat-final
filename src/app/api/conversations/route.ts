@@ -82,20 +82,44 @@ export async function GET(request: NextRequest) {
     // Transform to frontend format
     const formattedConversations = conversations.map(conv => {
       const fallbackId = conv.sessionId?.slice(-4) || conv.id.slice(-4);
+      const metadata = conv.metadata || {};
+
+      // Determine visitor name - if user is logged in, use their info
+      let visitorName = 'Guest';
+      let visitorEmail = '';
+      if (conv.user && conv.user.email) {
+        visitorName = conv.user.firstName && conv.user.lastName
+          ? `${conv.user.firstName} ${conv.user.lastName}`
+          : conv.user.email.split('@')[0];
+        visitorEmail = conv.user.email;
+      } else if (conv.guestName) {
+        visitorName = conv.guestName;
+      }
+
+      // Get first message time
+      const firstMessageTime = conv.messages?.length > 0
+        ? conv.messages[0].timestamp
+        : conv.createdAt?.toISOString();
+
       return {
         id: conv.id,
         sessionId: conv.sessionId,
-        guestName: conv.guestName || `Guest #${fallbackId}`,
+        guestName: visitorName,
         guestId: conv.guestId || `LC-${fallbackId}`,
+        visitorEmail: visitorEmail || metadata.email || '',
+        pageUrl: metadata.pageUrl || metadata.url || metadata.referrer || '',
+        country: metadata.country || metadata.location || '',
         mode: conv.mode,
         status: conv.status,
         messages: conv.messages || [],
+        messageCount: conv.messages?.length || 0,
         lastMessage: conv.messages?.length > 0
           ? conv.messages[conv.messages.length - 1].text
           : 'No messages yet',
         timestamp: conv.lastMessageAt
           ? getRelativeTime(new Date(conv.lastMessageAt))
           : 'Just now',
+        firstMessageTime: firstMessageTime,
         botName: conv.bot?.name,
         assignedAgent: conv.assignedAgent
           ? {

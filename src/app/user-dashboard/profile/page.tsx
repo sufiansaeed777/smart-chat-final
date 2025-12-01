@@ -162,8 +162,16 @@ const ProfilePage = () => {
         setErrors({ password: 'Please enter a new password' });
         return;
       }
-      if (passwordData.newPassword.length < 8) {
-        setErrors({ password: 'New password must be at least 8 characters long' });
+      // Validate all password requirements at once
+      const pwdErrors: string[] = [];
+      if (passwordData.newPassword.length < 8) pwdErrors.push('8+ characters');
+      if (!/[A-Z]/.test(passwordData.newPassword)) pwdErrors.push('uppercase letter');
+      if (!/[a-z]/.test(passwordData.newPassword)) pwdErrors.push('lowercase letter');
+      if (!/[0-9]/.test(passwordData.newPassword)) pwdErrors.push('number');
+      if (!/[!@#$%^&*(),.?":{}|<>]/.test(passwordData.newPassword)) pwdErrors.push('special character');
+
+      if (pwdErrors.length > 0) {
+        setErrors({ password: `Password must include: ${pwdErrors.join(', ')}` });
         return;
       }
       if (passwordData.newPassword !== passwordData.confirmPassword) {

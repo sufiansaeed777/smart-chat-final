@@ -5,8 +5,11 @@ import Link from 'next/link';
 import { HelpCircle, MessageSquare, Activity, Users, ArrowRight } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import { useChatBot } from '@/contexts/ChatBotContext';
 
 const SupportPage = () => {
+  const { triggerChat } = useChatBot();
+
   return (
     <div className="min-h-screen bg-white">
       <Navigation />
@@ -53,29 +56,29 @@ const SupportPage = () => {
                       <h3 className="text-2xl font-bold text-gray-900">Getting Started</h3>
                     </div>
                     <p className="text-gray-700 leading-relaxed text-lg mb-6">
-                      New to our platform? Start here with step-by-step guides to set up your account, 
+                      New to our platform? Start here with step-by-step guides to set up your account,
                       configure your first chatbot, and understand the basics.
                     </p>
                     <Link
-                      href="/help-center"
+                      href="/help-center#getting-started"
                       className="inline-flex items-center text-blue-600 hover:text-blue-700 font-semibold transition-colors"
                     >
                       View Getting Started Guide
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Link>
                   </div>
-                  
+
                   <div>
                     <div className="flex items-center mb-6">
                       <div className="w-3 h-3 bg-blue-500 rounded-full mr-4"></div>
                       <h3 className="text-2xl font-bold text-gray-900">Troubleshooting</h3>
                     </div>
                     <p className="text-gray-700 leading-relaxed text-lg mb-6">
-                      Experiencing issues? Our troubleshooting guides cover common problems and their solutions 
+                      Experiencing issues? Our troubleshooting guides cover common problems and their solutions
                       to get you back up and running quickly.
                     </p>
                     <Link
-                      href="/help-center"
+                      href="/help-center#faqs"
                       className="inline-flex items-center text-blue-600 hover:text-blue-700 font-semibold transition-colors"
                     >
                       Browse Solutions
@@ -117,16 +120,16 @@ const SupportPage = () => {
                       <h3 className="text-2xl font-bold text-gray-900">Live Chat</h3>
                     </div>
                     <p className="text-gray-700 leading-relaxed text-lg mb-6">
-                      Chat with our support team in real-time. Available during business hours for immediate 
+                      Chat with our support team in real-time. Available during business hours for immediate
                       assistance with urgent issues.
                     </p>
-                    <Link
-                      href="/contact-support"
+                    <button
+                      onClick={triggerChat}
                       className="inline-flex items-center text-green-600 hover:text-green-700 font-semibold transition-colors"
                     >
                       Start Chat
                       <ArrowRight className="w-4 h-4 ml-2" />
-                    </Link>
+                    </button>
                   </div>
                   
                   <div>
@@ -257,11 +260,11 @@ const SupportPage = () => {
                       <h3 className="text-2xl font-bold text-gray-900">Knowledge Base</h3>
                     </div>
                     <p className="text-gray-700 leading-relaxed text-lg mb-6">
-                      Access our comprehensive knowledge base with articles, tutorials, and best practices 
+                      Access our comprehensive knowledge base with articles, tutorials, and best practices
                       contributed by both our team and community members.
                     </p>
                     <Link
-                      href="/help-center"
+                      href="/help-center#faqs"
                       className="inline-flex items-center text-purple-600 hover:text-purple-700 font-semibold transition-colors"
                     >
                       Browse Articles

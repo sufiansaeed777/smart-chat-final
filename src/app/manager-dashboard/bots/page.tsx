@@ -142,6 +142,16 @@ const mockConversations = [
   }
 ];
 
+// Notification types
+type NotificationType = 'success' | 'error' | 'warning' | 'info';
+
+interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+}
+
 const BotsPage = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
@@ -173,6 +183,33 @@ const BotsPage = () => {
   const [assigningKnowledgeBot, setAssigningKnowledgeBot] = useState<any>(null);
   const [selectedKnowledgeIds, setSelectedKnowledgeIds] = useState<string[]>([]);
   const [isTraining, setIsTraining] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  // Notification helper functions
+  const showNotification = (type: NotificationType, title: string, message: string) => {
+    const id = Date.now().toString();
+    setNotifications(prev => [...prev, { id, type, title, message }]);
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 5000);
+  };
+
+  const dismissNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const getNotificationStyles = (type: NotificationType) => {
+    switch (type) {
+      case 'success':
+        return { bg: 'bg-green-50', border: 'border-green-200', icon: '✅', iconBg: 'bg-green-100', text: 'text-green-800', titleText: 'text-green-900' };
+      case 'error':
+        return { bg: 'bg-red-50', border: 'border-red-200', icon: '❌', iconBg: 'bg-red-100', text: 'text-red-800', titleText: 'text-red-900' };
+      case 'warning':
+        return { bg: 'bg-yellow-50', border: 'border-yellow-200', icon: '⚠️', iconBg: 'bg-yellow-100', text: 'text-yellow-800', titleText: 'text-yellow-900' };
+      case 'info':
+        return { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'ℹ️', iconBg: 'bg-blue-100', text: 'text-blue-800', titleText: 'text-blue-900' };
+    }
+  };
 
   const statusOptions = [
     { value: 'all', label: 'All Status', icon: '📊' },
@@ -276,13 +313,13 @@ const BotsPage = () => {
     try {
       // Validate domain format (must be valid https:// URL)
       if (!newBot.domain || newBot.domain.trim() === '') {
-        alert('Please enter a domain URL');
+        showNotification('warning', 'Domain Required', 'Please enter a domain URL for your bot.');
         return;
       }
 
       // Check if domain starts with https://
       if (!newBot.domain.startsWith('https://')) {
-        alert('Domain must start with https:// (e.g., https://yoursite.com)');
+        showNotification('warning', 'Invalid Domain Format', 'Domain must start with https:// (e.g., https://yoursite.com)');
         return;
       }
 
@@ -290,7 +327,7 @@ const BotsPage = () => {
       try {
         new URL(newBot.domain);
       } catch (urlError) {
-        alert('Please enter a valid URL (e.g., https://yoursite.com)');
+        showNotification('error', 'Invalid URL', 'Please enter a valid URL (e.g., https://yoursite.com)');
         return;
       }
 
@@ -319,11 +356,11 @@ const BotsPage = () => {
       } else {
         const errorData = await response.json();
         console.error('Error creating bot:', errorData.error);
-        alert('Error creating bot: ' + errorData.error);
+        showNotification('error', 'Bot Creation Failed', errorData.error || 'Failed to create bot. Please try again.');
       }
     } catch (error) {
       console.error('Error creating bot:', error);
-      alert('Error creating bot: ' + error);
+      showNotification('error', 'Bot Creation Failed', 'An unexpected error occurred. Please try again.');
     }
   };
 
@@ -348,7 +385,7 @@ const BotsPage = () => {
       const duplicateName = selectedDocs.some(doc => doc.name === documentToSelect.name);
 
       if (duplicateName) {
-        alert(`⚠️ A document named "${documentToSelect.name}" is already selected.\n\nPlease remove the existing one first or choose a different file.`);
+        showNotification('warning', 'Duplicate Document', `A document named "${documentToSelect.name}" is already selected. Please remove the existing one first or choose a different file.`);
         return prev; // Return unchanged state
       }
 
@@ -387,13 +424,14 @@ const BotsPage = () => {
         }));
         // Refresh available documents
         loadDocuments();
+        showNotification('success', 'Upload Successful', 'Documents uploaded successfully.');
       } else {
         const errorData = await response.json();
-        alert('Upload failed: ' + errorData.error);
+        showNotification('error', 'Upload Failed', errorData.error || 'Failed to upload documents.');
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Upload failed: ' + error);
+      showNotification('error', 'Upload Failed', 'An unexpected error occurred while uploading.');
     } finally {
       setIsUploadingDocument(false);
     }
@@ -434,7 +472,7 @@ const BotsPage = () => {
     try {
       // Validate domain
       if (editingBot.domain && !editingBot.domain.startsWith('https://')) {
-        alert('Domain must start with https://');
+        showNotification('warning', 'Invalid Domain Format', 'Domain must start with https:// (e.g., https://yoursite.com)');
         return;
       }
 
@@ -452,18 +490,18 @@ const BotsPage = () => {
       });
 
       if (response.ok) {
-        alert('Bot updated successfully!');
+        showNotification('success', 'Bot Updated', 'Your bot has been updated successfully!');
         setShowEditModal(false);
         setEditingBot(null);
         setSelectedKnowledgeIds([]);
         loadBots();
       } else {
         const error = await response.json();
-        alert('Error updating bot: ' + error.error);
+        showNotification('error', 'Update Failed', error.error || 'Failed to update bot. Please try again.');
       }
     } catch (error) {
       console.error('Error updating bot:', error);
-      alert('Error updating bot: ' + error);
+      showNotification('error', 'Update Failed', 'An unexpected error occurred. Please try again.');
     }
   };
 
@@ -488,24 +526,24 @@ const BotsPage = () => {
 
       if (response.ok) {
         const data = await response.json();
-        alert(data.message);
+        showNotification('success', 'Knowledge Assigned', data.message || `${selectedKnowledgeIds.length} document(s) assigned successfully!`);
         setShowAssignKnowledgeModal(false);
         setAssigningKnowledgeBot(null);
         setSelectedKnowledgeIds([]);
         loadBots();
       } else {
         const error = await response.json();
-        alert('Error assigning knowledge: ' + error.error);
+        showNotification('error', 'Assignment Failed', error.error || 'Failed to assign knowledge. Please try again.');
       }
     } catch (error) {
       console.error('Error assigning knowledge:', error);
-      alert('Error assigning knowledge: ' + error);
+      showNotification('error', 'Assignment Failed', 'An unexpected error occurred. Please try again.');
     }
   };
 
   const handleTrainBot = async (bot: any) => {
     if (!bot.documents || bot.documents.length === 0) {
-      alert('Please assign documents to this bot before training.');
+      showNotification('warning', 'No Documents', 'Please assign documents to this bot before training.');
       return;
     }
 
@@ -515,6 +553,8 @@ const BotsPage = () => {
 
     try {
       setIsTraining(true);
+      showNotification('info', 'Training Started', `Training ${bot.name}... This may take a few minutes.`);
+
       const response = await fetch('/api/manager/train-bot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -524,14 +564,14 @@ const BotsPage = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        alert(`✅ ${data.message}\n\nDocuments: ${data.summary.successfulDocuments}/${data.summary.totalDocuments}\nEmbeddings: ${data.summary.totalEmbeddings}`);
+        showNotification('success', 'Training Complete', `${data.message} Documents: ${data.summary.successfulDocuments}/${data.summary.totalDocuments}, Embeddings: ${data.summary.totalEmbeddings}`);
         loadBots();
       } else {
-        alert(`❌ Training failed: ${data.error || data.message || 'Unknown error'}\n\n${data.details || ''}`);
+        showNotification('error', 'Training Failed', data.error || data.message || 'Unknown error occurred during training.');
       }
     } catch (error) {
       console.error('Training error:', error);
-      alert('Training failed: ' + error);
+      showNotification('error', 'Training Failed', 'An unexpected error occurred during training.');
     } finally {
       setIsTraining(false);
     }
@@ -547,6 +587,35 @@ const BotsPage = () => {
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+      {/* Notification Container */}
+      <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 max-w-md">
+        {notifications.map((notification) => {
+          const styles = getNotificationStyles(notification.type);
+          return (
+            <div
+              key={notification.id}
+              className={`${styles.bg} ${styles.border} border rounded-2xl shadow-lg p-4 animate-in slide-in-from-right duration-300`}
+            >
+              <div className="flex items-start gap-3">
+                <div className={`${styles.iconBg} w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0`}>
+                  {styles.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className={`font-semibold ${styles.titleText}`}>{notification.title}</h4>
+                  <p className={`text-sm ${styles.text} mt-0.5`}>{notification.message}</p>
+                </div>
+                <button
+                  onClick={() => dismissNotification(notification.id)}
+                  className={`${styles.text} hover:opacity-70 transition-opacity p-1`}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
         {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">

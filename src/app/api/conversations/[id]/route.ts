@@ -127,13 +127,14 @@ export async function PATCH(
     if (mode) {
       conversation.mode = mode;
 
-      // Add system message when mode changes
+      // Add notification when mode changes (not a full message)
       if (message) {
         const messages = conversation.messages || [];
         messages.push({
           id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-          sender: mode === 'Human' ? 'agent' : 'bot',
-          text: message,
+          sender: 'system',
+          type: 'notification', // Mark as notification, not regular message
+          text: mode === 'Human' ? 'An agent has joined the conversation' : 'You are now chatting with AI',
           timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
         });
         conversation.messages = messages;

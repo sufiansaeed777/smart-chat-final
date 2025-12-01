@@ -23,63 +23,74 @@ import { useRouter } from 'next/navigation';
 const ManagerOverview = () => {
   const router = useRouter();
   const [overviewData, setOverviewData] = useState<{
-    metrics: { totalUsers: number; activeChats: number; totalConversations: number; resolvedToday: number }; 
-    stats: { acceptedUsers: number; chatChange: number }; 
-    connectedMetrics: { totalUsers: number; totalBots: number; availableAgents: number }; 
-    users: { 
-      id: string; 
-      name: string; 
-      email: string; 
-      initials: string; 
-      onlineStatus: 'online' | 'busy' | 'offline'; 
-      assignedBots: number; 
-      lastActive: string; 
-      status: 'accepted' | 'pending'; 
-      rating: number; 
-    }[]; 
-    recentActivity: { 
-      id: string; 
-      title: string; 
-      description: string; 
-      status: string; 
-      timestamp: Date; 
-    }[]; 
-    teamPerformance: { 
-      id: string; 
-      name: string; 
-      initials: string; 
-      chats: string; 
-      rating: string; 
-      status: string; 
-      statusColor: string; 
-    }[]; 
+    metrics: { totalUsers: number; activeChats: number; totalConversations: number; resolvedToday: number };
+    stats: { acceptedUsers: number; chatChange: number };
+    connectedMetrics: { totalUsers: number; totalBots: number; availableAgents: number };
+    users: {
+      id: string;
+      name: string;
+      email: string;
+      initials: string;
+      onlineStatus: 'online' | 'busy' | 'offline';
+      assignedBots: number;
+      lastActive: string;
+      status: 'accepted' | 'pending';
+      rating: string;
+    }[];
+    recentActivity: {
+      id: string;
+      title: string;
+      description: string;
+      status: string;
+      statusColor: string;
+      timestamp: Date;
+    }[];
+    teamPerformance: {
+      id: string;
+      name: string;
+      initials: string;
+      chats: string;
+      rating: string;
+      status: string;
+      statusColor: string;
+    }[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch overview data from API
-  useEffect(() => {
-    const fetchOverviewData = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/manager/overview');
-        
-        if (!response.ok) {
-          console.error('Failed to fetch overview data');
-          setLoading(false);
-          return;
-        }
-        
-        const data = await response.json();
-        setOverviewData(data);
-      } catch (err) {
-        console.error('Error fetching overview data:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchOverviewData = async (isInitialLoad = false) => {
+    try {
+      if (isInitialLoad) setLoading(true);
+      const response = await fetch('/api/manager/overview');
 
-    fetchOverviewData();
+      if (!response.ok) {
+        console.error('Failed to fetch overview data');
+        if (isInitialLoad) setLoading(false);
+        return;
+      }
+
+      const data = await response.json();
+      setOverviewData(data);
+    } catch (err) {
+      console.error('Error fetching overview data:', err);
+    } finally {
+      if (isInitialLoad) setLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    fetchOverviewData(true);
+  }, []);
+
+  // Auto-refresh every 30 seconds for live updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchOverviewData(false);
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
@@ -212,51 +223,27 @@ const ManagerOverview = () => {
     };
   });
 
-  // Recent activity with real user names (limited to 3)
-  const recentActivity = overviewData.users.slice(0, 3).map((user, index) => {
-    const activities = [
-    {
-      icon: MessageSquare,
-        title: `Handoff to ${user.name}`,
-        description: `Customer: ${user.email} • ${user.lastActive}`,
-      status: "active",
-      statusColor: "bg-purple-100 text-purple-600"
-    },
-    {
-      icon: CheckCircle,
-        title: `${user.name} resolved chat`,
-        description: `Customer: ${user.email} • ${user.lastActive}`,
-      status: "completed",
-        statusColor: "bg-green-100 text-green-600"
-    },
-    {
-      icon: UserCheck,
-        title: `Support Bot assigned to ${user.name}`,
-        description: `• ${user.lastActive}`,
-      status: "pending",
-        statusColor: "bg-yellow-100 text-yellow-600"
-      }
-    ];
-    return activities[index % activities.length];
-  });
+  // Use REAL recent activity data from API
+  const recentActivity = (overviewData.recentActivity || []).slice(0, 3).map((activity: any) => {
+    // Map status to icon
+    let icon = MessageSquare;
+    if (activity.status === 'completed') {
+      icon = CheckCircle;
+    } else if (activity.status === 'handoff') {
+      icon = UserCheck;
+    }
 
-  // Team performance with real user names (limited to 3)
-  const teamPerformance = overviewData.users.slice(0, 3).map(user => {
-    // Generate realistic chat count based on user activity
-    const chatCount = Math.floor(Math.random() * 15) + 1;
-    const rating = (4.0 + Math.random() * 1.0).toFixed(1);
-    
     return {
-      name: user.name,
-      initials: user.initials,
-      chats: `${chatCount} chat${chatCount !== 1 ? 's' : ''} today`,
-      rating: rating,
-      status: user.onlineStatus,
-      statusColor: user.onlineStatus === 'online' ? 'bg-green-100 text-green-600' : 
-                   user.onlineStatus === 'busy' ? 'bg-orange-100 text-orange-600' : 
-                   'bg-gray-100 text-gray-600'
+      icon: icon,
+      title: activity.title,
+      description: activity.description,
+      status: activity.status,
+      statusColor: activity.statusColor || 'bg-gray-100 text-gray-600'
     };
   });
+
+  // Use REAL team performance data from API
+  const teamPerformance = (overviewData.teamPerformance || []).slice(0, 3);
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -496,28 +483,36 @@ const ManagerOverview = () => {
           </CardHeader>
           <CardContent className="p-6 pt-0">
             <div className="space-y-4">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 hover:scale-[1.02] hover:shadow-md hover:shadow-blue-500/30 transition-all duration-300 cursor-pointer group">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center group-hover:bg-gray-50 group-hover:scale-110 transition-all duration-300">
-                      <activity.icon className="w-4 h-4 text-gray-600 group-hover:text-gray-700 group-hover:scale-110 transition-all duration-300" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 group-hover:text-gray-700 transition-colors duration-300">{activity.title}</p>
-                      <p className="text-sm text-gray-600 group-hover:text-gray-700 transition-colors duration-300">{activity.description}</p>
-                    </div>
-                  </div>
-                  <Badge className={`text-xs ${activity.statusColor} ${activity.statusColor.includes('bg-purple-100 text-purple-600') ? 'hover:bg-purple-600 hover:text-white' : 
-                    activity.statusColor.includes('bg-green-100 text-green-600') ? 'hover:bg-green-600 hover:text-white' : 
-                    activity.statusColor.includes('bg-yellow-100 text-yellow-600') ? 'hover:bg-yellow-600 hover:text-white' : 
-                    activity.statusColor.includes('bg-blue-100 text-blue-600') ? 'hover:bg-blue-600 hover:text-white' : 
-                    activity.statusColor.includes('bg-orange-100 text-orange-600') ? 'hover:bg-orange-600 hover:text-white' : 
-                    activity.statusColor.includes('bg-gray-100 text-gray-600') ? 'hover:bg-gray-600 hover:text-white' : 
-                    'hover:opacity-80'} transition-all duration-300`}>
-                    {activity.status}
-                  </Badge>
+              {recentActivity.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center bg-gray-50 rounded-xl">
+                  <Clock className="w-10 h-10 text-gray-300 mb-3" />
+                  <p className="text-sm font-medium text-gray-600">No recent activity</p>
+                  <p className="text-xs text-gray-400 mt-1">Chat activity will appear here</p>
                 </div>
-              ))}
+              ) : (
+                recentActivity.map((activity, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 hover:scale-[1.02] hover:shadow-md hover:shadow-blue-500/30 transition-all duration-300 cursor-pointer group">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center group-hover:bg-gray-50 group-hover:scale-110 transition-all duration-300">
+                        <activity.icon className="w-4 h-4 text-gray-600 group-hover:text-gray-700 group-hover:scale-110 transition-all duration-300" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900 group-hover:text-gray-700 transition-colors duration-300">{activity.title}</p>
+                        <p className="text-sm text-gray-600 group-hover:text-gray-700 transition-colors duration-300">{activity.description}</p>
+                      </div>
+                    </div>
+                    <Badge className={`text-xs ${activity.statusColor} ${activity.statusColor.includes('bg-purple-100 text-purple-600') ? 'hover:bg-purple-600 hover:text-white' :
+                      activity.statusColor.includes('bg-green-100 text-green-600') ? 'hover:bg-green-600 hover:text-white' :
+                      activity.statusColor.includes('bg-yellow-100 text-yellow-600') ? 'hover:bg-yellow-600 hover:text-white' :
+                      activity.statusColor.includes('bg-blue-100 text-blue-600') ? 'hover:bg-blue-600 hover:text-white' :
+                      activity.statusColor.includes('bg-orange-100 text-orange-600') ? 'hover:bg-orange-600 hover:text-white' :
+                      activity.statusColor.includes('bg-gray-100 text-gray-600') ? 'hover:bg-gray-600 hover:text-white' :
+                      'hover:opacity-80'} transition-all duration-300`}>
+                      {activity.status}
+                    </Badge>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -533,34 +528,42 @@ const ManagerOverview = () => {
           </CardHeader>
           <CardContent className="p-6 pt-0">
             <div className="space-y-4">
-              {teamPerformance.map((agent, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 hover:scale-[1.02] hover:shadow-md hover:shadow-blue-500/30 transition-all duration-300 cursor-pointer group">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center group-hover:bg-gray-300 group-hover:scale-110 transition-all duration-300">
-                      <span className="text-sm font-medium text-gray-600 group-hover:text-gray-700 transition-colors duration-300">{agent.initials}</span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 group-hover:text-gray-700 transition-colors duration-300">{agent.name}</p>
-                      <p className="text-sm text-gray-600 group-hover:text-gray-700 transition-colors duration-300">{agent.chats}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center space-x-1">
-                      <Star className="w-4 h-4 text-yellow-500 group-hover:text-yellow-600 group-hover:scale-110 transition-all duration-300" />
-                      <span className="text-sm font-medium text-gray-900 group-hover:text-gray-700 transition-colors duration-300">{agent.rating}</span>
-                    </div>
-                    <Badge className={`text-xs ${agent.statusColor} ${agent.statusColor.includes('bg-green-100 text-green-600') ? 'hover:bg-green-600 hover:text-white' : 
-                      agent.statusColor.includes('bg-orange-100 text-orange-600') ? 'hover:bg-orange-600 hover:text-white' : 
-                      agent.statusColor.includes('bg-gray-100 text-gray-600') ? 'hover:bg-gray-600 hover:text-white' : 
-                      agent.statusColor.includes('bg-blue-100 text-blue-600') ? 'hover:bg-blue-600 hover:text-white' : 
-                      agent.statusColor.includes('bg-purple-100 text-purple-600') ? 'hover:bg-purple-600 hover:text-white' : 
-                      agent.statusColor.includes('bg-yellow-100 text-yellow-600') ? 'hover:bg-yellow-600 hover:text-white' : 
-                      'hover:opacity-80'} transition-all duration-300`}>
-                      {agent.status}
-                    </Badge>
-                  </div>
+              {teamPerformance.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center bg-gray-50 rounded-xl">
+                  <Users className="w-10 h-10 text-gray-300 mb-3" />
+                  <p className="text-sm font-medium text-gray-600">No team members yet</p>
+                  <p className="text-xs text-gray-400 mt-1">Invite team members to see performance</p>
                 </div>
-              ))}
+              ) : (
+                teamPerformance.map((agent, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 hover:scale-[1.02] hover:shadow-md hover:shadow-blue-500/30 transition-all duration-300 cursor-pointer group">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center group-hover:bg-gray-300 group-hover:scale-110 transition-all duration-300">
+                        <span className="text-sm font-medium text-gray-600 group-hover:text-gray-700 transition-colors duration-300">{agent.initials}</span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900 group-hover:text-gray-700 transition-colors duration-300">{agent.name}</p>
+                        <p className="text-sm text-gray-600 group-hover:text-gray-700 transition-colors duration-300">{agent.chats}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-1">
+                        <Star className="w-4 h-4 text-yellow-500 group-hover:text-yellow-600 group-hover:scale-110 transition-all duration-300" />
+                        <span className="text-sm font-medium text-gray-900 group-hover:text-gray-700 transition-colors duration-300">{agent.rating}</span>
+                      </div>
+                      <Badge className={`text-xs ${agent.statusColor} ${agent.statusColor.includes('bg-green-100 text-green-600') ? 'hover:bg-green-600 hover:text-white' :
+                        agent.statusColor.includes('bg-orange-100 text-orange-600') ? 'hover:bg-orange-600 hover:text-white' :
+                        agent.statusColor.includes('bg-gray-100 text-gray-600') ? 'hover:bg-gray-600 hover:text-white' :
+                        agent.statusColor.includes('bg-blue-100 text-blue-600') ? 'hover:bg-blue-600 hover:text-white' :
+                        agent.statusColor.includes('bg-purple-100 text-purple-600') ? 'hover:bg-purple-600 hover:text-white' :
+                        agent.statusColor.includes('bg-yellow-100 text-yellow-600') ? 'hover:bg-yellow-600 hover:text-white' :
+                        'hover:opacity-80'} transition-all duration-300`}>
+                        {agent.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>

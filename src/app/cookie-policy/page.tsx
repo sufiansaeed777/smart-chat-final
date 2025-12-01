@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Footer from '@/components/Footer';
 
 export default function CookiePolicyPage() {
   const [showBanner, setShowBanner] = useState(false);
@@ -27,7 +28,7 @@ export default function CookiePolicyPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: '#f8fafc', fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: '#f8fafc', fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}>
       {/* Header */}
       <header
         className="border-b"
@@ -59,7 +60,7 @@ export default function CookiePolicyPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-[980px] mx-auto px-4 py-7">
+      <main className="flex-1 max-w-[980px] mx-auto px-4 py-7 w-full">
         <article
           className="bg-white rounded-xl p-6 md:p-9"
           style={{
@@ -193,9 +194,7 @@ export default function CookiePolicyPage() {
       )}
 
       {/* Footer */}
-      <footer className="max-w-[980px] mx-auto px-4 py-7 text-[#6b7280] text-sm">
-        Last updated: November 2025 &nbsp;•&nbsp; Smart Chat
-      </footer>
+      <Footer />
     </div>
   );
 }

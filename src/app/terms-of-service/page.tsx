@@ -2,21 +2,32 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 
 export default function TermsOfServicePage() {
   return (
-    <div className="min-h-screen bg-white">
-      <Navigation />
+    <div className="min-h-screen flex flex-col" style={{ background: '#f8fafc', fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}>
+      {/* Header */}
+      <header className="border-b" style={{ background: 'linear-gradient(90deg, rgba(16,185,129,0.06), transparent)', borderColor: 'rgba(15,23,42,0.04)', padding: '36px 18px' }}>
+        <div className="max-w-[980px] mx-auto px-4">
+          <div className="flex items-center gap-3">
+            <Link href="/">
+              <div className="w-[52px] h-[52px] rounded-[10px] flex items-center justify-center text-white font-bold text-lg cursor-pointer hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #10b981, #2563eb)' }}>SC</div>
+            </Link>
+            <div>
+              <h1 className="text-2xl md:text-[28px] font-bold text-[#0f172a] mb-1">Terms of Service</h1>
+              <p className="text-[#6b7280] text-sm md:text-base">Terms and conditions for using <strong>Smart Chat</strong></p>
+            </div>
+          </div>
+        </div>
+      </header>
 
-      <main className="py-16 mt-16">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Terms of Service</h1>
-            <p className="text-gray-600 mb-8">Last updated: January 2025</p>
+      {/* Main Content */}
+      <main className="flex-1 max-w-[980px] mx-auto px-4 py-7 w-full">
+        <article className="bg-white rounded-xl p-6 md:p-9" style={{ boxShadow: '0 6px 18px rgba(2,6,23,0.06)', border: '1px solid rgba(2,6,23,0.04)' }}>
+          <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-green-50 text-green-700 text-sm font-medium mb-6">Last updated: November 2025</div>
 
-            <div className="prose max-w-none">
+          <div className="space-y-6">
               <h2>1. Acceptance of Terms</h2>
               <p>
                 By accessing and using this service, you accept and agree to be bound by the terms and provision of this agreement.
@@ -108,11 +119,10 @@ export default function TermsOfServicePage() {
               <p>
                 For questions about these Terms, contact us at:
                 <br />
-                <a href="mailto:legal@smartchat.com" className="text-blue-600 hover:underline">legal@smartchat.com</a>
+                <a href="mailto:legal@smartchat.com" className="text-green-600 hover:underline">legal@smartchat.com</a>
               </p>
             </div>
-          </div>
-        </div>
+        </article>
       </main>
 
       <Footer />

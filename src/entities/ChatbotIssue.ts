@@ -43,6 +43,9 @@ export class ChatbotIssue {
   @JoinColumn({ name: 'bot_id' })
   bot?: Bot;
 
+  @Column({ name: 'website_url', type: 'varchar', length: 500, nullable: true })
+  websiteUrl?: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 

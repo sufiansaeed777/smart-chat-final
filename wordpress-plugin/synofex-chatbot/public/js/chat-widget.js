@@ -29,6 +29,7 @@
         modePollInterval: null, // NEW: Interval for polling mode changes
         displayedMessageIds: new Set(), // NEW: Track displayed message IDs to prevent duplicates
         isCheckingMode: false, // NEW: Prevent concurrent mode check requests
+        userMessageCount: 0, // Track user messages for showing action buttons
 
         // Initialize chat widget
         init: function() {
@@ -48,6 +49,12 @@
 
             // NEW: Start polling for mode changes (every 5 seconds)
             this.startModePolling();
+
+            // Hide action buttons initially (show after 5 messages)
+            $('#synofex-action-buttons').hide();
+
+            // Load saved message count
+            this.loadMessageCount();
 
             console.log('Synofex Chat: Ready');
         },
@@ -93,6 +100,20 @@
             // Report issue button
             $('#synofex-report-issue').on('click', () => {
                 this.showReportDialog();
+            });
+
+            // Action buttons (Request Human and Report Issue)
+            $('.synofex-action-btn.request-human').on('click', () => {
+                this.requestHumanAgent();
+            });
+
+            $('.synofex-action-btn.report-issue').on('click', () => {
+                this.showReportDialog();
+            });
+
+            // End chat button
+            $('#synofex-end-chat').on('click', () => {
+                this.endChat();
             });
         },
 
@@ -142,6 +163,11 @@
 
             // Clear input immediately
             input.val('').focus();
+
+            // Increment user message count and check if buttons should show
+            this.userMessageCount++;
+            this.saveMessageCount();
+            this.checkShowActionButtons();
 
             // Add user message to chat (track message ID to prevent duplicates)
             const userMessageId = `user-${Date.now()}-${message.substring(0, 20)}`;
@@ -354,6 +380,11 @@
                 // Clear displayed message IDs to allow fresh start
                 this.displayedMessageIds.clear();
 
+                // Reset message count and hide action buttons
+                this.userMessageCount = 0;
+                this.saveMessageCount();
+                $('#synofex-action-buttons').hide();
+
                 // Add welcome message
                 const welcomeId = `bot-welcome-${Date.now()}`;
                 this.displayedMessageIds.add(welcomeId);
@@ -546,12 +577,12 @@
             console.log('Conversation mode changed:', oldMode, '->', newMode);
 
             if (newMode === 'Human') {
-                // Agent took over
-                this.addSystemMessage('🙋 An agent has joined the conversation');
+                // Agent took over - show small notification
+                this.addNotification('An agent has joined the conversation');
                 this.updateModeIndicator('Human', 'Agent is here to help');
             } else if (newMode === 'AI') {
-                // Back to AI
-                this.addSystemMessage('🤖 You are now chatting with AI');
+                // Back to AI - show small notification
+                this.addNotification('You are now chatting with AI');
                 this.updateModeIndicator('AI', 'AI Assistant');
             }
         },
@@ -603,8 +634,21 @@
                 // Use server's message ID (critical for preventing duplicates!)
                 const messageId = msg.id || `${msg.sender}-${msg.timestamp}-${msg.text.substring(0, 20)}`;
 
+                // Skip if already displayed
+                if (this.displayedMessageIds.has(messageId)) {
+                    return;
+                }
+
+                // Handle notification messages (system notifications for mode changes)
+                if (msg.type === 'notification' || msg.sender === 'system') {
+                    this.displayedMessageIds.add(messageId);
+                    this.addNotification(msg.text, messageId);
+                    newMessagesAdded = true;
+                    return;
+                }
+
                 // Only add agent messages that we haven't displayed yet
-                if (msg.sender === 'agent' && !this.displayedMessageIds.has(messageId)) {
+                if (msg.sender === 'agent') {
                     this.displayedMessageIds.add(messageId);
                     // FIX: Pass messageId to addMessage - this preserves server's ID!
                     this.addMessage(msg.text, 'agent', messageId);
@@ -618,11 +662,59 @@
             }
         },
 
+        // Add a small notification (not a full message)
+        addNotification: function(text, notificationId) {
+            const messagesContainer = $('#synofex-chat-messages');
+            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const notificationHtml = `
+                <div class="synofex-notification" data-message-id="${this.escapeHtml(notificationId || '')}">
+                    <span class="synofex-notification-text">${this.escapeHtml(text)}</span>
+                </div>
+            `;
+
+            messagesContainer.append(notificationHtml);
+            this.scrollToBottom();
+        },
+
         // Stop polling (cleanup)
         stopModePolling: function() {
             if (this.modePollInterval) {
                 clearInterval(this.modePollInterval);
                 this.modePollInterval = null;
+            }
+        },
+
+        // Check if action buttons should be shown (after 5 messages)
+        checkShowActionButtons: function() {
+            if (this.userMessageCount >= 5) {
+                $('#synofex-action-buttons').slideDown(200);
+            }
+        },
+
+        // Save message count to localStorage
+        saveMessageCount: function() {
+            const token = window.synofexChatConfig?.token || 'default';
+            const storageKey = 'synofex_message_count_' + token.substring(0, 8);
+            try {
+                localStorage.setItem(storageKey, this.userMessageCount.toString());
+            } catch(e) {
+                console.warn('Could not save message count:', e);
+            }
+        },
+
+        // Load message count from localStorage
+        loadMessageCount: function() {
+            const token = window.synofexChatConfig?.token || 'default';
+            const storageKey = 'synofex_message_count_' + token.substring(0, 8);
+            try {
+                const count = localStorage.getItem(storageKey);
+                if (count) {
+                    this.userMessageCount = parseInt(count, 10) || 0;
+                    this.checkShowActionButtons();
+                }
+            } catch(e) {
+                console.warn('Could not load message count:', e);
             }
         },
 
@@ -730,6 +822,29 @@
                     this.addSystemMessage('⚠️ Failed to connect to human support. Please try again later.');
                 }
             });
+        },
+
+        // End chat
+        endChat: function() {
+            if (confirm('Are you sure you want to end this chat?')) {
+                // Clear chat and reset
+                $('#synofex-chat-messages').empty();
+                localStorage.removeItem('synofex_chat_history');
+                this.displayedMessageIds.clear();
+                this.userMessageCount = 0;
+                this.saveMessageCount();
+                $('#synofex-action-buttons').hide();
+                this.conversationId = null;
+                localStorage.removeItem('synofex_conversation_id');
+
+                // Add welcome message
+                const welcomeId = `bot-welcome-${Date.now()}`;
+                this.displayedMessageIds.add(welcomeId);
+                this.addMessage(this.config.welcomeMessage || 'Hello! How can I help you today?', 'bot', welcomeId);
+
+                // Close chat window
+                this.closeChat();
+            }
         }
     };
 

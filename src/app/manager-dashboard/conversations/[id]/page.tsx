@@ -76,7 +76,26 @@ const ConversationDetailsPage = () => {
   };
 
   const formatTime = (timeString: string) => {
-    return new Date(timeString).toLocaleString();
+    if (!timeString) return 'Unknown time';
+
+    const date = new Date(timeString);
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'Unknown time';
+    }
+
+    // Format: "Dec 25, 2024 at 2:30 PM"
+    const options: Intl.DateTimeFormatOptions = {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    };
+
+    return date.toLocaleDateString('en-US', options).replace(',', ' at');
   };
 
   if (loading) {

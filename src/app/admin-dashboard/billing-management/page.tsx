@@ -19,7 +19,9 @@ import {
   TrendingUp,
   TrendingDown,
   Edit,
-  X
+  X,
+  UserPlus,
+  RefreshCw
 } from 'lucide-react';
 
 interface Subscription {
@@ -39,6 +41,19 @@ interface Subscription {
   botsCount: number;
   createdAt: string;
   updatedAt: string;
+}
+
+interface UserForAssignment {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  role: string;
+  subscriptionPlan: string;
+  subscriptionStatus: string | null;
+  messagesUsedThisMonth: number;
+  isActive: boolean;
 }
 
 const AVAILABLE_PLANS = [
@@ -63,17 +78,32 @@ export default function AdminBillingManagement() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [planFilter, setPlanFilter] = useState<string>('all');
 
-  // Plan assignment modal state
+  // Plan assignment modal state (for existing subscriptions)
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Subscription | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [selectedBillingCycle, setSelectedBillingCycle] = useState<string>('monthly');
+  const [customAmount, setCustomAmount] = useState<string>('');
+  const [planNotes, setPlanNotes] = useState<string>('');
+  const [resetUsage, setResetUsage] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // New user assignment modal state
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<UserForAssignment[]>([]);
+  const [selectedUserForAssignment, setSelectedUserForAssignment] = useState<UserForAssignment | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   const openPlanModal = (subscription: Subscription) => {
     setSelectedUser(subscription);
     setSelectedPlan(subscription.planName.toLowerCase());
     setSelectedStatus(subscription.status);
+    setSelectedBillingCycle(subscription.billingCycle);
+    setCustomAmount(subscription.amount.toString());
+    setPlanNotes('');
+    setResetUsage(false);
     setShowPlanModal(true);
   };
 
@@ -82,41 +112,152 @@ export default function AdminBillingManagement() {
     setSelectedUser(null);
     setSelectedPlan('');
     setSelectedStatus('');
+    setSelectedBillingCycle('monthly');
+    setCustomAmount('');
+    setPlanNotes('');
+    setResetUsage(false);
   };
+
+  const openAssignModal = () => {
+    setShowAssignModal(true);
+    setUserSearchTerm('');
+    setSearchResults([]);
+    setSelectedUserForAssignment(null);
+    setSelectedPlan('free');
+    setSelectedStatus('active');
+    setSelectedBillingCycle('monthly');
+    setCustomAmount('');
+    setPlanNotes('');
+    setResetUsage(false);
+  };
+
+  const closeAssignModal = () => {
+    setShowAssignModal(false);
+    setUserSearchTerm('');
+    setSearchResults([]);
+    setSelectedUserForAssignment(null);
+    setSelectedPlan('');
+    setSelectedStatus('');
+    setSelectedBillingCycle('monthly');
+    setCustomAmount('');
+    setPlanNotes('');
+    setResetUsage(false);
+  };
+
+  // Search for users
+  const searchUsers = async (search: string) => {
+    if (!search || search.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/admin/billing/assign-plan?search=${encodeURIComponent(search)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.users || []);
+      }
+    } catch (error) {
+      console.error('Error searching users:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (userSearchTerm) {
+        searchUsers(userSearchTerm);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [userSearchTerm]);
 
   const handleUpdatePlan = async () => {
     if (!selectedUser || !selectedPlan) return;
 
     setIsUpdating(true);
     try {
-      const response = await fetch('/api/admin/users', {
-        method: 'PATCH',
+      const response = await fetch('/api/admin/billing/assign-plan', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: selectedUser.managerId,
-          updates: {
-            subscriptionPlan: selectedPlan,
-            subscriptionStatus: selectedStatus || 'active'
-          }
+          planName: selectedPlan,
+          subscriptionStatus: selectedStatus || 'active',
+          billingCycle: selectedBillingCycle,
+          customAmount: customAmount ? parseFloat(customAmount) : undefined,
+          notes: planNotes || undefined,
+          resetUsage: resetUsage
         })
       });
+
+      const data = await response.json();
 
       if (response.ok) {
         // Update local state
         setSubscriptions(prev => prev.map(sub =>
           sub.id === selectedUser.id
-            ? { ...sub, planName: selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1), status: selectedStatus as any }
+            ? {
+                ...sub,
+                planName: selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1),
+                status: selectedStatus as any,
+                billingCycle: selectedBillingCycle as any,
+                amount: customAmount ? parseFloat(customAmount) : sub.amount
+              }
             : sub
         ));
         closePlanModal();
-        alert('Plan updated successfully!');
+        alert(`Plan ${data.isUpgrade ? 'upgraded' : data.isDowngrade ? 'downgraded' : 'updated'} successfully!`);
       } else {
-        const error = await response.json();
-        alert(`Failed to update plan: ${error.error}`);
+        alert(`Failed to update plan: ${data.error}`);
       }
     } catch (error) {
       console.error('Error updating plan:', error);
       alert('An error occurred while updating the plan');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleAssignPlan = async () => {
+    if (!selectedUserForAssignment || !selectedPlan) return;
+
+    setIsUpdating(true);
+    try {
+      const response = await fetch('/api/admin/billing/assign-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: selectedUserForAssignment.id,
+          planName: selectedPlan,
+          subscriptionStatus: selectedStatus || 'active',
+          billingCycle: selectedBillingCycle,
+          customAmount: customAmount ? parseFloat(customAmount) : undefined,
+          notes: planNotes || undefined,
+          resetUsage: resetUsage
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        closeAssignModal();
+        alert(`Plan assigned successfully to ${selectedUserForAssignment.fullName || selectedUserForAssignment.email}!`);
+        // Refresh subscriptions list
+        const subsResponse = await fetch('/api/admin/billing/subscriptions');
+        if (subsResponse.ok) {
+          const subsData = await subsResponse.json();
+          setSubscriptions(subsData.subscriptions || []);
+        }
+      } else {
+        alert(`Failed to assign plan: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error assigning plan:', error);
+      alert('An error occurred while assigning the plan');
     } finally {
       setIsUpdating(false);
     }
@@ -213,9 +354,18 @@ export default function AdminBillingManagement() {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Billing Management</h1>
-        <p className="text-gray-600">Manage manager subscriptions and billing</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Billing Management</h1>
+          <p className="text-gray-600">Manage manager subscriptions and billing</p>
+        </div>
+        <Button
+          onClick={openAssignModal}
+          className="bg-[#6566F1] hover:bg-[#5A5BD9] text-white flex items-center gap-2"
+        >
+          <UserPlus className="h-4 w-4" />
+          Assign Plan to User
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -422,16 +572,19 @@ export default function AdminBillingManagement() {
         </CardContent>
       </Card>
 
-      {/* Plan Assignment Modal */}
+      {/* Edit Plan Modal (for existing subscriptions) */}
       {showPlanModal && selectedUser && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-xl font-bold text-gray-900">Assign Plan</h3>
+                <h3 className="text-xl font-bold text-gray-900">Edit Subscription</h3>
                 <p className="text-sm text-gray-600 mt-1">
                   {selectedUser.managerName} ({selectedUser.managerEmail})
                 </p>
+                <Badge className="mt-2 bg-blue-100 text-blue-800">
+                  Current: {selectedUser.planName}
+                </Badge>
               </div>
               <button
                 onClick={closePlanModal}
@@ -447,11 +600,11 @@ export default function AdminBillingManagement() {
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
                   Select Plan
                 </label>
-                <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
                   {AVAILABLE_PLANS.map((plan) => (
                     <label
                       key={plan.id}
-                      className={`flex items-center p-3 border rounded-lg cursor-pointer transition-all ${
+                      className={`flex flex-col p-3 border rounded-lg cursor-pointer transition-all ${
                         selectedPlan === plan.id
                           ? 'border-[#6566F1] bg-[#6566F1]/5 ring-2 ring-[#6566F1]/20'
                           : 'border-gray-200 hover:border-gray-300'
@@ -465,41 +618,99 @@ export default function AdminBillingManagement() {
                         onChange={(e) => setSelectedPlan(e.target.value)}
                         className="sr-only"
                       />
-                      <div className="flex-1">
+                      <div className="flex items-center justify-between">
                         <p className="font-medium text-gray-900">{plan.name}</p>
-                        <p className="text-sm text-gray-500">{plan.description}</p>
+                        {selectedPlan === plan.id && (
+                          <CheckCircle className="w-4 h-4 text-[#6566F1]" />
+                        )}
                       </div>
-                      {selectedPlan === plan.id && (
-                        <CheckCircle className="w-5 h-5 text-[#6566F1]" />
-                      )}
+                      <p className="text-xs text-gray-500 mt-1">{plan.description}</p>
                     </label>
                   ))}
                 </div>
               </div>
 
-              {/* Status Selection */}
+              {/* Two columns for Status and Billing Cycle */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Status
+                  </label>
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent text-sm"
+                  >
+                    {SUBSCRIPTION_STATUSES.map((status) => (
+                      <option key={status.id} value={status.id}>
+                        {status.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Billing Cycle
+                  </label>
+                  <select
+                    value={selectedBillingCycle}
+                    onChange={(e) => setSelectedBillingCycle(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent text-sm"
+                  >
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Custom Amount */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Subscription Status
+                  Custom Amount (USD) - Optional
                 </label>
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent"
-                >
-                  {SUBSCRIPTION_STATUSES.map((status) => (
-                    <option key={status.id} value={status.id}>
-                      {status.name}
-                    </option>
-                  ))}
-                </select>
+                <Input
+                  type="number"
+                  placeholder="Leave empty for default pricing"
+                  value={customAmount}
+                  onChange={(e) => setCustomAmount(e.target.value)}
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500 mt-1">Override the default plan price</p>
               </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Notes (Optional)
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Reason for change..."
+                  value={planNotes}
+                  onChange={(e) => setPlanNotes(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Reset Usage Checkbox */}
+              <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={resetUsage}
+                  onChange={(e) => setResetUsage(e.target.checked)}
+                  className="w-4 h-4 text-[#6566F1] rounded border-gray-300 focus:ring-[#6566F1]"
+                />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Reset Usage Counter</p>
+                  <p className="text-xs text-gray-500">Reset messages used this month to 0</p>
+                </div>
+              </label>
 
               {/* Warning */}
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                 <p className="text-sm text-yellow-800">
-                  <strong>Note:</strong> This will manually override the user&apos;s subscription.
-                  This bypasses Stripe billing - use for special cases only.
+                  <strong>Note:</strong> This will manually override the subscription.
+                  For Stripe-connected users, ensure billing is updated separately if needed.
                 </p>
               </div>
             </div>
@@ -510,10 +721,257 @@ export default function AdminBillingManagement() {
                 disabled={isUpdating || !selectedPlan}
                 className="flex-1 bg-[#6566F1] hover:bg-[#5A5BD9] text-white"
               >
-                {isUpdating ? 'Updating...' : 'Update Plan'}
+                {isUpdating ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  'Update Plan'
+                )}
               </Button>
               <Button
                 onClick={closePlanModal}
+                variant="outline"
+                disabled={isUpdating}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Plan to User Modal */}
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Assign Plan to User</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Search for a user and assign them a subscription plan
+                </p>
+              </div>
+              <button
+                onClick={closeAssignModal}
+                className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* User Search */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Search User
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={userSearchTerm}
+                    onChange={(e) => setUserSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                {/* Search Results */}
+                {isSearching && (
+                  <div className="mt-2 p-3 bg-gray-50 rounded-lg text-center text-sm text-gray-500">
+                    <RefreshCw className="w-4 h-4 animate-spin inline mr-2" />
+                    Searching...
+                  </div>
+                )}
+
+                {!isSearching && searchResults.length > 0 && (
+                  <div className="mt-2 border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
+                    {searchResults.map((user) => (
+                      <button
+                        key={user.id}
+                        onClick={() => setSelectedUserForAssignment(user)}
+                        className={`w-full p-3 text-left hover:bg-gray-50 border-b last:border-b-0 transition-colors ${
+                          selectedUserForAssignment?.id === user.id ? 'bg-[#6566F1]/5 border-[#6566F1]' : ''
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-gray-900">{user.fullName}</p>
+                            <p className="text-sm text-gray-500">{user.email}</p>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {user.role}
+                            </Badge>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Current: {user.subscriptionPlan}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {!isSearching && userSearchTerm.length >= 2 && searchResults.length === 0 && (
+                  <div className="mt-2 p-3 bg-gray-50 rounded-lg text-center text-sm text-gray-500">
+                    No users found
+                  </div>
+                )}
+              </div>
+
+              {/* Selected User Display */}
+              {selectedUserForAssignment && (
+                <div className="p-3 bg-[#6566F1]/5 border border-[#6566F1]/20 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">{selectedUserForAssignment.fullName}</p>
+                      <p className="text-sm text-gray-600">{selectedUserForAssignment.email}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {selectedUserForAssignment.role}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          Current: {selectedUserForAssignment.subscriptionPlan}
+                        </Badge>
+                      </div>
+                    </div>
+                    <CheckCircle className="w-5 h-5 text-[#6566F1]" />
+                  </div>
+                </div>
+              )}
+
+              {/* Plan Selection */}
+              {selectedUserForAssignment && (
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Select Plan
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {AVAILABLE_PLANS.map((plan) => (
+                        <label
+                          key={plan.id}
+                          className={`flex flex-col p-3 border rounded-lg cursor-pointer transition-all ${
+                            selectedPlan === plan.id
+                              ? 'border-[#6566F1] bg-[#6566F1]/5 ring-2 ring-[#6566F1]/20'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="assignPlan"
+                            value={plan.id}
+                            checked={selectedPlan === plan.id}
+                            onChange={(e) => setSelectedPlan(e.target.value)}
+                            className="sr-only"
+                          />
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-gray-900">{plan.name}</p>
+                            {selectedPlan === plan.id && (
+                              <CheckCircle className="w-4 h-4 text-[#6566F1]" />
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">{plan.description}</p>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Two columns for Status and Billing Cycle */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        Status
+                      </label>
+                      <select
+                        value={selectedStatus}
+                        onChange={(e) => setSelectedStatus(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent text-sm"
+                      >
+                        {SUBSCRIPTION_STATUSES.map((status) => (
+                          <option key={status.id} value={status.id}>
+                            {status.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        Billing Cycle
+                      </label>
+                      <select
+                        value={selectedBillingCycle}
+                        onChange={(e) => setSelectedBillingCycle(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent text-sm"
+                      >
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Custom Amount */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Custom Amount (USD) - Optional
+                    </label>
+                    <Input
+                      type="number"
+                      placeholder="Leave empty for default pricing"
+                      value={customAmount}
+                      onChange={(e) => setCustomAmount(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Notes */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Notes (Optional)
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="Reason for assignment..."
+                      value={planNotes}
+                      onChange={(e) => setPlanNotes(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Info Box */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-800">
+                  <strong>Info:</strong> This will update the user&apos;s subscription plan and create
+                  a subscription record if they are a manager. Billing dates will be set automatically.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 mt-6">
+              <Button
+                onClick={handleAssignPlan}
+                disabled={isUpdating || !selectedUserForAssignment || !selectedPlan}
+                className="flex-1 bg-[#6566F1] hover:bg-[#5A5BD9] text-white"
+              >
+                {isUpdating ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Assigning...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Assign Plan
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={closeAssignModal}
                 variant="outline"
                 disabled={isUpdating}
               >

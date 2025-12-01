@@ -35,8 +35,16 @@ const SignupComponent = () => {
       return;
     }
 
-    if (form.password.length < 8) {
-      setError('Password must be at least 8 characters long');
+    // Validate all password requirements at once
+    const pwdErrors: string[] = [];
+    if (form.password.length < 8) pwdErrors.push('8+ characters');
+    if (!/[A-Z]/.test(form.password)) pwdErrors.push('uppercase letter');
+    if (!/[a-z]/.test(form.password)) pwdErrors.push('lowercase letter');
+    if (!/[0-9]/.test(form.password)) pwdErrors.push('number');
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(form.password)) pwdErrors.push('special character');
+
+    if (pwdErrors.length > 0) {
+      setError(`Password must include: ${pwdErrors.join(', ')}`);
       return;
     }
     

@@ -47,6 +47,24 @@ export async function GET() {
       .where('user.updatedAt > :date', { date: thirtyDaysAgo })
       .getCount();
 
+    // Daily Active Users (last 24 hours)
+    const dailyActiveUsers = await userRepository
+      .createQueryBuilder('user')
+      .where('user.updatedAt > :date', { date: twentyFourHoursAgo })
+      .getCount();
+
+    // Weekly Active Users (last 7 days)
+    const weeklyActiveUsers = await userRepository
+      .createQueryBuilder('user')
+      .where('user.updatedAt > :date', { date: sevenDaysAgo })
+      .getCount();
+
+    // New Registrations (last 7 days)
+    const newRegistrations = await userRepository
+      .createQueryBuilder('user')
+      .where('user.createdAt > :date', { date: sevenDaysAgo })
+      .getCount();
+
     // Active Conversations (last 24 hours)
     const activeConversations = await conversationRepository
       .createQueryBuilder('conversation')
@@ -184,13 +202,13 @@ export async function GET() {
       ? (totalBots / totalUsers).toFixed(1)
       : '0';
 
-    // Recent Activity (last 10 conversations)
+    // Recent Activity (fetch more for pagination - initial 10, expandable to all)
     const recentConversations = await conversationRepository
       .createQueryBuilder('conversation')
       .leftJoinAndSelect('conversation.bot', 'bot')
       .leftJoinAndSelect('conversation.user', 'user')
       .orderBy('conversation.createdAt', 'DESC')
-      .take(10)
+      .take(100)
       .getMany();
 
     const recentActivity = recentConversations.map(conv => ({
@@ -211,7 +229,10 @@ export async function GET() {
         activeUsers,
         activeConversations,
         activeBots,
-        inactiveBots
+        inactiveBots,
+        dailyActiveUsers,
+        weeklyActiveUsers,
+        newRegistrations
       },
       growth: {
         userWeeklyGrowth: parseFloat(userWeeklyGrowth),

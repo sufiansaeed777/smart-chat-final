@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { ArrowRight } from 'lucide-react';
@@ -9,23 +9,34 @@ interface SmartCTAButtonProps {
   text: string;
   className?: string;
   showIcon?: boolean;
+  redirectToBilling?: boolean; // If true, logged-in users go to billing page
 }
 
 /**
  * Smart CTA Button that redirects based on authentication status
  * - Not logged in → /signup
- * - Manager → /manager-dashboard
+ * - Logged in + redirectToBilling → billing page (for Buy buttons)
+ * - Manager → /manager-dashboard or /manager-dashboard/billing
  * - Admin → /admin-dashboard
  * - User → /user-dashboard
  */
 export default function SmartCTAButton({
   text,
   className = '',
-  showIcon = true
+  showIcon = true,
+  redirectToBilling = false
 }: SmartCTAButtonProps) {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Detect if this is a buy/pricing action based on text
+  const isBuyAction = text.toLowerCase().includes('buy') ||
+    text.toLowerCase().includes('start free trial') ||
+    text.toLowerCase().includes('get started') ||
+    text.toLowerCase().includes('upgrade') ||
+    text.toLowerCase().includes('subscribe') ||
+    text.toLowerCase().includes('get custom quote');
 
   const handleClick = () => {
     setIsLoading(true);
@@ -33,18 +44,37 @@ export default function SmartCTAButton({
     if (status === 'authenticated' && session?.user) {
       const role = (session.user as any).role;
 
-      switch (role) {
-        case 'manager':
-          router.push('/manager-dashboard');
-          break;
-        case 'admin':
-          router.push('/admin-dashboard');
-          break;
-        case 'user':
-          router.push('/user-dashboard');
-          break;
-        default:
-          router.push('/signup');
+      // If it's a buy action or redirectToBilling is true, go to billing page
+      if (isBuyAction || redirectToBilling) {
+        switch (role) {
+          case 'manager':
+            router.push('/manager-dashboard/billing');
+            break;
+          case 'admin':
+            router.push('/admin-dashboard/billing');
+            break;
+          case 'user':
+            // Users don't have billing, redirect to dashboard
+            router.push('/user-dashboard');
+            break;
+          default:
+            router.push('/signup');
+        }
+      } else {
+        // Regular dashboard redirect
+        switch (role) {
+          case 'manager':
+            router.push('/manager-dashboard');
+            break;
+          case 'admin':
+            router.push('/admin-dashboard');
+            break;
+          case 'user':
+            router.push('/user-dashboard');
+            break;
+          default:
+            router.push('/signup');
+        }
       }
     } else {
       router.push('/signup');
