@@ -12,7 +12,8 @@ import {
   Loader2,
   Plus,
   AlertCircle,
-  Package
+  Package,
+  X
 } from 'lucide-react';
 
 interface SubscriptionData {
@@ -38,6 +39,14 @@ interface SubscriptionData {
   };
 }
 
+interface InvoiceData {
+  id: string;
+  date: string;
+  planName: string;
+  amount: number;
+  status: string;
+}
+
 const BillingPage: React.FC = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -45,6 +54,8 @@ const BillingPage: React.FC = () => {
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceData | null>(null);
 
   // Fetch subscription data on mount
   useEffect(() => {
@@ -758,7 +769,16 @@ const BillingPage: React.FC = () => {
                 </td>
                 <td className="px-6 py-4 text-left">
                   <button
-                    onClick={() => router.push('/manager-dashboard/billing/invoice/INV-2024-001')}
+                    onClick={() => {
+                      setSelectedInvoice({
+                        id: 'INV-2024-001',
+                        date: new Date().toLocaleDateString(),
+                        planName: plan.name,
+                        amount: plan.price,
+                        status: 'Paid'
+                      });
+                      setShowInvoiceModal(true);
+                    }}
                     className="text-[#6566F1] hover:text-[#5A5BD9] text-sm font-medium transition-colors"
                   >
                     View Invoice
@@ -786,6 +806,62 @@ const BillingPage: React.FC = () => {
               >
                 Upgrade Now
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invoice Modal */}
+      {showInvoiceModal && selectedInvoice && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900">Invoice</h2>
+              <button
+                onClick={() => setShowInvoiceModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Invoice #</span>
+                <span className="font-semibold text-gray-900">#{selectedInvoice.id}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Date</span>
+                <span className="font-semibold text-gray-900">{selectedInvoice.date}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Plan</span>
+                <span className="font-semibold text-gray-900">{selectedInvoice.planName} Subscription</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Amount</span>
+                <span className="font-bold text-2xl text-gray-900">${selectedInvoice.amount}.00</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Status</span>
+                <span className="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">
+                  PAID
+                </span>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 pb-6 pt-2">
+              <div className="bg-gray-50 rounded-xl p-4 text-center">
+                <p className="text-gray-700 font-medium mb-1">Thank you for your business!</p>
+                <p className="text-sm text-gray-500">Questions? Contact us at billing@smartchat.com</p>
+              </div>
             </div>
           </div>
         </div>

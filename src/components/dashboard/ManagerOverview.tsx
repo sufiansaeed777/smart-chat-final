@@ -131,33 +131,33 @@ const ManagerOverview = () => {
   // Use real data for metrics
   const metrics = [
     {
+      title: "Total Chats",
+      value: overviewData.metrics.totalConversations.toString(),
+      change: "Last 30 days",
+      changeType: "neutral",
+      icon: MessageCircle,
+      iconColor: "text-gray-600"
+    },
+    {
       title: "Total Users",
       value: overviewData.metrics.totalUsers.toString(),
-      change: `${overviewData.stats.acceptedUsers} active`,
-      changeType: "positive",
+      change: "Users who messaged (30 days)",
+      changeType: "neutral",
       icon: Users,
       iconColor: "text-gray-600"
     },
     {
       title: "Active Chats",
       value: overviewData.metrics.activeChats.toString(),
-      change: overviewData.stats.chatChange > 0 ? `+${overviewData.stats.chatChange}% from yesterday` : `${overviewData.stats.chatChange}% from yesterday`,
-      changeType: overviewData.stats.chatChange > 0 ? "positive" : "negative",
+      change: overviewData.stats.chatChange > 0 ? `+${overviewData.stats.chatChange}% from yesterday` : overviewData.stats.chatChange < 0 ? `${overviewData.stats.chatChange}% from yesterday` : "Currently active",
+      changeType: overviewData.stats.chatChange > 0 ? "positive" : overviewData.stats.chatChange < 0 ? "negative" : "neutral",
       icon: MessageSquare,
       iconColor: "text-gray-600"
     },
     {
-      title: "Total Conversations",
-      value: overviewData.metrics.totalConversations.toString(),
-      change: "All-time chats",
-      changeType: "positive",
-      icon: MessageCircle,
-      iconColor: "text-gray-600"
-    },
-    {
-      title: "Resolved Today",
+      title: "Issues Resolved",
       value: overviewData.metrics.resolvedToday.toString(),
-      change: "Recent conversations",
+      change: "Total resolved issues",
       changeType: "positive",
       icon: CheckCircle,
       iconColor: "text-gray-600"
@@ -250,56 +250,50 @@ const ManagerOverview = () => {
       {/* Top Row - Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.map((metric, index) => {
-          // Define colors for each metric - avoid repetition in similar groups
+          // Define colors for each metric - unique color for each card
           const getMetricColors = (title: string, index: number) => {
-            if (title.includes('Total Users')) {
-              return {
-                bg: 'bg-purple-50',
-                iconBg: 'bg-purple-500',
-                textColor: 'text-purple-600'
-              };
-            } else if (title.includes('Active Chats') || title.includes('Chats') || title.includes('Conversations')) {
-              return {
-                bg: 'bg-green-50',
-                iconBg: 'bg-green-500',
-                textColor: 'text-green-600'
-              };
-            } else if (title.includes('Total Conversations')) {
+            if (title === 'Total Chats') {
               return {
                 bg: 'bg-blue-50',
                 iconBg: 'bg-blue-500',
                 textColor: 'text-blue-600'
               };
-            } else if (title.includes('Resolved') || title.includes('Today')) {
-              return {
-                bg: 'bg-gray-50',
-                iconBg: 'bg-gray-500',
-                textColor: 'text-gray-600'
-              };
-            } else if (title.includes('Total Bots') || title.includes('Bots')) {
+            } else if (title === 'Total Users') {
               return {
                 bg: 'bg-purple-50',
                 iconBg: 'bg-purple-500',
                 textColor: 'text-purple-600'
               };
+            } else if (title === 'Active Chats') {
+              return {
+                bg: 'bg-green-50',
+                iconBg: 'bg-green-500',
+                textColor: 'text-green-600'
+              };
+            } else if (title === 'Issues Resolved') {
+              return {
+                bg: 'bg-orange-50',
+                iconBg: 'bg-orange-500',
+                textColor: 'text-orange-600'
+              };
             } else {
               return {
-                bg: 'bg-indigo-50',
-                iconBg: 'bg-indigo-500',
-                textColor: 'text-indigo-600'
+                bg: 'bg-gray-50',
+                iconBg: 'bg-gray-500',
+                textColor: 'text-gray-600'
               };
             }
           };
 
           // Define navigation path for each metric
           const getMetricPath = (title: string) => {
-            if (title.includes('Total Users')) {
-              return '/manager-dashboard/human-handoff';
+            if (title.includes('Total Chats')) {
+              return '/manager-dashboard/conversations';
+            } else if (title.includes('Total Users')) {
+              return '/manager-dashboard/conversations';
             } else if (title.includes('Active Chats')) {
               return '/manager-dashboard/conversations';
-            } else if (title.includes('Total Conversations')) {
-              return '/manager-dashboard/conversations';
-            } else if (title.includes('Resolved Today')) {
+            } else if (title.includes('Issues Resolved')) {
               return '/manager-dashboard/issues';
             }
             return null;

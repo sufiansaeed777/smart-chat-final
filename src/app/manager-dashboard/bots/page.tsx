@@ -619,7 +619,10 @@ const BotsPage = () => {
         {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <button className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors">
+          <button
+            onClick={() => router.push('/manager-dashboard')}
+            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+          >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Dashboard</span>
           </button>

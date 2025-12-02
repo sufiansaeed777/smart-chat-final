@@ -69,11 +69,12 @@ export async function GET(request: NextRequest) {
 
     // Get conversations data - QUERY BY MANAGER'S BOTS
     const conversationRepository = AppDataSource.getRepository(Conversation);
+    const issueRepository = AppDataSource.getRepository(ChatbotIssue);
 
     let totalChatsLast30Days = 0;
     let uniqueUsersLast30Days = 0;
     let activeChatsCount = 0;
-    let completedChatsToday = 0;
+    let issuesResolvedCount = 0;
     let recentConversations: Conversation[] = [];
     let yesterdayConversationsCount = 0;
     let todayConversationsCount = 0;
@@ -96,22 +97,31 @@ export async function GET(request: NextRequest) {
         .getRawMany();
       uniqueUsersLast30Days = uniqueVisitors.length;
 
-      // Active chats - conversations with status 'active' or recent activity (last 30 minutes)
+      // Active chats - conversations that are currently active (status='active' AND recent activity)
       activeChatsCount = await conversationRepository
         .createQueryBuilder('conversation')
         .where('conversation.botId IN (:...botIds)', { botIds: managerBotIds })
-        .andWhere('(conversation.status = :activeStatus OR conversation.lastMessageAt >= :thirtyMinutesAgo)', {
-          activeStatus: 'active',
-          thirtyMinutesAgo
-        })
+        .andWhere('conversation.status = :activeStatus', { activeStatus: 'active' })
         .getCount();
 
-      // Completed/Resolved chats today
-      completedChatsToday = await conversationRepository
+      // Also count conversations with very recent activity (last 5 minutes) as potentially active
+      const recentActiveCount = await conversationRepository
         .createQueryBuilder('conversation')
         .where('conversation.botId IN (:...botIds)', { botIds: managerBotIds })
-        .andWhere('conversation.status = :completedStatus', { completedStatus: 'completed' })
-        .andWhere('conversation.updatedAt >= :twentyFourHoursAgo', { twentyFourHoursAgo })
+        .andWhere('conversation.lastMessageAt >= :fiveMinutesAgo', {
+          fiveMinutesAgo: new Date(now - 5 * 60 * 1000)
+        })
+        .andWhere('conversation.status != :completedStatus', { completedStatus: 'completed' })
+        .getCount();
+
+      // Use the higher of the two counts
+      activeChatsCount = Math.max(activeChatsCount, recentActiveCount);
+
+      // Issues resolved - actual issues from ChatbotIssue with status 'resolved'
+      issuesResolvedCount = await issueRepository
+        .createQueryBuilder('issue')
+        .where('issue.botId IN (:...botIds)', { botIds: managerBotIds })
+        .andWhere('issue.status = :resolvedStatus', { resolvedStatus: 'resolved' })
         .getCount();
 
       // Recent conversations for activity feed (last 24 hours)
@@ -305,8 +315,8 @@ export async function GET(request: NextRequest) {
         activeChats: activeChatsCount,
         // Total conversations in last 30 days
         totalConversations: totalChatsLast30Days,
-        // Completed/resolved today
-        resolvedToday: completedChatsToday
+        // Issues resolved (from ChatbotIssue entity)
+        resolvedToday: issuesResolvedCount
       },
       connectedMetrics: {
         totalUsers: totalUsers,
@@ -328,7 +338,7 @@ export async function GET(request: NextRequest) {
         activeBots,
         totalChatsLast30Days,
         activeChatsCount,
-        completedChatsToday,
+        issuesResolvedCount,
         chatChange: parseFloat(chatChange as string)
       }
     };
