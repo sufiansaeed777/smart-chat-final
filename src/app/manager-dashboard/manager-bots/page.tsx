@@ -455,6 +455,27 @@ export default function BotsPage() {
     setIsUploadingDocument(true);
     try {
       for (const file of files) {
+        // CHECK FOR DUPLICATES BEFORE UPLOADING
+        // 1. Check against newly uploaded documents in this session
+        const isDuplicateInNewDocs = newBot.newDocuments.some(
+          doc => doc.name.toLowerCase() === file.name.toLowerCase()
+        );
+
+        if (isDuplicateInNewDocs) {
+          alert(`⚠️ File "${file.name}" is already selected.\n\nPlease choose a different file or remove the existing one first.`);
+          continue; // Skip this file and move to next
+        }
+
+        // 2. Check against existing documents in the database
+        const isDuplicateInAvailable = availableDocuments.some(
+          doc => doc.name.toLowerCase() === file.name.toLowerCase()
+        );
+
+        if (isDuplicateInAvailable) {
+          alert(`⚠️ A document named "${file.name}" already exists in your knowledge base.\n\nPlease select it from the list above instead of uploading again.`);
+          continue; // Skip this file and move to next
+        }
+
         const formData = new FormData();
         formData.append('documents', file);
         
