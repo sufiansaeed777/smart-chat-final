@@ -4,6 +4,8 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
 import { ChatbotIssue } from '@/entities/ChatbotIssue';
 import { User } from '@/entities/User';
+import { Conversation } from '@/entities/Conversation';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function PATCH(
   request: NextRequest,
@@ -59,6 +61,49 @@ export async function PATCH(
 
     const updatedIssue = await issueRepository.save(issue);
 
+    // If a response is being sent, also deliver it to the website widget
+    // by adding it as a message to the user's active conversation
+    if (response && response.trim()) {
+      try {
+        const conversationRepository = AppDataSource.getRepository(Conversation);
+
+        // Find an active conversation for this user/bot combination
+        const conversation = await conversationRepository
+          .createQueryBuilder('conversation')
+          .where('conversation.guestId = :guestId', { guestId: issue.userId })
+          .andWhere('conversation.botId = :botId', { botId: issue.botId })
+          .andWhere('conversation.status IN (:...statuses)', { statuses: ['active', 'waiting', 'idle'] })
+          .orderBy('conversation.lastMessageAt', 'DESC')
+          .getOne();
+
+        if (conversation) {
+          // Add the response as an agent message
+          const newMessage = {
+            id: uuidv4(),
+            sender: 'agent',
+            text: response,
+            timestamp: new Date().toISOString(),
+            type: 'message'
+          };
+
+          // Append to existing messages
+          const messages = conversation.messages || [];
+          messages.push(newMessage);
+          conversation.messages = messages;
+          conversation.lastMessageAt = new Date();
+          conversation.mode = 'Human'; // Switch to human mode when agent responds
+
+          await conversationRepository.save(conversation);
+          console.log(`[Issues] Response delivered to conversation ${conversation.id} for user ${issue.userId}`);
+        } else {
+          console.log(`[Issues] No active conversation found for user ${issue.userId}, response saved to issue only`);
+        }
+      } catch (convError) {
+        console.error('[Issues] Error delivering response to conversation:', convError);
+        // Don't fail the request, the response is still saved to the issue
+      }
+    }
+
     // Fetch updated issue with bot info
     const finalIssue = await issueRepository
       .createQueryBuilder('issue')
@@ -86,6 +131,7 @@ export async function PATCH(
           name: finalIssue!.bot.name,
           description: finalIssue!.bot.description
         } : null,
+        websiteUrl: finalIssue!.websiteUrl,
         createdAt: finalIssue!.createdAt.toISOString(),
         updatedAt: finalIssue!.updatedAt.toISOString()
       }
@@ -162,6 +208,7 @@ export async function GET(
           name: issue.bot.name,
           description: issue.bot.description
         } : null,
+        websiteUrl: issue.websiteUrl,
         createdAt: issue.createdAt.toISOString(),
         updatedAt: issue.updatedAt.toISOString()
       }

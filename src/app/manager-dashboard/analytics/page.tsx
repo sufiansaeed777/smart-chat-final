@@ -111,6 +111,7 @@ const PERIOD_OPTIONS = [
   { value: '30d', label: 'Last 30 Days' },
   { value: '90d', label: 'Last 90 Days' },
   { value: '1y', label: 'Last Year' },
+  { value: 'custom', label: 'Custom Range' },
   { value: 'lifetime', label: 'All Time' },
 ];
 
@@ -121,6 +122,9 @@ const AnalyticsPage = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [trendView, setTrendView] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
 
   // Data states
   const [overview, setOverview] = useState<OverviewData | null>(null);
@@ -255,7 +259,14 @@ const AnalyticsPage = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
         <div className="flex flex-wrap items-center gap-3">
-          <Select value={period} onValueChange={setPeriod}>
+          <Select value={period} onValueChange={(value) => {
+            setPeriod(value);
+            if (value === 'custom') {
+              setShowCustomDatePicker(true);
+            } else {
+              setShowCustomDatePicker(false);
+            }
+          }}>
             <SelectTrigger className="w-40 border-gray-200 bg-white rounded-lg">
               <SelectValue />
             </SelectTrigger>
@@ -265,6 +276,34 @@ const AnalyticsPage = () => {
               ))}
             </SelectContent>
           </Select>
+
+          {/* Custom Date Range Picker */}
+          {showCustomDatePicker && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+              />
+              <span className="text-gray-500">to</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => loadAnalytics(true)}
+                disabled={!customStartDate || !customEndDate}
+                className="rounded-lg border-gray-200"
+              >
+                Apply
+              </Button>
+            </div>
+          )}
 
           <Select value={selectedBot} onValueChange={setSelectedBot}>
             <SelectTrigger className="w-36 border-gray-200 bg-white rounded-lg">
@@ -291,7 +330,7 @@ const AnalyticsPage = () => {
       </div>
 
       {/* Stat Cards Row 1 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* AI Messages */}
         <Card className="border border-gray-200 bg-white rounded-2xl">
           <CardContent className="p-6">
@@ -339,6 +378,22 @@ const AnalyticsPage = () => {
               </div>
               <div className="p-3 bg-red-500 rounded-xl">
                 <AlertCircle className="w-5 h-5 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Total Bots */}
+        <Card className="border border-gray-200 bg-white rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Total Bots</p>
+                <p className="text-3xl font-bold text-gray-900">{overview?.totalBots || botOptions.length}</p>
+                <p className="text-sm text-gray-400 mt-1">Active chatbots</p>
+              </div>
+              <div className="p-3 bg-purple-500 rounded-xl">
+                <Bot className="w-5 h-5 text-white" />
               </div>
             </div>
           </CardContent>
