@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/utils/db';
-import { AppDataSource } from '@/data-source';
+import { AppDataSource } from '@/config/database';
 import { ChatbotIssue } from '@/entities/ChatbotIssue';
 
 // CORS headers
