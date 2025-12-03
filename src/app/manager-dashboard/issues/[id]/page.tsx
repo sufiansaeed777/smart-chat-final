@@ -131,16 +131,22 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
   useEffect(() => {
     const fetchAgents = async () => {
       try {
+        // Get botId from issue - try botId first, then bot.id as fallback
+        const issueBotId = issue?.botId || issue?.bot?.id;
+
         // If issue has a botId, fetch only agents assigned to that bot
-        const url = issue?.botId
-          ? `/api/manager/users?botId=${issue.botId}`
+        const url = issueBotId
+          ? `/api/manager/users?botId=${issueBotId}`
           : '/api/manager/users';
+
+        console.log(`[Assign Agent] Fetching agents for botId: ${issueBotId || 'ALL'}`);
 
         const response = await fetch(url);
         if (response.ok) {
           const data = await response.json();
           if (data.users) {
             setAgents(data.users);
+            console.log(`[Assign Agent] Found ${data.users.length} agents for bot`);
           }
         }
       } catch (err) {
@@ -392,7 +398,13 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
         <Card className="bg-white rounded-xl shadow-sm border-0">
           <CardContent className="p-6">
             <h3 className="text-sm font-bold text-gray-900 mb-2">Actions Required</h3>
-            <p className="text-sm text-gray-600 mb-4">Select an agent to handle this issue.</p>
+            <p className="text-sm text-gray-600 mb-2">Select an agent to handle this issue.</p>
+            {(issue.botId || issue.bot) && (
+              <p className="text-xs text-[#5A5BD8] mb-4 flex items-center">
+                <Bot className="w-3 h-3 mr-1" />
+                Showing agents assigned to: <span className="font-semibold ml-1">{issue.bot?.name || 'This Bot'}</span>
+              </p>
+            )}
             <div className="flex items-center space-x-3">
               <select
                 value={selectedAgent}
@@ -400,21 +412,30 @@ const IssueDetailPage = ({ params }: { params: { id: string } }) => {
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5A5BD8] focus:border-[#5A5BD8] text-sm text-gray-900"
               >
                 <option value="">Select an agent...</option>
-                {agents.map((agent) => (
-                  <option key={agent.id} value={agent.id}>
-                    {agent.name} ({agent.email})
-                  </option>
-                ))}
+                {agents.length === 0 ? (
+                  <option disabled>No agents assigned to this bot</option>
+                ) : (
+                  agents.map((agent) => (
+                    <option key={agent.id} value={agent.id}>
+                      {agent.name} ({agent.email})
+                    </option>
+                  ))
+                )}
               </select>
               <Button
                 onClick={handleAssignToAgent}
-                disabled={!selectedAgent}
+                disabled={!selectedAgent || agents.length === 0}
                 className="bg-[#5A5BD8] hover:bg-[#4A4BC8] text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <User className="w-4 h-4 mr-2" />
                 Assign
               </Button>
             </div>
+            {agents.length === 0 && (issue.botId || issue.bot) && (
+              <p className="text-xs text-amber-600 mt-3">
+                No agents are assigned to this bot. Please assign agents to &quot;{issue.bot?.name}&quot; in Bot Management first.
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
