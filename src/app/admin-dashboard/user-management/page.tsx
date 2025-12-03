@@ -586,8 +586,8 @@ const UserManagementPage: React.FC = () => {
         <div className="bg-white p-6 rounded-2xl shadow-sm border-0 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Pending Managers</p>
-              <p className="text-3xl font-bold text-gray-900">{users.filter(u => u.role === 'manager' && (!u.isEmailVerified || u.status === 'pending')).length}</p>
+              <p className="text-sm font-medium text-gray-600">Pending Approval</p>
+              <p className="text-3xl font-bold text-gray-900">{users.filter(u => !u.isEmailVerified || u.status === 'pending').length}</p>
               <p className="text-sm text-purple-600 flex items-center mt-1">
                 <Clock className="w-4 h-4 mr-1" />
                 Awaiting approval
