@@ -68,25 +68,34 @@ export async function GET(request: NextRequest) {
     }, {} as Record<string, number>);
 
     // Transform the data to match the expected format
-    const formattedBots = bots.map(bot => ({
-      id: bot.id,
-      name: bot.name,
-      description: bot.description,
-      domain: bot.domain,
-      status: bot.status,
-      conversations: conversationCountMap[bot.id] || 0, // Use real conversation count
-      totalUsers: bot.assignments?.length || 0,
-      lastActive: bot.lastActive ? new Date(bot.lastActive).toLocaleString() : 'Never',
-      assignedUsers: bot.assignments?.map(assignment => assignment.user?.email).filter(Boolean) || [],
-      createdAt: bot.createdAt.toISOString().split('T')[0],
-      lastConversation: bot.lastActive ? new Date(bot.lastActive).toISOString().split('T')[0] : null,
-      documents: bot.botDocuments?.map(bd => ({
-        id: bd.document.id,
-        name: bd.document.name,
-        type: bd.document.type,
-        size: Number(bd.document.size) || 0
-      })) || []
-    }));
+    const formattedBots = bots.map(bot => {
+      const allDocs = bot.botDocuments?.map(bd => bd.document) || [];
+      // Webpages are documents with type 'url' or 'webpage' or have a url field
+      const webpages = allDocs.filter(doc => doc?.type === 'url' || doc?.type === 'webpage' || doc?.url);
+      const documents = allDocs.filter(doc => doc?.type !== 'url' && doc?.type !== 'webpage' && !doc?.url);
+
+      return {
+        id: bot.id,
+        name: bot.name,
+        description: bot.description,
+        domain: bot.domain,
+        status: bot.status,
+        conversations: conversationCountMap[bot.id] || 0, // Use real conversation count
+        totalUsers: bot.assignments?.length || 0,
+        lastActive: bot.lastActive ? new Date(bot.lastActive).toLocaleString() : 'Never',
+        assignedUsers: bot.assignments?.map(assignment => assignment.user?.email).filter(Boolean) || [],
+        createdAt: bot.createdAt.toISOString().split('T')[0],
+        lastConversation: bot.lastActive ? new Date(bot.lastActive).toISOString().split('T')[0] : null,
+        documents: allDocs.map(doc => ({
+          id: doc?.id,
+          name: doc?.name,
+          type: doc?.type,
+          size: Number(doc?.size) || 0
+        })).filter(doc => doc.id) || [],
+        webpagesCount: webpages.length,
+        documentsCount: documents.length
+      };
+    });
 
     return NextResponse.json({ 
       bots: formattedBots,

@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { ReportIssueProvider } from '@/contexts/ReportIssueContext';
 import ReportIssueModal from '@/components/ReportIssueModal';
+import { ToastProvider } from '@/components/ui/toast';
 
 interface ManagerDashboardLayoutProps {
   children: React.ReactNode;
@@ -182,6 +183,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
   }
 
   return (
+    <ToastProvider>
     <ReportIssueProvider>
       <div className="min-h-screen bg-gray-50">
         {/* Sidebar */}
@@ -366,6 +368,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
       </div>
       <ReportIssueModal />
     </ReportIssueProvider>
+    </ToastProvider>
   );
 };
 

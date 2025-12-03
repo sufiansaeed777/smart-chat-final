@@ -26,7 +26,8 @@ import {
   FileText,
   File,
   FileImage,
-  Upload
+  Upload,
+  Globe
 } from 'lucide-react';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/toast';
 // Removed Radix UI dropdown imports - using custom implementation
 
 // Mock data
@@ -109,6 +111,7 @@ const mockConversations = [
 
 export default function BotsPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedBot, setSelectedBot] = useState<{
@@ -176,6 +179,8 @@ export default function BotsPage() {
     createdAt: string;
     lastConversation: string | null;
     documents?: Array<{ id: string; name: string; type: string; size: number }>;
+    webpagesCount?: number;
+    documentsCount?: number;
   }>>([]);
   const [loading, setLoading] = useState(true);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -438,7 +443,7 @@ export default function BotsPage() {
       const duplicateName = selectedDocs.some(doc => doc.name === documentToSelect.name);
 
       if (duplicateName) {
-        alert(`⚠️ A document named "${documentToSelect.name}" is already selected.\n\nPlease remove the existing one first or choose a different file.`);
+        showToast(`Document "${documentToSelect.name}" is already selected`, 'warning');
         return prev; // Return unchanged state
       }
 
@@ -462,7 +467,7 @@ export default function BotsPage() {
         );
 
         if (isDuplicateInNewDocs) {
-          alert(`⚠️ File "${file.name}" is already selected.\n\nPlease choose a different file or remove the existing one first.`);
+          showToast(`File "${file.name}" is already selected`, 'warning');
           continue; // Skip this file and move to next
         }
 
@@ -472,7 +477,7 @@ export default function BotsPage() {
         );
 
         if (isDuplicateInAvailable) {
-          alert(`⚠️ A document named "${file.name}" already exists in your knowledge base.\n\nPlease select it from the list above instead of uploading again.`);
+          showToast(`Document "${file.name}" already exists in knowledge base`, 'warning');
           continue; // Skip this file and move to next
         }
 
@@ -515,8 +520,8 @@ export default function BotsPage() {
                     );
 
                     if (existingFileIndex !== -1) {
-                      // File exists - show alert and don't add duplicate
-                      alert(`⚠️ File "${newDoc.name}" is already selected.\n\nPlease choose a different file or remove the existing one first.`);
+                      // File exists - show toast and don't add duplicate
+                      showToast(`File "${newDoc.name}" is already selected`, 'warning');
                       return prev; // Return unchanged state
                     }
 
@@ -579,23 +584,23 @@ export default function BotsPage() {
   const handleCreateBot = async () => {
     // Validate required fields
     if (!newBot.name.trim()) {
-      alert('Please enter a bot name');
+      showToast('Please enter a bot name', 'warning');
       return;
     }
 
     if (!newBot.description.trim()) {
-      alert('Please enter a bot description');
+      showToast('Please enter a bot description', 'warning');
       return;
     }
 
     // Validate domain format (must be valid https:// URL)
     if (!newBot.domain || newBot.domain.trim() === '') {
-      alert('Please enter a domain URL');
+      showToast('Please enter a domain URL', 'warning');
       return;
     }
 
     if (!newBot.domain.startsWith('https://')) {
-      alert('Domain must start with https:// (e.g., https://yoursite.com)');
+      showToast('Domain must start with https:// (e.g., https://yoursite.com)', 'warning');
       return;
     }
 
@@ -603,7 +608,7 @@ export default function BotsPage() {
     try {
       new URL(newBot.domain);
     } catch (urlError) {
-      alert('Please enter a valid URL (e.g., https://yoursite.com)');
+      showToast('Please enter a valid URL (e.g., https://yoursite.com)', 'error');
       return;
     }
 
@@ -646,12 +651,12 @@ export default function BotsPage() {
       // Refresh the bots list
       fetchBots();
 
-      // Show success message (you can add a toast notification here)
-      alert('Bot created successfully!');
+      // Show success message
+      showToast('Bot created successfully!', 'success');
 
     } catch (error) {
       console.error('Error creating bot:', error);
-      alert(`Error creating bot: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showToast(`Error creating bot: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -917,11 +922,11 @@ export default function BotsPage() {
       } else {
         const error = await response.json();
         console.error('Failed to update knowledge:', error.message || 'Unknown error');
-        alert('Failed to update knowledge. Please try again.');
+        showToast('Failed to update knowledge. Please try again.', 'error');
       }
     } catch (error) {
       console.error('Error updating knowledge:', error);
-      alert('Network error. Please try again.');
+      showToast('Network error. Please try again.', 'error');
     }
   };
 
@@ -943,7 +948,7 @@ export default function BotsPage() {
       const result = await response.json();
 
       if (response.ok) {
-        alert(`✅ Training initiated for "${bot.name}"!\n\n${result.message}\n\nDocuments processed: ${result.documentsProcessed || 0}\nStatus: ${result.trainingStatus || 'unknown'}`);
+        showToast(`Training initiated for "${bot.name}" - ${result.documentsProcessed || 0} documents processed`, 'success');
 
         // Refresh bots list to show updated training status
         const refreshResponse = await fetch('/api/manager/bots');
@@ -954,37 +959,13 @@ export default function BotsPage() {
       } else {
         // Provide detailed error message
         console.error('Training failed:', result);
-
-        let errorMessage = `❌ Training failed for "${bot.name}"\n\n`;
-
-        if (result.error) {
-          errorMessage += `Error: ${result.error}\n`;
-        }
-
-        if (result.details) {
-          errorMessage += `\nDetails: ${result.details}\n`;
-        }
-
-        if (response.status) {
-          errorMessage += `\nStatus Code: ${response.status}`;
-        }
-
-        // If still no useful info, provide generic guidance
-        if (!result.error && !result.details) {
-          errorMessage += 'No specific error details provided.\n\n';
-          errorMessage += 'Common causes:\n';
-          errorMessage += '• Bot has no documents assigned\n';
-          errorMessage += '• Document processing failed\n';
-          errorMessage += '• OpenAI API connection issue\n';
-          errorMessage += '\nPlease check that your bot has valid documents assigned and try again.';
-        }
-
-        alert(errorMessage);
+        const errorMessage = result.error || result.details || 'Training failed. Please check bot has documents assigned.';
+        showToast(`Training failed for "${bot.name}": ${errorMessage}`, 'error');
       }
     } catch (error) {
       console.error('Error training bot:', error);
       const errorMsg = error instanceof Error ? error.message : 'Unknown network error';
-      alert(`❌ Network error while initiating training.\n\nError: ${errorMsg}\n\nPlease check your connection and try again.`);
+      showToast(`Network error while training: ${errorMsg}`, 'error');
     } finally {
       setTrainingBot(null);
     }
@@ -1042,13 +1023,13 @@ export default function BotsPage() {
           const refreshData = await refreshResponse.json();
           setBots(refreshData.bots || []);
         }
-        alert(`✅ Bot "${deleteConfirm.botName}" deleted successfully`);
+        showToast(`Bot "${deleteConfirm.botName}" deleted successfully`, 'success');
       } else {
         const error = await response.json();
-        alert(`❌ Failed to delete bot: ${error.message || 'Unknown error'}`);
+        showToast(`Failed to delete bot: ${error.message || 'Unknown error'}`, 'error');
       }
     } catch (error) {
-      alert('❌ Network error. Please try again.');
+      showToast('Network error. Please try again.', 'error');
     } finally {
       setDeleteConfirm(null);
     }
@@ -2086,7 +2067,19 @@ export default function BotsPage() {
                   </div>
                      <div>
                        <p className="text-xs text-gray-600">Knowledge</p>
-                       <p className="text-lg font-bold text-orange-600">{bot.documents?.length || 0}</p>
+                       <p className="text-lg font-bold text-orange-600">{bot.documentsCount || bot.documents?.length || 0}</p>
+                </div>
+                   </div>
+                </div>
+
+                 <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg group-hover:bg-blue-100 transition-colors duration-200">
+                  <div className="flex items-center space-x-2">
+                     <div className="w-8 h-8 bg-blue-400 rounded-lg flex items-center justify-center">
+                       <Globe className="w-4 h-4 text-white" />
+                  </div>
+                     <div>
+                       <p className="text-xs text-gray-600">Webpages</p>
+                       <p className="text-lg font-bold text-blue-600">{bot.webpagesCount || 0}</p>
                 </div>
                    </div>
                 </div>

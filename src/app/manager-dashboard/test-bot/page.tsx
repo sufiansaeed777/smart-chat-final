@@ -123,44 +123,27 @@ export default function TestBotPage() {
     }
   };
 
-  // Smooth scroll to bottom of entire page when page loads (2 seconds duration)
-  const scrollToBottomOnLoad = () => {
-    setTimeout(() => {
-      const startPosition = window.pageYOffset;
-      const targetPosition = document.documentElement.scrollHeight - window.innerHeight;
-      const distance = targetPosition - startPosition;
-      const duration = 1000; // 1 second
-      let startTime: number | null = null;
-
-      const animateScroll = (currentTime: number) => {
-        if (startTime === null) startTime = currentTime;
-        const timeElapsed = currentTime - startTime;
-        const progress = Math.min(timeElapsed / duration, 1);
-        
-        // Easing function for smooth animation
-        const easeInOutCubic = progress < 0.5 
-          ? 4 * progress * progress * progress 
-          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-        
-        window.scrollTo(0, startPosition + distance * easeInOutCubic);
-        
-        if (progress < 1) {
-          requestAnimationFrame(animateScroll);
-        }
-      };
-
-      requestAnimationFrame(animateScroll);
-    }, 100); // Small delay to ensure DOM is ready
+  // Scroll messages container to bottom (not the whole page)
+  const scrollMessagesToBottom = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // Scroll to bottom when page first loads
+  // Scroll messages to bottom when bot is selected (not the whole page)
   useEffect(() => {
     if (!isLoadingBot && bot) {
-      scrollToBottomOnLoad();
+      // Small delay to ensure content is rendered
+      setTimeout(() => {
+        scrollMessagesToBottom();
+      }, 100);
     }
   }, [isLoadingBot, bot]);
 
