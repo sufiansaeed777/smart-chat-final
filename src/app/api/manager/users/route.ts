@@ -157,22 +157,22 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Count issues resolved by each user
+    // Count issues resolved by each user (using assignedTo field since resolvedBy doesn't exist)
     const userIssueCounts: Record<string, number> = {};
     if (userIds.length > 0 && managerBotIds.length > 0) {
       const issueCounts = await issueRepository
         .createQueryBuilder('issue')
-        .select('issue.resolvedBy', 'resolvedBy')
+        .select('issue.assignedTo', 'assignedTo')
         .addSelect('COUNT(*)', 'count')
-        .where('issue.resolvedBy IN (:...userIds)', { userIds })
+        .where('issue.assignedTo IN (:...userIds)', { userIds })
         .andWhere('issue.botId IN (:...botIds)', { botIds: managerBotIds })
         .andWhere('issue.status = :status', { status: 'resolved' })
-        .groupBy('issue.resolvedBy')
+        .groupBy('issue.assignedTo')
         .getRawMany();
 
       issueCounts.forEach(item => {
-        if (item.resolvedBy) {
-          userIssueCounts[item.resolvedBy] = parseInt(item.count) || 0;
+        if (item.assignedTo) {
+          userIssueCounts[item.assignedTo] = parseInt(item.count) || 0;
         }
       });
     }
