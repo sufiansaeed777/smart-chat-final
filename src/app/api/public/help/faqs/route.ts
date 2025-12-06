@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { AppDataSource } from '@/config/database';
-import { HelpFAQ } from '@/entities/HelpFAQ';
+import { FAQ } from '@/entities/FAQ';
 
 // GET - Fetch all published FAQs (public)
 export async function GET() {
@@ -9,7 +9,7 @@ export async function GET() {
       await AppDataSource.initialize();
     }
 
-    const faqRepository = AppDataSource.getRepository(HelpFAQ);
+    const faqRepository = AppDataSource.getRepository(FAQ);
     const faqs = await faqRepository.find({
       where: { isPublished: true },
       order: { createdAt: 'DESC' }

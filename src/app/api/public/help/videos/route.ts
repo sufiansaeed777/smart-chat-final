@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { AppDataSource } from '@/config/database';
-import { HelpVideo } from '@/entities/HelpVideo';
+import { VideoLink } from '@/entities/VideoLink';
 
 // GET - Fetch all published videos (public)
 export async function GET() {
@@ -9,7 +9,7 @@ export async function GET() {
       await AppDataSource.initialize();
     }
 
-    const videoRepository = AppDataSource.getRepository(HelpVideo);
+    const videoRepository = AppDataSource.getRepository(VideoLink);
     const videos = await videoRepository.find({
       where: { isPublished: true },
       order: { createdAt: 'DESC' }
