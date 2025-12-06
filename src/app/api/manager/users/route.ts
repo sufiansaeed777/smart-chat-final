@@ -4,6 +4,9 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
 import { User } from '@/entities/User';
 import { BotAssignment } from '@/entities/BotAssignment';
+import { Conversation } from '@/entities/Conversation';
+import { ChatbotIssue } from '@/entities/ChatbotIssue';
+import { In } from 'typeorm';
 
 export async function GET(request: NextRequest) {
   try {
@@ -125,6 +128,55 @@ export async function GET(request: NextRequest) {
       });
     });
 
+    // Get manager's bot IDs for querying conversations and issues
+    const botRepository = AppDataSource.getRepository("bots");
+    const managerBots = await botRepository.find({
+      where: { createdBy: currentUser.id },
+      select: ['id']
+    });
+    const managerBotIds = managerBots.map((b: { id: string }) => b.id);
+
+    // Get REAL stats for each user
+    const conversationRepository = AppDataSource.getRepository(Conversation);
+    const issueRepository = AppDataSource.getRepository(ChatbotIssue);
+
+    // Count conversations handled by each user (as assigned agent)
+    const userChatCounts: Record<string, number> = {};
+    if (userIds.length > 0 && managerBotIds.length > 0) {
+      const chatCounts = await conversationRepository
+        .createQueryBuilder('conversation')
+        .select('conversation.assignedAgentId', 'agentId')
+        .addSelect('COUNT(DISTINCT conversation.sessionId)', 'count')
+        .where('conversation.assignedAgentId IN (:...userIds)', { userIds })
+        .andWhere('conversation.botId IN (:...botIds)', { botIds: managerBotIds })
+        .groupBy('conversation.assignedAgentId')
+        .getRawMany();
+
+      chatCounts.forEach(item => {
+        userChatCounts[item.agentId] = parseInt(item.count) || 0;
+      });
+    }
+
+    // Count issues resolved by each user
+    const userIssueCounts: Record<string, number> = {};
+    if (userIds.length > 0 && managerBotIds.length > 0) {
+      const issueCounts = await issueRepository
+        .createQueryBuilder('issue')
+        .select('issue.resolvedBy', 'resolvedBy')
+        .addSelect('COUNT(*)', 'count')
+        .where('issue.resolvedBy IN (:...userIds)', { userIds })
+        .andWhere('issue.botId IN (:...botIds)', { botIds: managerBotIds })
+        .andWhere('issue.status = :status', { status: 'resolved' })
+        .groupBy('issue.resolvedBy')
+        .getRawMany();
+
+      issueCounts.forEach(item => {
+        if (item.resolvedBy) {
+          userIssueCounts[item.resolvedBy] = parseInt(item.count) || 0;
+        }
+      });
+    }
+
     // Transform the data to include status based on whether they have a password
     const usersWithStatus = invitedUsers.map(user => {
       // Properly handle undefined/null values
@@ -139,7 +191,11 @@ export async function GET(request: NextRequest) {
         status: user.password ? 'accepted' : 'pending', // accepted if they have password, pending if not
         lastLoginAt: user.lastLoginAt,
         createdAt: user.createdAt,
-        assignedBots: userBotAssignments[user.id] || []
+        assignedBots: userBotAssignments[user.id] || [],
+        // REAL stats from database
+        totalChats: userChatCounts[user.id] || 0,
+        issuesHandled: userIssueCounts[user.id] || 0,
+        botsAssigned: (userBotAssignments[user.id] || []).length
       };
     });
 

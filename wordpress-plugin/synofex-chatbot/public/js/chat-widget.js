@@ -768,10 +768,133 @@
             });
         },
 
-        // Show report issue dialog
+        // Show report issue dialog - Proper form with Name, Email, Issue
         showReportDialog: function() {
-            const description = prompt('Please describe the issue:');
-            if (!description) return;
+            // Remove any existing overlay
+            $('.synofex-report-overlay').remove();
+
+            const formHtml = `
+                <div class="synofex-report-overlay">
+                    <div class="synofex-report-form">
+                        <div class="synofex-report-header">
+                            <h4>Report an Issue</h4>
+                            <button class="synofex-report-close" type="button">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="synofex-report-field">
+                            <label>Name <span class="required">*</span></label>
+                            <input type="text" id="synofex-report-name" placeholder="Enter your name" required>
+                            <div class="error-message" style="display: none;"></div>
+                        </div>
+                        <div class="synofex-report-field">
+                            <label>Email <span class="required">*</span></label>
+                            <input type="email" id="synofex-report-email" placeholder="Enter your email" required>
+                            <div class="error-message" style="display: none;"></div>
+                        </div>
+                        <div class="synofex-report-field">
+                            <label>Issue <span class="required">*</span></label>
+                            <textarea id="synofex-report-issue" placeholder="Describe your issue..." required></textarea>
+                            <div class="error-message" style="display: none;"></div>
+                        </div>
+                        <div class="synofex-report-actions">
+                            <button class="synofex-report-cancel" type="button">Cancel</button>
+                            <button class="synofex-report-submit" type="button">Submit</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Append to chat window
+            $('#synofex-chat-window').append(formHtml);
+
+            // Focus on name field
+            setTimeout(() => {
+                $('#synofex-report-name').focus();
+            }, 100);
+
+            // Close button handler
+            $('.synofex-report-close, .synofex-report-cancel').on('click', () => {
+                this.closeReportDialog();
+            });
+
+            // Submit button handler
+            $('.synofex-report-submit').on('click', () => {
+                this.submitReportForm();
+            });
+
+            // Close on overlay click
+            $('.synofex-report-overlay').on('click', (e) => {
+                if ($(e.target).hasClass('synofex-report-overlay')) {
+                    this.closeReportDialog();
+                }
+            });
+
+            // Enter key submits on last field
+            $('#synofex-report-issue').on('keypress', (e) => {
+                if (e.which === 13 && e.ctrlKey) {
+                    this.submitReportForm();
+                }
+            });
+        },
+
+        // Close report dialog
+        closeReportDialog: function() {
+            $('.synofex-report-overlay').fadeOut(200, function() {
+                $(this).remove();
+            });
+        },
+
+        // Validate email format
+        isValidEmail: function(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        },
+
+        // Submit report form with validation
+        submitReportForm: function() {
+            const name = $('#synofex-report-name').val().trim();
+            const email = $('#synofex-report-email').val().trim();
+            const issue = $('#synofex-report-issue').val().trim();
+
+            let isValid = true;
+
+            // Clear previous errors
+            $('.synofex-report-field input, .synofex-report-field textarea').removeClass('error');
+            $('.synofex-report-field .error-message').hide().text('');
+
+            // Validate name
+            if (!name) {
+                $('#synofex-report-name').addClass('error');
+                $('#synofex-report-name').siblings('.error-message').text('Name is required').show();
+                isValid = false;
+            }
+
+            // Validate email
+            if (!email) {
+                $('#synofex-report-email').addClass('error');
+                $('#synofex-report-email').siblings('.error-message').text('Email is required').show();
+                isValid = false;
+            } else if (!this.isValidEmail(email)) {
+                $('#synofex-report-email').addClass('error');
+                $('#synofex-report-email').siblings('.error-message').text('Please enter a valid email address').show();
+                isValid = false;
+            }
+
+            // Validate issue
+            if (!issue) {
+                $('#synofex-report-issue').addClass('error');
+                $('#synofex-report-issue').siblings('.error-message').text('Issue description is required').show();
+                isValid = false;
+            }
+
+            if (!isValid) return;
+
+            // Disable submit button
+            $('.synofex-report-submit').prop('disabled', true).text('Submitting...');
 
             $.ajax({
                 url: synofex_config.ajax_url,
@@ -781,25 +904,30 @@
                     nonce: synofex_config.nonce,
                     bot_id: this.botId,
                     issue_type: 'general',
-                    description: description,
+                    name: name,
+                    email: email,
+                    description: issue,
                     conversation_id: this.conversationId
                 },
                 success: (response) => {
+                    this.closeReportDialog();
                     if (response.success) {
-                        alert('Thank you! Your issue has been reported.');
+                        this.addNotification('Thank you! Your issue has been reported.');
                     } else {
-                        alert('Failed to report issue. Please try again.');
+                        this.addNotification('Failed to report issue. Please try again.');
                     }
                 },
                 error: () => {
-                    alert('Failed to report issue. Please try again.');
+                    this.closeReportDialog();
+                    this.addNotification('Failed to report issue. Please try again.');
                 }
             });
         },
 
-        // Request human agent
+        // Request human agent - Shows notification instead of popup
         requestHumanAgent: function() {
-            const reason = prompt('Please tell us why you need to speak with a human agent:') || 'Requested human assistance';
+            // Show immediate notification
+            this.addNotification('Connecting you to a human agent...');
 
             $.ajax({
                 url: synofex_config.ajax_url,
@@ -809,17 +937,17 @@
                     nonce: synofex_config.nonce,
                     bot_id: this.botId,
                     conversation_id: this.conversationId,
-                    reason: reason
+                    reason: 'Requested human assistance'
                 },
                 success: (response) => {
                     if (response.success) {
-                        this.addSystemMessage('🙋 Your request has been received. A human agent will assist you shortly.');
+                        this.addNotification('A human agent will assist you shortly');
                     } else {
-                        this.addSystemMessage('⚠️ Human agents are currently unavailable. Please try again later.');
+                        this.addNotification('Human agents unavailable. Please try again later.');
                     }
                 },
                 error: () => {
-                    this.addSystemMessage('⚠️ Failed to connect to human support. Please try again later.');
+                    this.addNotification('Failed to connect. Please try again later.');
                 }
             });
         },

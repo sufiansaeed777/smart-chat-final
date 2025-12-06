@@ -4,8 +4,9 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import pool from '@/utils/db';
 
 /**
- * Cleanup old tokens - Keep only 5 most recent tokens per bot
- * Deactivates all older tokens beyond the 5 limit
+ * Cleanup old and expired tokens
+ * 1. Deactivates all expired tokens
+ * 2. Keeps only 5 most recent active tokens per bot
  */
 export async function POST(request: Request) {
   try {
@@ -23,6 +24,19 @@ export async function POST(request: Request) {
     // Get botId from request (optional - if not provided, cleanup all user's bots)
     const body = await request.json().catch(() => ({}));
     const { botId } = body;
+
+    // First, deactivate ALL expired tokens for this user
+    const expiredResult = await pool.query(
+      `UPDATE wordpress_tokens
+       SET is_active = false
+       WHERE user_id = $1
+         AND is_active = true
+         AND expires_at IS NOT NULL
+         AND expires_at < NOW()
+       RETURNING id`,
+      [session.user.id]
+    );
+    const expiredCount = expiredResult.rowCount || 0;
 
     let query;
     let params;
@@ -86,10 +100,13 @@ export async function POST(request: Request) {
     const summaryParams = botId ? [session.user.id, botId] : [session.user.id];
     const summary = await pool.query(summaryQuery, summaryParams);
 
+    const oldTokensCount = result.rowCount || 0;
     return NextResponse.json({
       success: true,
-      deactivated: result.rowCount,
-      message: `Deactivated ${result.rowCount} old tokens. Maximum 5 tokens per bot enforced.`,
+      deactivatedExpired: expiredCount,
+      deactivatedOld: oldTokensCount,
+      deactivated: expiredCount + oldTokensCount,
+      message: `Deactivated ${expiredCount} expired tokens and ${oldTokensCount} old tokens. Maximum 5 tokens per bot enforced.`,
       tokenCounts: summary.rows
     });
 
@@ -126,7 +143,7 @@ export async function GET(request: Request) {
       [session.user.id]
     );
 
-    // Count how many tokens would be deactivated
+    // Count how many tokens would be deactivated (excess tokens)
     const excess = await pool.query(
       `SELECT COUNT(*) as excess_tokens
        FROM (
@@ -139,10 +156,25 @@ export async function GET(request: Request) {
       [session.user.id]
     );
 
+    // Count expired tokens that are still active
+    const expired = await pool.query(
+      `SELECT COUNT(*) as expired_tokens
+       FROM wordpress_tokens
+       WHERE user_id = $1
+         AND is_active = true
+         AND expires_at IS NOT NULL
+         AND expires_at < NOW()`,
+      [session.user.id]
+    );
+
+    const excessCount = parseInt(excess.rows[0].excess_tokens || '0');
+    const expiredCount = parseInt(expired.rows[0].expired_tokens || '0');
+
     return NextResponse.json({
       tokenCounts: summary.rows,
-      excessTokens: parseInt(excess.rows[0].excess_tokens || 0),
-      needsCleanup: parseInt(excess.rows[0].excess_tokens || 0) > 0
+      excessTokens: excessCount,
+      expiredTokens: expiredCount,
+      needsCleanup: excessCount > 0 || expiredCount > 0
     });
 
   } catch (error) {

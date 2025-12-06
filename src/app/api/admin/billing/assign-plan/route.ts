@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
 
     const userRepository = AppDataSource.getRepository('users');
     const subscriptionRepository = AppDataSource.getRepository('subscriptions');
+    const invoiceRepository = AppDataSource.getRepository('invoices');
 
     // Find the user
     const user = await userRepository.findOne({ where: { id: userId } });
@@ -142,6 +143,37 @@ export async function POST(request: NextRequest) {
           notes: notes || 'Plan assigned by admin'
         });
         await subscriptionRepository.save(newSubscription);
+      }
+
+      // Generate invoice for paid plans
+      if (planName !== 'free' && amount > 0) {
+        // Get the subscription ID for the invoice
+        const subscription = await subscriptionRepository.findOne({
+          where: { managerId: userId }
+        });
+
+        // Generate unique invoice number
+        const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+        // Calculate due date (30 days from now for new subscriptions)
+        const dueDate = new Date(now);
+        dueDate.setDate(dueDate.getDate() + 30);
+
+        const newInvoice = invoiceRepository.create({
+          managerId: userId,
+          subscriptionId: subscription?.id || null,
+          invoiceNumber: invoiceNumber,
+          status: 'open',
+          amount: amount,
+          tax: 0,
+          discount: 0,
+          total: amount,
+          currency: 'USD',
+          dueDate: dueDate,
+          notes: notes || `${planName.charAt(0).toUpperCase() + planName.slice(1)} plan - ${billingCycle} subscription`
+        });
+
+        await invoiceRepository.save(newInvoice);
       }
     }
 

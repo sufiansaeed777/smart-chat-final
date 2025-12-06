@@ -47,25 +47,53 @@ export async function GET(request: NextRequest) {
     });
 
     // Get real conversation counts for each bot
+    // FIX: Count unique conversations properly:
+    // - NEW schema (session-based): Each row with sessionId is one conversation
+    // - OLD schema (Playground): Each unique botId+userId pair is one conversation
     const botIds = bots.map(bot => bot.id);
-    let conversationCounts = [];
-    
+    const conversationCountMap: Record<string, number> = {};
+
+    // Initialize counts to 0 for all bots
+    botIds.forEach(botId => {
+      conversationCountMap[botId] = 0;
+    });
+
     // Only query conversations if there are bots
     if (botIds.length > 0) {
-      conversationCounts = await conversationRepository
+      // Count session-based conversations (NEW schema - WordPress/widget)
+      // FIX: Count DISTINCT sessionIds, not rows (multiple rows can share same sessionId)
+      const sessionBasedCounts = await conversationRepository
         .createQueryBuilder('conversation')
         .select('conversation.botId')
-        .addSelect('COUNT(*)', 'count')
+        .addSelect('COUNT(DISTINCT conversation.sessionId)', 'count')
         .where('conversation.botId IN (:...botIds)', { botIds })
+        .andWhere('conversation.sessionId IS NOT NULL')
         .groupBy('conversation.botId')
         .getRawMany();
-    }
 
-    // Create a map of botId to conversation count
-    const conversationCountMap = conversationCounts.reduce((acc, item) => {
-      acc[item.conversation_botId] = parseInt(item.count);
-      return acc;
-    }, {} as Record<string, number>);
+      // Add session-based counts
+      sessionBasedCounts.forEach(item => {
+        conversationCountMap[item.conversation_botId] = parseInt(item.count);
+      });
+
+      // Count Playground conversations (OLD schema)
+      // These don't have sessionId - count unique botId+userId pairs
+      const playgroundCounts = await conversationRepository
+        .createQueryBuilder('conversation')
+        .select('conversation.botId')
+        .addSelect('COUNT(DISTINCT conversation.userId)', 'count')
+        .where('conversation.botId IN (:...botIds)', { botIds })
+        .andWhere('conversation.sessionId IS NULL')
+        .andWhere('conversation.userId IS NOT NULL')
+        .groupBy('conversation.botId')
+        .getRawMany();
+
+      // Add playground counts
+      playgroundCounts.forEach(item => {
+        conversationCountMap[item.conversation_botId] =
+          (conversationCountMap[item.conversation_botId] || 0) + parseInt(item.count);
+      });
+    }
 
     // Transform the data to match the expected format
     const formattedBots = bots.map(bot => {

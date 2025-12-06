@@ -23,6 +23,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const selectedBotId = searchParams.get('botId');
+
     // Initialize database connection
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
@@ -48,7 +52,18 @@ export async function GET(request: NextRequest) {
       relations: ['bot']
     });
 
-    const botIds = assignments.map(assignment => assignment.bot?.id).filter(Boolean);
+    // Build list of available bots for the filter dropdown
+    const availableBots = assignments
+      .filter(a => a.bot)
+      .map(a => ({ id: a.bot.id, name: a.bot.name }));
+
+    // Filter botIds based on selection (if a specific bot is selected)
+    let botIds = assignments.map(assignment => assignment.bot?.id).filter(Boolean);
+
+    // If a specific bot is selected and it's in the user's assigned bots, filter to just that bot
+    if (selectedBotId && selectedBotId !== 'all' && botIds.includes(selectedBotId)) {
+      botIds = [selectedBotId];
+    }
 
     if (botIds.length === 0) {
       return NextResponse.json({
@@ -68,7 +83,8 @@ export async function GET(request: NextRequest) {
           monthlyGrowth: 0,
           averageSessionLength: '0 min'
         },
-        recentActivity: []
+        recentActivity: [],
+        availableBots: []
       });
     }
 
@@ -251,7 +267,7 @@ export async function GET(request: NextRequest) {
       stats: {
         assignedBots: assignments.length,
         totalConversations,
-        totalUsersWhoMessaged,  // FIX: Added unique users count
+        totalUsersWhoMessaged,
         recentConversations,
         activeConversations,
         avgResponseTime: totalConversations > 0 ? '2.3 min' : '0 min'
@@ -264,7 +280,8 @@ export async function GET(request: NextRequest) {
         monthlyGrowth: parseFloat(monthlyGrowth),
         averageSessionLength: '3.5 min'
       },
-      recentActivity: formattedActivity
+      recentActivity: formattedActivity,
+      availableBots
     });
 
   } catch (error) {

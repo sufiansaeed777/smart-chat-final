@@ -2,18 +2,20 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 
 export default function TermsOfServicePage() {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#f8fafc', fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}>
-      {/* Header */}
-      <header className="border-b" style={{ background: 'linear-gradient(90deg, rgba(16,185,129,0.06), transparent)', borderColor: 'rgba(15,23,42,0.04)', padding: '36px 18px' }}>
+      {/* Navigation */}
+      <Navigation />
+
+      {/* Page Header */}
+      <header className="border-b pt-20" style={{ background: 'linear-gradient(90deg, rgba(16,185,129,0.06), transparent)', borderColor: 'rgba(15,23,42,0.04)', padding: '36px 18px' }}>
         <div className="max-w-[980px] mx-auto px-4">
           <div className="flex items-center gap-3">
-            <Link href="/">
-              <div className="w-[52px] h-[52px] rounded-[10px] flex items-center justify-center text-white font-bold text-lg cursor-pointer hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #10b981, #2563eb)' }}>SC</div>
-            </Link>
+            <div className="w-[52px] h-[52px] rounded-[10px] flex items-center justify-center text-white font-bold text-lg" style={{ background: 'linear-gradient(135deg, #10b981, #2563eb)' }}>SC</div>
             <div>
               <h1 className="text-2xl md:text-[28px] font-bold text-[#0f172a] mb-1">Terms of Service</h1>
               <p className="text-[#6b7280] text-sm md:text-base">Terms and conditions for using <strong>Smart Chat</strong></p>

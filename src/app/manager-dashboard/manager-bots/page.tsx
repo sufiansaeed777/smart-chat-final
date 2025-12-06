@@ -457,6 +457,11 @@ export default function BotsPage() {
 
   // Handle document upload
   const handleDocumentUpload = async (files: FileList) => {
+    // FIX: Prevent duplicate uploads if already uploading
+    if (isUploadingDocument) {
+      console.log('Upload already in progress, skipping...');
+      return;
+    }
     setIsUploadingDocument(true);
     try {
       for (const file of files) {
@@ -903,6 +908,10 @@ export default function BotsPage() {
       if (response.ok) {
         console.log('Knowledge updated successfully');
 
+        const assignedCount = botKnowledgeIds.length;
+        const botName = selectedBotForKnowledge.name;
+        const botId = selectedBotForKnowledge.id;
+
         // Refresh bots list to show updated knowledge count
         const refreshResponse = await fetch('/api/manager/bots');
         if (refreshResponse.ok) {
@@ -914,10 +923,13 @@ export default function BotsPage() {
         setSelectedBotForKnowledge(null);
         setBotKnowledgeIds([]);
 
+        // Show success toast
+        showToast(`${assignedCount} document(s) assigned to "${botName}" successfully!`, 'success');
+
         // Prompt user to train the bot after knowledge assignment
-        const shouldTrain = confirm(`✅ Knowledge assigned successfully!\n\n${botKnowledgeIds.length} document(s) assigned to "${selectedBotForKnowledge.name}".\n\nWould you like to train the bot now?`);
+        const shouldTrain = confirm(`Would you like to train the bot "${botName}" now with the assigned documents?`);
         if (shouldTrain) {
-          await handleTrainBot({ id: selectedBotForKnowledge.id, name: selectedBotForKnowledge.name });
+          await handleTrainBot({ id: botId, name: botName });
         }
       } else {
         const error = await response.json();
@@ -948,7 +960,9 @@ export default function BotsPage() {
       const result = await response.json();
 
       if (response.ok) {
-        showToast(`Training initiated for "${bot.name}" - ${result.documentsProcessed || 0} documents processed`, 'success');
+        const docsProcessed = result.summary?.successfulDocuments || result.summary?.totalDocuments || result.documentsProcessed || 0;
+        const totalEmbeddings = result.summary?.totalEmbeddings || 0;
+        showToast(`Training complete for "${bot.name}" - ${docsProcessed} document(s) processed, ${totalEmbeddings} embeddings created`, 'success');
 
         // Refresh bots list to show updated training status
         const refreshResponse = await fetch('/api/manager/bots');
@@ -1200,7 +1214,10 @@ export default function BotsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <button className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors">
+          <button
+            onClick={() => router.push('/manager-dashboard')}
+            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+          >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Dashboard</span>
           </button>

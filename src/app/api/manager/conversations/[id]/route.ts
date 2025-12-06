@@ -63,6 +63,25 @@ export async function GET(
       // Messages are stored in JSONB array
       const messages = conv.messages || [];
 
+      // Helper to ensure timestamp is a valid ISO string
+      const formatTimestamp = (ts: any, fallback: any): string => {
+        if (ts) {
+          // If it's already a valid date string or Date object
+          const date = new Date(ts);
+          if (!isNaN(date.getTime())) {
+            return date.toISOString();
+          }
+        }
+        // Use fallback (createdAt)
+        if (fallback) {
+          const fallbackDate = new Date(fallback);
+          if (!isNaN(fallbackDate.getTime())) {
+            return fallbackDate.toISOString();
+          }
+        }
+        return new Date().toISOString();
+      };
+
       conversation = {
         id: conversationId,
         sessionId: conv.sessionId,
@@ -75,7 +94,7 @@ export async function GET(
           id: msg.id || `msg-${index}`,
           message: msg.text || msg.message,
           sender: msg.sender === 'visitor' ? 'user' : msg.sender === 'bot' ? 'bot' : msg.sender,
-          timestamp: msg.timestamp || conv.createdAt,
+          timestamp: formatTimestamp(msg.timestamp, conv.createdAt),
           isTestMessage: false
         }))
       };
@@ -83,30 +102,74 @@ export async function GET(
       // Check if this is a UUID (actual conversation ID from session-based)
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+      // Helper to ensure timestamp is a valid ISO string
+      const formatTimestamp = (ts: any, fallback: any): string => {
+        if (ts) {
+          const date = new Date(ts);
+          if (!isNaN(date.getTime())) {
+            return date.toISOString();
+          }
+        }
+        if (fallback) {
+          const fallbackDate = new Date(fallback);
+          if (!isNaN(fallbackDate.getTime())) {
+            return fallbackDate.toISOString();
+          }
+        }
+        return new Date().toISOString();
+      };
+
       if (uuidRegex.test(conversationId)) {
         // Try to find by actual ID first
         const conv = await conversationRepository.findOne({
           where: { id: conversationId }
         });
 
-        if (conv && conv.messages && Array.isArray(conv.messages)) {
-          // Session-based conversation found by ID
-          conversation = {
-            id: conversationId,
-            sessionId: conv.sessionId,
-            guestName: conv.guestName,
-            guestId: conv.guestId,
-            mode: conv.mode,
-            status: conv.status,
-            source: conv.guestId ? 'wordpress' : 'playground',
-            messages: conv.messages.map((msg: any, index: number) => ({
-              id: msg.id || `msg-${index}`,
-              message: msg.text || msg.message,
-              sender: msg.sender === 'visitor' ? 'user' : msg.sender === 'bot' ? 'bot' : msg.sender,
-              timestamp: msg.timestamp || conv.createdAt,
-              isTestMessage: false
-            }))
-          };
+        if (conv) {
+          // Check if this is a new schema conversation (has messages in JSONB array)
+          // OR an old schema conversation (has single message field)
+          if (conv.messages && Array.isArray(conv.messages) && conv.messages.length > 0) {
+            // New schema: Session-based conversation with messages array
+            conversation = {
+              id: conversationId,
+              sessionId: conv.sessionId,
+              guestName: conv.guestName,
+              guestId: conv.guestId,
+              mode: conv.mode,
+              status: conv.status,
+              source: conv.guestId ? 'wordpress' : 'playground',
+              messages: conv.messages.map((msg: any, index: number) => ({
+                id: msg.id || `msg-${index}`,
+                message: msg.text || msg.message,
+                sender: msg.sender === 'visitor' ? 'user' : msg.sender === 'bot' ? 'bot' : msg.sender,
+                timestamp: formatTimestamp(msg.timestamp, conv.createdAt),
+                isTestMessage: false
+              }))
+            };
+          } else if (conv.message || (!conv.messages && conv.botId && conv.userId)) {
+            // Old schema: Single message per row (Playground conversations)
+            // Each message is a separate row - fetch ALL messages for this bot-user pair
+            const allMessages = await conversationRepository.find({
+              where: {
+                botId: conv.botId,
+                userId: conv.userId
+              },
+              order: { createdAt: 'ASC' }
+            });
+
+            conversation = {
+              id: conversationId,
+              sessionId: conv.sessionId,
+              source: 'playground',
+              messages: allMessages.map(msg => ({
+                id: msg.id,
+                message: msg.message,
+                sender: msg.sender || 'user',
+                timestamp: formatTimestamp(msg.createdAt, new Date()),
+                isTestMessage: msg.isTestMessage || false
+              }))
+            };
+          }
         }
       }
 
@@ -137,7 +200,7 @@ export async function GET(
             id: conv.id,
             message: conv.message,
             sender: conv.sender,
-            timestamp: conv.createdAt,
+            timestamp: formatTimestamp(conv.createdAt, new Date()),
             isTestMessage: conv.isTestMessage || false
           }))
         };

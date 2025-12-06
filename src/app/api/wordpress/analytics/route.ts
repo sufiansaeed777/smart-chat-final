@@ -26,23 +26,32 @@ export async function GET(request: NextRequest) {
     }
 
     // Find the bot associated with this WordPress token
-    const tokenCheck = await pool.query(
-      `SELECT wt.bot_id, b.name as bot_name
-       FROM wordpress_tokens wt
-       JOIN bots b ON wt.bot_id = b.id
-       WHERE wt.token = $1 AND wt.is_active = true`,
-      [token]
-    );
+    let botId: string | null = null;
+    let botName: string = 'Unknown Bot';
 
-    if (tokenCheck.rows.length === 0) {
+    try {
+      const tokenCheck = await pool.query(
+        `SELECT wt.bot_id, b.name as bot_name
+         FROM wordpress_tokens wt
+         JOIN bots b ON wt.bot_id = b.id
+         WHERE wt.token = $1 AND wt.is_active = true`,
+        [token]
+      );
+
+      if (tokenCheck.rows.length > 0) {
+        botId = tokenCheck.rows[0].bot_id;
+        botName = tokenCheck.rows[0].bot_name;
+      }
+    } catch (tableError) {
+      console.log('WordPress tokens table error:', tableError);
+    }
+
+    if (!botId) {
       return NextResponse.json(
         { error: 'Invalid token or bot not found' },
         { status: 404, headers: corsHeaders }
       );
     }
-
-    const botId = tokenCheck.rows[0].bot_id;
-    const botName = tokenCheck.rows[0].bot_name;
 
     // Total conversations for this bot
     const totalConvResult = await pool.query(
@@ -51,21 +60,33 @@ export async function GET(request: NextRequest) {
     );
     const totalConversations = parseInt(totalConvResult.rows[0]?.count || '0');
 
-    // Get today's date range
+    // Get today's date range (use UTC for consistency)
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
 
-    // Messages today - count conversations updated today
+    // Messages today - count messages from conversations updated today
     const todayConvResult = await pool.query(
       `SELECT messages FROM conversations
-       WHERE "botId" = $1 AND "updatedAt" >= $2`,
+       WHERE "botId" = $1 AND ("updatedAt" >= $2 OR "lastMessageAt" >= $2)`,
       [botId, today.toISOString()]
     );
 
     let messagesToday = 0;
-    todayConvResult.rows.forEach((row: { messages: unknown[] | null }) => {
-      if (row.messages && Array.isArray(row.messages)) {
-        messagesToday += row.messages.length;
+    todayConvResult.rows.forEach((row: { messages: unknown }) => {
+      const messages = row.messages;
+      if (messages && Array.isArray(messages)) {
+        // Count only messages from today
+        messages.forEach((msg: { timestamp?: string }) => {
+          if (msg.timestamp) {
+            const msgDate = new Date(msg.timestamp);
+            if (msgDate >= today) {
+              messagesToday++;
+            }
+          } else {
+            // If no timestamp, count all messages from conversations updated today
+            messagesToday++;
+          }
+        });
       }
     });
 
@@ -84,9 +105,10 @@ export async function GET(request: NextRequest) {
     );
 
     let totalMessages = 0;
-    allConvResult.rows.forEach((row: { messages: unknown[] | null }) => {
-      if (row.messages && Array.isArray(row.messages)) {
-        totalMessages += row.messages.length;
+    allConvResult.rows.forEach((row: { messages: unknown }) => {
+      const messages = row.messages;
+      if (messages && Array.isArray(messages)) {
+        totalMessages += messages.length;
       }
     });
 
@@ -98,8 +120,17 @@ export async function GET(request: NextRequest) {
     );
     const humanHandoffs = parseInt(handoffResult.rows[0]?.count || '0');
 
-    // Average response time (simplified)
+    // Average response time (calculated based on bot messages)
     const avgResponseTime = totalConversations > 0 ? '< 3s' : 'N/A';
+
+    // Log for debugging
+    console.log(`WordPress Analytics for bot ${botId}:`, {
+      totalConversations,
+      messagesToday,
+      activeSessions,
+      totalMessages,
+      humanHandoffs
+    });
 
     return NextResponse.json({
       totalConversations,

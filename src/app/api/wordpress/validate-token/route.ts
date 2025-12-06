@@ -66,6 +66,12 @@ export async function POST(request: NextRequest) {
     // Check if token is expired
     const tokenData = tokenCheck.rows[0];
     if (tokenData.is_expired) {
+      // Deactivate the expired token
+      await pool.query(
+        'UPDATE wordpress_tokens SET is_active = false WHERE token = $1',
+        [token]
+      );
+
       return NextResponse.json(
         {
           valid: false,

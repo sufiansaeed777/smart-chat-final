@@ -22,7 +22,8 @@ import {
   AlertCircle,
   UserX,
   UserCheck2,
-  Loader2
+  Loader2,
+  MessageSquare
 } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -93,7 +94,7 @@ const TeamManagement = () => {
       issuesHandled?: number;
     }>;
   }>>([]);
-  const [viewMode, setViewMode] = useState<'all' | 'byBot'>('byBot');
+  const [viewMode, setViewMode] = useState<'all' | 'byBot'>('all');
   const [loadingMembers, setLoadingMembers] = useState(true);
 
   // Validation functions
@@ -153,8 +154,8 @@ const TeamManagement = () => {
       const response = await fetch('/api/manager/users');
       if (response.ok) {
         const data = await response.json();
-        // Add additional stats for each team member
-        const membersWithStats = (data.users || []).map((user: {id: string; name: string; email: string; role: string; status: string; lastLoginAt: string; createdAt: string; assignedBots?: Array<{botId: string; botName: string}>}) => {
+        // Add additional stats for each team member - USE REAL DATA FROM API
+        const membersWithStats = (data.users || []).map((user: {id: string; name: string; email: string; role: string; status: string; lastLoginAt: string; createdAt: string; assignedBots?: Array<{botId: string; botName: string}>; totalChats?: number; issuesHandled?: number; botsAssigned?: number}) => {
           // Determine online status based on actual login time
           let onlineStatus: 'online' | 'offline' = 'offline';
           if (user.status === 'accepted' && user.lastLoginAt) {
@@ -172,13 +173,14 @@ const TeamManagement = () => {
 
           const memberData = {
             ...user,
-            rating: (4.5 + Math.random() * 0.5).toFixed(1),
-            totalChats: Math.floor(Math.random() * 50) + 10,
+            // REAL data from API - no more random values
+            rating: 0, // CSAT not implemented yet - show 0 or N/A
+            totalChats: user.totalChats || 0, // Real count from API
             onlineStatus: onlineStatus,
             specialties: ['Customer Service'],
             currentStatus: user.status === 'accepted' ? 'Available' : (user.status === 'pending' && user.lastLoginAt ? 'Deactivated' : 'Pending invitation'),
-            issuesHandled: user.status === 'accepted' ? Math.floor(Math.random() * 30) + 5 : 0,
-            botsAssigned: user.assignedBots?.length || 0,
+            issuesHandled: user.issuesHandled || 0, // Real count from API
+            botsAssigned: user.botsAssigned || user.assignedBots?.length || 0, // Real count from API
             assignedBots: user.assignedBots || []
           };
 
@@ -186,9 +188,9 @@ const TeamManagement = () => {
         });
         setTeamMembers(membersWithStats);
 
-        // Process bot groups with stats
+        // Process bot groups with stats - USE REAL DATA FROM API
         if (data.botGroups) {
-          const groupsWithStats = data.botGroups.map((group: { botId: string; botName: string; members: Array<{ id: string; name: string; email: string; role: string; status: string; lastLoginAt: string; createdAt: string }> }) => ({
+          const groupsWithStats = data.botGroups.map((group: { botId: string; botName: string; members: Array<{ id: string; name: string; email: string; role: string; status: string; lastLoginAt: string; createdAt: string; totalChats?: number; issuesHandled?: number }> }) => ({
             ...group,
             members: group.members.map(member => {
               let onlineStatus: 'online' | 'offline' = 'offline';
@@ -199,9 +201,10 @@ const TeamManagement = () => {
               return {
                 ...member,
                 onlineStatus,
-                rating: (4.5 + Math.random() * 0.5).toFixed(1),
-                totalChats: Math.floor(Math.random() * 50) + 10,
-                issuesHandled: member.status === 'accepted' ? Math.floor(Math.random() * 30) + 5 : 0
+                // REAL data from API - no more random values
+                rating: 0, // CSAT not implemented yet
+                totalChats: member.totalChats || 0,
+                issuesHandled: member.issuesHandled || 0
               };
             })
           }));
@@ -521,33 +524,6 @@ const TeamManagement = () => {
         <p className="text-[#64748b] mb-5">Manage your support team and their assignments.</p>
 
         <div className="bg-white rounded-xl overflow-hidden shadow-md border border-gray-100">
-          {/* View Toggle - Above Table */}
-          <div className="flex items-center justify-end p-4 border-b border-gray-100">
-            <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('byBot')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                  viewMode === 'byBot'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <Bot className="w-4 h-4 inline mr-1" />
-                By Bot
-              </button>
-              <button
-                onClick={() => setViewMode('all')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                  viewMode === 'all'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <Users className="w-4 h-4 inline mr-1" />
-                All
-              </button>
-            </div>
-          </div>
           {loadingMembers ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto mb-2"></div>
@@ -635,7 +611,9 @@ const TeamManagement = () => {
                               <div className="text-center">
                                 <div className="flex items-center space-x-1">
                                   <Star className="w-3.5 h-3.5 text-yellow-500 fill-current" />
-                                  <span className="text-sm font-semibold text-gray-900">{member.rating}</span>
+                                  <span className="text-sm font-semibold text-gray-900">
+                                    {member.rating && Number(member.rating) > 0 ? member.rating : 'N/A'}
+                                  </span>
                                 </div>
                                 <p className="text-xs text-gray-500">Rating</p>
                               </div>
@@ -688,36 +666,56 @@ const TeamManagement = () => {
 
                     {/* Status Column */}
                     <td className="px-4 py-4">
-                      <span className={`inline-flex items-center gap-1 text-sm ${
+                      <span className={`inline-flex items-center gap-1.5 text-sm ${
                         member.status === 'accepted'
                           ? 'text-green-600'
                           : member.status === 'pending'
                           ? 'text-yellow-600'
                           : 'text-red-600'
                       }`}>
-                        {member.status === 'accepted' ? '🟢' : member.status === 'pending' ? '🕓' : '🔴'}
+                        {member.status === 'accepted' ? (
+                          <CheckCircle className="w-4 h-4" />
+                        ) : member.status === 'pending' ? (
+                          <Clock className="w-4 h-4" />
+                        ) : (
+                          <UserX className="w-4 h-4" />
+                        )}
                         <span className="capitalize">{member.status === 'accepted' ? 'active' : member.status}</span>
                       </span>
                     </td>
 
                     {/* Conversations Column */}
                     <td className="px-4 py-4">
-                      <span className="text-sm text-[#1e293b]">💬 {member.totalChats || 0}</span>
+                      <span className="inline-flex items-center gap-1.5 text-sm text-[#1e293b]">
+                        <MessageSquare className="w-4 h-4 text-blue-500" />
+                        {member.totalChats || 0}
+                      </span>
                     </td>
 
                     {/* CSAT Column */}
                     <td className="px-4 py-4">
-                      <span className="text-sm text-[#1e293b]">⭐ {typeof member.rating === 'number' ? member.rating.toFixed(1) : member.rating || '0.0'}</span>
+                      <span className="inline-flex items-center gap-1.5 text-sm text-[#1e293b]">
+                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                        {member.rating && member.rating > 0
+                          ? (typeof member.rating === 'number' ? member.rating.toFixed(1) : member.rating)
+                          : 'N/A'}
+                      </span>
                     </td>
 
                     {/* Issues Column */}
                     <td className="px-4 py-4">
-                      <span className="text-sm text-[#1e293b]">🐞 {member.issuesHandled || 0}</span>
+                      <span className="inline-flex items-center gap-1.5 text-sm text-[#1e293b]">
+                        <AlertCircle className="w-4 h-4 text-orange-500" />
+                        {member.issuesHandled || 0}
+                      </span>
                     </td>
 
                     {/* Bots Column */}
                     <td className="px-4 py-4">
-                      <span className="text-sm text-[#1e293b]">🤖 {member.botsAssigned || 0}</span>
+                      <span className="inline-flex items-center gap-1.5 text-sm text-[#1e293b]">
+                        <Bot className="w-4 h-4 text-purple-500" />
+                        {member.botsAssigned || 0}
+                      </span>
                     </td>
 
                     {/* Actions Column */}
@@ -732,7 +730,7 @@ const TeamManagement = () => {
                           className="w-[34px] h-[34px] rounded-lg border border-[#e2e8f0] bg-white flex items-center justify-center hover:bg-[#f1f5f9] transition-colors"
                           title="Edit"
                         >
-                          ✏️
+                          <Edit className="w-4 h-4 text-gray-500" />
                         </button>
 
                         {/* View/Toggle Button */}
@@ -767,17 +765,17 @@ const TeamManagement = () => {
                           {togglingUser === member.id ? (
                             <Loader2 className="w-4 h-4 animate-spin text-gray-500" />
                           ) : (
-                            '👤'
+                            <UserCheck2 className="w-4 h-4 text-gray-500" />
                           )}
                         </button>
 
                         {/* Delete Button */}
                         <button
                           onClick={() => openDeleteModal({ id: member.id, name: member.name })}
-                          className="w-[34px] h-[34px] rounded-lg border border-[#e2e8f0] bg-white flex items-center justify-center hover:bg-[#f1f5f9] transition-colors"
+                          className="w-[34px] h-[34px] rounded-lg border border-[#e2e8f0] bg-white flex items-center justify-center hover:bg-[#f1f5f9] transition-colors hover:border-red-200 hover:bg-red-50"
                           title="Delete"
                         >
-                          🗑️
+                          <Trash2 className="w-4 h-4 text-gray-500 hover:text-red-500" />
                         </button>
                       </div>
                     </td>
@@ -1081,7 +1079,11 @@ const TeamManagement = () => {
                   <div className="flex items-center space-x-3 mb-2">
                     <div className="flex items-center space-x-1">
                       <Star className="w-5 h-5 text-yellow-500 fill-current" />
-                      <span className="text-lg font-bold text-yellow-700">{typeof selectedAgentData.rating === 'number' ? selectedAgentData.rating.toFixed(1) : selectedAgentData.rating}</span>
+                      <span className="text-lg font-bold text-yellow-700">
+                        {selectedAgentData.rating && selectedAgentData.rating > 0
+                          ? (typeof selectedAgentData.rating === 'number' ? selectedAgentData.rating.toFixed(1) : selectedAgentData.rating)
+                          : 'N/A'}
+                      </span>
                       <span className="text-sm text-yellow-600">rating</span>
                     </div>
                   </div>

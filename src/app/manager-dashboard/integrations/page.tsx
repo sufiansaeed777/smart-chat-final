@@ -3,22 +3,142 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Puzzle } from 'lucide-react';
+import { Puzzle, X, Check, ChevronRight, Download, Copy, ExternalLink } from 'lucide-react';
+
+interface Bot {
+  id: string;
+  name: string;
+  status: string;
+  model?: string;
+}
+
+interface Token {
+  token: string;
+  created_at: string;
+  last_used?: string;
+}
+
+// App definitions
+const apps = [
+  {
+    id: 'wordpress',
+    name: 'WordPress',
+    description: 'Add chatbot to your WordPress website with our official plugin',
+    icon: '/wordpress-logo.png',
+    fallbackIcon: '🌐',
+    color: 'from-blue-500 to-blue-600',
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200',
+    status: 'active'
+  },
+  {
+    id: 'facebook',
+    name: 'Facebook Messenger',
+    description: 'Connect your bot to Facebook Messenger',
+    icon: null,
+    fallbackIcon: '📘',
+    color: 'from-blue-600 to-blue-700',
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200',
+    status: 'coming_soon'
+  },
+  {
+    id: 'whatsapp',
+    name: 'WhatsApp',
+    description: 'Integrate with WhatsApp Business API',
+    icon: null,
+    fallbackIcon: '💬',
+    color: 'from-green-500 to-green-600',
+    bgColor: 'bg-green-50',
+    borderColor: 'border-green-200',
+    status: 'coming_soon'
+  },
+  {
+    id: 'discord',
+    name: 'Discord',
+    description: 'Add your bot to Discord servers',
+    icon: null,
+    fallbackIcon: '🎮',
+    color: 'from-indigo-500 to-indigo-600',
+    bgColor: 'bg-indigo-50',
+    borderColor: 'border-indigo-200',
+    status: 'coming_soon'
+  },
+  {
+    id: 'instagram',
+    name: 'Instagram',
+    description: 'Connect to Instagram Direct Messages',
+    icon: null,
+    fallbackIcon: '📸',
+    color: 'from-pink-500 to-purple-600',
+    bgColor: 'bg-pink-50',
+    borderColor: 'border-pink-200',
+    status: 'coming_soon'
+  },
+  {
+    id: 'telegram',
+    name: 'Telegram',
+    description: 'Deploy your bot on Telegram',
+    icon: null,
+    fallbackIcon: '✈️',
+    color: 'from-sky-500 to-sky-600',
+    bgColor: 'bg-sky-50',
+    borderColor: 'border-sky-200',
+    status: 'coming_soon'
+  },
+  {
+    id: 'shopify',
+    name: 'Shopify',
+    description: 'Add chatbot to your Shopify store',
+    icon: null,
+    fallbackIcon: '🛍️',
+    color: 'from-green-600 to-green-700',
+    bgColor: 'bg-green-50',
+    borderColor: 'border-green-200',
+    status: 'coming_soon'
+  },
+  {
+    id: 'custom-widget',
+    name: 'Custom Widget',
+    description: 'Embed on any website with JavaScript',
+    icon: null,
+    fallbackIcon: '🔧',
+    color: 'from-gray-600 to-gray-700',
+    bgColor: 'bg-gray-50',
+    borderColor: 'border-gray-200',
+    status: 'coming_soon'
+  },
+  {
+    id: 'slack',
+    name: 'Slack',
+    description: 'Add your bot to Slack workspaces',
+    icon: null,
+    fallbackIcon: '💼',
+    color: 'from-purple-500 to-purple-600',
+    bgColor: 'bg-purple-50',
+    borderColor: 'border-purple-200',
+    status: 'coming_soon'
+  }
+];
 
 export default function IntegrationsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [bots, setBots] = useState([]);
-  const [selectedBot, setSelectedBot] = useState(null);
+
+  // WordPress connection modal state
+  const [showWordPressModal, setShowWordPressModal] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [bots, setBots] = useState<Bot[]>([]);
+  const [selectedBot, setSelectedBot] = useState<Bot | null>(null);
   const [wpToken, setWpToken] = useState('');
-  const [showInstructions, setShowInstructions] = useState(false);
+  const [existingTokens, setExistingTokens] = useState<Token[]>([]);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
-  const [existingTokens, setExistingTokens] = useState([]);
   const [loadingTokens, setLoadingTokens] = useState(false);
+  const [generatingToken, setGeneratingToken] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -26,24 +146,16 @@ export default function IntegrationsPage() {
     } else if (status === 'authenticated') {
       fetchUserBots();
     }
-  }, [status]);
+  }, [status, router]);
 
   const fetchUserBots = async () => {
     try {
-      // Check user role and fetch appropriate bots
       const userRole = session?.user?.role;
-      const endpoint = userRole === 'manager'
-        ? '/api/manager/bots'  // Managers see their created bots
-        : '/api/user/assigned-bots';  // Regular users see assigned bots
-
+      const endpoint = userRole === 'manager' ? '/api/manager/bots' : '/api/user/assigned-bots';
       const response = await fetch(endpoint);
-      console.log('Fetching from:', endpoint, 'Status:', response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('Fetched bots data:', data);
         setBots(data.bots || []);
-      } else {
-        console.error('Failed to fetch bots:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error fetching bots:', error);
@@ -52,7 +164,7 @@ export default function IntegrationsPage() {
     }
   };
 
-  const fetchExistingTokens = async (botId) => {
+  const fetchExistingTokens = async (botId: string) => {
     setLoadingTokens(true);
     try {
       const response = await fetch(`/api/integrations/save-token?botId=${botId}`);
@@ -67,44 +179,37 @@ export default function IntegrationsPage() {
     }
   };
 
-  const generateWordPressToken = async (botId) => {
-    // 1 bot = 1 site = 1 token model
-    // Deactivate all existing tokens for this bot before creating new one
+  const generateWordPressToken = async () => {
+    if (!selectedBot || !session?.user?.id) return;
 
-    // Generate a secure random token
+    setGeneratingToken(true);
     const secretKey = 'wp_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    const token = `${session.user.id}:${botId}:${secretKey}`;
+    const token = `${session.user.id}:${selectedBot.id}:${secretKey}`;
 
-    // Save this token to database (will auto-deactivate old tokens via API)
     try {
       const response = await fetch('/api/integrations/save-token', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ botId, token, deactivateOld: true }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ botId: selectedBot.id, token, deactivateOld: true }),
       });
 
       if (response.ok) {
         setWpToken(token);
-        setShowInstructions(true);
-        // Refresh to show new single token
-        fetchExistingTokens(botId);
+        setCurrentStep(3);
+        fetchExistingTokens(selectedBot.id);
       } else {
         const data = await response.json();
-        console.error('Failed to save token:', data);
         alert(data.error || 'Failed to generate token. Please try again.');
       }
     } catch (error) {
       console.error('Error saving token:', error);
       alert('An error occurred. Please try again.');
+    } finally {
+      setGeneratingToken(false);
     }
   };
 
-  // Removed deactivateToken - 1 bot = 1 site = 1 token model
-  // Old tokens are auto-deactivated when generating new token
-
-  const copyToClipboard = (text) => {
+  const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -113,23 +218,15 @@ export default function IntegrationsPage() {
   const downloadPlugin = async () => {
     try {
       const response = await fetch('/api/download/wordpress-plugin');
+      if (!response.ok) throw new Error('Download failed');
 
-      if (!response.ok) {
-        throw new Error('Download failed');
-      }
-
-      // Get the blob from the response
       const blob = await response.blob();
-
-      // Create a download link
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = 'synofex-chatbot.zip';
       document.body.appendChild(a);
       a.click();
-
-      // Clean up
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
@@ -138,11 +235,34 @@ export default function IntegrationsPage() {
     }
   };
 
+  const handleConnectClick = (appId: string) => {
+    if (appId === 'wordpress') {
+      setShowWordPressModal(true);
+      setCurrentStep(1);
+      setSelectedBot(null);
+      setWpToken('');
+      setExistingTokens([]);
+    }
+  };
+
+  const handleBotSelect = (bot: Bot) => {
+    setSelectedBot(bot);
+    fetchExistingTokens(bot.id);
+    setCurrentStep(2);
+  };
+
+  const closeModal = () => {
+    setShowWordPressModal(false);
+    setCurrentStep(1);
+    setSelectedBot(null);
+    setWpToken('');
+  };
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       {/* Page Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+      <div className="flex items-center gap-3 mb-8">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#6566F1] to-[#8B5CF6] flex items-center justify-center shadow-lg">
           <Puzzle className="w-6 h-6 text-white" />
         </div>
         <div>
@@ -151,376 +271,377 @@ export default function IntegrationsPage() {
         </div>
       </div>
 
-      {/* WordPress Integration Card */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center space-x-3">
-            <img
-              src="/wordpress-logo.png"
-              alt="WordPress"
-              className="w-10 h-10"
-              onError={(e) => { e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNDAwIj48cGF0aCBmaWxsPSIjMjE3NTlhIiBkPSJNMCAwaDQwMHY0MDBIMHoiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNNTAgMjAwYzAtODIuOCA2Ny4yLTE1MCAxNTAtMTUwczE1MCA2Ny4yIDE1MCAxNTAtNjcuMiAxNTAtMTUwIDE1MFM1MCAyODIuOCA1MCAyMDB6bTI3LjMgMGMwIDY3LjggNTUgMTIyLjcgMTIyLjcgMTIyLjdzMTIyLjctNTUgMTIyLjctMTIyLjdTMjY3LjggNzcuMyAyMDAgNzcuMyA3Ny4zIDEzMi4yIDc3LjMgMjAweiIvPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik0xMDQuNyAyMDQuN2wxOC40IDUwLjVMMTQxLjUgMjA1bDE4LjQgNTAuMiAxOC40LTUwLjVIMjA0bC0zNi44IDk1aC0yNS44bC0xOC4zLTQ3LjctMTguMyA0Ny43SDc5TDQyLjIgMjA0LjdoMjUuN2wxOC40IDUwLjUgMTguNC01MC41eiIvPjwvc3ZnPg=='; }}
-            />
-            <CardTitle>WordPress Plugin Integration</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {/* Apps Grid - 9 Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {apps.map((app) => (
+          <Card
+            key={app.id}
+            className={`relative overflow-hidden transition-all duration-300 hover:shadow-lg ${
+              app.status === 'coming_soon' ? 'opacity-75' : ''
+            }`}
+          >
+            <CardContent className="p-6">
+              {/* Status Badge */}
+              <div className="absolute top-4 right-4">
+                {app.status === 'active' ? (
+                  <Badge className="bg-green-100 text-green-700 border-green-200">
+                    <Check className="w-3 h-3 mr-1" />
+                    Available
+                  </Badge>
+                ) : (
+                  <Badge className="bg-gray-100 text-gray-600 border-gray-200">
+                    Coming Soon
+                  </Badge>
+                )}
+              </div>
 
-              {loading ? (
-                <div className="text-center py-4">Loading your bots...</div>
-              ) : bots.length === 0 ? (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-                  <p className="text-sm text-yellow-800">
-                    You need to create a chatbot first before you can integrate it with WordPress.
-                  </p>
-                  <button
-                    onClick={() => {
-                      // Navigate to appropriate dashboard based on user role
-                      const userRole = session?.user?.role;
-                      const dashboardPath = userRole === 'manager' ? '/manager-dashboard/manager-bots' : '/dashboard/bots';
-                      router.push(dashboardPath);
+              {/* App Icon */}
+              <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${app.color} flex items-center justify-center mb-4 shadow-md`}>
+                {app.icon ? (
+                  <img
+                    src={app.icon}
+                    alt={app.name}
+                    className="w-8 h-8"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.parentElement!.innerHTML = `<span class="text-2xl">${app.fallbackIcon}</span>`;
                     }}
-                    className="mt-2 text-sm font-medium text-yellow-600 hover:text-yellow-500"
-                  >
-                    Create a Bot →
-                  </button>
-                </div>
+                  />
+                ) : (
+                  <span className="text-2xl">{app.fallbackIcon}</span>
+                )}
+              </div>
+
+              {/* App Info */}
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{app.name}</h3>
+              <p className="text-sm text-gray-600 mb-4 min-h-[40px]">{app.description}</p>
+
+              {/* Action Button */}
+              {app.status === 'active' ? (
+                <Button
+                  onClick={() => handleConnectClick(app.id)}
+                  className="w-full bg-[#6566F1] hover:bg-[#5A5BD9] text-white"
+                >
+                  Connect
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
               ) : (
-                <>
-                  {/* Bot Selection - Manager can have multiple bots (1 bot per website) */}
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select a Bot to Integrate
-                    </label>
-                    <select
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      onChange={(e) => {
-                        const bot = bots.find(b => b.id === e.target.value);
-                        setSelectedBot(bot);
-                        setShowInstructions(false);
-                        setWpToken('');
-                        setExistingTokens([]);
-                        // Fetch existing tokens for this bot
-                        if (bot) {
-                          fetchExistingTokens(bot.id);
-                        }
-                      }}
-                      value={selectedBot?.id || ''}
-                    >
-                      <option value="">-- Select a bot --</option>
-                      {bots.map((bot) => (
-                        <option key={bot.id} value={bot.id}>
-                          {bot.name} ({bot.status})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {selectedBot && (
-                    <div className="space-y-4">
-                      {/* Bot Details */}
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h3 className="font-medium text-gray-900 mb-2">Bot Details</h3>
-                        <dl className="text-sm space-y-1">
-                          <div className="flex">
-                            <dt className="font-medium text-gray-600 w-24">Name:</dt>
-                            <dd className="text-gray-900">{selectedBot.name}</dd>
-                          </div>
-                          <div className="flex">
-                            <dt className="font-medium text-gray-600 w-24">Model:</dt>
-                            <dd className="text-gray-900">{selectedBot.model || 'gpt-3.5-turbo'}</dd>
-                          </div>
-                          <div className="flex">
-                            <dt className="font-medium text-gray-600 w-24">Status:</dt>
-                            <dd className="text-gray-900">
-                              <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                                selectedBot.status === 'active'
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-gray-100 text-gray-800'
-                              }`}>
-                                {selectedBot.status}
-                              </span>
-                            </dd>
-                          </div>
-                        </dl>
-                      </div>
-
-                      {/* Active Token - 1 Bot = 1 Site = 1 Token */}
-                      <div className="border-2 border-blue-200 rounded-lg p-5 bg-blue-50/30">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-semibold text-gray-900">Active Integration Token</h3>
-                          {existingTokens.length > 0 && (
-                            <Badge className="bg-green-100 text-green-800 border-green-300">
-                              ✓ Active
-                            </Badge>
-                          )}
-                        </div>
-
-                        {loadingTokens ? (
-                          <div className="text-center py-6 text-sm text-gray-600">
-                            <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-2"></div>
-                            <div>Loading token...</div>
-                          </div>
-                        ) : existingTokens.length === 0 ? (
-                          <div className="text-center py-8 text-sm">
-                            <div className="text-gray-400 mb-2">
-                              <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                              </svg>
-                            </div>
-                            <p className="text-gray-600 font-medium">No token generated yet</p>
-                            <p className="text-gray-500 text-xs mt-1">Click the button below to generate your integration token</p>
-                          </div>
-                        ) : (
-                          <div className="bg-white border border-gray-300 rounded-lg p-4 space-y-3 shadow-sm">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <span className="text-sm font-semibold text-gray-900">
-                                  Integration Token
-                                </span>
-                                {existingTokens[0].last_used ? (
-                                  <Badge className="bg-green-100 text-green-800 border-green-300">
-                                    ✓ In Use
-                                  </Badge>
-                                ) : (
-                                  <Badge className="bg-gray-100 text-gray-600 border-gray-300">
-                                    Not Used Yet
-                                  </Badge>
-                                )}
-                              </div>
-                              <button
-                                onClick={() => copyToClipboard(existingTokens[0].token)}
-                                className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-medium"
-                              >
-                                Copy Token
-                              </button>
-                            </div>
-                            <div className="flex gap-4 text-xs text-gray-600">
-                              <span className="font-medium">Created: {new Date(existingTokens[0].created_at).toLocaleDateString()}</span>
-                              {existingTokens[0].last_used && (
-                                <span className="font-medium">Last used: {new Date(existingTokens[0].last_used).toLocaleDateString()}</span>
-                              )}
-                            </div>
-                            <div className="text-xs font-mono bg-gray-50 px-3 py-2 rounded border border-gray-200 break-all">
-                              {existingTokens[0].token}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Download WordPress Plugin Button - Always Visible */}
-                      {!showInstructions && (
-                        <div className="mb-4">
-                          <button
-                            onClick={downloadPlugin}
-                            className="w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg font-semibold text-base flex items-center justify-center gap-2"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                            </svg>
-                            Download WordPress Plugin (synofex-chatbot.zip)
-                          </button>
-                          <p className="text-xs text-center text-gray-600 mt-2">
-                            Download the latest version of the WordPress plugin with all fixes
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Generate Token Button */}
-                      {!showInstructions && (
-                        <div className="space-y-3">
-                          <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded">
-                            <div className="flex">
-                              <div className="flex-shrink-0">
-                                <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                                </svg>
-                              </div>
-                              <div className="ml-3">
-                                <p className="text-sm font-semibold text-amber-900 mb-1">
-                                  📋 1 Bot = 1 Site = 1 Token
-                                </p>
-                                <ul className="text-sm text-amber-800 space-y-1">
-                                  <li>• Each bot can have only one active token</li>
-                                  <li>• This token is used for the dedicated website</li>
-                                  <li>• Generating a new token will deactivate the old one</li>
-                                  <li>• {existingTokens.length > 0 ? 'Use the existing token above or generate a new one' : 'Generate your first token below'}</li>
-                                </ul>
-                              </div>
-                            </div>
-                          </div>
-                          <Button
-                            onClick={() => generateWordPressToken(selectedBot.id)}
-                            className="w-full py-6 text-base font-semibold"
-                            variant="default"
-                          >
-                            {existingTokens.length > 0 ? '🔄 Regenerate Token (Old will be deactivated)' : '+ Generate Token'}
-                          </Button>
-                        </div>
-                      )}
-
-                      {/* Installation Instructions */}
-                      {showInstructions && (
-                        <div className="border border-blue-200 rounded-lg p-6 bg-blue-50">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                            WordPress Installation Instructions
-                          </h3>
-
-                          {/* Token Display */}
-                          <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Your Integration Token
-                            </label>
-                            <div className="flex">
-                              <input
-                                type="text"
-                                value={wpToken}
-                                readOnly
-                                className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-l-md font-mono text-sm"
-                              />
-                              <button
-                                onClick={() => copyToClipboard(wpToken)}
-                                className="px-4 py-2 bg-gray-700 text-white rounded-r-md hover:bg-gray-800 transition"
-                              >
-                                {copied ? 'Copied!' : 'Copy'}
-                              </button>
-                            </div>
-                            <p className="mt-2 text-xs text-gray-600 font-medium">
-                              🔒 Keep this token secure. It provides access to your chatbot.
-                            </p>
-                          </div>
-
-                          {/* Step by Step Instructions */}
-                          <div className="space-y-4">
-                            <h4 className="font-medium text-gray-900">Installation Steps:</h4>
-
-                            <ol className="space-y-3 text-sm">
-                              <li className="flex">
-                                <span className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs mr-3">1</span>
-                                <div>
-                                  <strong>Download the Plugin</strong>
-                                  <button
-                                    onClick={downloadPlugin}
-                                    className="ml-3 text-blue-600 hover:text-blue-500 underline"
-                                  >
-                                    Download synofex-chatbot.zip
-                                  </button>
-                                </div>
-                              </li>
-
-                              <li className="flex">
-                                <span className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs mr-3">2</span>
-                                <div>
-                                  <strong>Install in WordPress</strong>
-                                  <p className="text-gray-600 mt-1">
-                                    Go to WordPress Admin → Plugins → Add New → Upload Plugin
-                                  </p>
-                                </div>
-                              </li>
-
-                              <li className="flex">
-                                <span className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs mr-3">3</span>
-                                <div>
-                                  <strong>Activate the Plugin</strong>
-                                  <p className="text-gray-600 mt-1">
-                                    Click &quot;Activate&quot; after installation
-                                  </p>
-                                </div>
-                              </li>
-
-                              <li className="flex">
-                                <span className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs mr-3">4</span>
-                                <div>
-                                  <strong>Configure Settings</strong>
-                                  <p className="text-gray-600 mt-1">
-                                    Go to Settings → Synofex Chatbot<br/>
-                                    Paste your token and set API URL to: <code className="bg-gray-100 px-1">http://localhost:3000</code>
-                                  </p>
-                                </div>
-                              </li>
-
-                              <li className="flex">
-                                <span className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs mr-3">✓</span>
-                                <div>
-                                  <strong>Done!</strong>
-                                  <p className="text-gray-600 mt-1">
-                                    The chat widget will appear on your WordPress site
-                                  </p>
-                                </div>
-                              </li>
-                            </ol>
-                          </div>
-
-                          {/* API URL Info */}
-                          <div className="mt-6 p-4 bg-white rounded-md">
-                            <h4 className="font-medium text-gray-900 mb-2">API Configuration</h4>
-                            <div className="text-sm space-y-2">
-                              <div>
-                                <span className="font-medium">Development:</span>
-                                <code className="ml-2 bg-gray-100 px-2 py-1 rounded">http://localhost:3000</code>
-                              </div>
-                              <div>
-                                <span className="font-medium">Production:</span>
-                                <code className="ml-2 bg-gray-100 px-2 py-1 rounded">https://your-domain.com</code>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
+                <Button
+                  disabled
+                  className="w-full bg-gray-100 text-gray-400 cursor-not-allowed"
+                >
+                  Coming Soon
+                </Button>
               )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-            {/* Future Integrations */}
-            <div className="mt-12 pt-8 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Coming Soon</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* JavaScript Widget */}
-                <div className="border border-gray-200 rounded-lg p-4 opacity-60">
-                  <div className="flex items-center mb-2">
-                    <span className="text-2xl mr-2">🌐</span>
-                    <h4 className="font-medium">JavaScript Widget</h4>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Embed on any website with a simple script tag
-                  </p>
-                  <span className="inline-block mt-2 text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                    Coming Soon
-                  </span>
+      {/* WordPress Connection Modal */}
+      {showWordPressModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                  <span className="text-xl">🌐</span>
                 </div>
-
-                {/* Shopify */}
-                <div className="border border-gray-200 rounded-lg p-4 opacity-60">
-                  <div className="flex items-center mb-2">
-                    <span className="text-2xl mr-2">🛍️</span>
-                    <h4 className="font-medium">Shopify App</h4>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Add chatbot to your Shopify store
-                  </p>
-                  <span className="inline-block mt-2 text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                    Coming Soon
-                  </span>
-                </div>
-
-                {/* WhatsApp */}
-                <div className="border border-gray-200 rounded-lg p-4 opacity-60">
-                  <div className="flex items-center mb-2">
-                    <span className="text-2xl mr-2">💬</span>
-                    <h4 className="font-medium">WhatsApp</h4>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Connect your bot to WhatsApp Business
-                  </p>
-                  <span className="inline-block mt-2 text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                    Coming Soon
-                  </span>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Connect WordPress</h2>
+                  <p className="text-sm text-gray-500">Follow the steps to integrate your chatbot</p>
                 </div>
               </div>
+              <button
+                onClick={closeModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
-        </CardContent>
-      </Card>
+
+            {/* Step Indicator */}
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+              <div className="flex items-center justify-between max-w-md mx-auto">
+                {[1, 2, 3].map((step) => (
+                  <div key={step} className="flex items-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
+                      currentStep >= step
+                        ? 'bg-[#6566F1] text-white'
+                        : 'bg-gray-200 text-gray-500'
+                    }`}>
+                      {currentStep > step ? <Check className="w-4 h-4" /> : step}
+                    </div>
+                    <span className={`ml-2 text-sm font-medium ${
+                      currentStep >= step ? 'text-gray-900' : 'text-gray-400'
+                    }`}>
+                      {step === 1 ? 'Select Bot' : step === 2 ? 'Generate Token' : 'Install Plugin'}
+                    </span>
+                    {step < 3 && (
+                      <div className={`w-12 h-0.5 mx-3 ${
+                        currentStep > step ? 'bg-[#6566F1]' : 'bg-gray-200'
+                      }`} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              {/* Step 1: Bot Selection */}
+              {currentStep === 1 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Select a Bot to Connect</h3>
+
+                  {loading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6566F1] mx-auto mb-2"></div>
+                      <p className="text-gray-500">Loading your bots...</p>
+                    </div>
+                  ) : bots.length === 0 ? (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                      <p className="text-yellow-800 mb-2">You need to create a chatbot first</p>
+                      <Button
+                        onClick={() => {
+                          closeModal();
+                          router.push('/manager-dashboard/bots');
+                        }}
+                        variant="outline"
+                        className="text-yellow-700 border-yellow-300"
+                      >
+                        Create a Bot
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid gap-3">
+                      {bots.map((bot) => (
+                        <button
+                          key={bot.id}
+                          onClick={() => handleBotSelect(bot)}
+                          className="w-full p-4 border border-gray-200 rounded-xl hover:border-[#6566F1] hover:bg-[#6566F1]/5 transition-all text-left group"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium text-gray-900 group-hover:text-[#6566F1]">{bot.name}</h4>
+                              <p className="text-sm text-gray-500">Model: {bot.model || 'gpt-3.5-turbo'}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge className={`${
+                                bot.status === 'active'
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                {bot.status}
+                              </Badge>
+                              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#6566F1]" />
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Step 2: Token Generation */}
+              {currentStep === 2 && selectedBot && (
+                <div className="space-y-6">
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <h4 className="font-medium text-gray-900 mb-2">Selected Bot</h4>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-gray-900 font-medium">{selectedBot.name}</p>
+                        <p className="text-sm text-gray-500">Model: {selectedBot.model || 'gpt-3.5-turbo'}</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentStep(1)}
+                      >
+                        Change
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Existing Token Display */}
+                  {loadingTokens ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#6566F1] mx-auto"></div>
+                    </div>
+                  ) : existingTokens.length > 0 ? (
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Check className="w-5 h-5 text-green-600" />
+                          <span className="font-medium text-green-800">Active Token Found</span>
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(existingTokens[0].token)}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
+                        >
+                          <Copy className="w-3 h-3" />
+                          {copied ? 'Copied!' : 'Copy'}
+                        </button>
+                      </div>
+                      <code className="block text-xs bg-white p-2 rounded border border-green-200 break-all">
+                        {existingTokens[0].token}
+                      </code>
+                      <p className="text-xs text-green-700 mt-2">
+                        Created: {new Date(existingTokens[0].created_at).toLocaleDateString()}
+                        {existingTokens[0].last_used && ` • Last used: ${new Date(existingTokens[0].last_used).toLocaleDateString()}`}
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {/* Token Info */}
+                  <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
+                    <div className="flex">
+                      <div className="ml-3">
+                        <p className="text-sm font-semibold text-amber-900 mb-1">1 Bot = 1 Site = 1 Token</p>
+                        <ul className="text-sm text-amber-800 space-y-1">
+                          <li>• Each bot can have only one active token</li>
+                          <li>• Generating a new token will deactivate the old one</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Generate Button */}
+                  <Button
+                    onClick={generateWordPressToken}
+                    disabled={generatingToken}
+                    className="w-full py-6 text-base bg-[#6566F1] hover:bg-[#5A5BD9]"
+                  >
+                    {generatingToken ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Generating...
+                      </>
+                    ) : existingTokens.length > 0 ? (
+                      'Regenerate Token & Continue'
+                    ) : (
+                      'Generate Token & Continue'
+                    )}
+                  </Button>
+
+                  {existingTokens.length > 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setWpToken(existingTokens[0].token);
+                        setCurrentStep(3);
+                      }}
+                      className="w-full"
+                    >
+                      Use Existing Token & Continue
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {/* Step 3: Plugin & Instructions */}
+              {currentStep === 3 && (
+                <div className="space-y-6">
+                  {/* Token Display */}
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-medium text-green-800">Your Integration Token</span>
+                      <button
+                        onClick={() => copyToClipboard(wpToken || existingTokens[0]?.token || '')}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
+                      >
+                        <Copy className="w-3 h-3" />
+                        {copied ? 'Copied!' : 'Copy Token'}
+                      </button>
+                    </div>
+                    <code className="block text-xs bg-white p-3 rounded border border-green-200 break-all font-mono">
+                      {wpToken || existingTokens[0]?.token || ''}
+                    </code>
+                    <p className="text-xs text-green-700 mt-2">🔒 Keep this token secure</p>
+                  </div>
+
+                  {/* Download Plugin */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <h4 className="font-medium text-blue-900 mb-3">Download WordPress Plugin</h4>
+                    <button
+                      onClick={downloadPlugin}
+                      className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium"
+                    >
+                      <Download className="w-5 h-5" />
+                      Download synofex-chatbot.zip
+                    </button>
+                  </div>
+
+                  {/* Installation Instructions */}
+                  <div className="border border-gray-200 rounded-xl p-5">
+                    <h4 className="font-semibold text-gray-900 mb-4">Installation Steps</h4>
+                    <ol className="space-y-4">
+                      <li className="flex">
+                        <span className="flex-shrink-0 w-7 h-7 bg-[#6566F1] text-white rounded-full flex items-center justify-center text-sm mr-3">1</span>
+                        <div>
+                          <strong className="text-gray-900">Upload Plugin</strong>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Go to WordPress Admin → Plugins → Add New → Upload Plugin → Select the downloaded zip file
+                          </p>
+                        </div>
+                      </li>
+                      <li className="flex">
+                        <span className="flex-shrink-0 w-7 h-7 bg-[#6566F1] text-white rounded-full flex items-center justify-center text-sm mr-3">2</span>
+                        <div>
+                          <strong className="text-gray-900">Activate Plugin</strong>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Click &quot;Activate&quot; after installation completes
+                          </p>
+                        </div>
+                      </li>
+                      <li className="flex">
+                        <span className="flex-shrink-0 w-7 h-7 bg-[#6566F1] text-white rounded-full flex items-center justify-center text-sm mr-3">3</span>
+                        <div>
+                          <strong className="text-gray-900">Configure Settings</strong>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Go to Settings → Synofex Chatbot → Paste your token
+                          </p>
+                        </div>
+                      </li>
+                      <li className="flex">
+                        <span className="flex-shrink-0 w-7 h-7 bg-[#6566F1] text-white rounded-full flex items-center justify-center text-sm mr-3">4</span>
+                        <div>
+                          <strong className="text-gray-900">Set API URL</strong>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Enter API URL: <code className="bg-gray-100 px-2 py-0.5 rounded text-xs">{typeof window !== 'undefined' ? window.location.origin : 'https://your-domain.com'}</code>
+                          </p>
+                        </div>
+                      </li>
+                      <li className="flex">
+                        <span className="flex-shrink-0 w-7 h-7 bg-green-500 text-white rounded-full flex items-center justify-center text-sm mr-3">
+                          <Check className="w-4 h-4" />
+                        </span>
+                        <div>
+                          <strong className="text-gray-900">Done!</strong>
+                          <p className="text-sm text-gray-600 mt-1">
+                            The chatbot widget will appear on your WordPress site
+                          </p>
+                        </div>
+                      </li>
+                    </ol>
+                  </div>
+
+                  {/* Close Button */}
+                  <Button
+                    onClick={closeModal}
+                    className="w-full bg-gray-900 hover:bg-gray-800"
+                  >
+                    Done
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

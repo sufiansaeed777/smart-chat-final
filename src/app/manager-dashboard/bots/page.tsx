@@ -407,9 +407,37 @@ const BotsPage = () => {
     setIsUploadingDocument(true);
     try {
       const formData = new FormData();
+      let hasValidFiles = false;
+
       Array.from(files).forEach(file => {
+        // FIX: Check for duplicate files before adding to FormData
+        // 1. Check against newly uploaded documents in this session
+        const isDuplicateInNewDocs = newBot.newDocuments.some(
+          doc => doc.name?.toLowerCase() === file.name.toLowerCase()
+        );
+        if (isDuplicateInNewDocs) {
+          showNotification('warning', 'Duplicate File', `File "${file.name}" is already selected.`);
+          return; // Skip this file
+        }
+
+        // 2. Check against existing documents in the database
+        const isDuplicateInAvailable = availableDocuments.some(
+          doc => doc.name?.toLowerCase() === file.name.toLowerCase()
+        );
+        if (isDuplicateInAvailable) {
+          showNotification('warning', 'Duplicate File', `Document "${file.name}" already exists in knowledge base.`);
+          return; // Skip this file
+        }
+
         formData.append('documents', file);
+        hasValidFiles = true;
       });
+
+      // If no valid files to upload, exit early
+      if (!hasValidFiles) {
+        setIsUploadingDocument(false);
+        return;
+      }
 
       const response = await fetch('/api/manager/documents', {
         method: 'POST',
@@ -564,7 +592,10 @@ const BotsPage = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        showNotification('success', 'Training Complete', `${data.message} Documents: ${data.summary.successfulDocuments}/${data.summary.totalDocuments}, Embeddings: ${data.summary.totalEmbeddings}`);
+        const successfulDocs = data.summary?.successfulDocuments || 0;
+        const totalDocs = data.summary?.totalDocuments || 0;
+        const totalEmbeddings = data.summary?.totalEmbeddings || 0;
+        showNotification('success', 'Training Complete', `${data.message || 'Training successful!'} Documents: ${successfulDocs}/${totalDocs}, Embeddings: ${totalEmbeddings}`);
         loadBots();
       } else {
         showNotification('error', 'Training Failed', data.error || data.message || 'Unknown error occurred during training.');

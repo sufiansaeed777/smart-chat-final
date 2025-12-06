@@ -87,9 +87,9 @@ const HelpPage = () => {
       try {
         setLoading(true);
         const [articlesRes, videosRes, faqsRes] = await Promise.all([
-          fetch('/api/admin/help/articles'),
-          fetch('/api/admin/help/videos'),
-          fetch('/api/admin/help/faqs')
+          fetch('/api/public/help/articles'),
+          fetch('/api/public/help/videos'),
+          fetch('/api/public/help/faqs')
         ]);
 
         if (articlesRes.ok) {

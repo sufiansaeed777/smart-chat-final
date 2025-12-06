@@ -41,23 +41,57 @@ export async function GET() {
     const twentyFourHoursAgo = new Date();
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
 
-    // Active Users (last 30 days)
-    const activeUsers = await userRepository
+    // Active Users (last 30 days) - based on actual login activity
+    const activeUsersFromLogin = await userRepository
       .createQueryBuilder('user')
-      .where('user.updatedAt > :date', { date: thirtyDaysAgo })
+      .where('user.lastLoginAt > :date', { date: thirtyDaysAgo })
       .getCount();
 
-    // Daily Active Users (last 24 hours)
-    const dailyActiveUsers = await userRepository
+    // Fallback: count users with recent conversations
+    const activeUsersFromConversations = await conversationRepository
+      .createQueryBuilder('conv')
+      .select('COUNT(DISTINCT conv.userId)', 'count')
+      .where('conv.userId IS NOT NULL')
+      .andWhere('conv.createdAt > :date', { date: thirtyDaysAgo })
+      .getRawOne();
+
+    const activeUsers = activeUsersFromLogin > 0
+      ? activeUsersFromLogin
+      : parseInt(activeUsersFromConversations?.count || '0');
+
+    // Daily Active Users (last 24 hours) - based on actual login activity
+    const dailyActiveUsersFromLogin = await userRepository
       .createQueryBuilder('user')
-      .where('user.updatedAt > :date', { date: twentyFourHoursAgo })
+      .where('user.lastLoginAt > :date', { date: twentyFourHoursAgo })
       .getCount();
 
-    // Weekly Active Users (last 7 days)
-    const weeklyActiveUsers = await userRepository
+    const dailyActiveUsersFromConversations = await conversationRepository
+      .createQueryBuilder('conv')
+      .select('COUNT(DISTINCT conv.userId)', 'count')
+      .where('conv.userId IS NOT NULL')
+      .andWhere('conv.createdAt > :date', { date: twentyFourHoursAgo })
+      .getRawOne();
+
+    const dailyActiveUsers = dailyActiveUsersFromLogin > 0
+      ? dailyActiveUsersFromLogin
+      : parseInt(dailyActiveUsersFromConversations?.count || '0');
+
+    // Weekly Active Users (last 7 days) - based on actual login activity
+    const weeklyActiveUsersFromLogin = await userRepository
       .createQueryBuilder('user')
-      .where('user.updatedAt > :date', { date: sevenDaysAgo })
+      .where('user.lastLoginAt > :date', { date: sevenDaysAgo })
       .getCount();
+
+    const weeklyActiveUsersFromConversations = await conversationRepository
+      .createQueryBuilder('conv')
+      .select('COUNT(DISTINCT conv.userId)', 'count')
+      .where('conv.userId IS NOT NULL')
+      .andWhere('conv.createdAt > :date', { date: sevenDaysAgo })
+      .getRawOne();
+
+    const weeklyActiveUsers = weeklyActiveUsersFromLogin > 0
+      ? weeklyActiveUsersFromLogin
+      : parseInt(weeklyActiveUsersFromConversations?.count || '0');
 
     // New Registrations (last 7 days)
     const newRegistrations = await userRepository

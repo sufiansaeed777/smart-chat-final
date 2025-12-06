@@ -539,8 +539,9 @@ class Synofex_Admin {
             }
             .synofex-toggle {
                 position: relative;
-                width: 48px;
-                height: 26px;
+                width: 52px;
+                height: 28px;
+                flex-shrink: 0;
             }
             .synofex-toggle input {
                 opacity: 0;
@@ -556,13 +557,13 @@ class Synofex_Admin {
                 bottom: 0;
                 background-color: #ccc;
                 transition: 0.3s;
-                border-radius: 26px;
+                border-radius: 28px;
             }
             .synofex-toggle-slider:before {
                 position: absolute;
                 content: "";
-                height: 20px;
-                width: 20px;
+                height: 22px;
+                width: 22px;
                 left: 3px;
                 bottom: 3px;
                 background-color: white;
@@ -573,11 +574,12 @@ class Synofex_Admin {
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             }
             .synofex-toggle input:checked + .synofex-toggle-slider:before {
-                transform: translateX(22px);
+                transform: translateX(24px);
             }
             .synofex-toggle-text {
                 font-weight: 600;
                 color: #333;
+                white-space: nowrap;
             }
 
             /* Buttons */

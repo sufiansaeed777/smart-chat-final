@@ -55,6 +55,28 @@
     height: 24px;
 }
 
+/* Emoji icon style */
+.synofex-chat-emoji {
+    font-size: 24px;
+    line-height: 1;
+    width: auto;
+    height: auto;
+}
+
+/* Custom SVG icon style */
+.synofex-chat-custom-svg {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.synofex-chat-custom-svg svg {
+    width: 24px;
+    height: 24px;
+}
+
 /* Unread indicator */
 .synofex-unread-indicator {
     position: absolute;
@@ -73,8 +95,8 @@
 /* Chat window - Match website styling */
 .synofex-chat-window {
     position: absolute;
-    width: 420px;
-    height: 600px;
+    width: 380px;
+    height: 520px;
     background: white;
     border-radius: 16px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -394,11 +416,12 @@
     border-top: 1px solid #e5e7eb;
 }
 
-/* Action buttons - Appear after 5 messages */
+/* Action buttons - Simple text links */
 .synofex-action-buttons {
     display: none;
-    gap: 8px;
+    gap: 16px;
     margin-bottom: 8px;
+    justify-content: center;
 }
 
 .synofex-action-buttons.visible {
@@ -406,25 +429,22 @@
 }
 
 .synofex-action-btn {
-    flex: 1;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 4px;
-    padding: 8px 12px;
+    padding: 0;
     font-size: 12px;
     font-weight: 500;
-    color: #4b5563;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    color: #6b7280;
+    background: transparent;
+    border: none;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: color 0.2s;
+    text-decoration: none;
 }
 
 .synofex-action-btn:hover {
-    background: #f3f4f6;
-    border-color: #d1d5db;
+    color: #6566F1;
 }
 
 .synofex-action-btn svg {
@@ -433,21 +453,19 @@
 }
 
 .synofex-action-btn.request-human {
-    color: #059669;
+    color: #6b7280;
 }
 
 .synofex-action-btn.request-human:hover {
-    background: #ecfdf5;
-    border-color: #a7f3d0;
+    color: #059669;
 }
 
 .synofex-action-btn.report-issue {
-    color: #dc2626;
+    color: #6b7280;
 }
 
 .synofex-action-btn.report-issue:hover {
-    background: #fef2f2;
-    border-color: #fecaca;
+    color: #dc2626;
 }
 
 /* Input row with End and Send buttons */
@@ -751,5 +769,184 @@
 
 .synofex-theme-dark .synofex-system-content {
     background: #374151;
+    color: #d1d5db;
+}
+
+/* Report Issue Form Overlay */
+.synofex-report-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    animation: fadeIn 0.2s ease;
+}
+
+.synofex-report-form {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    width: calc(100% - 40px);
+    max-width: 320px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    animation: slideUp 0.3s ease;
+}
+
+.synofex-report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.synofex-report-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.synofex-report-close {
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.synofex-report-close:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.synofex-report-field {
+    margin-bottom: 12px;
+}
+
+.synofex-report-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+.synofex-report-field label .required {
+    color: #dc2626;
+}
+
+.synofex-report-field input,
+.synofex-report-field textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #111827;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+.synofex-report-field input:focus,
+.synofex-report-field textarea:focus {
+    outline: none;
+    border-color: #6566F1;
+    box-shadow: 0 0 0 2px rgba(101, 102, 241, 0.1);
+}
+
+.synofex-report-field input.error,
+.synofex-report-field textarea.error {
+    border-color: #dc2626;
+}
+
+.synofex-report-field .error-message {
+    font-size: 11px;
+    color: #dc2626;
+    margin-top: 4px;
+}
+
+.synofex-report-field textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.synofex-report-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.synofex-report-cancel {
+    flex: 1;
+    padding: 8px 16px;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.synofex-report-cancel:hover {
+    background: #e5e7eb;
+}
+
+.synofex-report-submit {
+    flex: 1;
+    padding: 8px 16px;
+    background: #6566F1;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.synofex-report-submit:hover {
+    background: #5A5BD8;
+}
+
+.synofex-report-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Dark theme for report form */
+.synofex-theme-dark .synofex-report-form {
+    background: #1f2937;
+}
+
+.synofex-theme-dark .synofex-report-header h4 {
+    color: #f3f4f6;
+}
+
+.synofex-theme-dark .synofex-report-field label {
+    color: #d1d5db;
+}
+
+.synofex-theme-dark .synofex-report-field input,
+.synofex-theme-dark .synofex-report-field textarea {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f3f4f6;
+}
+
+.synofex-theme-dark .synofex-report-cancel {
+    background: #374151;
+    border-color: #4b5563;
     color: #d1d5db;
 }

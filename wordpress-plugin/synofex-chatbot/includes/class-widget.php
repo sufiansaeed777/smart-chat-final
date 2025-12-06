@@ -28,6 +28,11 @@ class Synofex_Widget {
         $theme = isset($atts['theme']) ? $atts['theme'] : get_option('synofex_widget_theme', 'light');
         $bot_config = get_option('synofex_bot_config', []);
 
+        // Get widget icon settings
+        $widget_icon_type = get_option('synofex_widget_icon_type', 'default');
+        $widget_icon_emoji = get_option('synofex_widget_icon_emoji', '💬');
+        $widget_icon_svg = get_option('synofex_widget_icon_svg', '');
+
         // Set position class
         $position_class = 'synofex-widget-' . $position;
         $theme_class = 'synofex-theme-' . $theme;
@@ -36,9 +41,15 @@ class Synofex_Widget {
         <div id="synofex-chatbot-widget" class="synofex-chatbot-widget <?php echo esc_attr($position_class); ?> <?php echo esc_attr($theme_class); ?>" style="display:none;">
             <!-- Chat Toggle Button -->
             <button id="synofex-chat-toggle" class="synofex-chat-toggle" aria-label="<?php esc_attr_e('Open chat', 'synofex-chatbot'); ?>">
-                <svg class="synofex-chat-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M21 11.5C21.0034 12.8199 20.6951 14.1219 20.1 15.3C19.3944 16.7118 18.3098 17.8992 16.9674 18.7293C15.6251 19.5594 14.0782 19.9994 12.5 20C11.1801 20.0035 9.87812 19.6951 8.7 19.1L3 21L4.9 15.3C4.30493 14.1219 3.99656 12.8199 4 11.5C4.00061 9.92179 4.44061 8.37488 5.27072 7.03258C6.10083 5.69028 7.28825 4.6056 8.7 3.90003C9.87812 3.30496 11.1801 2.99659 12.5 3.00003H13C15.0843 3.11502 17.053 3.99479 18.5291 5.47089C20.0052 6.94699 20.885 8.91568 21 11V11.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                <?php if ($widget_icon_type === 'emoji' && !empty($widget_icon_emoji)): ?>
+                    <span class="synofex-chat-icon synofex-chat-emoji"><?php echo esc_html($widget_icon_emoji); ?></span>
+                <?php elseif ($widget_icon_type === 'svg' && !empty($widget_icon_svg)): ?>
+                    <span class="synofex-chat-icon synofex-chat-custom-svg"><?php echo $widget_icon_svg; ?></span>
+                <?php else: ?>
+                    <svg class="synofex-chat-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 11.5C21.0034 12.8199 20.6951 14.1219 20.1 15.3C19.3944 16.7118 18.3098 17.8992 16.9674 18.7293C15.6251 19.5594 14.0782 19.9994 12.5 20C11.1801 20.0035 9.87812 19.6951 8.7 19.1L3 21L4.9 15.3C4.30493 14.1219 3.99656 12.8199 4 11.5C4.00061 9.92179 4.44061 8.37488 5.27072 7.03258C6.10083 5.69028 7.28825 4.6056 8.7 3.90003C9.87812 3.30496 11.1801 2.99659 12.5 3.00003H13C15.0843 3.11502 17.053 3.99479 18.5291 5.47089C20.0052 6.94699 20.885 8.91568 21 11V11.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                <?php endif; ?>
                 <svg class="synofex-close-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;">
                     <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>

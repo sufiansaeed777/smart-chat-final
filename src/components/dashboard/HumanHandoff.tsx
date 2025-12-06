@@ -36,12 +36,14 @@ interface Conversation {
   mode: 'AI' | 'Human';
   status: 'active' | 'waiting' | 'idle' | 'completed';
   lastMessage: string;
+  firstMessage?: string;
   timestamp: string;
   messages: Message[];
   messageCount?: number;
   firstMessageTime?: string;
   lastMessageAt?: string;
   createdAt?: string;
+  isHandoffRequest?: boolean;
 }
 
 const HumanHandoff = () => {
@@ -55,18 +57,26 @@ const HumanHandoff = () => {
   const [userBots, setUserBots] = useState<any[]>([]);
   const [selectedBotId, setSelectedBotId] = useState<string | null>(null);
 
-  // Fetch user's bots (manager can have multiple bots, 1 per site)
+  // Fetch user's bots - try user endpoint first (for regular users), then manager endpoint
   const fetchUserBots = async () => {
     try {
-      const response = await fetch('/api/manager/bots');
-      if (response.ok) {
-        const data = await response.json();
-        const bots = data.bots || [];
-        setUserBots(bots);
-        // Auto-select first bot if available
-        if (bots.length > 0 && !selectedBotId) {
-          setSelectedBotId(bots[0].id);
+      // First try the user bots endpoint (for regular users with assigned bots)
+      let response = await fetch('/api/user/bots');
+      let data = await response.json();
+
+      // If user bots returns empty or unauthorized, try manager bots
+      if (!response.ok || (data.bots && data.bots.length === 0)) {
+        response = await fetch('/api/manager/bots');
+        if (response.ok) {
+          data = await response.json();
         }
+      }
+
+      const bots = data.bots || [];
+      setUserBots(bots);
+      // Auto-select first bot if available
+      if (bots.length > 0 && !selectedBotId) {
+        setSelectedBotId(bots[0].id);
       }
     } catch (error) {
       console.error('Error fetching user bots:', error);
@@ -201,6 +211,37 @@ const HumanHandoff = () => {
 
     return () => clearInterval(interval);
   }, [pauseAutoRefresh, selectedBotId]);
+
+  // Auto-revert check every minute (revert conversations to AI if agent hasn't responded in 10 mins)
+  useEffect(() => {
+    if (!selectedBotId) return;
+
+    const checkAutoRevert = async () => {
+      try {
+        const response = await fetch('/api/conversations/auto-revert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ botId: selectedBotId })
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.revertedCount > 0) {
+          console.log(`[AUTO-REVERT] ${data.revertedCount} conversation(s) reverted to AI mode`);
+          // Refresh conversations to reflect the changes
+          fetchConversations(false);
+        }
+      } catch (error) {
+        console.error('Auto-revert check failed:', error);
+      }
+    };
+
+    // Run immediately on mount and then every minute
+    checkAutoRevert();
+    const interval = setInterval(checkAutoRevert, 60000); // Every 60 seconds
+
+    return () => clearInterval(interval);
+  }, [selectedBotId]);
 
   const selectedConversation = conversations.find(conv => conv.id === selectedConversationId);
 
@@ -402,7 +443,7 @@ const HumanHandoff = () => {
     }
   };
 
-  // Helper to format date/time
+  // Helper to format date/time in GMT 0 (UTC)
   const formatDateTime = (dateString: string | undefined) => {
     if (!dateString) return 'Unknown';
     const date = new Date(dateString);
@@ -413,9 +454,28 @@ const HumanHandoff = () => {
       year: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
-    });
+      hour12: true,
+      timeZone: 'UTC'
+    }) + ' GMT';
   };
+
+  // Helper to format message timestamp in GMT 0
+  const formatMessageTime = (timestamp: string | undefined) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return timestamp; // Return original if can't parse
+    return date.toLocaleString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'UTC'
+    }) + ' GMT';
+  };
+
+  // Count handoff requests (conversations where mode is Human and status is waiting)
+  const handoffRequestCount = conversations.filter(
+    conv => conv.mode === 'Human' && conv.status === 'waiting'
+  ).length;
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-gray-50">
@@ -426,6 +486,12 @@ const HumanHandoff = () => {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold text-gray-900">Agent Console</h2>
             <div className="flex items-center space-x-2">
+              {/* Handoff Request Indicator */}
+              {handoffRequestCount > 0 && (
+                <Badge className="bg-red-500 text-white text-xs px-2 py-1 font-semibold animate-pulse">
+                  {handoffRequestCount} Handoff{handoffRequestCount > 1 ? 's' : ''}
+                </Badge>
+              )}
               <button
                 onClick={() => fetchConversations(true)}
                 disabled={isRefreshing}
@@ -494,7 +560,9 @@ const HumanHandoff = () => {
                   className={`p-3 rounded-xl border cursor-pointer transition-all ${
                     selectedConversationId === conversation.id
                       ? 'border-[#6566F1] bg-[#6566F1]/5 shadow-sm'
-                      : 'border-gray-200 hover:border-[#6566F1]/50 hover:bg-gray-50 bg-white'
+                      : conversation.isHandoffRequest || (conversation.mode === 'Human' && conversation.status === 'waiting')
+                        ? 'border-red-300 bg-red-50 hover:border-red-400'
+                        : 'border-gray-200 hover:border-[#6566F1]/50 hover:bg-gray-50 bg-white'
                   }`}
                 >
                   <div className="flex items-start justify-between mb-2">
@@ -503,17 +571,25 @@ const HumanHandoff = () => {
                         <h4 className="text-sm font-semibold text-gray-900">{conversation.guestName}</h4>
                         <Badge
                           className={`text-xs px-2 py-0.5 ${
-                            conversation.mode === 'AI'
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-green-100 text-green-700'
+                            conversation.isHandoffRequest || (conversation.mode === 'Human' && conversation.status === 'waiting')
+                              ? 'bg-red-500 text-white animate-pulse'
+                              : conversation.mode === 'AI'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-green-100 text-green-700'
                           }`}
                         >
-                          {conversation.mode}
+                          {conversation.isHandoffRequest || (conversation.mode === 'Human' && conversation.status === 'waiting')
+                            ? 'Needs Help'
+                            : conversation.mode}
                         </Badge>
                       </div>
                       <p className="text-xs text-gray-500 mt-0.5">{conversation.guestId}</p>
                     </div>
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <div className={`w-2 h-2 rounded-full animate-pulse ${
+                      conversation.isHandoffRequest || (conversation.mode === 'Human' && conversation.status === 'waiting')
+                        ? 'bg-red-500'
+                        : 'bg-green-500'
+                    }`}></div>
                   </div>
                   <p className="text-xs text-gray-600 truncate">{conversation.lastMessage}</p>
                   <p className="text-xs text-[#6566F1] mt-1">{conversation.timestamp}</p>
@@ -545,7 +621,21 @@ const HumanHandoff = () => {
                 {recentCompletedConversations.map((conversation) => (
                   <div
                     key={conversation.id}
-                    className="p-3 rounded-xl border border-gray-200 hover:border-[#6566F1]/50 hover:bg-white bg-white cursor-pointer transition-all"
+                    onClick={() => {
+                      // Find full conversation data and select it to view transcript
+                      const fullConv = conversations.find(c => c.id === conversation.id);
+                      if (fullConv) {
+                        setSelectedConversationId(conversation.id);
+                      } else {
+                        // If not in active list, fetch and show
+                        setSelectedConversationId(conversation.id);
+                      }
+                    }}
+                    className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                      selectedConversationId === conversation.id
+                        ? 'border-[#6566F1] bg-[#6566F1]/5 shadow-sm'
+                        : 'border-gray-200 hover:border-[#6566F1]/50 hover:bg-white bg-white'
+                    }`}
                   >
                     <div className="flex items-start justify-between mb-1">
                       <div>
@@ -656,7 +746,7 @@ const HumanHandoff = () => {
                             : 'text-white/70'
                         }`}
                       >
-                        {message.timestamp}
+                        {formatMessageTime(message.timestamp)}
                       </p>
                     </div>
                   </div>
@@ -768,11 +858,22 @@ const HumanHandoff = () => {
                 </div>
               </div>
 
-              {/* First Message Time */}
+              {/* First Message Content */}
+              <div className="flex items-start space-x-3 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+                <MessageCircle className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-gray-500">First Message</p>
+                  <p className="text-sm text-gray-900 line-clamp-2" title={selectedConversation.firstMessage || 'No messages yet'}>
+                    {selectedConversation.firstMessage || 'No messages yet'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Started At */}
               <div className="flex items-start space-x-3 p-3 bg-purple-50 rounded-xl border border-purple-100">
                 <Calendar className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-gray-500">First Message</p>
+                  <p className="text-xs font-medium text-gray-500">Started At</p>
                   <p className="text-sm text-gray-900">{formatDateTime(selectedConversation.firstMessageTime)}</p>
                 </div>
               </div>

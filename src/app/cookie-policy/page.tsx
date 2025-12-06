@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 
 export default function CookiePolicyPage() {
@@ -29,9 +30,12 @@ export default function CookiePolicyPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#f8fafc', fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}>
-      {/* Header */}
+      {/* Navigation */}
+      <Navigation />
+
+      {/* Page Header */}
       <header
-        className="border-b"
+        className="border-b pt-20"
         style={{
           background: 'linear-gradient(90deg, rgba(37,99,235,0.06), transparent)',
           borderColor: 'rgba(15,23,42,0.04)',

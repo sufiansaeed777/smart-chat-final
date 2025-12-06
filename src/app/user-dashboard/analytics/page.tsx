@@ -40,6 +40,11 @@ import {
   ResponsiveContainer
 } from 'recharts';
 
+interface BotOption {
+  id: string;
+  name: string;
+}
+
 interface AnalyticsData {
   stats: {
     assignedBots: number;
@@ -75,23 +80,29 @@ interface AnalyticsData {
     time: string;
     status: string;
   }>;
+  availableBots: BotOption[];
 }
 
 const COLORS = ['#6566F1', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
 
 const AnalyticsPage = () => {
   const [timeRange, setTimeRange] = useState("7d");
+  const [selectedBot, setSelectedBot] = useState("all");
   const [loading, setLoading] = useState(true);
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
 
   useEffect(() => {
     loadAnalytics();
-  }, []);
+  }, [selectedBot]);
 
   const loadAnalytics = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/user/analytics');
+      const params = new URLSearchParams();
+      if (selectedBot && selectedBot !== 'all') {
+        params.append('botId', selectedBot);
+      }
+      const response = await fetch(`/api/user/analytics?${params}`);
       if (response.ok) {
         const data = await response.json();
         setAnalyticsData(data);
@@ -116,6 +127,20 @@ const AnalyticsPage = () => {
             </p>
           </div>
           <div className="flex gap-3">
+            <Select value={selectedBot} onValueChange={setSelectedBot}>
+              <SelectTrigger className="w-44 border-gray-300 focus:border-[#6566F1] focus:ring-[#6566F1] bg-white rounded-2xl text-gray-900">
+                <Bot className="w-4 h-4 mr-2 text-gray-500" />
+                <SelectValue placeholder="All Bots" className="text-gray-900" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-gray-900">All Bots</SelectItem>
+                {analyticsData?.availableBots?.map((bot) => (
+                  <SelectItem key={bot.id} value={bot.id} className="text-gray-900">
+                    {bot.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={timeRange} onValueChange={setTimeRange}>
               <SelectTrigger className="w-32 border-gray-300 focus:border-[#6566F1] focus:ring-[#6566F1] bg-white rounded-2xl text-gray-900">
                 <SelectValue className="text-gray-900" />

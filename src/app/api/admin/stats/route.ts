@@ -34,10 +34,28 @@ export async function GET() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const activeUsers = await userRepository
+    // Count active users based on:
+    // 1. Users with lastLoginAt in last 30 days, OR
+    // 2. Users who have conversations in last 30 days
+    const activeUsersFromLogin = await userRepository
       .createQueryBuilder('user')
-      .where('user.updatedAt > :date', { date: thirtyDaysAgo })
+      .where('user.lastLoginAt > :date', { date: thirtyDaysAgo })
       .getCount();
+
+    // Also count users with recent conversations (for users without lastLoginAt tracking)
+    const activeUsersFromConversations = await conversationRepository
+      .createQueryBuilder('conv')
+      .select('COUNT(DISTINCT conv.userId)', 'count')
+      .where('conv.userId IS NOT NULL')
+      .andWhere('conv.createdAt > :date', { date: thirtyDaysAgo })
+      .getRawOne();
+
+    const conversationActiveUsers = parseInt(activeUsersFromConversations?.count || '0');
+
+    // Use the higher of the two counts, or combine unique users
+    // For simplicity, we'll use users who logged in recently as the primary metric
+    // If lastLoginAt is not being tracked, fall back to conversation-based activity
+    const activeUsers = activeUsersFromLogin > 0 ? activeUsersFromLogin : conversationActiveUsers;
 
     // Count pending managers (managers with unverified emails or pending status)
     const pendingManagers = await userRepository

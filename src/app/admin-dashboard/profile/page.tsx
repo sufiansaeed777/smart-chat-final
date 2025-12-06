@@ -152,7 +152,7 @@ const ProfilePage = () => {
       if (!/[!@#$%^&*(),.?":{}|<>]/.test(passwordData.newPassword)) pwdErrors.push('special character');
 
       if (pwdErrors.length > 0) {
-        setErrors({ password: `Password must include: ${pwdErrors.join(', ')}` });
+        setErrors({ password: 'Password must include uppercase, lowercase, number, special character, and be 8+ characters long.' });
         return;
       }
       if (passwordData.newPassword !== passwordData.confirmPassword) {

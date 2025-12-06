@@ -1029,19 +1029,80 @@ const KnowledgeBasePage: React.FC = () => {
                 </button>
               </div>
               
-              <div className="flex-1 p-6 overflow-y-auto">
+              <div className="flex-1 p-6 overflow-y-auto bg-white">
                 {viewingDocument.content ? (
-                  <div className="prose max-w-none">
-                    <pre className="whitespace-pre-wrap text-sm text-gray-700 bg-gray-50 p-4 rounded-lg border">
-                      {viewingDocument.content}
-                    </pre>
+                  <div className="document-viewer">
+                    {/* Render content with proper formatting */}
+                    <div className="prose prose-sm sm:prose-base max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-p:text-gray-700 prose-p:leading-relaxed prose-li:text-gray-700 prose-strong:text-gray-900">
+                      {viewingDocument.content.split('\n\n').map((paragraph, pIndex) => {
+                        // Check if it's a heading (starts with # or is all caps short line)
+                        if (paragraph.startsWith('# ')) {
+                          return <h1 key={pIndex} className="text-2xl font-bold text-gray-900 mt-6 mb-4">{paragraph.slice(2)}</h1>;
+                        }
+                        if (paragraph.startsWith('## ')) {
+                          return <h2 key={pIndex} className="text-xl font-bold text-gray-900 mt-5 mb-3">{paragraph.slice(3)}</h2>;
+                        }
+                        if (paragraph.startsWith('### ')) {
+                          return <h3 key={pIndex} className="text-lg font-semibold text-gray-900 mt-4 mb-2">{paragraph.slice(4)}</h3>;
+                        }
+
+                        // Check if it's a list (bullet points or numbered)
+                        const lines = paragraph.split('\n');
+                        const isBulletList = lines.every(line => line.trim().startsWith('•') || line.trim().startsWith('-') || line.trim().startsWith('*') || line.trim() === '');
+                        const isNumberedList = lines.every(line => /^\d+[\.\)]\s/.test(line.trim()) || line.trim() === '');
+
+                        if (isBulletList && lines.some(l => l.trim())) {
+                          return (
+                            <ul key={pIndex} className="list-disc list-inside space-y-1 my-3 ml-4">
+                              {lines.filter(line => line.trim()).map((line, lIndex) => (
+                                <li key={lIndex} className="text-gray-700">
+                                  {line.replace(/^[\•\-\*]\s*/, '').trim()}
+                                </li>
+                              ))}
+                            </ul>
+                          );
+                        }
+
+                        if (isNumberedList && lines.some(l => l.trim())) {
+                          return (
+                            <ol key={pIndex} className="list-decimal list-inside space-y-1 my-3 ml-4">
+                              {lines.filter(line => line.trim()).map((line, lIndex) => (
+                                <li key={lIndex} className="text-gray-700">
+                                  {line.replace(/^\d+[\.\)]\s*/, '').trim()}
+                                </li>
+                              ))}
+                            </ol>
+                          );
+                        }
+
+                        // Check if it looks like a title (short, possibly uppercase or title case)
+                        if (paragraph.length < 100 && !paragraph.includes('.') && paragraph === paragraph.toUpperCase() && paragraph.trim().length > 0) {
+                          return <h2 key={pIndex} className="text-xl font-bold text-gray-900 mt-5 mb-3">{paragraph}</h2>;
+                        }
+
+                        // Regular paragraph - preserve line breaks within
+                        if (paragraph.trim()) {
+                          return (
+                            <p key={pIndex} className="text-gray-700 leading-relaxed my-3">
+                              {paragraph.split('\n').map((line, lIndex, arr) => (
+                                <React.Fragment key={lIndex}>
+                                  {line}
+                                  {lIndex < arr.length - 1 && <br />}
+                                </React.Fragment>
+                              ))}
+                            </p>
+                          );
+                        }
+                        return null;
+                      })}
+                    </div>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-64 text-gray-500">
                     <FileText className="w-16 h-16 mb-4 text-gray-300" />
                     <p className="text-lg font-medium mb-2">No content available</p>
                     <p className="text-sm text-center">
-                      This document doesn't have extractable text content. 
+                      This document doesn&apos;t have extractable text content.
                       You can download the file to view it with an appropriate application.
                     </p>
                     <button

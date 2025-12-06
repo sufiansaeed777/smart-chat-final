@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       sender: 'visitor' as const,
       text: initialMessage,
-      timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      timestamp: new Date().toISOString()
     }] : [];
 
     // Timestamps

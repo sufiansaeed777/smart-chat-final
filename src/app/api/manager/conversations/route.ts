@@ -221,9 +221,24 @@ export async function GET(request: NextRequest) {
         const endTime = conv.lastMessageAt || conv.createdAt;
 
         // Count messages - for JSONB array, count array length; for old schema, count records
+        // IMPORTANT: Exclude system/notification messages from count
         let messageCount = 0;
-        if (conv.messages && Array.isArray(conv.messages)) {
-          messageCount = conv.messages.length;
+        if (conv.messages && Array.isArray(conv.messages) && conv.messages.length > 0) {
+          // Count only user, AI, and agent messages (exclude system/notification)
+          messageCount = conv.messages.filter((msg: { sender?: string; type?: string; text?: string }) => {
+            // Exclude system messages
+            if (msg.sender === 'system') return false;
+            // Exclude notification type messages
+            if (msg.type === 'notification') return false;
+            // Exclude messages that look like system notifications
+            if (msg.text && (
+              msg.text.includes("Now you're chatting with") ||
+              msg.text.includes('automatically returned to AI') ||
+              msg.text.includes('transferred to') ||
+              msg.text.includes('human agent')
+            )) return false;
+            return true;
+          }).length;
         } else if (conv.message) {
           messageCount = 1; // Old schema - individual record
         }

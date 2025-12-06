@@ -60,7 +60,7 @@ export async function POST(
       id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       sender: sender as 'visitor' | 'agent' | 'bot',
       text: message,
-      timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      timestamp: new Date().toISOString()
     };
 
     messages.push(newMessage);

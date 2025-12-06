@@ -44,7 +44,7 @@ const SignupComponent = () => {
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(form.password)) pwdErrors.push('special character');
 
     if (pwdErrors.length > 0) {
-      setError(`Password must include: ${pwdErrors.join(', ')}`);
+      setError('Password must include uppercase, lowercase, number, special character, and be 8+ characters long.');
       return;
     }
     

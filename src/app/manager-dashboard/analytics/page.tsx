@@ -656,20 +656,20 @@ const AnalyticsPage = () => {
         </Card>
       </div>
 
-      {/* Bot-wise Analytics & Language Analytics */}
+      {/* Top 3 Bots & Language Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Bot-wise Analytics */}
+        {/* Top 3 Bots */}
         <Card className="border border-gray-200 bg-white rounded-2xl">
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
               <Bot className="w-5 h-5 text-gray-600" />
-              <CardTitle className="text-lg font-semibold">Bot-wise Analytics</CardTitle>
+              <CardTitle className="text-lg font-semibold">Top 3 Bots</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
             {bots.length > 0 ? (
               <div className="space-y-3">
-                {bots.map(bot => (
+                {bots.slice(0, 3).map(bot => (
                   <div key={bot.botId} className="border border-gray-200 rounded-xl overflow-hidden">
                     <button
                       onClick={() => toggleBot(bot.botId)}
@@ -712,8 +712,11 @@ const AnalyticsPage = () => {
                           <p className="text-xs text-gray-500">Top Question</p>
                           <p className="text-sm text-gray-700">{questions.data.find(q => q.botName === bot.botName)?.question || 'No questions yet'}</p>
                         </div>
-                        <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg">
-                          View Details
+                        <Button
+                          onClick={() => setSelectedBot(bot.botId)}
+                          className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
+                        >
+                          View
                         </Button>
                       </div>
                     )}
@@ -723,7 +726,7 @@ const AnalyticsPage = () => {
                 {/* Quick Summary */}
                 <div className="mt-4 p-4 bg-gray-50 rounded-xl">
                   <p className="text-sm font-medium text-gray-700 mb-2">Quick Summary</p>
-                  {bots.map(bot => (
+                  {bots.slice(0, 3).map(bot => (
                     <p key={bot.botId} className="text-sm text-blue-600">
                       {bot.botName} — AI {bot.aiMessages.toLocaleString()} / Human {bot.humanMessages.toLocaleString()}
                     </p>

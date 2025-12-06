@@ -143,7 +143,8 @@ export async function GET(request: NextRequest) {
         hmConversations.forEach(conv => {
           if (conv.messages && Array.isArray(conv.messages)) {
             conv.messages.forEach((msg: any) => {
-              if (msg.sender === 'visitor' || msg.sender === 'user') {
+              // Human messages = ONLY agent messages (after handoff)
+              if (msg.sender === 'agent') {
                 humanMessageCount++;
               }
             });
@@ -258,33 +259,65 @@ async function getOverviewAnalytics(
   const conversations = await buildConversationQuery().getMany();
   const issues = await buildIssueQuery().getMany();
 
-  // Count AI and Human messages
+  // Count AI and Human Agent messages
+  // AI Messages: Messages sent by 'bot' or 'ai' (includes Playground responses)
+  // Human Messages: Messages sent by 'agent' ONLY (after human handoff)
   let aiMessages = 0;
-  let humanMessages = 0;
+  let humanAgentMessages = 0;
   let totalResponseTimes: number[] = [];
   const languagesSet = new Set<string>();
 
   conversations.forEach(conv => {
     if (conv.messages && Array.isArray(conv.messages)) {
       let lastVisitorTime: Date | null = null;
+      let isInHumanMode = false;
 
       conv.messages.forEach((msg: any, index: number) => {
+        // Track when conversation enters Human mode
+        if (msg.type === 'notification' && msg.text?.includes("now talking to")) {
+          if (msg.text.toLowerCase().includes("agent") || msg.text.toLowerCase().includes("human")) {
+            isInHumanMode = true;
+          } else if (msg.text.toLowerCase().includes("ai") || msg.text.toLowerCase().includes("bot")) {
+            isInHumanMode = false;
+          }
+        }
+
+        // Also check mode changes based on conversation mode
+        if (conv.mode === 'Human') {
+          isInHumanMode = true;
+        }
+
         if (msg.sender === 'visitor' || msg.sender === 'user') {
-          humanMessages++;
-          lastVisitorTime = new Date(msg.timestamp);
-        } else if (msg.sender === 'bot') {
+          // Track visitor message time for response time calculation
+          lastVisitorTime = parseTimestamp(msg.timestamp);
+        } else if (msg.sender === 'bot' || msg.sender === 'ai' || msg.sender === 'assistant') {
+          // AI Messages: bot, ai, or assistant (includes Playground)
           aiMessages++;
-          // Calculate response time
+          // Calculate response time for AI responses
           if (lastVisitorTime) {
-            const botResponseTime = new Date(msg.timestamp);
-            const responseTime = (botResponseTime.getTime() - lastVisitorTime.getTime()) / 1000;
-            if (responseTime > 0 && responseTime < 300) { // Max 5 minutes
-              totalResponseTimes.push(responseTime);
+            const botResponseTime = parseTimestamp(msg.timestamp);
+            if (botResponseTime && lastVisitorTime) {
+              const responseTime = (botResponseTime.getTime() - lastVisitorTime.getTime()) / 1000;
+              if (responseTime > 0 && responseTime < 300) { // Max 5 minutes
+                totalResponseTimes.push(responseTime);
+              }
             }
             lastVisitorTime = null;
           }
         } else if (msg.sender === 'agent') {
-          humanMessages++; // Agent messages count as human
+          // Human Agent Messages: ONLY count agent messages (after handoff)
+          humanAgentMessages++;
+          // Also calculate response time for agent responses
+          if (lastVisitorTime) {
+            const agentResponseTime = parseTimestamp(msg.timestamp);
+            if (agentResponseTime && lastVisitorTime) {
+              const responseTime = (agentResponseTime.getTime() - lastVisitorTime.getTime()) / 1000;
+              if (responseTime > 0 && responseTime < 300) {
+                totalResponseTimes.push(responseTime);
+              }
+            }
+            lastVisitorTime = null;
+          }
         }
       });
     }
@@ -316,7 +349,7 @@ async function getOverviewAnalytics(
 
   return NextResponse.json({
     aiMessages,
-    humanMessages,
+    humanMessages: humanAgentMessages,
     issueReports,
     csatRating: Math.round(csatRating * 10) / 10,
     avgResponseTime: Math.round(avgResponseTime * 10) / 10,
@@ -446,7 +479,9 @@ async function getMessageTrendsAnalytics(
   conversations.forEach(conv => {
     if (conv.messages && Array.isArray(conv.messages)) {
       conv.messages.forEach((msg: any) => {
-        const date = new Date(msg.timestamp);
+        const date = parseTimestamp(msg.timestamp);
+        if (!date) return;
+
         const key = getDateKey(date, groupBy);
 
         if (!trendsMap.has(key)) {
@@ -454,11 +489,14 @@ async function getMessageTrendsAnalytics(
         }
 
         const trend = trendsMap.get(key)!;
-        if (msg.sender === 'bot') {
+        // AI Messages: bot, ai, or assistant (includes Playground)
+        if (msg.sender === 'bot' || msg.sender === 'ai' || msg.sender === 'assistant') {
           trend.aiMessages++;
-        } else if (msg.sender === 'visitor' || msg.sender === 'user' || msg.sender === 'agent') {
+        } else if (msg.sender === 'agent') {
+          // Human Messages: ONLY agent messages (after handoff)
           trend.humanMessages++;
         }
+        // Note: visitor/user messages are NOT counted as human messages
       });
     }
   });
@@ -517,19 +555,34 @@ async function getBotwiseAnalytics(
 
         conv.messages.forEach((msg: any) => {
           if (msg.sender === 'visitor' || msg.sender === 'user') {
-            humanMessages++;
-            lastVisitorTime = new Date(msg.timestamp);
-          } else if (msg.sender === 'bot') {
+            // Track visitor message time for response time calculation
+            lastVisitorTime = parseTimestamp(msg.timestamp);
+          } else if (msg.sender === 'bot' || msg.sender === 'ai' || msg.sender === 'assistant') {
+            // AI Messages: bot, ai, or assistant (includes Playground)
             aiMessages++;
             if (lastVisitorTime) {
-              const responseTime = (new Date(msg.timestamp).getTime() - lastVisitorTime.getTime()) / 1000;
-              if (responseTime > 0 && responseTime < 300) {
-                totalResponseTimes.push(responseTime);
+              const botResponseTime = parseTimestamp(msg.timestamp);
+              if (botResponseTime && lastVisitorTime) {
+                const responseTime = (botResponseTime.getTime() - lastVisitorTime.getTime()) / 1000;
+                if (responseTime > 0 && responseTime < 300) {
+                  totalResponseTimes.push(responseTime);
+                }
               }
               lastVisitorTime = null;
             }
           } else if (msg.sender === 'agent') {
+            // Human Agent Messages: ONLY count agent messages
             humanMessages++;
+            if (lastVisitorTime) {
+              const agentResponseTime = parseTimestamp(msg.timestamp);
+              if (agentResponseTime && lastVisitorTime) {
+                const responseTime = (agentResponseTime.getTime() - lastVisitorTime.getTime()) / 1000;
+                if (responseTime > 0 && responseTime < 300) {
+                  totalResponseTimes.push(responseTime);
+                }
+              }
+              lastVisitorTime = null;
+            }
           }
         });
       }
@@ -652,4 +705,41 @@ function getLanguageName(code: string): string {
   };
 
   return languages[code] || code.toUpperCase();
+}
+
+// Helper: Parse timestamp (handles both ISO strings and localized time strings)
+function parseTimestamp(timestamp: string | Date | undefined): Date | null {
+  if (!timestamp) return null;
+
+  // If already a Date object
+  if (timestamp instanceof Date) {
+    return isNaN(timestamp.getTime()) ? null : timestamp;
+  }
+
+  // Try parsing as ISO string first
+  let date = new Date(timestamp);
+  if (!isNaN(date.getTime())) {
+    return date;
+  }
+
+  // If it looks like a localized time string (e.g., "2:30 PM"), try parsing with today's date
+  if (/^\d{1,2}:\d{2}(:\d{2})?\s*(AM|PM)?$/i.test(timestamp)) {
+    const today = new Date();
+    const timeStr = timestamp.toUpperCase();
+    const isPM = timeStr.includes('PM');
+    const isAM = timeStr.includes('AM');
+    const timeParts = timeStr.replace(/\s*(AM|PM)/i, '').split(':');
+
+    let hours = parseInt(timeParts[0], 10);
+    const minutes = parseInt(timeParts[1], 10);
+    const seconds = timeParts[2] ? parseInt(timeParts[2], 10) : 0;
+
+    if (isPM && hours !== 12) hours += 12;
+    if (isAM && hours === 12) hours = 0;
+
+    today.setHours(hours, minutes, seconds, 0);
+    return today;
+  }
+
+  return null;
 }

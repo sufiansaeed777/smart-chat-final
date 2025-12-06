@@ -4,11 +4,12 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
 import { ChatbotIssue } from '@/entities/ChatbotIssue';
 import { User } from '@/entities/User';
+import { In } from 'typeorm';
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -20,35 +21,65 @@ export async function GET(request: NextRequest) {
 
     // Get user from database
     const userRepository = AppDataSource.getRepository("users");
-    const user = await userRepository.findOne({ 
-      where: { email: session.user.email } 
+    const user = await userRepository.findOne({
+      where: { email: session.user.email }
     });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Get user's issues
-    const issueRepository = AppDataSource.getRepository("chatbot_issues");
-    const issues = await issueRepository.find({
-      where: { 
+    // Get user's assigned bots
+    const assignmentRepository = AppDataSource.getRepository("bot_assignments");
+    const assignments = await assignmentRepository.find({
+      where: {
         userId: user.id,
-        type: 'issue_report'
+        status: 'active'
       },
-      order: { createdAt: 'DESC' }
+      relations: ['bot']
     });
+
+    const assignedBotIds = assignments
+      .map(assignment => assignment.bot?.id)
+      .filter(Boolean);
+
+    // Get issues related to assigned bots (or created by the user)
+    const issueRepository = AppDataSource.getRepository("chatbot_issues");
+
+    let issues: any[] = [];
+
+    if (assignedBotIds.length > 0) {
+      // Get issues for assigned bots
+      issues = await issueRepository.find({
+        where: [
+          { botId: In(assignedBotIds) },
+          { userId: user.id }
+        ],
+        order: { createdAt: 'DESC' }
+      });
+    } else {
+      // Fallback: get user's own issues
+      issues = await issueRepository.find({
+        where: { userId: user.id },
+        order: { createdAt: 'DESC' }
+      });
+    }
 
     // Format issues for frontend
     const formattedIssues = issues.map(issue => ({
       id: issue.id,
-      type: issue.type === 'issue_report' ? 'Issue Report' : issue.type,
-      description: issue.message,
+      type: issue.type,
+      userId: issue.userId || user.id,
+      userEmail: issue.userEmail || user.email,
+      userName: issue.userName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email.split('@')[0],
+      message: issue.message,
       status: issue.status,
-      createdAt: issue.createdAt.toISOString(),
       priority: issue.priority,
       assignedTo: issue.assignedTo,
       notes: issue.notes,
-      response: issue.response
+      response: issue.response,
+      createdAt: issue.createdAt.toISOString(),
+      updatedAt: issue.updatedAt ? issue.updatedAt.toISOString() : issue.createdAt.toISOString()
     }));
 
     return NextResponse.json({ 

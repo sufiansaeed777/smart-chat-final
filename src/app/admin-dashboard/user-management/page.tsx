@@ -25,7 +25,8 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ChevronsUpDown
+  ChevronsUpDown,
+  Copy
 } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
 
@@ -72,6 +73,9 @@ const UserManagementPage: React.FC = () => {
     status: 'active' as 'active' | 'inactive' | 'pending',
     isEmailVerified: false
   });
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdUserInfo, setCreatedUserInfo] = useState<{ email: string; password: string; name: string } | null>(null);
+  const [copiedPassword, setCopiedPassword] = useState(false);
 
   // Sorting state
   const [sortColumn, setSortColumn] = useState<string | null>(null);
@@ -305,8 +309,15 @@ const UserManagementPage: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        alert(`User created successfully!${data.defaultPassword ? `\n\nDefault password: ${data.defaultPassword}\n\nPlease share this with the user.` : ''}`);
         setShowCreateModal(false);
+        // Show success modal with user info
+        setCreatedUserInfo({
+          email: newUser.email,
+          password: data.defaultPassword || newUser.password || 'Password set by admin',
+          name: `${newUser.firstName} ${newUser.lastName}`
+        });
+        setShowSuccessModal(true);
+        setCopiedPassword(false);
         setNewUser({ email: '', firstName: '', lastName: '', role: 'user', password: '', status: 'active', isEmailVerified: false });
         // Refresh user list
         const usersResponse = await fetch('/api/admin/users');
@@ -1462,6 +1473,76 @@ const UserManagementPage: React.FC = () => {
                 className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {deleting === userToDelete.id ? 'Deleting...' : 'Delete User'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Created Success Modal */}
+      {showSuccessModal && createdUserInfo && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">User Created Successfully!</h2>
+              <p className="text-sm text-gray-600 mt-1">The new user account has been created.</p>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Name</label>
+                <p className="text-sm font-medium text-gray-900">{createdUserInfo.name}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Email</label>
+                <p className="text-sm font-medium text-gray-900">{createdUserInfo.email}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Password</label>
+                <div className="flex items-center space-x-2">
+                  <code className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono text-gray-900">
+                    {createdUserInfo.password}
+                  </code>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(createdUserInfo.password);
+                      setCopiedPassword(true);
+                      setTimeout(() => setCopiedPassword(false), 2000);
+                    }}
+                    className={`p-2 rounded-lg transition-colors ${
+                      copiedPassword
+                        ? 'bg-green-100 text-green-600'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                    title="Copy password"
+                  >
+                    {copiedPassword ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                {copiedPassword && (
+                  <p className="text-xs text-green-600 mt-1">Password copied to clipboard!</p>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
+              <p className="text-xs text-yellow-800">
+                <strong>Important:</strong> Please share these credentials with the user securely. They will need to change their password after first login.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center mt-6">
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  setCreatedUserInfo(null);
+                }}
+                className="px-6 py-2.5 bg-[#6566F1] text-white rounded-xl hover:bg-[#5A5BD9] transition-colors font-medium"
+              >
+                Done
               </button>
             </div>
           </div>

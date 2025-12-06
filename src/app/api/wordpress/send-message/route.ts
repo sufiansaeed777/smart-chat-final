@@ -22,6 +22,32 @@ import { botConfigCache } from '@/utils/cache';
  * - Implement message queuing for high traffic
  */
 
+// Helper function to get country from IP address
+async function getCountryFromIP(ip: string): Promise<string> {
+  // Skip for localhost/private IPs
+  if (!ip || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.')) {
+    return 'Local';
+  }
+
+  try {
+    // Use ip-api.com (free, no API key needed, 45 requests/minute)
+    const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode`, {
+      signal: AbortSignal.timeout(3000) // 3 second timeout
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.status === 'success' && data.country) {
+        return data.country;
+      }
+    }
+  } catch (error) {
+    console.log(`[GeoIP] Could not determine country for IP ${ip}:`, error);
+  }
+
+  return 'Unknown';
+}
+
 // Set SSL for Supabase connection - ONLY in development
 if (process.env.NODE_ENV === 'development') {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -140,6 +166,13 @@ export async function POST(request: NextRequest) {
       const tokenData = tokenCheck.rows[0];
       if (tokenData.is_expired) {
         console.error('Token validation failed: Token has expired');
+
+        // Deactivate the expired token
+        await pool.query(
+          'UPDATE wordpress_tokens SET is_active = false WHERE token = $1',
+          [token]
+        );
+
         return NextResponse.json(
           {
             error: 'Token has expired',
@@ -273,11 +306,33 @@ export async function POST(request: NextRequest) {
       const guestNumber = Math.floor(1000 + Math.random() * 9000);
       const guestIdSuffix = actualSessionId.slice(-4);
 
+      // Get visitor IP from request headers or metadata
+      const visitorIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+                        request.headers.get('x-real-ip') ||
+                        metadata?.user_ip ||
+                        metadata?.userIp ||
+                        'Unknown';
+
+      // Get country from IP (async geolocation)
+      const country = await getCountryFromIP(visitorIp);
+
+      // Extract visitor name from metadata (WordPress user email or custom name)
+      const visitorName = metadata?.visitorName ||
+                          (metadata?.wordpress_user && metadata.wordpress_user !== 'guest'
+                            ? metadata.wordpress_user.split('@')[0]
+                            : `Guest #${guestNumber}`);
+
+      // Extract email if available
+      const visitorEmail = metadata?.visitorEmail ||
+                          (metadata?.wordpress_user && metadata.wordpress_user !== 'guest'
+                            ? metadata.wordpress_user
+                            : '');
+
       conversation = conversationRepository.create({
         botId: botId,
         userId: userId,
         sessionId: actualSessionId,
-        guestName: `Guest #${guestNumber}`,
+        guestName: visitorName,
         guestId: `LC-${guestIdSuffix}`,
         mode: 'AI', // Start in AI mode
         status: 'active',
@@ -287,9 +342,11 @@ export async function POST(request: NextRequest) {
         metadata: {
           ...metadata,
           source: 'wordpress',
-          userIp: metadata?.userIp,
-          userAgent: metadata?.userAgent,
-          pageUrl: metadata?.pageUrl,
+          userIp: visitorIp,
+          userAgent: metadata?.user_agent || metadata?.userAgent || request.headers.get('user-agent') || '',
+          pageUrl: metadata?.page_url || metadata?.pageUrl || request.headers.get('referer') || '',
+          country: country,
+          email: visitorEmail,
           // PHASE 4: Track language for analytics
           language: metadata?.language || 'en' // Default to English
         }
@@ -321,7 +378,7 @@ export async function POST(request: NextRequest) {
         id: `${Date.now()}-visitor`,
         sender: 'visitor',
         text: message,
-        timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toISOString()
       });
 
       conversation.messages = messages;
@@ -371,13 +428,13 @@ export async function POST(request: NextRequest) {
               id: `${Date.now()}-visitor`,
               sender: 'visitor',
               text: message,
-              timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+              timestamp: new Date().toISOString()
             },
             {
               id: `${Date.now()}-bot`,
               sender: 'bot',
               text: aiResponse,
-              timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+              timestamp: new Date().toISOString()
             }
           );
 
@@ -449,7 +506,7 @@ export async function POST(request: NextRequest) {
               id: `${Date.now()}-visitor`,
               sender: 'visitor',
               text: message,
-              timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+              timestamp: new Date().toISOString()
             });
 
             let fullResponse = '';
@@ -492,7 +549,7 @@ export async function POST(request: NextRequest) {
                     id: `${Date.now()}-bot`,
                     sender: 'bot',
                     text: fullResponse,
-                    timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                    timestamp: new Date().toISOString()
                   });
 
                   conversation.messages = messages;
@@ -629,13 +686,13 @@ export async function POST(request: NextRequest) {
         id: `${Date.now()}-visitor`,
         sender: 'visitor',
         text: message,
-        timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toISOString()
       },
       {
         id: `${Date.now()}-bot`,
         sender: 'bot',
         text: aiResponse,
-        timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toISOString()
       }
     );
 

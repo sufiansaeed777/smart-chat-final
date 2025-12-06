@@ -46,7 +46,7 @@ function ResetPasswordForm() {
 
     const validationErrors = validatePassword(password);
     if (validationErrors.length > 0) {
-      setError(`Password must contain: ${validationErrors.join(', ')}.`);
+      setError('Password must include uppercase, lowercase, number, special character, and be 8+ characters long.');
       return;
     }
 

@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Users, 
-  MessageSquare, 
-  Clock, 
-  CheckCircle, 
+import {
+  Users,
+  MessageSquare,
+  Clock,
+  CheckCircle,
   Link as LinkIcon,
   User,
   Bot,
@@ -16,7 +16,10 @@ import {
   ArrowDown,
   Star,
   UserCheck,
-  Loader2
+  Loader2,
+  AlertCircle,
+  PlusCircle,
+  HandMetal
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -225,12 +228,19 @@ const ManagerOverview = () => {
 
   // Use REAL recent activity data from API
   const recentActivity = (overviewData.recentActivity || []).slice(0, 3).map((activity: any) => {
-    // Map status to icon
+    // Map status/type to icon
     let icon = MessageSquare;
-    if (activity.status === 'completed') {
+    if (activity.status === 'completed' || activity.status === 'resolved') {
       icon = CheckCircle;
     } else if (activity.status === 'handoff') {
       icon = UserCheck;
+    } else if (activity.status === 'waiting') {
+      // Incoming handoff request
+      icon = HandMetal;
+    } else if (activity.status === 'reported' || activity.type === 'issue_report') {
+      icon = AlertCircle;
+    } else if (activity.status === 'created' || activity.type === 'bot_created') {
+      icon = PlusCircle;
     }
 
     return {
@@ -500,6 +510,8 @@ const ManagerOverview = () => {
                       activity.statusColor.includes('bg-yellow-100 text-yellow-600') ? 'hover:bg-yellow-600 hover:text-white' :
                       activity.statusColor.includes('bg-blue-100 text-blue-600') ? 'hover:bg-blue-600 hover:text-white' :
                       activity.statusColor.includes('bg-orange-100 text-orange-600') ? 'hover:bg-orange-600 hover:text-white' :
+                      activity.statusColor.includes('bg-red-100 text-red-600') ? 'hover:bg-red-600 hover:text-white' :
+                      activity.statusColor.includes('bg-indigo-100 text-indigo-600') ? 'hover:bg-indigo-600 hover:text-white' :
                       activity.statusColor.includes('bg-gray-100 text-gray-600') ? 'hover:bg-gray-600 hover:text-white' :
                       'hover:opacity-80'} transition-all duration-300`}>
                       {activity.status}

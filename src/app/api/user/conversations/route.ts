@@ -124,15 +124,20 @@ export async function GET(request: NextRequest) {
 
       return {
         id: session.id,
-        customerName: session.userEmail.split('@')[0] || 'Unknown User',
-        customerEmail: session.userEmail,
+        botId: session.botId,
         botName: session.botName,
+        userId: session.userId,
+        userName: session.userName || session.userEmail.split('@')[0] || 'Unknown User',
+        userEmail: session.userEmail,
         startTime: session.startTime.toISOString(),
         endTime: session.endTime.toISOString(),
+        lastMessageTime: (session.lastMessageAt || session.endTime).toISOString(),
         status: isActive ? 'active' : 'completed',
         messageCount: session.messageCount,
         duration: `${duration} min`,
-        satisfaction: Math.floor(Math.random() * 2) + 4 // Mock rating between 4-5
+        satisfaction: Math.floor(Math.random() * 2) + 4, // Mock rating between 4-5
+        source: 'playground',
+        mode: 'AI'
       };
     });
 
@@ -150,7 +155,17 @@ export async function GET(request: NextRequest) {
         total,
         active,
         completed,
-        avgRating: Math.round(avgRating * 10) / 10
+        avgResponseTime: '< 1 min'
+      },
+      filters: {
+        bots: Array.from(new Set(formattedSessions.map(s => s.botId))).map(botId => {
+          const session = formattedSessions.find(s => s.botId === botId);
+          return { id: botId, name: session?.botName || 'Unknown' };
+        }),
+        users: Array.from(new Set(formattedSessions.map(s => s.userId))).map(userId => {
+          const session = formattedSessions.find(s => s.userId === userId);
+          return { id: userId, name: session?.userName || 'Unknown', email: session?.userEmail || '' };
+        })
       }
     });
 
