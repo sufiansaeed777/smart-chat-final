@@ -474,6 +474,7 @@ class Synofex_Admin {
             .synofex-field-group {
                 margin-bottom: 20px;
                 overflow: visible;
+                position: relative;
             }
             .synofex-field-group:last-child {
                 margin-bottom: 0;
@@ -486,6 +487,7 @@ class Synofex_Admin {
             }
             .synofex-field-group > .synofex-toggle-label {
                 display: inline-flex;
+                width: auto;
             }
             .synofex-field-description {
                 margin-top: 6px;
@@ -540,7 +542,8 @@ class Synofex_Admin {
                 align-items: center;
                 gap: 12px;
                 cursor: pointer;
-                min-width: 220px;
+                min-width: 260px;
+                overflow: visible;
             }
             .synofex-toggle {
                 position: relative;
@@ -553,6 +556,7 @@ class Synofex_Admin {
                 opacity: 0;
                 width: 0;
                 height: 0;
+                position: absolute;
             }
             .synofex-toggle-slider {
                 position: absolute;
@@ -575,6 +579,7 @@ class Synofex_Admin {
                 background-color: white;
                 transition: 0.3s;
                 border-radius: 50%;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             }
             .synofex-toggle input:checked + .synofex-toggle-slider {
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -587,6 +592,7 @@ class Synofex_Admin {
                 color: #333;
                 white-space: nowrap;
                 flex-shrink: 0;
+                overflow: visible;
             }
 
             /* Buttons */
