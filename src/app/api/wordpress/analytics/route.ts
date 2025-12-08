@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/utils/db';
+import { AppDataSource } from '@/config/database';
+import { Conversation } from '@/entities/Conversation';
+import { MoreThanOrEqual, In } from 'typeorm';
 
 // CORS headers
 const corsHeaders = {
@@ -25,12 +27,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Initialize database if needed
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+    }
+
     // Find the bot associated with this WordPress token
     let botId: string | null = null;
     let botName: string = 'Unknown Bot';
 
     try {
-      const tokenCheck = await pool.query(
+      const tokenResult = await AppDataSource.query(
         `SELECT wt.bot_id, b.name as bot_name
          FROM wordpress_tokens wt
          JOIN bots b ON wt.bot_id = b.id
@@ -38,9 +45,9 @@ export async function GET(request: NextRequest) {
         [token]
       );
 
-      if (tokenCheck.rows.length > 0) {
-        botId = tokenCheck.rows[0].bot_id;
-        botName = tokenCheck.rows[0].bot_name;
+      if (tokenResult && tokenResult.length > 0) {
+        botId = tokenResult[0].bot_id;
+        botName = tokenResult[0].bot_name;
       }
     } catch (tableError) {
       console.log('WordPress tokens table error:', tableError);
@@ -53,74 +60,57 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const conversationRepository = AppDataSource.getRepository(Conversation);
+
     // Total conversations for this bot
-    const totalConvResult = await pool.query(
-      'SELECT COUNT(*) as count FROM conversations WHERE "botId" = $1',
-      [botId]
-    );
-    const totalConversations = parseInt(totalConvResult.rows[0]?.count || '0');
+    const totalConversations = await conversationRepository.count({
+      where: { botId }
+    });
 
-    // Get today's date range (use UTC for consistency)
+    // Get today's date range (use local timezone)
     const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
 
-    // Messages today - count messages from conversations updated today
-    const todayConvResult = await pool.query(
-      `SELECT messages FROM conversations
-       WHERE "botId" = $1 AND ("updatedAt" >= $2 OR "lastMessageAt" >= $2)`,
-      [botId, today.toISOString()]
-    );
+    // Get all conversations for this bot to count messages
+    const allConversations = await conversationRepository.find({
+      where: { botId },
+      select: ['id', 'messages', 'status', 'mode', 'updatedAt', 'lastMessageAt']
+    });
 
+    // Count messages
+    let totalMessages = 0;
     let messagesToday = 0;
-    todayConvResult.rows.forEach((row: { messages: unknown }) => {
-      const messages = row.messages;
-      if (messages && Array.isArray(messages)) {
-        // Count only messages from today
-        messages.forEach((msg: { timestamp?: string }) => {
+    let activeSessions = 0;
+    let humanHandoffs = 0;
+
+    allConversations.forEach((conv) => {
+      // Count total messages
+      if (conv.messages && Array.isArray(conv.messages)) {
+        totalMessages += conv.messages.length;
+
+        // Count messages from today
+        conv.messages.forEach((msg) => {
           if (msg.timestamp) {
             const msgDate = new Date(msg.timestamp);
             if (msgDate >= today) {
               messagesToday++;
             }
-          } else {
-            // If no timestamp, count all messages from conversations updated today
-            messagesToday++;
           }
         });
       }
-    });
 
-    // Active sessions (conversations with status 'active' or 'waiting')
-    const activeResult = await pool.query(
-      `SELECT COUNT(*) as count FROM conversations
-       WHERE "botId" = $1 AND (status = 'active' OR status = 'waiting')`,
-      [botId]
-    );
-    const activeSessions = parseInt(activeResult.rows[0]?.count || '0');
+      // Count active sessions
+      if (conv.status === 'active' || conv.status === 'waiting') {
+        activeSessions++;
+      }
 
-    // Total messages across all conversations
-    const allConvResult = await pool.query(
-      'SELECT messages FROM conversations WHERE "botId" = $1',
-      [botId]
-    );
-
-    let totalMessages = 0;
-    allConvResult.rows.forEach((row: { messages: unknown }) => {
-      const messages = row.messages;
-      if (messages && Array.isArray(messages)) {
-        totalMessages += messages.length;
+      // Count human handoffs
+      if (conv.mode === 'Human') {
+        humanHandoffs++;
       }
     });
 
-    // Human handoffs (conversations with mode = 'Human')
-    const handoffResult = await pool.query(
-      `SELECT COUNT(*) as count FROM conversations
-       WHERE "botId" = $1 AND mode = 'Human'`,
-      [botId]
-    );
-    const humanHandoffs = parseInt(handoffResult.rows[0]?.count || '0');
-
-    // Average response time (calculated based on bot messages)
+    // Average response time placeholder
     const avgResponseTime = totalConversations > 0 ? '< 3s' : 'N/A';
 
     // Log for debugging

@@ -473,6 +473,7 @@ class Synofex_Admin {
             /* Field Groups */
             .synofex-field-group {
                 margin-bottom: 20px;
+                overflow: visible;
             }
             .synofex-field-group:last-child {
                 margin-bottom: 0;
@@ -482,6 +483,9 @@ class Synofex_Admin {
                 font-weight: 600;
                 margin-bottom: 8px;
                 color: #333;
+            }
+            .synofex-field-group > .synofex-toggle-label {
+                display: inline-flex;
             }
             .synofex-field-description {
                 margin-top: 6px;
@@ -532,14 +536,16 @@ class Synofex_Admin {
 
             /* Toggle Switch */
             .synofex-toggle-label {
-                display: flex;
+                display: inline-flex;
                 align-items: center;
                 gap: 12px;
                 cursor: pointer;
+                min-width: 220px;
             }
             .synofex-toggle {
                 position: relative;
                 width: 52px;
+                min-width: 52px;
                 height: 28px;
                 flex-shrink: 0;
             }
@@ -580,6 +586,7 @@ class Synofex_Admin {
                 font-weight: 600;
                 color: #333;
                 white-space: nowrap;
+                flex-shrink: 0;
             }
 
             /* Buttons */
