@@ -31,31 +31,17 @@ export async function GET() {
     const totalBots = await botRepository.count();
     const totalConversations = await conversationRepository.count();
 
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    // Use 7-day window for "active users" to distinguish from "total users"
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    // Count active users based on:
-    // 1. Users with lastLoginAt in last 30 days, OR
-    // 2. Users who have conversations in last 30 days
-    const activeUsersFromLogin = await userRepository
+    // Count active users: users with isActive=true who logged in within last 7 days
+    const activeUsers = await userRepository
       .createQueryBuilder('user')
-      .where('user.lastLoginAt > :date', { date: thirtyDaysAgo })
+      .where('user.isActive = :isActive', { isActive: true })
+      .andWhere('user.lastLoginAt IS NOT NULL')
+      .andWhere('user.lastLoginAt > :date', { date: sevenDaysAgo })
       .getCount();
-
-    // Also count users with recent conversations (for users without lastLoginAt tracking)
-    const activeUsersFromConversations = await conversationRepository
-      .createQueryBuilder('conv')
-      .select('COUNT(DISTINCT conv.userId)', 'count')
-      .where('conv.userId IS NOT NULL')
-      .andWhere('conv.createdAt > :date', { date: thirtyDaysAgo })
-      .getRawOne();
-
-    const conversationActiveUsers = parseInt(activeUsersFromConversations?.count || '0');
-
-    // Use the higher of the two counts, or combine unique users
-    // For simplicity, we'll use users who logged in recently as the primary metric
-    // If lastLoginAt is not being tracked, fall back to conversation-based activity
-    const activeUsers = activeUsersFromLogin > 0 ? activeUsersFromLogin : conversationActiveUsers;
 
     // Count pending managers (managers with unverified emails or pending status)
     const pendingManagers = await userRepository
