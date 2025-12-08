@@ -102,16 +102,23 @@ const UserManagementPage: React.FC = () => {
           setShowDeleteModal(false);
           setUserToDelete(null);
         }
+        if (showCreateModal) {
+          setShowCreateModal(false);
+        }
+        if (showSuccessModal) {
+          setShowSuccessModal(false);
+          setCreatedUserInfo(null);
+        }
       }
     };
 
-    if (showViewModal || showEditModal || showDeleteModal) {
+    if (showViewModal || showEditModal || showDeleteModal || showCreateModal || showSuccessModal) {
       window.addEventListener('keydown', handleEscape);
       return () => {
         window.removeEventListener('keydown', handleEscape);
       };
     }
-  }, [showViewModal, showEditModal, showDeleteModal]);
+  }, [showViewModal, showEditModal, showDeleteModal, showCreateModal, showSuccessModal]);
 
   // Fetch users function
   const loadUsers = async (isInitialLoad = false) => {

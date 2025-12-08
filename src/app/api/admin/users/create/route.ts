@@ -98,7 +98,8 @@ export async function POST(request: NextRequest) {
         isActive: savedUser.isActive,
         createdAt: savedUser.createdAt
       },
-      defaultPassword: password ? undefined : defaultPassword
+      // Always return the password that was used (either provided or auto-generated)
+      defaultPassword: defaultPassword
     });
 
   } catch (error) {
