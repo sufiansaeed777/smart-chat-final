@@ -41,25 +41,30 @@ interface SubscriptionData {
 
 interface InvoiceData {
   id: string;
+  invoiceNumber: string;
   date: string;
   planName: string;
   amount: number;
   status: string;
+  dueDate: string | null;
+  paidAt: string | null;
 }
 
 const BillingPage: React.FC = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(null);
+  const [invoices, setInvoices] = useState<InvoiceData[]>([]);
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceData | null>(null);
 
-  // Fetch subscription data on mount
+  // Fetch subscription data and invoices on mount
   useEffect(() => {
     fetchSubscriptionData();
+    fetchInvoices();
   }, []);
 
   const fetchSubscriptionData = async () => {
@@ -83,6 +88,19 @@ const BillingPage: React.FC = () => {
     }
   };
 
+  const fetchInvoices = async () => {
+    try {
+      const response = await fetch('/api/billing/invoices');
+
+      if (response.ok) {
+        const data = await response.json();
+        setInvoices(data.invoices || []);
+      }
+    } catch (err) {
+      console.error('Error fetching invoices:', err);
+    }
+  };
+
   // Handle upgrade plan
   const handleUpgrade = async () => {
     try {
@@ -90,9 +108,9 @@ const BillingPage: React.FC = () => {
 
       const enterprisePlan = {
         planType: 'enterprise',
-        amount: 299,
+        amount: 199,
         currency: 'USD',
-        description: 'Enterprise Plan - Unlimited Users & Bots',
+        description: 'Enterprise Plan - Up to 100 Users & 50 Bots',
       };
 
       const response = await fetch('/api/payment/create-checkout-session', {
@@ -129,9 +147,9 @@ const BillingPage: React.FC = () => {
       setIsUpgrading(true);
 
       const planDescriptions: Record<string, string> = {
-        starter: 'Starter Plan - Up to 20 Users & 5 Bots',
-        professional: 'Professional Plan - Up to 50 Users & 10 Bots',
-        enterprise: 'Enterprise Plan - Unlimited Users & Bots'
+        starter: 'Starter Plan - Up to 5 Users & 3 Bots',
+        professional: 'Professional Plan - Up to 20 Users & 10 Bots',
+        enterprise: 'Enterprise Plan - Up to 100 Users & 50 Bots'
       };
 
       const planData = {
@@ -360,11 +378,11 @@ const BillingPage: React.FC = () => {
                 <ul className="space-y-2">
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">Up to 5 Users</span>
+                    <span className="text-sm text-gray-700">Up to 1 User</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">Up to 2 Bots</span>
+                    <span className="text-sm text-gray-700">Up to 1 Bot</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
@@ -372,7 +390,7 @@ const BillingPage: React.FC = () => {
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">100 Conversations</span>
+                    <span className="text-sm text-gray-700">100 Conversations/month</span>
                   </li>
                 </ul>
               </div>
@@ -411,11 +429,11 @@ const BillingPage: React.FC = () => {
                 <ul className="space-y-2">
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">Up to 20 Users</span>
+                    <span className="text-sm text-gray-700">Up to 5 Users</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">Up to 5 Bots</span>
+                    <span className="text-sm text-gray-700">Up to 3 Bots</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
@@ -423,7 +441,7 @@ const BillingPage: React.FC = () => {
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">1,000 Conversations</span>
+                    <span className="text-sm text-gray-700">1,000 Conversations/month</span>
                   </li>
                 </ul>
               </div>
@@ -455,13 +473,13 @@ const BillingPage: React.FC = () => {
               <div className="mb-6 mt-2">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Professional</h3>
                 <div className="flex items-baseline mb-4">
-                  <span className="text-3xl font-bold text-gray-900">$99</span>
+                  <span className="text-3xl font-bold text-gray-900">$79</span>
                   <span className="text-gray-600 ml-2">/month</span>
                 </div>
                 <ul className="space-y-2">
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">Up to 50 Users</span>
+                    <span className="text-sm text-gray-700">Up to 20 Users</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
@@ -473,12 +491,12 @@ const BillingPage: React.FC = () => {
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">Advanced Analytics</span>
+                    <span className="text-sm text-gray-700">5,000 Conversations/month</span>
                   </li>
                 </ul>
               </div>
               <button
-                onClick={() => handleSubscribe('professional', 99)}
+                onClick={() => handleSubscribe('professional', 79)}
                 disabled={isUpgrading}
                 className="w-full py-3 bg-[#6566F1] text-white rounded-xl hover:bg-[#5A5BD9] transition-colors font-medium disabled:opacity-50"
               >
@@ -491,17 +509,17 @@ const BillingPage: React.FC = () => {
               <div className="mb-6 mt-2">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Enterprise</h3>
                 <div className="flex items-baseline mb-4">
-                  <span className="text-3xl font-bold text-gray-900">$299</span>
+                  <span className="text-3xl font-bold text-gray-900">$199</span>
                   <span className="text-gray-600 ml-2">/month</span>
                 </div>
                 <ul className="space-y-2">
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">Unlimited Users</span>
+                    <span className="text-sm text-gray-700">Up to 100 Users</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">Unlimited Bots</span>
+                    <span className="text-sm text-gray-700">Up to 50 Bots</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
@@ -509,12 +527,12 @@ const BillingPage: React.FC = () => {
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">Custom Integrations</span>
+                    <span className="text-sm text-gray-700">50,000 Conversations/month</span>
                   </li>
                 </ul>
               </div>
               <button
-                onClick={() => handleSubscribe('enterprise', 299)}
+                onClick={() => handleSubscribe('enterprise', 199)}
                 disabled={isUpgrading}
                 className="w-full py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium disabled:opacity-50"
               >
@@ -756,35 +774,42 @@ const BillingPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {/* Sample invoice - will be replaced with real data */}
-              <tr className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">#INV-2024-001</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{new Date().toLocaleDateString()}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{plan.name} Plan - Monthly</td>
-                <td className="px-6 py-4 text-sm font-semibold text-gray-900">${plan.price}.00</td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                    Paid
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-left">
-                  <button
-                    onClick={() => {
-                      setSelectedInvoice({
-                        id: 'INV-2024-001',
-                        date: new Date().toLocaleDateString(),
-                        planName: plan.name,
-                        amount: plan.price,
-                        status: 'Paid'
-                      });
-                      setShowInvoiceModal(true);
-                    }}
-                    className="text-[#6566F1] hover:text-[#5A5BD9] text-sm font-medium transition-colors"
-                  >
-                    View Invoice
-                  </button>
-                </td>
-              </tr>
+              {invoices.length > 0 ? (
+                invoices.map((invoice) => (
+                  <tr key={invoice.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">#{invoice.invoiceNumber}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{new Date(invoice.date).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{invoice.planName}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">${invoice.amount.toFixed(2)}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+                        invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
+                        invoice.status === 'open' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-left">
+                      <button
+                        onClick={() => {
+                          setSelectedInvoice(invoice);
+                          setShowInvoiceModal(true);
+                        }}
+                        className="text-[#6566F1] hover:text-[#5A5BD9] text-sm font-medium transition-colors"
+                      >
+                        View Invoice
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                    No invoices found. Invoices will appear here when you have billing activity.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -830,30 +855,41 @@ const BillingPage: React.FC = () => {
             <div className="p-6 space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Invoice #</span>
-                <span className="font-semibold text-gray-900">#{selectedInvoice.id}</span>
+                <span className="font-semibold text-gray-900">#{selectedInvoice.invoiceNumber}</span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Date</span>
-                <span className="font-semibold text-gray-900">{selectedInvoice.date}</span>
+                <span className="font-semibold text-gray-900">{new Date(selectedInvoice.date).toLocaleDateString()}</span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Plan</span>
-                <span className="font-semibold text-gray-900">{selectedInvoice.planName} Subscription</span>
+                <span className="font-semibold text-gray-900">{selectedInvoice.planName}</span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Amount</span>
-                <span className="font-bold text-2xl text-gray-900">${selectedInvoice.amount}.00</span>
+                <span className="font-bold text-2xl text-gray-900">${selectedInvoice.amount.toFixed(2)}</span>
               </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Status</span>
-                <span className="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">
-                  PAID
+                <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
+                  selectedInvoice.status === 'paid' ? 'bg-green-100 text-green-800' :
+                  selectedInvoice.status === 'open' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {selectedInvoice.status.toUpperCase()}
                 </span>
               </div>
+
+              {selectedInvoice.dueDate && selectedInvoice.status !== 'paid' && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Due Date</span>
+                  <span className="font-semibold text-gray-900">{new Date(selectedInvoice.dueDate).toLocaleDateString()}</span>
+                </div>
+              )}
             </div>
 
             {/* Modal Footer */}

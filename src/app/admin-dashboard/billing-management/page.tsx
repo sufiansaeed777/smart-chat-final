@@ -197,20 +197,14 @@ export default function AdminBillingManagement() {
       const data = await response.json();
 
       if (response.ok) {
-        // Update local state
-        setSubscriptions(prev => prev.map(sub =>
-          sub.id === selectedUser.id
-            ? {
-                ...sub,
-                planName: selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1),
-                status: selectedStatus as any,
-                billingCycle: selectedBillingCycle as any,
-                amount: customAmount ? parseFloat(customAmount) : sub.amount
-              }
-            : sub
-        ));
         closePlanModal();
         alert(`Plan ${data.isUpgrade ? 'upgraded' : data.isDowngrade ? 'downgraded' : 'updated'} successfully!`);
+        // Refresh subscriptions list to show updated data from database
+        const subsResponse = await fetch('/api/admin/billing/subscriptions');
+        if (subsResponse.ok) {
+          const subsData = await subsResponse.json();
+          setSubscriptions(subsData.subscriptions || []);
+        }
       } else {
         alert(`Failed to update plan: ${data.error}`);
       }

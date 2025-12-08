@@ -41,34 +41,35 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Define plan limits based on subscription plan
+    // Pricing must match PLAN_PRICING in /api/admin/billing/assign-plan
     const planLimits: Record<string, any> = {
       free: {
         name: 'Free',
         price: 0,
         period: 'month',
-        features: ['Up to 5 Users', 'Up to 2 Bots', 'Basic Support', '100 Conversations/month'],
-        limits: { users: 5, bots: 2, conversations: 100, storage: 1 }
+        features: ['Up to 1 User', 'Up to 1 Bot', 'Basic Support', '100 Conversations/month'],
+        limits: { users: 1, bots: 1, conversations: 100, storage: 1 }
       },
       starter: {
         name: 'Starter',
         price: 29,
         period: 'month',
-        features: ['Up to 20 Users', 'Up to 5 Bots', 'Email Support', '1,000 Conversations/month'],
-        limits: { users: 20, bots: 5, conversations: 1000, storage: 10 }
+        features: ['Up to 5 Users', 'Up to 3 Bots', 'Email Support', '1,000 Conversations/month'],
+        limits: { users: 5, bots: 3, conversations: 1000, storage: 10 }
       },
       professional: {
         name: 'Professional',
-        price: 99,
+        price: 79,
         period: 'month',
-        features: ['Up to 50 Users', 'Up to 10 Bots', 'Priority Support', 'Advanced Analytics'],
-        limits: { users: 50, bots: 10, conversations: 5000, storage: 50 }
+        features: ['Up to 20 Users', 'Up to 10 Bots', 'Priority Support', '5,000 Conversations/month'],
+        limits: { users: 20, bots: 10, conversations: 5000, storage: 50 }
       },
       enterprise: {
         name: 'Enterprise',
-        price: 299,
+        price: 199,
         period: 'month',
-        features: ['Unlimited Users', 'Unlimited Bots', '24/7 Support', 'Custom Integrations'],
-        limits: { users: 999999, bots: 999999, conversations: 999999, storage: 999999 }
+        features: ['Up to 100 Users', 'Up to 50 Bots', '24/7 Support', '50,000 Conversations/month'],
+        limits: { users: 100, bots: 50, conversations: 50000, storage: 999999 }
       }
     };
 
