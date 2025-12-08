@@ -164,20 +164,36 @@ class Synofex_AJAX_Handler {
         }
 
         $bot_id = sanitize_text_field($_POST['bot_id'] ?? 'default');
-        $issue_type = sanitize_text_field($_POST['issue_type'] ?? 'general');
-        $description = sanitize_textarea_field($_POST['description'] ?? '');
-        $conversation_id = sanitize_text_field($_POST['conversation_id'] ?? '');
+        $session_id = sanitize_text_field($_POST['session_id'] ?? '');
+        $name = sanitize_text_field($_POST['name'] ?? '');
+        $email = sanitize_email($_POST['email'] ?? '');
+        $issue = sanitize_textarea_field($_POST['issue'] ?? '');
 
-        if (empty($description)) {
-            wp_send_json_error(['message' => 'Description is required']);
+        // Validate required fields
+        if (empty($name)) {
+            wp_send_json_error(['message' => 'Name is required']);
+            exit;
+        }
+
+        if (empty($email) || !is_email($email)) {
+            wp_send_json_error(['message' => 'Valid email is required']);
+            exit;
+        }
+
+        if (empty($issue)) {
+            wp_send_json_error(['message' => 'Issue description is required']);
             exit;
         }
 
         // Initialize API client
         $this->init_api_client();
 
-        // Report issue
-        $response = $this->api_client->report_issue($bot_id, $issue_type, $description, $conversation_id);
+        // Report issue with name, email, and issue fields
+        $response = $this->api_client->report_issue($bot_id, 'issue_report', $issue, $session_id, [
+            'name' => $name,
+            'email' => $email,
+            'source' => 'wordpress_plugin'
+        ]);
 
         if ($response) {
             wp_send_json_success([

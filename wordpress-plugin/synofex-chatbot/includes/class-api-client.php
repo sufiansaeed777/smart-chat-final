@@ -149,15 +149,22 @@ class Synofex_API_Client {
     /**
      * Report issue - saves to database via WordPress API endpoint
      */
-    public function report_issue($bot_id, $issue_type, $description, $conversation_id = null) {
-        return $this->make_request('POST', '/api/wordpress/report-issue', [
+    public function report_issue($bot_id, $issue_type, $description, $conversation_id = null, $metadata = []) {
+        $data = [
             'token' => $this->auth_token,
             'bot_id' => $bot_id,
             'issue_type' => $issue_type,
             'description' => $description,
             'conversation_id' => $conversation_id,
             'source' => 'wordpress',
-        ]);
+        ];
+
+        // Merge additional metadata (name, email, etc.)
+        if (!empty($metadata)) {
+            $data = array_merge($data, $metadata);
+        }
+
+        return $this->make_request('POST', '/api/wordpress/report-issue', $data);
     }
 
     /**

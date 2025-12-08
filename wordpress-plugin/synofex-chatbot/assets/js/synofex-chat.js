@@ -85,9 +85,15 @@ if (typeof jQuery === 'undefined') {
                 SynofexChat.handleMenuAction(action);
             });
 
-            // Report issue button
-            $('#synofex-report-issue').on('click', () => {
-                this.showReportDialog();
+            // Action buttons (Request Human and Report Issue)
+            $('.synofex-action-btn').on('click', (e) => {
+                const action = $(e.currentTarget).data('action');
+                this.handleMenuAction(action);
+            });
+
+            // Close button
+            $('#synofex-chat-close').on('click', () => {
+                this.closeChat();
             });
         },
 
@@ -261,12 +267,174 @@ if (typeof jQuery === 'undefined') {
                     this.downloadTranscript();
                     break;
                 case 'report-issue':
-                    this.showReportDialog();
+                    this.showReportIssueForm();
                     break;
                 case 'request-human':
                     this.requestHumanAgent();
                     break;
             }
+        },
+
+        // Request human agent - show simple notification instead of popup
+        requestHumanAgent: function() {
+            // Show notification in chat
+            this.addNotification('Your request for a human agent has been sent. An agent will join shortly.');
+
+            // Send request to backend
+            $.ajax({
+                url: this.config.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'synofex_request_human',
+                    nonce: this.config.nonce,
+                    bot_id: this.botId,
+                    session_id: this.sessionId
+                },
+                success: (response) => {
+                    if (!response.success) {
+                        this.addNotification('Could not connect to an agent. Please try again later.');
+                    }
+                },
+                error: () => {
+                    this.addNotification('Could not connect to an agent. Please try again later.');
+                }
+            });
+        },
+
+        // Add notification to chat (simple inline notification)
+        addNotification: function(message) {
+            const messagesContainer = $('#synofex-messages');
+            const notificationHtml = `
+                <div class="synofex-notification">
+                    <span class="synofex-notification-text">${this.escapeHtml(message)}</span>
+                </div>
+            `;
+            messagesContainer.append(notificationHtml);
+            this.scrollToBottom();
+        },
+
+        // Show Report Issue form overlay
+        showReportIssueForm: function() {
+            const formHtml = `
+                <div class="synofex-report-overlay" id="synofex-report-overlay">
+                    <div class="synofex-report-form">
+                        <div class="synofex-report-header">
+                            <h4>Report an Issue</h4>
+                            <button type="button" class="synofex-report-close" id="synofex-report-close">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <form id="synofex-report-form">
+                            <div class="synofex-report-field">
+                                <label for="synofex-report-name">Name <span class="required">*</span></label>
+                                <input type="text" id="synofex-report-name" name="name" required placeholder="Your name">
+                            </div>
+                            <div class="synofex-report-field">
+                                <label for="synofex-report-email">Email <span class="required">*</span></label>
+                                <input type="email" id="synofex-report-email" name="email" required placeholder="your@email.com">
+                                <div class="error-message" id="synofex-email-error" style="display:none;">Please enter a valid email address</div>
+                            </div>
+                            <div class="synofex-report-field">
+                                <label for="synofex-report-issue">Issue <span class="required">*</span></label>
+                                <textarea id="synofex-report-issue" name="issue" required placeholder="Describe the issue you're experiencing..."></textarea>
+                            </div>
+                            <div class="synofex-report-actions">
+                                <button type="button" class="synofex-report-cancel" id="synofex-report-cancel">Cancel</button>
+                                <button type="submit" class="synofex-report-submit">Submit</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+
+            $('#synofex-chat-window').append(formHtml);
+
+            // Setup form event listeners
+            const self = this;
+
+            $('#synofex-report-close, #synofex-report-cancel').on('click', function() {
+                self.closeReportForm();
+            });
+
+            // Email validation on blur
+            $('#synofex-report-email').on('blur', function() {
+                self.validateEmail($(this).val());
+            });
+
+            $('#synofex-report-form').on('submit', function(e) {
+                e.preventDefault();
+                self.submitReportIssue();
+            });
+        },
+
+        // Validate email format
+        validateEmail: function(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const isValid = emailRegex.test(email);
+
+            if (!isValid && email.length > 0) {
+                $('#synofex-report-email').addClass('error');
+                $('#synofex-email-error').show();
+            } else {
+                $('#synofex-report-email').removeClass('error');
+                $('#synofex-email-error').hide();
+            }
+
+            return isValid;
+        },
+
+        // Submit Report Issue form
+        submitReportIssue: function() {
+            const name = $('#synofex-report-name').val().trim();
+            const email = $('#synofex-report-email').val().trim();
+            const issue = $('#synofex-report-issue').val().trim();
+
+            // Validate all fields
+            if (!name || !email || !issue) {
+                return;
+            }
+
+            // Validate email format
+            if (!this.validateEmail(email)) {
+                return;
+            }
+
+            // Disable submit button
+            $('.synofex-report-submit').prop('disabled', true).text('Submitting...');
+
+            // Send to backend
+            $.ajax({
+                url: this.config.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'synofex_report_issue',
+                    nonce: this.config.nonce,
+                    bot_id: this.botId,
+                    session_id: this.sessionId,
+                    name: name,
+                    email: email,
+                    issue: issue
+                },
+                success: (response) => {
+                    this.closeReportForm();
+                    if (response.success) {
+                        this.addNotification('Thank you! Your issue has been reported successfully.');
+                    } else {
+                        this.addNotification('Could not submit your issue. Please try again later.');
+                    }
+                },
+                error: () => {
+                    this.closeReportForm();
+                    this.addNotification('Could not submit your issue. Please try again later.');
+                }
+            });
+        },
+
+        // Close Report Issue form
+        closeReportForm: function() {
+            $('#synofex-report-overlay').remove();
         },
 
         // Clear chat history
