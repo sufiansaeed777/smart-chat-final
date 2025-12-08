@@ -29,9 +29,9 @@ interface DashboardLayoutProps {
   activeSection?: string;
 }
 
-const DashboardLayoutWithAuth: React.FC<DashboardLayoutProps> = ({ 
-  children, 
-  activeSection = 'overview' 
+const DashboardLayoutWithAuth: React.FC<DashboardLayoutProps> = ({
+  children,
+  activeSection = 'overview'
 }) => {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -40,6 +40,7 @@ const DashboardLayoutWithAuth: React.FC<DashboardLayoutProps> = ({
   const [isAdmin, setIsAdmin] = useState(false);
   const [isManager, setIsManager] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [handoffRequestCount, setHandoffRequestCount] = useState(0);
 
   // Check if user is admin or manager
   useEffect(() => {
@@ -62,6 +63,33 @@ const DashboardLayoutWithAuth: React.FC<DashboardLayoutProps> = ({
       router.push('/login');
     }
   }, [session, status, router]);
+
+  // Fetch handoff request count for managers and users with Human Handoff access
+  useEffect(() => {
+    const fetchHandoffCount = async () => {
+      if (status !== 'authenticated' || (!isManager && isAdmin)) return;
+
+      try {
+        const response = await fetch('/api/conversations?mode=Human&status=waiting');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setHandoffRequestCount(data.conversations?.length || 0);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching handoff count:', error);
+      }
+    };
+
+    // Fetch immediately
+    fetchHandoffCount();
+
+    // Poll every 30 seconds for real-time updates
+    const interval = setInterval(fetchHandoffCount, 30000);
+
+    return () => clearInterval(interval);
+  }, [status, isManager, isAdmin]);
 
   // Get the base dashboard path based on user role
   const getDashboardBasePath = () => {
@@ -98,6 +126,7 @@ const DashboardLayoutWithAuth: React.FC<DashboardLayoutProps> = ({
       return [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard, path: basePath },
         { id: 'bots', label: 'Bots', icon: Bot, path: `${basePath}/bots` },
+        { id: 'human-handoff', label: 'Human Handoff', icon: HandHeart, path: `${basePath}/human-handoff` },
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: `${basePath}/analytics` },
         { id: 'settings', label: 'Settings', icon: Settings, path: `${basePath}/settings` },
         { id: 'billing', label: 'Billing', icon: CreditCard, path: `${basePath}/billing` },
@@ -162,7 +191,8 @@ const DashboardLayoutWithAuth: React.FC<DashboardLayoutProps> = ({
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeSection === item.id;
-              
+              const showBadge = item.id === 'human-handoff' && handoffRequestCount > 0;
+
               return (
                 <button
                   key={item.id}
@@ -173,11 +203,25 @@ const DashboardLayoutWithAuth: React.FC<DashboardLayoutProps> = ({
                     isActive
                       ? 'bg-blue-50 text-blue-700'
                       : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                  } relative`}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-blue-700' : 'text-[#6566F1]'} flex-shrink-0`} />
-                  <div className={`overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
+                  <div className="relative">
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-blue-700' : 'text-[#6566F1]'} flex-shrink-0`} />
+                    {/* Badge on icon when sidebar is collapsed */}
+                    {showBadge && sidebarCollapsed && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                        {handoffRequestCount > 9 ? '9+' : handoffRequestCount}
+                      </span>
+                    )}
+                  </div>
+                  <div className={`overflow-hidden transition-all duration-300 flex items-center ${sidebarCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
                     <span className="ml-3 whitespace-nowrap">{item.label}</span>
+                    {/* Badge next to label when sidebar is expanded */}
+                    {showBadge && !sidebarCollapsed && (
+                      <span className="ml-2 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full animate-pulse">
+                        {handoffRequestCount > 99 ? '99+' : handoffRequestCount}
+                      </span>
+                    )}
                   </div>
                 </button>
               );

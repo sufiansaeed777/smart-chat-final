@@ -328,12 +328,20 @@ export async function POST(request: NextRequest) {
                             ? metadata.wordpress_user
                             : '');
 
+      // Extract page URL from metadata or referer
+      const pageUrl = metadata?.page_url || metadata?.pageUrl || request.headers.get('referer') || '';
+
       conversation = conversationRepository.create({
         botId: botId,
         userId: userId,
         sessionId: actualSessionId,
         guestName: visitorName,
         guestId: `LC-${guestIdSuffix}`,
+        // Dedicated visitor info fields for Human Handoff display
+        visitorEmail: visitorEmail,
+        pageUrl: pageUrl,
+        country: country,
+        ipAddress: visitorIp,
         mode: 'AI', // Start in AI mode
         status: 'active',
         messages: [],
@@ -344,7 +352,7 @@ export async function POST(request: NextRequest) {
           source: 'wordpress',
           userIp: visitorIp,
           userAgent: metadata?.user_agent || metadata?.userAgent || request.headers.get('user-agent') || '',
-          pageUrl: metadata?.page_url || metadata?.pageUrl || request.headers.get('referer') || '',
+          pageUrl: pageUrl,
           country: country,
           email: visitorEmail,
           // PHASE 4: Track language for analytics

@@ -38,6 +38,18 @@ export class Conversation {
   @Column({ type: 'varchar', length: 100, nullable: true })
   guestId?: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  visitorEmail?: string;
+
+  @Column({ type: 'text', nullable: true })
+  pageUrl?: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  country?: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  ipAddress?: string;
+
   // Handoff fields
   @Column({
     type: 'enum',

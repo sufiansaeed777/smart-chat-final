@@ -162,6 +162,15 @@ export async function GET(request: NextRequest) {
         visitorName = conv.guestName;
       }
 
+      // Get visitor email from entity field, metadata, or user
+      const finalVisitorEmail = conv.visitorEmail || visitorEmail || metadata.email || '';
+
+      // Get page URL from entity field or metadata
+      const finalPageUrl = conv.pageUrl || metadata.pageUrl || metadata.page_url || metadata.url || metadata.referrer || '';
+
+      // Get country from entity field or metadata
+      const finalCountry = conv.country || metadata.country || metadata.location || '';
+
       // Get first message time and text
       const firstMessageTime = conv.messages?.length > 0
         ? conv.messages[0].timestamp
@@ -179,9 +188,10 @@ export async function GET(request: NextRequest) {
         sessionId: conv.sessionId,
         guestName: visitorName,
         guestId: conv.guestId || `LC-${fallbackId}`,
-        visitorEmail: visitorEmail || metadata.email || '',
-        pageUrl: metadata.pageUrl || metadata.page_url || metadata.url || metadata.referrer || '',
-        country: metadata.country || metadata.location || '',
+        visitorEmail: finalVisitorEmail,
+        pageUrl: finalPageUrl,
+        country: finalCountry,
+        ipAddress: conv.ipAddress || metadata.ipAddress || metadata.ip || '',
         mode: conv.mode,
         status: conv.status,
         messages: conv.messages || [],
