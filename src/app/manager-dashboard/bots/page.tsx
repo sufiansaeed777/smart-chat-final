@@ -368,8 +368,10 @@ const BotsPage = () => {
     const documentToSelect = availableDocuments.find(d => d.id === documentId);
     if (!documentToSelect) return;
 
+    const docNameLower = (documentToSelect.name || '').toLowerCase().trim();
+
     setNewBot(prev => {
-      // If document is already selected by ID, remove it
+      // If document is already selected by ID, remove it (toggle behavior)
       if (prev.documentIds.includes(documentId)) {
         return {
           ...prev,
@@ -377,15 +379,27 @@ const BotsPage = () => {
         };
       }
 
-      // Check if a document with the same name is already selected
+      // Check if a document with the same name is already selected from available docs
       const selectedDocs = prev.documentIds
         .map(id => availableDocuments.find(d => d.id === id))
         .filter(Boolean);
 
-      const duplicateName = selectedDocs.some(doc => doc.name === documentToSelect.name);
+      const duplicateInSelected = selectedDocs.some(
+        doc => (doc.name || '').toLowerCase().trim() === docNameLower
+      );
 
-      if (duplicateName) {
-        showNotification('warning', 'Duplicate Document', `A document named "${documentToSelect.name}" is already selected. Please remove the existing one first or choose a different file.`);
+      if (duplicateInSelected) {
+        showNotification('warning', 'Duplicate Document', `A document named "${documentToSelect.name}" is already selected.`);
+        return prev; // Return unchanged state
+      }
+
+      // Check if a document with the same name was newly uploaded
+      const duplicateInNewDocs = prev.newDocuments.some(
+        doc => (doc.name || doc.originalName || '').toLowerCase().trim() === docNameLower
+      );
+
+      if (duplicateInNewDocs) {
+        showNotification('warning', 'Duplicate Document', `A document named "${documentToSelect.name}" was already uploaded.`);
         return prev; // Return unchanged state
       }
 
@@ -408,28 +422,49 @@ const BotsPage = () => {
     try {
       const formData = new FormData();
       let hasValidFiles = false;
+      const filesBeingAdded: string[] = []; // Track files being added in this batch
 
       Array.from(files).forEach(file => {
+        const fileNameLower = file.name.toLowerCase().trim();
+
         // FIX: Check for duplicate files before adding to FormData
-        // 1. Check against newly uploaded documents in this session
-        const isDuplicateInNewDocs = newBot.newDocuments.some(
-          doc => doc.name?.toLowerCase() === file.name.toLowerCase()
-        );
-        if (isDuplicateInNewDocs) {
-          showNotification('warning', 'Duplicate File', `File "${file.name}" is already selected.`);
+        // 1. Check if this exact file is already being added in this batch (multi-select same file)
+        if (filesBeingAdded.includes(fileNameLower)) {
+          showNotification('warning', 'Duplicate File', `File "${file.name}" is already being uploaded.`);
           return; // Skip this file
         }
 
-        // 2. Check against existing documents in the database
+        // 2. Check against newly uploaded documents in this session
+        const isDuplicateInNewDocs = newBot.newDocuments.some(
+          doc => (doc.name || doc.originalName || '').toLowerCase().trim() === fileNameLower
+        );
+        if (isDuplicateInNewDocs) {
+          showNotification('warning', 'Duplicate File', `File "${file.name}" is already added.`);
+          return; // Skip this file
+        }
+
+        // 3. Check against selected documents from available list
+        const isDuplicateInSelected = newBot.documentIds.some(docId => {
+          const doc = availableDocuments.find(d => d.id === docId);
+          return doc && (doc.name || '').toLowerCase().trim() === fileNameLower;
+        });
+        if (isDuplicateInSelected) {
+          showNotification('warning', 'Duplicate File', `File "${file.name}" is already selected from knowledge base.`);
+          return; // Skip this file
+        }
+
+        // 4. Check against ALL existing documents in the database (not just selected)
         const isDuplicateInAvailable = availableDocuments.some(
-          doc => doc.name?.toLowerCase() === file.name.toLowerCase()
+          doc => (doc.name || '').toLowerCase().trim() === fileNameLower
         );
         if (isDuplicateInAvailable) {
           showNotification('warning', 'Duplicate File', `Document "${file.name}" already exists in knowledge base.`);
           return; // Skip this file
         }
 
+        // File passed all duplicate checks, add it
         formData.append('documents', file);
+        filesBeingAdded.push(fileNameLower);
         hasValidFiles = true;
       });
 
