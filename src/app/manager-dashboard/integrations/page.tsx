@@ -21,15 +21,15 @@ interface Token {
   last_used?: string;
 }
 
-// App definitions
+// App definitions with official logo URLs
 const apps = [
   {
     id: 'wordpress',
     name: 'WordPress',
     description: 'Add chatbot to your WordPress website with our official plugin',
-    icon: '/wordpress-logo.png',
-    fallbackIcon: '🌐',
-    color: 'from-blue-500 to-blue-600',
+    icon: 'https://s.w.org/style/images/about/WordPress-logotype-simplified.png',
+    fallbackIcon: 'W',
+    color: 'from-[#21759b] to-[#21759b]',
     bgColor: 'bg-blue-50',
     borderColor: 'border-blue-200',
     status: 'active'
@@ -38,9 +38,9 @@ const apps = [
     id: 'facebook',
     name: 'Facebook Messenger',
     description: 'Connect your bot to Facebook Messenger',
-    icon: null,
-    fallbackIcon: '📘',
-    color: 'from-blue-600 to-blue-700',
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/b/be/Facebook_Messenger_logo_2020.svg',
+    fallbackIcon: 'M',
+    color: 'from-[#0084ff] to-[#0084ff]',
     bgColor: 'bg-blue-50',
     borderColor: 'border-blue-200',
     status: 'coming_soon'
@@ -49,9 +49,9 @@ const apps = [
     id: 'whatsapp',
     name: 'WhatsApp',
     description: 'Integrate with WhatsApp Business API',
-    icon: null,
-    fallbackIcon: '💬',
-    color: 'from-green-500 to-green-600',
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg',
+    fallbackIcon: 'W',
+    color: 'from-[#25D366] to-[#25D366]',
     bgColor: 'bg-green-50',
     borderColor: 'border-green-200',
     status: 'coming_soon'
@@ -60,9 +60,9 @@ const apps = [
     id: 'discord',
     name: 'Discord',
     description: 'Add your bot to Discord servers',
-    icon: null,
-    fallbackIcon: '🎮',
-    color: 'from-indigo-500 to-indigo-600',
+    icon: 'https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a69f118df70ad7828d4_icon_clyde_blurple_RGB.svg',
+    fallbackIcon: 'D',
+    color: 'from-[#5865F2] to-[#5865F2]',
     bgColor: 'bg-indigo-50',
     borderColor: 'border-indigo-200',
     status: 'coming_soon'
@@ -71,9 +71,9 @@ const apps = [
     id: 'instagram',
     name: 'Instagram',
     description: 'Connect to Instagram Direct Messages',
-    icon: null,
-    fallbackIcon: '📸',
-    color: 'from-pink-500 to-purple-600',
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg',
+    fallbackIcon: 'I',
+    color: 'from-[#E4405F] to-[#833AB4]',
     bgColor: 'bg-pink-50',
     borderColor: 'border-pink-200',
     status: 'coming_soon'
@@ -82,9 +82,9 @@ const apps = [
     id: 'telegram',
     name: 'Telegram',
     description: 'Deploy your bot on Telegram',
-    icon: null,
-    fallbackIcon: '✈️',
-    color: 'from-sky-500 to-sky-600',
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg',
+    fallbackIcon: 'T',
+    color: 'from-[#0088cc] to-[#0088cc]',
     bgColor: 'bg-sky-50',
     borderColor: 'border-sky-200',
     status: 'coming_soon'
@@ -93,9 +93,9 @@ const apps = [
     id: 'shopify',
     name: 'Shopify',
     description: 'Add chatbot to your Shopify store',
-    icon: null,
-    fallbackIcon: '🛍️',
-    color: 'from-green-600 to-green-700',
+    icon: 'https://cdn.shopify.com/shopifycloud/brochure/assets/brand-assets/shopify-logo-primary-logo-456baa801ee66a0a435671082365958316831c9960c480451f0571f2571f2471.svg',
+    fallbackIcon: 'S',
+    color: 'from-[#96bf48] to-[#96bf48]',
     bgColor: 'bg-green-50',
     borderColor: 'border-green-200',
     status: 'coming_soon'
@@ -105,7 +105,7 @@ const apps = [
     name: 'Custom Widget',
     description: 'Embed on any website with JavaScript',
     icon: null,
-    fallbackIcon: '🔧',
+    fallbackIcon: '</>',
     color: 'from-gray-600 to-gray-700',
     bgColor: 'bg-gray-50',
     borderColor: 'border-gray-200',
@@ -115,9 +115,9 @@ const apps = [
     id: 'slack',
     name: 'Slack',
     description: 'Add your bot to Slack workspaces',
-    icon: null,
-    fallbackIcon: '💼',
-    color: 'from-purple-500 to-purple-600',
+    icon: 'https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png',
+    fallbackIcon: '#',
+    color: 'from-[#4A154B] to-[#4A154B]',
     bgColor: 'bg-purple-50',
     borderColor: 'border-purple-200',
     status: 'coming_soon'
@@ -183,19 +183,27 @@ export default function IntegrationsPage() {
     if (!selectedBot || !session?.user?.id) return;
 
     setGeneratingToken(true);
-    const secretKey = 'wp_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    const token = `${session.user.id}:${selectedBot.id}:${secretKey}`;
+    // Clear existing tokens first to avoid showing stale data
+    setExistingTokens([]);
+    setWpToken('');
+
+    // Generate a truly unique token with timestamp to ensure uniqueness
+    const timestamp = Date.now().toString(36);
+    const secretKey = 'wp_' + timestamp + '_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const newToken = `${session.user.id}:${selectedBot.id}:${secretKey}`;
 
     try {
       const response = await fetch('/api/integrations/save-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ botId: selectedBot.id, token, deactivateOld: true }),
+        body: JSON.stringify({ botId: selectedBot.id, token: newToken, deactivateOld: true }),
       });
 
       if (response.ok) {
-        setWpToken(token);
+        // Set the NEW token immediately - this takes priority in display
+        setWpToken(newToken);
         setCurrentStep(3);
+        // Refresh existing tokens from DB (should now show the new token)
         fetchExistingTokens(selectedBot.id);
       } else {
         const data = await response.json();
@@ -426,7 +434,6 @@ export default function IntegrationsPage() {
                           <div className="flex items-center justify-between">
                             <div>
                               <h4 className="font-medium text-gray-900 group-hover:text-[#6566F1]">{bot.name}</h4>
-                              <p className="text-sm text-gray-500">Model: {bot.model || 'gpt-3.5-turbo'}</p>
                             </div>
                             <div className="flex items-center gap-2">
                               <Badge className={`${
@@ -454,7 +461,6 @@ export default function IntegrationsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-gray-900 font-medium">{selectedBot.name}</p>
-                        <p className="text-sm text-gray-500">Model: {selectedBot.model || 'gpt-3.5-turbo'}</p>
                       </div>
                       <Button
                         variant="outline"
