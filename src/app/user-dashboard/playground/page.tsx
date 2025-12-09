@@ -279,17 +279,13 @@ export default function TestBotPage() {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      if (e.shiftKey) {
-        // Allow Shift + Enter for new line (default behavior)
-        return;
-      } else {
-        // Enter without Shift sends the message
-        e.preventDefault();
-        sendMessage();
-      }
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      // Enter without Shift sends the message
+      e.preventDefault();
+      sendMessage();
     }
+    // Shift + Enter allows new line (default behavior, no action needed)
   };
 
   // Filter bots based on search and status
@@ -662,7 +658,7 @@ export default function TestBotPage() {
                   <textarea
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
+                    onKeyDown={handleKeyDown}
                     placeholder={showBotSelection ? "Select a bot to start chatting..." : "Type your message here..."}
                         className="w-full pl-4 pr-12 py-3 border-2 border-gray-200/60 rounded-xl focus:border-2 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus-visible:outline-none transition-all duration-200 bg-white/90 backdrop-blur-sm text-gray-900 placeholder-gray-500 resize-none min-h-[48px] max-h-24 shadow-lg shadow-gray-200/30 text-sm font-medium"
                     disabled={isLoading || showBotSelection}

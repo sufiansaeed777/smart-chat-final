@@ -57,8 +57,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Calculate expiration date (default 30 days, max 365 days)
-    const days = Math.min(Math.max(expiresInDays || 30, 1), 365);
+    // Calculate expiration date (default 365 days / 1 year, max 730 days / 2 years)
+    // Changed from 30 days default as tokens shouldn't expire frequently
+    const days = Math.min(Math.max(expiresInDays || 365, 1), 730);
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + days);
 

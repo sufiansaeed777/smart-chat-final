@@ -165,9 +165,11 @@ class Synofex_AJAX_Handler {
 
         $bot_id = sanitize_text_field($_POST['bot_id'] ?? 'default');
         $session_id = sanitize_text_field($_POST['session_id'] ?? '');
+        $conversation_id = sanitize_text_field($_POST['conversation_id'] ?? '');
         $name = sanitize_text_field($_POST['name'] ?? '');
         $email = sanitize_email($_POST['email'] ?? '');
-        $issue = sanitize_textarea_field($_POST['issue'] ?? '');
+        // FIX: JS sends 'description' not 'issue'
+        $issue = sanitize_textarea_field($_POST['description'] ?? $_POST['issue'] ?? '');
 
         // Validate required fields
         if (empty($name)) {
@@ -189,7 +191,7 @@ class Synofex_AJAX_Handler {
         $this->init_api_client();
 
         // Report issue with name, email, and issue fields
-        $response = $this->api_client->report_issue($bot_id, 'issue_report', $issue, $session_id, [
+        $response = $this->api_client->report_issue($bot_id, 'issue_report', $issue, $conversation_id, [
             'name' => $name,
             'email' => $email,
             'source' => 'wordpress_plugin'

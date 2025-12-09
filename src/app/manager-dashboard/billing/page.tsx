@@ -13,7 +13,8 @@ import {
   Plus,
   AlertCircle,
   Package,
-  X
+  X,
+  Download
 } from 'lucide-react';
 
 interface SubscriptionData {
@@ -184,6 +185,30 @@ const BillingPage: React.FC = () => {
       alert('An error occurred. Please try again.');
     } finally {
       setIsUpgrading(false);
+    }
+  };
+
+  // Handle download invoice
+  const handleDownloadInvoice = async (invoiceId: string) => {
+    try {
+      const response = await fetch(`/api/billing/invoice/${invoiceId}/download`);
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `invoice-${invoiceId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        alert('Failed to download invoice. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      alert('An error occurred while downloading the invoice.');
     }
   };
 
@@ -791,15 +816,25 @@ const BillingPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-left">
-                      <button
-                        onClick={() => {
-                          setSelectedInvoice(invoice);
-                          setShowInvoiceModal(true);
-                        }}
-                        className="text-[#6566F1] hover:text-[#5A5BD9] text-sm font-medium transition-colors"
-                      >
-                        View Invoice
-                      </button>
+                      <div className="flex items-center space-x-3">
+                        <button
+                          onClick={() => {
+                            setSelectedInvoice(invoice);
+                            setShowInvoiceModal(true);
+                          }}
+                          className="text-[#6566F1] hover:text-[#5A5BD9] text-sm font-medium transition-colors"
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={() => handleDownloadInvoice(invoice.id)}
+                          className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors"
+                          title="Download Invoice PDF"
+                        >
+                          <Download className="w-4 h-4" />
+                          <span>Export</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -893,7 +928,14 @@ const BillingPage: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 pb-6 pt-2">
+            <div className="px-6 pb-6 pt-2 space-y-4">
+              <button
+                onClick={() => handleDownloadInvoice(selectedInvoice.id)}
+                className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-[#6566F1] text-white rounded-xl hover:bg-[#5A5BD9] font-medium transition-colors"
+              >
+                <Download className="w-5 h-5" />
+                <span>Download Invoice PDF</span>
+              </button>
               <div className="bg-gray-50 rounded-xl p-4 text-center">
                 <p className="text-gray-700 font-medium mb-1">Thank you for your business!</p>
                 <p className="text-sm text-gray-500">Questions? Contact us at billing@smartchat.com</p>

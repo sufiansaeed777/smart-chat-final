@@ -96,14 +96,16 @@ export async function GET(request: NextRequest) {
       .where('conversation.botId IN (:...botIds)', { botIds })
       .getCount();
 
-    // FIX: Count unique users who messaged (website visitors, not the dashboard user)
-    const uniqueUsersResult = await conversationRepository
+    // FIX: Count unique visitors who messaged
+    // For WordPress/external visitors: use guestId or sessionId
+    // For internal users: use distinct combinations
+    const uniqueVisitorsResult = await conversationRepository
       .createQueryBuilder('conversation')
-      .select('COUNT(DISTINCT conversation.userId)', 'count')
+      .select('COUNT(DISTINCT COALESCE(conversation.guestId, conversation.sessionId, conversation.id))', 'count')
       .where('conversation.botId IN (:...botIds)', { botIds })
       .getRawOne();
 
-    const totalUsersWhoMessaged = parseInt(uniqueUsersResult?.count || '0');
+    const totalUsersWhoMessaged = parseInt(uniqueVisitorsResult?.count || '0');
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -114,13 +116,16 @@ export async function GET(request: NextRequest) {
       .andWhere('conversation.createdAt >= :sevenDaysAgo', { sevenDaysAgo })
       .getCount();
 
+    // FIX: Active chats should check lastMessageAt (recent activity) not createdAt
+    // A conversation is "active" if it had activity in the last 24 hours
     const oneDayAgo = new Date();
     oneDayAgo.setDate(oneDayAgo.getDate() - 1);
 
     const activeConversations = await conversationRepository
       .createQueryBuilder('conversation')
       .where('conversation.botId IN (:...botIds)', { botIds })
-      .andWhere('conversation.createdAt >= :oneDayAgo', { oneDayAgo })
+      .andWhere('(conversation.lastMessageAt >= :oneDayAgo OR (conversation.lastMessageAt IS NULL AND conversation.createdAt >= :oneDayAgo))', { oneDayAgo })
+      .andWhere('conversation.status != :completedStatus', { completedStatus: 'completed' })
       .getCount();
 
     // ===== CHAT VOLUME OVER TIME (Last 30 days) =====
@@ -142,12 +147,56 @@ export async function GET(request: NextRequest) {
       conversations: parseInt(item.count)
     }));
 
-    // ===== LANGUAGES BREAKDOWN =====
+    // ===== LANGUAGES BREAKDOWN & RESPONSE TIME CALCULATION =====
     const conversations = await conversationRepository
       .createQueryBuilder('conversation')
       .where('conversation.botId IN (:...botIds)', { botIds })
       .andWhere('conversation.createdAt >= :thirtyDaysAgo', { thirtyDaysAgo })
       .getMany();
+
+    // Calculate average response time from actual message data
+    let totalResponseTimeMs = 0;
+    let responseCount = 0;
+
+    conversations.forEach(conv => {
+      if (conv.messages && Array.isArray(conv.messages) && conv.messages.length >= 2) {
+        for (let i = 0; i < conv.messages.length - 1; i++) {
+          const currentMsg = conv.messages[i];
+          const nextMsg = conv.messages[i + 1];
+
+          // If current is visitor/user and next is bot/agent, calculate response time
+          if ((currentMsg.sender === 'visitor' || currentMsg.sender === 'user') &&
+              (nextMsg.sender === 'bot' || nextMsg.sender === 'agent')) {
+            const userTime = new Date(currentMsg.timestamp).getTime();
+            const botTime = new Date(nextMsg.timestamp).getTime();
+            const responseTime = botTime - userTime;
+
+            // Only count valid response times (positive and less than 1 hour)
+            if (responseTime > 0 && responseTime < 3600000) {
+              totalResponseTimeMs += responseTime;
+              responseCount++;
+            }
+          }
+        }
+      }
+    });
+
+    // Calculate average response time
+    let avgResponseTime = '0 min';
+    if (responseCount > 0) {
+      const avgMs = totalResponseTimeMs / responseCount;
+      const avgSeconds = Math.round(avgMs / 1000);
+
+      if (avgSeconds < 60) {
+        avgResponseTime = `${avgSeconds} sec`;
+      } else if (avgSeconds < 3600) {
+        const minutes = Math.round(avgSeconds / 60 * 10) / 10;
+        avgResponseTime = `${minutes} min`;
+      } else {
+        const hours = Math.round(avgSeconds / 3600 * 10) / 10;
+        avgResponseTime = `${hours} hr`;
+      }
+    }
 
     const languageCounts: { [key: string]: number } = {};
     conversations.forEach(conv => {
@@ -270,7 +319,7 @@ export async function GET(request: NextRequest) {
         totalUsersWhoMessaged,
         recentConversations,
         activeConversations,
-        avgResponseTime: totalConversations > 0 ? '2.3 min' : '0 min'
+        avgResponseTime
       },
       chatVolume,
       languages,

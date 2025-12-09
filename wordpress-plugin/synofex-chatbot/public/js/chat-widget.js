@@ -952,27 +952,73 @@
             });
         },
 
-        // End chat
+        // End chat - Closes current session and starts fresh on next message
         endChat: function() {
             if (confirm('Are you sure you want to end this chat?')) {
-                // Clear chat and reset
+                // Call API to mark conversation as completed (if we have a conversation ID)
+                if (this.conversationId) {
+                    this.closeConversationOnServer(this.conversationId);
+                }
+
+                // Clear chat UI
                 $('#synofex-chat-messages').empty();
-                localStorage.removeItem('synofex_chat_history');
+
+                // Clear all session data - CRITICAL: Generate NEW sessionId for next conversation
+                const token = window.synofexChatConfig?.token || 'default';
+                const storageKey = 'synofex_session_id_' + token.substring(0, 8);
+                const historyKey = 'synofex_chat_history_' + token.substring(0, 8);
+
+                // Remove old session and generate new one
+                localStorage.removeItem(storageKey);
+                localStorage.removeItem(historyKey);
+                localStorage.removeItem('synofex_conversation_id');
+
+                // Generate NEW session ID for next conversation
+                this.sessionId = 'wp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                this.saveSessionId(this.sessionId);
+
+                // Clear conversation tracking
+                this.conversationId = null;
                 this.displayedMessageIds.clear();
                 this.userMessageCount = 0;
                 this.saveMessageCount();
                 $('#synofex-action-buttons').hide();
-                this.conversationId = null;
-                localStorage.removeItem('synofex_conversation_id');
 
-                // Add welcome message
+                // Reset mode to AI
+                this.conversationMode = 'AI';
+                $('.synofex-mode-indicator').remove();
+
+                // Add welcome message for new session
                 const welcomeId = `bot-welcome-${Date.now()}`;
                 this.displayedMessageIds.add(welcomeId);
                 this.addMessage(this.config.welcomeMessage || 'Hello! How can I help you today?', 'bot', welcomeId);
 
                 // Close chat window
                 this.closeChat();
+
+                console.log('Synofex Chat: Session ended. New session ID:', this.sessionId);
             }
+        },
+
+        // Close conversation on server (mark as completed)
+        closeConversationOnServer: function(conversationId) {
+            // Call API to close conversation - fire and forget
+            $.ajax({
+                url: this.apiUrl + '/api/conversations/' + conversationId + '/close',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    status: 'completed',
+                    reason: 'User ended chat'
+                }),
+                success: (response) => {
+                    console.log('Synofex Chat: Conversation closed on server');
+                },
+                error: (xhr) => {
+                    // Silently fail - not critical
+                    console.log('Synofex Chat: Could not close conversation on server');
+                }
+            });
         }
     };
 

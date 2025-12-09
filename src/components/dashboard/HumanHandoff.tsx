@@ -460,16 +460,54 @@ const HumanHandoff = () => {
   };
 
   // Helper to format message timestamp in GMT 0
+  // Shows date for older messages, time only for today's messages
   const formatMessageTime = (timestamp: string | undefined) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
     if (isNaN(date.getTime())) return timestamp; // Return original if can't parse
-    return date.toLocaleString('en-US', {
+
+    const now = new Date();
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const messageDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+
+    // Check if message is from today
+    const isToday = today.getTime() === messageDay.getTime();
+
+    // Check if message is from yesterday
+    const yesterday = new Date(today);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+    const isYesterday = yesterday.getTime() === messageDay.getTime();
+
+    // Check if message is from this year
+    const isThisYear = date.getUTCFullYear() === now.getUTCFullYear();
+
+    const timeStr = date.toLocaleString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
       timeZone: 'UTC'
-    }) + ' GMT';
+    });
+
+    if (isToday) {
+      return timeStr + ' GMT';
+    } else if (isYesterday) {
+      return `Yesterday, ${timeStr} GMT`;
+    } else if (isThisYear) {
+      const dateStr = date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC'
+      });
+      return `${dateStr}, ${timeStr} GMT`;
+    } else {
+      const dateStr = date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        timeZone: 'UTC'
+      });
+      return `${dateStr}, ${timeStr} GMT`;
+    }
   };
 
   // Count handoff requests (conversations where mode is Human and status is waiting)

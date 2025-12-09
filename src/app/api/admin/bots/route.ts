@@ -48,10 +48,13 @@ export async function GET(request: NextRequest) {
 
     // Get real conversation counts for each bot
     const botIds = bots.map(bot => bot.id);
-    let conversationCounts = [];
+    let conversationCounts: any[] = [];
+    let completedCounts: any[] = [];
+    let allConversations: any[] = [];
 
     // Only query conversations if there are bots
     if (botIds.length > 0) {
+      // Get total conversation counts
       conversationCounts = await conversationRepository
         .createQueryBuilder('conversation')
         .select('conversation.botId')
@@ -59,43 +62,133 @@ export async function GET(request: NextRequest) {
         .where('conversation.botId IN (:...botIds)', { botIds })
         .groupBy('conversation.botId')
         .getRawMany();
+
+      // Get completed conversation counts for resolution rate
+      completedCounts = await conversationRepository
+        .createQueryBuilder('conversation')
+        .select('conversation.botId')
+        .addSelect('COUNT(*)', 'count')
+        .where('conversation.botId IN (:...botIds)', { botIds })
+        .andWhere('conversation.status = :status', { status: 'completed' })
+        .groupBy('conversation.botId')
+        .getRawMany();
+
+      // Get all conversations with messages for response time calculation
+      allConversations = await conversationRepository
+        .createQueryBuilder('conversation')
+        .select(['conversation.botId', 'conversation.messages', 'conversation.status'])
+        .where('conversation.botId IN (:...botIds)', { botIds })
+        .getMany();
     }
 
-    // Create a map of botId to conversation count
-    // Note: getRawMany() returns keys with format "alias_columnName" or just column name depending on DB
+    // Create maps for counts
     const conversationCountMap = conversationCounts.reduce((acc, item) => {
-      // Try different possible key formats from raw query
       const botId = item.conversation_botId || item.botId || item.bot_id || item['conversation_bot_id'];
       const count = parseInt(item.count || item.COUNT || '0');
-      if (botId) {
-        acc[botId] = count;
-      }
+      if (botId) acc[botId] = count;
       return acc;
     }, {} as Record<string, number>);
 
-    // Transform the data to match the expected format
-    const formattedBots = bots.map(bot => ({
-      id: bot.id,
-      name: bot.name,
-      description: bot.description,
-      domain: bot.domain,
-      status: bot.status,
-      category: bot.category || 'General',
-      conversations: conversationCountMap[bot.id] || 0, // Use real conversation count
-      users: bot.assignments?.length || 0,
-      totalUsers: bot.assignments?.length || 0,
-      lastActive: bot.lastActive ? new Date(bot.lastActive).toLocaleString() : 'Never',
-      assignedUsers: bot.assignments?.map(assignment => assignment.user?.email).filter(Boolean) || [],
-      createdBy: bot.createdBy || 'Unknown',
-      createdAt: bot.createdAt.toISOString().split('T')[0],
-      lastConversation: bot.lastActive ? new Date(bot.lastActive).toISOString().split('T')[0] : null,
-      documents: bot.botDocuments?.map(bd => ({
-        id: bd.document.id,
-        name: bd.document.name,
-        type: bd.document.type,
-        size: Number(bd.document.size) || 0
-      })) || []
-    }));
+    const completedCountMap = completedCounts.reduce((acc, item) => {
+      const botId = item.conversation_botId || item.botId || item.bot_id || item['conversation_bot_id'];
+      const count = parseInt(item.count || item.COUNT || '0');
+      if (botId) acc[botId] = count;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Calculate response times per bot from message data
+    const responseTimeMap: Record<string, { totalMs: number; count: number }> = {};
+
+    allConversations.forEach(conv => {
+      if (!conv.messages || !Array.isArray(conv.messages) || conv.messages.length < 2) return;
+
+      const botId = conv.botId;
+      if (!responseTimeMap[botId]) {
+        responseTimeMap[botId] = { totalMs: 0, count: 0 };
+      }
+
+      // Calculate response times between visitor messages and bot responses
+      for (let i = 0; i < conv.messages.length - 1; i++) {
+        const currentMsg = conv.messages[i];
+        const nextMsg = conv.messages[i + 1];
+
+        if ((currentMsg.sender === 'visitor' || currentMsg.sender === 'user') &&
+            (nextMsg.sender === 'bot' || nextMsg.sender === 'agent')) {
+          const userTime = new Date(currentMsg.timestamp).getTime();
+          const botTime = new Date(nextMsg.timestamp).getTime();
+          const responseTime = botTime - userTime;
+
+          // Only count valid response times (positive and less than 5 minutes)
+          if (responseTime > 0 && responseTime < 300000) {
+            responseTimeMap[botId].totalMs += responseTime;
+            responseTimeMap[botId].count++;
+          }
+        }
+      }
+    });
+
+    // Transform the data to match the expected format with analytics
+    const formattedBots = bots.map(bot => {
+      const totalConversations = conversationCountMap[bot.id] || 0;
+      const completedConversations = completedCountMap[bot.id] || 0;
+
+      // Calculate resolution rate (% of completed conversations)
+      const resolutionRate = totalConversations > 0
+        ? Math.round((completedConversations / totalConversations) * 100)
+        : 0;
+
+      // Calculate average response time in seconds
+      const responseData = responseTimeMap[bot.id];
+      const avgResponseTimeMs = responseData && responseData.count > 0
+        ? responseData.totalMs / responseData.count
+        : 0;
+      const responseTime = Math.round(avgResponseTimeMs / 100) / 10; // Convert to seconds with 1 decimal
+
+      // Calculate satisfaction score (1-5 scale based on resolution rate and response time)
+      // Higher resolution rate and lower response time = higher satisfaction
+      let satisfaction = 0;
+      if (totalConversations > 0) {
+        // Base score from resolution rate (0-2.5 points)
+        const resolutionScore = (resolutionRate / 100) * 2.5;
+        // Response time score (0-2.5 points) - faster is better
+        // Under 2 seconds = 2.5, under 5 seconds = 2.0, under 10 seconds = 1.5, else = 1.0
+        let responseScore = 1.0;
+        if (responseTime > 0 && responseTime < 2) responseScore = 2.5;
+        else if (responseTime >= 2 && responseTime < 5) responseScore = 2.0;
+        else if (responseTime >= 5 && responseTime < 10) responseScore = 1.5;
+        else if (responseTime === 0) responseScore = 2.0; // No data, assume average
+
+        satisfaction = Math.round((resolutionScore + responseScore) * 10) / 10;
+        satisfaction = Math.min(5, Math.max(0, satisfaction)); // Clamp between 0-5
+      }
+
+      return {
+        id: bot.id,
+        name: bot.name,
+        description: bot.description,
+        domain: bot.domain,
+        status: bot.status,
+        category: bot.category || 'General',
+        conversations: totalConversations,
+        users: bot.assignments?.length || 0,
+        totalUsers: bot.assignments?.length || 0,
+        // Analytics metrics
+        satisfaction,
+        responseTime,
+        resolutionRate,
+        lastActive: bot.lastActive ? new Date(bot.lastActive).toLocaleString() : 'Never',
+        assignedUsers: bot.assignments?.map(assignment => assignment.user?.email).filter(Boolean) || [],
+        createdBy: bot.createdBy || 'Unknown',
+        createdAt: bot.createdAt.toISOString().split('T')[0],
+        lastConversation: bot.lastActive ? new Date(bot.lastActive).toISOString().split('T')[0] : null,
+        documents: bot.botDocuments?.map(bd => ({
+          id: bd.document.id,
+          name: bd.document.name,
+          type: bd.document.type,
+          size: Number(bd.document.size) || 0
+        })) || []
+      };
+    });
 
     return NextResponse.json({
       bots: formattedBots,

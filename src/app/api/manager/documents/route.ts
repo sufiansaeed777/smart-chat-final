@@ -165,7 +165,19 @@ export async function POST(request: NextRequest) {
 
     for (const file of files) {
       // Validate file type
-      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'text/csv', 'application/json'];
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain',
+        'text/csv',
+        'application/json',
+        'image/svg+xml',  // SVG files
+        'image/png',      // PNG images
+        'image/jpeg',     // JPEG images
+        'image/gif',      // GIF images
+        'image/webp'      // WebP images
+      ];
       if (!allowedTypes.includes(file.type)) {
         continue; // Skip invalid files
       }
