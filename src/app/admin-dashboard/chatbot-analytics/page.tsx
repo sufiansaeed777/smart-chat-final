@@ -102,39 +102,36 @@ const ChatbotAnalyticsPage: React.FC = () => {
         }
 
         // Transform bot data to analytics format
+        // Note: Real analytics would come from a dedicated analytics API/table
+        // For now, we use the actual bot data where available
         const botAnalytics: BotAnalytics[] = bots.map((bot: any) => {
-          // Calculate trend based on status and conversations
+          // Determine trend based on bot status (stable for now - real trend needs historical data)
           let trend: 'up' | 'down' | 'stable' = 'stable';
           let change = 0;
 
-          // Simple heuristic: active bots with many conversations are trending up
-          if (bot.status === 'active' && bot.conversations > 100) {
-            trend = 'up';
-            change = Math.random() * 15; // Simulated growth
+          // Use status to indicate general trend direction
+          if (bot.status === 'active') {
+            trend = 'stable';
+            change = 0;
           } else if (bot.status === 'inactive') {
             trend = 'down';
-            change = -(Math.random() * 10);
-          } else {
-            change = Math.random() * 3 - 1.5; // Small fluctuation
+            change = 0;
           }
 
-          // Calculate satisfaction from conversation count (higher activity = higher satisfaction)
-          const satisfaction = Math.min(5, 3.5 + (bot.conversations / 500));
-
-          // Calculate response time (inverse of activity)
-          const responseTime = Math.max(0.3, 3 - (bot.conversations / 1000));
-
-          // Calculate resolution rate based on status
-          const resolutionRate = bot.status === 'active' ? 85 + Math.random() * 10 : 70 + Math.random() * 15;
+          // Use actual values from API if available, otherwise show N/A indicators
+          // These metrics should ideally come from a real analytics system
+          const satisfaction = bot.satisfaction || 0; // No data = 0
+          const responseTime = bot.responseTime || 0; // No data = 0
+          const resolutionRate = bot.resolutionRate || 0; // No data = 0
 
           return {
             id: bot.id,
             name: bot.name,
-            conversations: bot.conversations,
-            users: bot.users || bot.totalUsers || 0,
-            satisfaction: parseFloat(satisfaction.toFixed(1)),
-            responseTime: parseFloat(responseTime.toFixed(1)),
-            resolutionRate: parseFloat(resolutionRate.toFixed(0)),
+            conversations: bot.conversations || 0, // Real count from API
+            users: bot.users || bot.totalUsers || 0, // Real count from API
+            satisfaction: parseFloat((satisfaction).toFixed(1)),
+            responseTime: parseFloat((responseTime).toFixed(1)),
+            resolutionRate: parseFloat((resolutionRate).toFixed(0)),
             trend,
             change: parseFloat(change.toFixed(1))
           };

@@ -62,8 +62,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Create a map of botId to conversation count
+    // Note: getRawMany() returns keys with format "alias_columnName" or just column name depending on DB
     const conversationCountMap = conversationCounts.reduce((acc, item) => {
-      acc[item.conversation_botId] = parseInt(item.count);
+      // Try different possible key formats from raw query
+      const botId = item.conversation_botId || item.botId || item.bot_id || item['conversation_bot_id'];
+      const count = parseInt(item.count || item.COUNT || '0');
+      if (botId) {
+        acc[botId] = count;
+      }
       return acc;
     }, {} as Record<string, number>);
 

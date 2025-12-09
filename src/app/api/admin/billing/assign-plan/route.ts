@@ -64,6 +64,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Only managers can have plans assigned (they are the account owners)
+    if (user.role !== 'manager') {
+      return NextResponse.json(
+        { error: 'Plans can only be assigned to managers. Regular users inherit their manager\'s plan.' },
+        { status: 400 }
+      );
+    }
+
     const previousPlan = user.subscriptionPlan;
     const isUpgrade = getPlanLevel(planName) > getPlanLevel(previousPlan);
     const isDowngrade = getPlanLevel(planName) < getPlanLevel(previousPlan);
@@ -244,6 +252,8 @@ export async function GET(request: NextRequest) {
 
     const userRepository = AppDataSource.getRepository('users');
 
+    // Only allow plan assignment to managers (not regular users)
+    // Managers are the account owners who can have subscriptions
     let query = userRepository.createQueryBuilder('user')
       .select([
         'user.id',
@@ -257,18 +267,18 @@ export async function GET(request: NextRequest) {
         'user.billingCycleStart',
         'user.billingCycleEnd',
         'user.isActive'
-      ]);
+      ])
+      .where('user.role = :managerRole', { managerRole: 'manager' }); // Only managers can have plans assigned
 
     if (search) {
-      query = query.where(
+      query = query.andWhere(
         '(user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)',
         { search: `%${search}%` }
       );
     }
 
-    if (role !== 'all') {
-      query = query.andWhere('user.role = :role', { role });
-    }
+    // Note: role filter ignored since we only show managers
+    // This is intentional - plans should only be assigned to managers
 
     query = query.orderBy('user.createdAt', 'DESC').take(50);
 
