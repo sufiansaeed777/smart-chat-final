@@ -412,12 +412,19 @@ async function getTopQuestionsAnalytics(buildConversationQuery: () => any, bots:
     if (conv.messages && Array.isArray(conv.messages)) {
       conv.messages.forEach((msg: any) => {
         if (msg.sender === 'visitor' || msg.sender === 'user') {
-          const text = msg.text.trim();
+          const text = (msg.text || '').trim();
+          if (!text) return;
+
           if (text.endsWith('?') ||
               /^(what|who|where|when|why|how|can|could|would|will|is|are|do|does)/i.test(text)) {
             const normalizedQ = text.toLowerCase().substring(0, 100);
             const existing = questionMap.get(normalizedQ);
-            const timestamp = new Date(msg.timestamp);
+
+            // Safely parse timestamp with fallback
+            let timestamp = new Date(msg.timestamp);
+            if (isNaN(timestamp.getTime())) {
+              timestamp = conv.createdAt || new Date();
+            }
 
             if (existing) {
               existing.count++;
@@ -442,12 +449,23 @@ async function getTopQuestionsAnalytics(buildConversationQuery: () => any, bots:
   const topQuestions = Array.from(questionMap.values())
     .sort((a, b) => b.count - a.count)
     .slice(0, 15)
-    .map(q => ({
-      question: q.question,
-      timesAsked: q.count,
-      botName: q.botName,
-      lastAsked: q.lastAsked.toISOString()
-    }));
+    .map(q => {
+      // Safely convert to ISO string with fallback
+      let lastAskedStr: string;
+      try {
+        lastAskedStr = q.lastAsked instanceof Date && !isNaN(q.lastAsked.getTime())
+          ? q.lastAsked.toISOString()
+          : new Date().toISOString();
+      } catch {
+        lastAskedStr = new Date().toISOString();
+      }
+      return {
+        question: q.question,
+        timesAsked: q.count,
+        botName: q.botName,
+        lastAsked: lastAskedStr
+      };
+    });
 
   return NextResponse.json({
     type: 'topQuestions',
