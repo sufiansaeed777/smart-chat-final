@@ -479,7 +479,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ apiKey, externalTrigger, onTriggered 
 
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Email *
+                  Email
                 </label>
                 <input
                   type="email"
