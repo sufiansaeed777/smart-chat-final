@@ -481,11 +481,14 @@ const BotsPage = () => {
 
       if (response.ok) {
         const data = await response.json();
+        // FIX: Add uploaded document IDs to documentIds (not newDocuments)
+        // This ensures the KB checkbox gets checked and prevents duplicates
+        const uploadedDocIds = data.documents.map((doc: any) => doc.id).filter(Boolean);
         setNewBot(prev => ({
           ...prev,
-          newDocuments: [...prev.newDocuments, ...data.documents]
+          documentIds: [...prev.documentIds, ...uploadedDocIds]
         }));
-        // Refresh available documents
+        // Refresh available documents so the uploaded files appear in KB list
         loadDocuments();
         showNotification('success', 'Upload Successful', 'Documents uploaded successfully.');
       } else {

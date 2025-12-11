@@ -508,32 +508,19 @@ export default function BotsPage() {
                 // The API returns { documents: [...] }, so we need to get the first document
                 const uploadedDoc = data.documents && data.documents.length > 0 ? data.documents[0] : null;
                 
-                if (uploadedDoc) {
-                  const newDoc = {
-                    name: uploadedDoc.name,
-                    type: uploadedDoc.type,
-                    size: uploadedDoc.size,
-                    filePath: uploadedDoc.id, // Use ID as filePath since that's what we have
-                    content: uploadedDoc.content || '',
-                    mimeType: file.type
-                  };
-
+                if (uploadedDoc && uploadedDoc.id) {
+                  // FIX: Add uploaded document ID to documentIds (not newDocuments)
+                  // This ensures the KB checkbox gets checked and prevents duplicates
                   setNewBot(prev => {
-                    // Check if file with same name already exists
-                    const existingFileIndex = prev.newDocuments.findIndex(
-                      doc => doc.name === newDoc.name
-                    );
-
-                    if (existingFileIndex !== -1) {
-                      // File exists - show toast and don't add duplicate
-                      showToast(`File "${newDoc.name}" is already selected`, 'warning');
-                      return prev; // Return unchanged state
+                    // Check if already in documentIds
+                    if (prev.documentIds.includes(uploadedDoc.id)) {
+                      showToast(`File "${uploadedDoc.name}" is already selected`, 'warning');
+                      return prev;
                     }
 
-                    // File doesn't exist - add it
                     return {
                       ...prev,
-                      newDocuments: [...prev.newDocuments, newDoc]
+                      documentIds: [...prev.documentIds, uploadedDoc.id]
                     };
                   });
                 }
