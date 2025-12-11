@@ -38,16 +38,16 @@ export class Conversation {
   @Column({ type: 'varchar', length: 100, nullable: true })
   guestId?: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ name: 'visitorEmail', type: 'varchar', length: 255, nullable: true })
   visitorEmail?: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'pageUrl', type: 'text', nullable: true })
   pageUrl?: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ name: 'country', type: 'varchar', length: 100, nullable: true })
   country?: string;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
+  @Column({ name: 'ipAddress', type: 'varchar', length: 50, nullable: true })
   ipAddress?: string;
 
   // Handoff fields
