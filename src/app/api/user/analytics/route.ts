@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    // Get user from database
-    const userRepository = AppDataSource.getRepository("users");
+    // Get user from database - Use Entity class for proper column name mapping
+    const userRepository = AppDataSource.getRepository(User);
     const user = await userRepository.findOne({
       where: { email: session.user.email }
     });
@@ -42,8 +42,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Get bot assignments for this user
-    const assignmentRepository = AppDataSource.getRepository("bot_assignments");
+    // Get bot assignments for this user - Use Entity class for proper column name mapping
+    const assignmentRepository = AppDataSource.getRepository(BotAssignment);
     const assignments = await assignmentRepository.find({
       where: {
         userId: user.id,
@@ -88,7 +88,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const conversationRepository = AppDataSource.getRepository("conversations");
+    // Use Entity class for proper column name mapping
+    const conversationRepository = AppDataSource.getRepository(Conversation);
 
     // ===== BASIC STATS =====
     const totalConversations = await conversationRepository

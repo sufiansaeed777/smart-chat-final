@@ -5,6 +5,7 @@ import { AppDataSource } from '@/config/database';
 import { User } from '@/entities/User';
 import { BotAssignment } from '@/entities/BotAssignment';
 import { Bot } from '@/entities/Bot';
+import { Conversation } from '@/entities/Conversation';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,8 +20,8 @@ export async function GET(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    // Get user from database
-    const userRepository = AppDataSource.getRepository("users");
+    // Get user from database - Use Entity class for proper column name mapping
+    const userRepository = AppDataSource.getRepository(User);
     const user = await userRepository.findOne({
       where: { email: session.user.email }
     });
@@ -30,7 +31,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get bot assignments for this user with bot and document relations
-    const assignmentRepository = AppDataSource.getRepository("bot_assignments");
+    // Use Entity class for proper column name mapping
+    const assignmentRepository = AppDataSource.getRepository(BotAssignment);
     const assignments = await assignmentRepository.find({
       where: {
         userId: user.id,
@@ -52,7 +54,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get real conversation counts from the conversations table
-    const conversationRepository = AppDataSource.getRepository("conversations");
+    // Use Entity class for proper column name mapping
+    const conversationRepository = AppDataSource.getRepository(Conversation);
     const conversationCounts = await conversationRepository
       .createQueryBuilder('conversation')
       .select('conversation.botId', 'botId')

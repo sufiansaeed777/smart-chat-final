@@ -64,80 +64,49 @@ export async function GET(request: NextRequest) {
       .orderBy('conversation.createdAt', 'DESC')
       .getMany();
 
-    // Group conversations by session (assuming conversations with same bot and user within 30 minutes are same session)
-    const conversationSessions = new Map<string, { 
-      id: string; 
-      botId: string; 
-      botName: string; 
-      userId: string; 
-      userName: string; 
-      userEmail: string; 
-      startTime: Date; 
-      endTime: Date;
-      lastMessageAt: Date; 
-      messageCount: number; 
-      conversations: Conversation[];
-      status: string; 
-      messages: { id: string; content: string; timestamp: Date }[] 
-    }>();
-    
-    conversations.forEach(conv => {
-      const sessionKey = `${conv.botId}-${conv.userId}-${Math.floor(conv.createdAt.getTime() / (30 * 60 * 1000))}`;
-      
-      if (!conversationSessions.has(sessionKey)) {
-        conversationSessions.set(sessionKey, {
-          id: sessionKey,
-          botId: conv.botId,
-          botName: conv.bot?.name || 'Unknown Bot',
-          userId: conv.userId,
-          userName: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email.split('@')[0] : 'Unknown User',
-          userEmail: user?.email || 'Unknown',
-          startTime: conv.createdAt,
-          endTime: conv.createdAt,
-          lastMessageAt: conv.createdAt,
-          messageCount: 0,
-          conversations: [],
-          status: 'active',
-          messages: []
-        });
-      }
-      
-      const session = conversationSessions.get(sessionKey);
-      if (session) {
-        session.conversations.push(conv);
-        session.messageCount++;
-        
-        // Update end time if this conversation is later
-        if (conv.createdAt > session.endTime) {
-          session.endTime = conv.createdAt;
-        }
-      }
-    });
+    // Format conversations - use actual conversation IDs so clicking works
+    const formattedSessions = conversations.map(conv => {
+      // Calculate message count from messages array
+      const messageCount = conv.messages && Array.isArray(conv.messages) ? conv.messages.length : 1;
 
-    // Convert to array and format
-    const formattedSessions = Array.from(conversationSessions.values()).map(session => {
+      // Calculate duration
+      const startTime = conv.createdAt;
+      const endTime = conv.lastMessageAt || conv.createdAt;
+      const duration = Math.floor((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+
       // Auto-complete: If no message for 30 minutes, mark as completed
       const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-      const lastMessageTime = session.lastMessageAt || session.endTime;
-      const isActive = lastMessageTime > thirtyMinutesAgo;
-      const duration = Math.floor((session.endTime.getTime() - session.startTime.getTime()) / (1000 * 60)); // Duration in minutes
+      const isActive = endTime > thirtyMinutesAgo && conv.status !== 'completed';
+
+      // Determine user name and email
+      let userName = 'Unknown User';
+      let userEmail = '';
+
+      if (conv.guestName) {
+        userName = conv.guestName;
+        userEmail = conv.visitorEmail || '';
+      } else if (user) {
+        userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email.split('@')[0];
+        userEmail = user.email;
+      }
 
       return {
-        id: session.id,
-        botId: session.botId,
-        botName: session.botName,
-        userId: session.userId,
-        userName: session.userName || session.userEmail.split('@')[0] || 'Unknown User',
-        userEmail: session.userEmail,
-        startTime: session.startTime.toISOString(),
-        endTime: session.endTime.toISOString(),
-        lastMessageTime: (session.lastMessageAt || session.endTime).toISOString(),
-        status: isActive ? 'active' : 'completed',
-        messageCount: session.messageCount,
+        id: conv.id, // Use actual conversation ID
+        botId: conv.botId,
+        botName: conv.bot?.name || 'Unknown Bot',
+        userId: conv.userId,
+        userName: userName,
+        userEmail: userEmail,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        lastMessageTime: endTime.toISOString(),
+        status: isActive ? 'active' : (conv.status || 'completed'),
+        messageCount: messageCount,
         duration: `${duration} min`,
         satisfaction: Math.floor(Math.random() * 2) + 4, // Mock rating between 4-5
-        source: 'playground',
-        mode: 'AI'
+        source: conv.guestId ? 'wordpress' : 'playground',
+        guestId: conv.guestId,
+        mode: conv.mode || 'AI'
       };
     });
 
