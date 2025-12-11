@@ -45,6 +45,7 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
   const [isAdmin, setIsAdmin] = useState(false);
   const [isManager, setIsManager] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [handoffCount, setHandoffCount] = useState(0);
 
   // Check if user is admin or manager
   useEffect(() => {
@@ -58,6 +59,31 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
       router.push('/login');
     }
   }, [session, status, router]);
+
+  // Fetch pending human handoff count
+  useEffect(() => {
+    const fetchHandoffCount = async () => {
+      try {
+        const response = await fetch('/api/conversations?status=waiting&mode=Human');
+        if (response.ok) {
+          const data = await response.json();
+          // Count conversations that are waiting for human agent
+          const waitingCount = Array.isArray(data) ? data.length :
+                              (data.conversations ? data.conversations.length : 0);
+          setHandoffCount(waitingCount);
+        }
+      } catch (error) {
+        console.error('Error fetching handoff count:', error);
+      }
+    };
+
+    // Fetch immediately and then every 10 seconds
+    if (status === 'authenticated') {
+      fetchHandoffCount();
+      const interval = setInterval(fetchHandoffCount, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [status]);
 
   // Get the base dashboard path based on user role
   const getDashboardBasePath = () => {
@@ -221,12 +247,24 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
                     isActive
                       ? 'bg-[#6566F1]/10 text-[#6566F1]'
                       : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                  } relative`}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-[#6566F1]' : 'text-[#7F82F3]'} flex-shrink-0`} />
+                  <div className="relative">
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-[#6566F1]' : 'text-[#7F82F3]'} flex-shrink-0`} />
+                    {/* Notification dot for Human Handoff when sidebar is collapsed */}
+                    {item.id === 'human-handoff' && handoffCount > 0 && sidebarCollapsed && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                    )}
+                  </div>
                   <div className={`overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
                     <span className="ml-3 whitespace-nowrap">{item.label}</span>
                   </div>
+                  {/* Badge counter for Human Handoff when sidebar is expanded */}
+                  {item.id === 'human-handoff' && handoffCount > 0 && !sidebarCollapsed && (
+                    <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center animate-pulse">
+                      {handoffCount > 99 ? '99+' : handoffCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
