@@ -35,6 +35,32 @@ if (typeof jQuery === 'undefined') {
         isTyping: false,
         messageQueue: [],
 
+        // Format timestamp for display - shows date for older messages, time only for today
+        formatTimestamp: function(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp);
+            if (isNaN(date.getTime())) return timestamp;
+
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const messageDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+            const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            if (today.getTime() === messageDay.getTime()) {
+                return timeStr;
+            }
+
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (yesterday.getTime() === messageDay.getTime()) {
+                return 'Yesterday, ' + timeStr;
+            }
+
+            const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            return dateStr + ', ' + timeStr;
+        },
+
         // Initialize chat widget
         init: function() {
             console.log('Synofex Chat: Initializing...');
@@ -185,10 +211,12 @@ if (typeof jQuery === 'undefined') {
         // Add message to chat window
         addMessage: function(message, sender) {
             const messagesContainer = $('#synofex-messages');
-            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            // FIX: Store full ISO timestamp for proper date display on older messages
+            const timestamp = new Date().toISOString();
+            const displayTime = this.formatTimestamp(timestamp);
 
             const messageHtml = `
-                <div class="synofex-message synofex-${sender}-message">
+                <div class="synofex-message synofex-${sender}-message" data-timestamp="${this.escapeHtml(timestamp)}">
                     <div class="synofex-message-avatar">
                         ${sender === 'bot' ? this.getBotAvatar() : this.getUserAvatar()}
                     </div>
@@ -196,7 +224,7 @@ if (typeof jQuery === 'undefined') {
                         <div class="synofex-message-bubble">
                             ${this.escapeHtml(message)}
                         </div>
-                        <div class="synofex-message-time">${timestamp}</div>
+                        <div class="synofex-message-time">${displayTime}</div>
                     </div>
                 </div>
             `;

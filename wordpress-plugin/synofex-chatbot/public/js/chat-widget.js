@@ -31,6 +31,35 @@
         isCheckingMode: false, // NEW: Prevent concurrent mode check requests
         userMessageCount: 0, // Track user messages for showing action buttons
 
+        // Format timestamp for display - shows date for older messages, time only for today
+        formatTimestamp: function(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp);
+            if (isNaN(date.getTime())) return timestamp; // Return original if can't parse
+
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const messageDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+            const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            // Check if message is from today
+            if (today.getTime() === messageDay.getTime()) {
+                return timeStr;
+            }
+
+            // Check if message is from yesterday
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (yesterday.getTime() === messageDay.getTime()) {
+                return 'Yesterday, ' + timeStr;
+            }
+
+            // Older messages - show date and time
+            const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            return dateStr + ', ' + timeStr;
+        },
+
         // Initialize chat widget
         init: function() {
             console.log('Synofex Chat: Initializing...');
@@ -256,7 +285,8 @@
         addMessage: function(message, sender, messageId) {
             // FIX: Changed from #synofex-messages to #synofex-chat-messages
             const messagesContainer = $('#synofex-chat-messages');
-            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            // FIX: Store full ISO timestamp for proper date display on older messages
+            const timestamp = new Date().toISOString();
 
             // Generate message ID if not provided (for user messages and old code compatibility)
             if (!messageId) {
@@ -273,9 +303,10 @@
                 avatar = this.getUserAvatar(); // Visitor
             }
 
-            // FIX: Store message ID in data attribute to preserve it across save/load
+            // FIX: Store message ID and timestamp in data attributes for proper persistence
+            const displayTime = this.formatTimestamp(timestamp);
             const messageHtml = `
-                <div class="synofex-message synofex-${sender}-message" data-message-id="${this.escapeHtml(messageId)}">
+                <div class="synofex-message synofex-${sender}-message" data-message-id="${this.escapeHtml(messageId)}" data-timestamp="${this.escapeHtml(timestamp)}">
                     <div class="synofex-message-avatar">
                         ${avatar}
                     </div>
@@ -283,7 +314,7 @@
                         <div class="synofex-message-bubble">
                             ${this.escapeHtml(message)}
                         </div>
-                        <div class="synofex-message-time">${timestamp}</div>
+                        <div class="synofex-message-time">${displayTime}</div>
                     </div>
                 </div>
             `;
@@ -443,9 +474,10 @@
                     sender = 'agent';
                 }
                 const content = $(this).find('.synofex-message-bubble').text();
-                const timestamp = $(this).find('.synofex-message-time').text();
+                // FIX: Read the actual timestamp from data attribute (preserves full ISO date for older messages)
+                const timestamp = $(this).data('timestamp') || $(this).find('.synofex-message-time').text();
                 // FIX: Read the actual message ID from data attribute (preserves server's ID)
-                const messageId = $(this).data('message-id') || `${sender}-${timestamp}-${content.substring(0, 20)}`;
+                const messageId = $(this).data('message-id') || `${sender}-${Date.now()}-${content.substring(0, 20)}`;
                 messages.push({ sender, content, messageId, timestamp });
             });
             const token = window.synofexChatConfig?.token || 'default';
