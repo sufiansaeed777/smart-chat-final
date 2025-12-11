@@ -186,7 +186,8 @@
                     nonce: synofex_config.nonce, // FIX: Changed from synofex_ajax to synofex_config
                     message: message,
                     bot_id: this.botId,
-                    session_id: this.sessionId
+                    session_id: this.sessionId,
+                    page_url: window.location.href // Send current page URL for Human Handoff
                 },
                 success: (response) => {
                     this.hideTypingIndicator();

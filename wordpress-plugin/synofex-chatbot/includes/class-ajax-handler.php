@@ -102,12 +102,18 @@ class Synofex_AJAX_Handler {
         // Initialize API client
         $this->init_api_client();
 
-        // Prepare metadata
+        // Get page URL from POST data (sent by JS widget) or fallback to referer
+        $page_url = sanitize_url($_POST['page_url'] ?? '') ?: wp_get_referer();
+
+        // Prepare metadata with visitor info for Human Handoff
         $metadata = [
             'user_ip' => $_SERVER['REMOTE_ADDR'],
             'user_agent' => $_SERVER['HTTP_USER_AGENT'],
-            'page_url' => wp_get_referer(),
+            'page_url' => $page_url,
+            'pageUrl' => $page_url, // Also send as pageUrl for API compatibility
             'wordpress_user' => is_user_logged_in() ? wp_get_current_user()->user_email : 'guest',
+            'visitorEmail' => is_user_logged_in() ? wp_get_current_user()->user_email : '',
+            'visitorName' => is_user_logged_in() ? wp_get_current_user()->display_name : '',
             'timestamp' => current_time('mysql'),
         ];
 
