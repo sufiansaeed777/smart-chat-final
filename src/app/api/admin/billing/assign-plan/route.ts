@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
+import { User } from '@/entities/User';
+import { Subscription } from '@/entities/Subscription';
+import { Invoice } from '@/entities/Invoice';
 
 // Plan pricing configuration
 const PLAN_PRICING = {
@@ -53,9 +56,9 @@ export async function POST(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository('users');
-    const subscriptionRepository = AppDataSource.getRepository('subscriptions');
-    const invoiceRepository = AppDataSource.getRepository('invoices');
+    const userRepository = AppDataSource.getRepository(User);
+    const subscriptionRepository = AppDataSource.getRepository(Subscription);
+    const invoiceRepository = AppDataSource.getRepository(Invoice);
 
     // Find the user
     const user = await userRepository.findOne({ where: { id: userId } });
@@ -167,10 +170,14 @@ export async function POST(request: NextRequest) {
         const dueDate = new Date(now);
         dueDate.setDate(dueDate.getDate() + 30);
 
+        // Capitalize plan name for display
+        const displayPlanName = planName.charAt(0).toUpperCase() + planName.slice(1);
+
         const newInvoice = invoiceRepository.create({
           managerId: userId,
           subscriptionId: subscription?.id || null,
           invoiceNumber: invoiceNumber,
+          planName: displayPlanName,
           status: 'open',
           amount: amount,
           tax: 0,
@@ -178,7 +185,7 @@ export async function POST(request: NextRequest) {
           total: amount,
           currency: 'USD',
           dueDate: dueDate,
-          notes: notes || `${planName.charAt(0).toUpperCase() + planName.slice(1)} plan - ${billingCycle} subscription`
+          notes: notes || `${displayPlanName} plan - ${billingCycle} subscription`
         });
 
         await invoiceRepository.save(newInvoice);
@@ -250,7 +257,7 @@ export async function GET(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository('users');
+    const userRepository = AppDataSource.getRepository(User);
 
     // Only allow plan assignment to managers (not regular users)
     // Managers are the account owners who can have subscriptions

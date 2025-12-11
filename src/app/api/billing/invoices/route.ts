@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
+import { User } from '@/entities/User';
+import { Invoice } from '@/entities/Invoice';
 
 /**
  * GET /api/billing/invoices
@@ -19,8 +21,8 @@ export async function GET(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository('users');
-    const invoiceRepository = AppDataSource.getRepository('invoices');
+    const userRepository = AppDataSource.getRepository(User);
+    const invoiceRepository = AppDataSource.getRepository(Invoice);
 
     // Find the current user
     const user = await userRepository.findOne({
@@ -43,7 +45,8 @@ export async function GET(request: NextRequest) {
       id: invoice.id,
       invoiceNumber: invoice.invoiceNumber,
       date: invoice.createdAt ? new Date(invoice.createdAt).toISOString() : new Date().toISOString(),
-      planName: invoice.subscription?.planName || invoice.notes?.split(' - ')[0] || 'Subscription',
+      // Use planName directly from invoice, fallback to subscription or notes
+      planName: invoice.planName || invoice.subscription?.planName || invoice.notes?.split(' - ')[0] || 'Subscription',
       amount: parseFloat(invoice.total?.toString() || invoice.amount?.toString() || '0'),
       status: invoice.status || 'open',
       dueDate: invoice.dueDate ? new Date(invoice.dueDate).toISOString() : null,

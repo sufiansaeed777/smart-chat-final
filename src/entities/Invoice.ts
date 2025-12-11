@@ -24,6 +24,9 @@ export class Invoice {
   @Column({ type: 'varchar', length: 50, unique: true })
   invoiceNumber!: string;
 
+  @Column({ name: 'plan_name', type: 'varchar', length: 100, nullable: true })
+  planName?: string;
+
   @Column({ type: 'varchar', length: 20 })
   status!: 'draft' | 'open' | 'paid' | 'void' | 'uncollectible';
 

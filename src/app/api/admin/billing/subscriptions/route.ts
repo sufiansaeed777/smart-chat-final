@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
     }
-    const subscriptionRepository = AppDataSource.getRepository("subscriptions");
-    const userRepository = AppDataSource.getRepository("users");
+    const subscriptionRepository = AppDataSource.getRepository(Subscription);
+    const userRepository = AppDataSource.getRepository(User);
 
     // Get all subscriptions with manager details
     const subscriptions = await subscriptionRepository.find({
@@ -105,8 +105,8 @@ export async function POST(request: NextRequest) {
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
     }
-    const subscriptionRepository = AppDataSource.getRepository("subscriptions");
-    const userRepository = AppDataSource.getRepository("users");
+    const subscriptionRepository = AppDataSource.getRepository(Subscription);
+    const userRepository = AppDataSource.getRepository(User);
 
     // Verify manager exists
     const manager = await userRepository.findOne({
