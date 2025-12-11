@@ -117,14 +117,17 @@ class Synofex_AJAX_Handler {
             'timestamp' => current_time('mysql'),
         ];
 
-        // Send message to backend
-        $response = $this->api_client->send_message($bot_id, $message, $metadata);
+        // CRITICAL: Pass session_id from JavaScript client to ensure new sessions work after end chat
+        $response = $this->api_client->send_message($bot_id, $message, $metadata, $session_id);
 
         if ($response && isset($response['response'])) {
             // Success - send response back to frontend
             wp_send_json_success([
                 'response' => $response['response'],
                 'sessionId' => $response['sessionId'] ?? $session_id,
+                'conversationId' => $response['conversationId'] ?? null,
+                'mode' => $response['mode'] ?? 'AI',
+                'waitingForAgent' => $response['waitingForAgent'] ?? false,
                 'typing' => false,
             ]);
         } else {

@@ -110,15 +110,23 @@ class Synofex_API_Client {
 
     /**
      * Send message to bot
+     * @param string $bot_id Bot ID
+     * @param string $message User message
+     * @param array $metadata Additional metadata
+     * @param string|null $session_id Session ID from client (critical for new sessions after end chat)
      */
-    public function send_message($bot_id, $message, $metadata = []) {
+    public function send_message($bot_id, $message, $metadata = [], $session_id = null) {
+        // CRITICAL: Use session_id passed from JavaScript client
+        // This ensures new sessions are created after user ends chat
+        $actual_session_id = $session_id ?: ($_COOKIE['synofex_session'] ?? session_id());
+
         // Updated to match Next.js WordPress API endpoint
         $response = $this->make_request('POST', '/api/wordpress/send-message', [
             'token' => $this->auth_token,
             'bot_id' => $bot_id,
             'message' => $message,
             'metadata' => $metadata,
-            'sessionId' => $_COOKIE['synofex_session'] ?? session_id(),
+            'sessionId' => $actual_session_id,
             'source' => 'wordpress',
         ]);
 
