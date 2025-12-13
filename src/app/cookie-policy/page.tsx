@@ -35,11 +35,11 @@ export default function CookiePolicyPage() {
 
       {/* Page Header */}
       <header
-        className="border-b pt-20"
+        className="border-b"
         style={{
           background: 'linear-gradient(90deg, rgba(37,99,235,0.06), transparent)',
           borderColor: 'rgba(15,23,42,0.04)',
-          padding: '36px 18px'
+          padding: '120px 18px 36px 18px'
         }}
       >
         <div className="max-w-[980px] mx-auto px-4">

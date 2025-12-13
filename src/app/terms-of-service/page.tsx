@@ -12,7 +12,7 @@ export default function TermsOfServicePage() {
       <Navigation />
 
       {/* Page Header */}
-      <header className="border-b pt-20" style={{ background: 'linear-gradient(90deg, rgba(16,185,129,0.06), transparent)', borderColor: 'rgba(15,23,42,0.04)', padding: '36px 18px' }}>
+      <header className="border-b" style={{ background: 'linear-gradient(90deg, rgba(16,185,129,0.06), transparent)', borderColor: 'rgba(15,23,42,0.04)', padding: '120px 18px 36px 18px' }}>
         <div className="max-w-[980px] mx-auto px-4">
           <div className="flex items-center gap-3">
             <div className="w-[52px] h-[52px] rounded-[10px] flex items-center justify-center text-white font-bold text-lg" style={{ background: 'linear-gradient(135deg, #10b981, #2563eb)' }}>SC</div>
