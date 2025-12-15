@@ -110,15 +110,34 @@ export async function GET(request: NextRequest) {
 
       totalChatsLast30Days = sessionBasedCount + playgroundConversations.length;
 
-      // Unique users who messaged in last 30 days (by guestId or sessionId)
-      const uniqueVisitors = await conversationRepository
+      // Unique users who messaged in last 30 days
+      // FIX: Use visitorEmail or ipAddress to identify unique visitors (persistent across sessions)
+      // Previously used guestId/sessionId which changes per chat, incorrectly counting same user multiple times
+
+      // Count by visitorEmail (most reliable - users who provided email)
+      const uniqueByEmail = await conversationRepository
         .createQueryBuilder('conversation')
-        .select('DISTINCT COALESCE(conversation.guestId, conversation.sessionId)', 'uniqueId')
+        .select('DISTINCT conversation.visitorEmail', 'email')
         .where('conversation.botId IN (:...botIds)', { botIds: managerBotIds })
         .andWhere('conversation.createdAt >= :thirtyDaysAgo', { thirtyDaysAgo })
-        .andWhere('(conversation.guestId IS NOT NULL OR conversation.sessionId IS NOT NULL)')
+        .andWhere('conversation.visitorEmail IS NOT NULL')
+        .andWhere("conversation.visitorEmail != ''")
         .getRawMany();
-      uniqueUsersLast30Days = uniqueVisitors.length;
+
+      // Count by ipAddress (for anonymous visitors without email)
+      const uniqueByIp = await conversationRepository
+        .createQueryBuilder('conversation')
+        .select('DISTINCT conversation.ipAddress', 'ip')
+        .where('conversation.botId IN (:...botIds)', { botIds: managerBotIds })
+        .andWhere('conversation.createdAt >= :thirtyDaysAgo', { thirtyDaysAgo })
+        .andWhere('(conversation.visitorEmail IS NULL OR conversation.visitorEmail = \'\')')
+        .andWhere('conversation.ipAddress IS NOT NULL')
+        .andWhere("conversation.ipAddress != ''")
+        .andWhere("conversation.ipAddress != 'Unknown'")
+        .getRawMany();
+
+      // Total unique users = users with email + anonymous users by IP
+      uniqueUsersLast30Days = uniqueByEmail.length + uniqueByIp.length;
 
       // FIX: Active chats - ONLY count conversations with recent activity (last 30 minutes)
       // A chat is "active" only if there was activity in the last 30 minutes and it's not completed

@@ -142,9 +142,9 @@ const ManagerOverview = () => {
       iconColor: "text-gray-600"
     },
     {
-      title: "Total Users",
+      title: "Unique Visitors",
       value: overviewData.metrics.totalUsers.toString(),
-      change: "Users who messaged (30 days)",
+      change: "Unique visitors (30 days)",
       changeType: "neutral",
       icon: Users,
       iconColor: "text-gray-600"
@@ -268,7 +268,7 @@ const ManagerOverview = () => {
                 iconBg: 'bg-blue-500',
                 textColor: 'text-blue-600'
               };
-            } else if (title === 'Total Users') {
+            } else if (title === 'Unique Visitors') {
               return {
                 bg: 'bg-purple-50',
                 iconBg: 'bg-purple-500',
@@ -299,7 +299,7 @@ const ManagerOverview = () => {
           const getMetricPath = (title: string) => {
             if (title.includes('Total Chats')) {
               return '/manager-dashboard/conversations';
-            } else if (title.includes('Total Users')) {
+            } else if (title.includes('Unique Visitors')) {
               return '/manager-dashboard/conversations';
             } else if (title.includes('Active Chats')) {
               return '/manager-dashboard/conversations';
