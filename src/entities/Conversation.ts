@@ -7,11 +7,11 @@ export class Conversation {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ name: 'bot_id', type: 'uuid' })
   @Index()
   botId!: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ name: 'user_id', type: 'uuid' })
   @Index()
   userId!: string;
 
@@ -27,27 +27,27 @@ export class Conversation {
   sender?: 'user' | 'bot';
 
   // NEW SCHEMA: Session identifier for grouping messages (Human Handoff)
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ name: 'session_id', type: 'varchar', length: 255, nullable: true })
   @Index()
   sessionId?: string;
 
   // Guest/Visitor information
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ name: 'guest_name', type: 'varchar', length: 255, nullable: true })
   guestName?: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ name: 'guest_id', type: 'varchar', length: 100, nullable: true })
   guestId?: string;
 
-  @Column({ name: 'visitorEmail', type: 'varchar', length: 255, nullable: true })
+  @Column({ name: 'visitor_email', type: 'varchar', length: 255, nullable: true })
   visitorEmail?: string;
 
-  @Column({ name: 'pageUrl', type: 'text', nullable: true })
+  @Column({ name: 'page_url', type: 'text', nullable: true })
   pageUrl?: string;
 
-  @Column({ name: 'country', type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   country?: string;
 
-  @Column({ name: 'ipAddress', type: 'varchar', length: 50, nullable: true })
+  @Column({ name: 'ip_address', type: 'varchar', length: 50, nullable: true })
   ipAddress?: string;
 
   // Handoff fields
@@ -67,14 +67,14 @@ export class Conversation {
   status!: 'active' | 'waiting' | 'idle' | 'completed';
 
   // Agent assignment
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ name: 'assigned_agent_id', type: 'uuid', nullable: true })
   @Index()
   assignedAgentId?: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ name: 'assigned_agent_name', type: 'varchar', length: 255, nullable: true })
   assignedAgentName?: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'assigned_at', type: 'timestamp', nullable: true })
   assignedAt?: Date;
 
   // Messages stored as JSON array
@@ -87,20 +87,20 @@ export class Conversation {
   }>;
 
   // Timestamps
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'started_at', type: 'timestamp', nullable: true })
   startedAt?: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'last_message_at', type: 'timestamp', nullable: true })
   lastMessageAt?: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'completed_at', type: 'timestamp', nullable: true })
   completedAt?: Date;
 
   // Additional metadata
   @Column({ type: 'jsonb', nullable: true })
   metadata?: Record<string, any>;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({ name: 'is_test_message', type: 'boolean', default: false })
   isTestMessage!: boolean;
 
   // Content Moderation / Flagging
@@ -135,22 +135,22 @@ export class Conversation {
   @Column({ name: 'review_notes', type: 'text', nullable: true })
   reviewNotes?: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
 
   // Relations
   @ManyToOne('User', 'conversations')
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'user_id' })
   user?: User;
 
   @ManyToOne('Bot', 'conversations')
-  @JoinColumn({ name: 'botId' })
+  @JoinColumn({ name: 'bot_id' })
   bot?: Bot;
 
   @ManyToOne('User')
-  @JoinColumn({ name: 'assignedAgentId' })
+  @JoinColumn({ name: 'assigned_agent_id' })
   assignedAgent?: User;
 }

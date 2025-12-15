@@ -8,41 +8,41 @@ export class BotAssignment {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ name: 'bot_id', type: 'uuid' })
   botId!: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ name: 'assigned_by', type: 'uuid' })
   assignedBy!: string; // Manager who assigned the bot
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ name: 'assigned_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   assignedAt!: Date;
 
-  @Column({ 
-    type: 'enum', 
-    enum: ['active', 'inactive'], 
-    default: 'active' 
+  @Column({
+    type: 'enum',
+    enum: ['active', 'inactive'],
+    default: 'active'
   })
   status!: 'active' | 'inactive';
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
 
   // Relations
   @ManyToOne('User', 'botAssignments')
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'user_id' })
   user?: User;
 
   @ManyToOne('Bot', 'assignments')
-  @JoinColumn({ name: 'botId' })
+  @JoinColumn({ name: 'bot_id' })
   bot?: Bot;
 
   @ManyToOne('User')
-  @JoinColumn({ name: 'assignedBy' })
+  @JoinColumn({ name: 'assigned_by' })
   assignedByUser?: User;
 }
