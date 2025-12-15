@@ -60,7 +60,7 @@ const SupportPage = () => {
                       configure your first chatbot, and understand the basics.
                     </p>
                     <Link
-                      href="/help-center#getting-started"
+                      href="/help"
                       className="inline-flex items-center text-blue-600 hover:text-blue-700 font-semibold transition-colors"
                     >
                       View Getting Started Guide
@@ -78,7 +78,7 @@ const SupportPage = () => {
                       to get you back up and running quickly.
                     </p>
                     <Link
-                      href="/help-center#faqs"
+                      href="/help?category=troubleshooting"
                       className="inline-flex items-center text-blue-600 hover:text-blue-700 font-semibold transition-colors"
                     >
                       Browse Solutions
@@ -264,7 +264,7 @@ const SupportPage = () => {
                       contributed by both our team and community members.
                     </p>
                     <Link
-                      href="/help-center#faqs"
+                      href="/help"
                       className="inline-flex items-center text-purple-600 hover:text-purple-700 font-semibold transition-colors"
                     >
                       Browse Articles
