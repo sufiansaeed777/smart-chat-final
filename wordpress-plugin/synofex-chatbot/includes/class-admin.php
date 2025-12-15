@@ -47,16 +47,56 @@ class Synofex_Admin {
             update_option('synofex_widget_icon_emoji', sanitize_text_field($_POST['synofex_widget_icon_emoji']));
 
             // Handle SVG upload
+            $svg_upload_error = '';
             if (!empty($_FILES['synofex_widget_icon_svg']['tmp_name'])) {
                 $uploaded_file = $_FILES['synofex_widget_icon_svg'];
                 $file_type = wp_check_filetype($uploaded_file['name']);
 
-                if ($file_type['ext'] === 'svg') {
+                if ($file_type['ext'] !== 'svg') {
+                    $svg_upload_error = __('Invalid file type. Please upload an SVG file.', 'synofex-chatbot');
+                } else {
                     $svg_content = file_get_contents($uploaded_file['tmp_name']);
+
+                    // Check SVG dimensions from viewBox or width/height attributes
+                    $svg_valid = true;
+                    $dimension_warning = '';
+
+                    // Try to get dimensions from viewBox
+                    if (preg_match('/viewBox\s*=\s*["\']([^"\']+)["\']/', $svg_content, $matches)) {
+                        $viewbox_parts = preg_split('/[\s,]+/', trim($matches[1]));
+                        if (count($viewbox_parts) >= 4) {
+                            $width = floatval($viewbox_parts[2]);
+                            $height = floatval($viewbox_parts[3]);
+                            if ($width > 64 || $height > 64) {
+                                $dimension_warning = sprintf(__('Warning: SVG dimensions (%dx%d) are larger than recommended (24x24px). The icon may not display correctly.', 'synofex-chatbot'), intval($width), intval($height));
+                            }
+                        }
+                    }
+                    // Try to get dimensions from width/height attributes
+                    elseif (preg_match('/width\s*=\s*["\']?(\d+)/', $svg_content, $w_match) &&
+                            preg_match('/height\s*=\s*["\']?(\d+)/', $svg_content, $h_match)) {
+                        $width = intval($w_match[1]);
+                        $height = intval($h_match[1]);
+                        if ($width > 64 || $height > 64) {
+                            $dimension_warning = sprintf(__('Warning: SVG dimensions (%dx%d) are larger than recommended (24x24px). The icon may not display correctly.', 'synofex-chatbot'), $width, $height);
+                        }
+                    }
+
                     // Basic sanitization - remove script tags
                     $svg_content = preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', '', $svg_content);
                     update_option('synofex_widget_icon_svg', $svg_content);
+
+                    if ($dimension_warning) {
+                        echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html($dimension_warning) . '</p></div>';
+                    } else {
+                        echo '<div class="notice notice-success is-dismissible"><p>' . __('SVG icon uploaded successfully!', 'synofex-chatbot') . '</p></div>';
+                    }
                 }
+            }
+
+            // Show SVG upload error if any
+            if ($svg_upload_error) {
+                echo '<div class="notice notice-error is-dismissible"><p><strong>' . __('SVG Upload Failed:', 'synofex-chatbot') . '</strong> ' . esc_html($svg_upload_error) . '</p></div>';
             }
 
             // Validate token if provided (website URL auto-detected)
