@@ -44,38 +44,65 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
     pending: 0
   });
 
-  // Real data for human handoff counts
-  const [handoffCounts, setHandoffCounts] = useState({
-    total: 0,
-    pending: 0,
-    inProgress: 0,
-    resolved: 0
-  });
+  // Human handoff count (same as manager dashboard)
+  const [handoffCount, setHandoffCount] = useState(0);
 
-  // Fetch stats on mount
+  // Fetch issue stats on mount
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchIssueStats = async () => {
       try {
-        // Fetch issue stats
         const issuesResponse = await fetch('/api/user/issues/stats');
         if (issuesResponse.ok) {
           const issuesData = await issuesResponse.json();
           setIssueCounts(issuesData);
         }
-
-        // Fetch handoff stats
-        const handoffResponse = await fetch('/api/user/handoff/stats');
-        if (handoffResponse.ok) {
-          const handoffData = await handoffResponse.json();
-          setHandoffCounts(handoffData);
-        }
       } catch (error) {
-        console.error('Error fetching stats:', error);
+        console.error('Error fetching issue stats:', error);
       }
     };
 
     if (status === 'authenticated') {
-      fetchStats();
+      fetchIssueStats();
+    }
+  }, [status]);
+
+  // Fetch pending human handoff count (same logic as manager dashboard)
+  useEffect(() => {
+    const fetchHandoffCount = async () => {
+      try {
+        // Fetch conversations that need attention:
+        // 1. Waiting for human agent (status=waiting, mode=Human)
+        // 2. Active human conversations (status=active, mode=Human)
+        const [waitingResponse, activeResponse] = await Promise.all([
+          fetch('/api/conversations?status=waiting&mode=Human'),
+          fetch('/api/conversations?status=active&mode=Human')
+        ]);
+
+        let totalCount = 0;
+
+        if (waitingResponse.ok) {
+          const data = await waitingResponse.json();
+          const waitingCount = data.conversations ? data.conversations.length : 0;
+          totalCount += waitingCount;
+        }
+
+        if (activeResponse.ok) {
+          const data = await activeResponse.json();
+          const activeCount = data.conversations ? data.conversations.length : 0;
+          totalCount += activeCount;
+        }
+
+        setHandoffCount(totalCount);
+      } catch (error) {
+        console.error('Error fetching handoff count:', error);
+      }
+    };
+
+    // Fetch immediately and then every 10 seconds
+    if (status === 'authenticated') {
+      fetchHandoffCount();
+      const interval = setInterval(fetchHandoffCount, 10000);
+      return () => clearInterval(interval);
     }
   }, [status]);
 
@@ -86,12 +113,12 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
     { id: 'playground', label: 'Playground', icon: PlayCircle, path: '/user-dashboard/playground' },
     { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/user-dashboard/analytics' },
     { id: 'conversations', label: 'Conversations', icon: MessageSquare, path: '/user-dashboard/conversations' },
-    { 
-      id: 'human-handoff', 
-      label: 'Human Handoff', 
-      icon: HandHeart, 
+    {
+      id: 'human-handoff',
+      label: 'Human Handoff',
+      icon: HandHeart,
       path: '/user-dashboard/human-handoff',
-      badge: handoffCounts.pending > 0 ? handoffCounts.pending : null
+      badge: handoffCount > 0 ? handoffCount : null
     },
     {
       id: 'issues',
@@ -202,14 +229,13 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
                     isActive
                       ? 'bg-[#6566F1]/10 text-[#6566F1]'
                       : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                  } relative`}
                 >
                   <div className="relative">
                     <Icon className={`w-5 h-5 ${isActive ? 'text-[#6566F1]' : 'text-[#7F82F3]'} flex-shrink-0`} />
-                    {item.badge && !sidebarCollapsed && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center text-[10px] font-bold">
-                        {item.badge}
-                      </span>
+                    {/* Notification dot for Human Handoff when sidebar is collapsed */}
+                    {item.id === 'human-handoff' && handoffCount > 0 && sidebarCollapsed && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                     )}
                   </div>
                   <div className={`overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
@@ -220,6 +246,18 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
                       )}
                     </div>
                   </div>
+                  {/* Badge counter for Human Handoff when sidebar is expanded */}
+                  {item.id === 'human-handoff' && handoffCount > 0 && !sidebarCollapsed && (
+                    <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center animate-pulse">
+                      {handoffCount > 99 ? '99+' : handoffCount}
+                    </span>
+                  )}
+                  {/* Badge for Issues */}
+                  {item.id === 'issues' && item.badge && !sidebarCollapsed && (
+                    <span className="ml-auto bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+                      {item.badge}
+                    </span>
+                  )}
                 </button>
               );
             })}
