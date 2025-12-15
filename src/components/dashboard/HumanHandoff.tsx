@@ -713,10 +713,10 @@ const HumanHandoff = () => {
             <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-full bg-[#6566F1] flex items-center justify-center text-white font-semibold">
-                  {selectedConversation.guestName.charAt(0).toUpperCase()}
+                  {(selectedConversation.guestName || 'Unknown').charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">{selectedConversation.guestName}</h2>
+                  <h2 className="text-lg font-bold text-gray-900">{selectedConversation.guestName || 'Unknown'}</h2>
                   <p className="text-xs text-gray-500">{selectedConversation.guestId}</p>
                 </div>
               </div>
@@ -847,10 +847,10 @@ const HumanHandoff = () => {
             <div className="bg-[#6566F1] rounded-2xl p-4 mb-6 text-white">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-xl font-bold">
-                  {selectedConversation.guestName.charAt(0).toUpperCase()}
+                  {(selectedConversation.guestName || 'Unknown').charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h4 className="font-semibold">{selectedConversation.guestName}</h4>
+                  <h4 className="font-semibold">{selectedConversation.guestName || 'Unknown'}</h4>
                   <p className="text-xs text-white/70">{selectedConversation.guestId}</p>
                 </div>
               </div>
@@ -872,7 +872,7 @@ const HumanHandoff = () => {
                 <Mail className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium text-gray-500">Email</p>
-                  <p className="text-sm text-gray-900 truncate">{selectedConversation.visitorEmail || 'Not provided'}</p>
+                  <p className="text-sm text-gray-900 truncate">{selectedConversation.visitorEmail || 'Unknown'}</p>
                 </div>
               </div>
 
