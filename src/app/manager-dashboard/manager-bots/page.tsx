@@ -27,7 +27,8 @@ import {
   File,
   FileImage,
   Upload,
-  Globe
+  Globe,
+  AlertTriangle
 } from 'lucide-react';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { Button } from '@/components/ui/button';
@@ -221,6 +222,11 @@ export default function BotsPage() {
   const [isUploadingDocument, setIsUploadingDocument] = useState(false);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [showAllDocuments, setShowAllDocuments] = useState(false);
+
+  // Custom confirmation modal state
+  const [showTrainConfirmModal, setShowTrainConfirmModal] = useState(false);
+  const [showRemoveKnowledgeConfirmModal, setShowRemoveKnowledgeConfirmModal] = useState(false);
+  const [pendingTrainBot, setPendingTrainBot] = useState<{ id: string; name: string } | null>(null);
 
   const statusOptions = [
     { value: 'all', label: 'All Status', icon: BarChart3 },
@@ -868,17 +874,19 @@ export default function BotsPage() {
   const handleSaveKnowledge = async () => {
     if (!selectedBotForKnowledge) return;
 
-    // Prevent removing all knowledge when 0 files are selected
+    // Prevent removing all knowledge when 0 files are selected - show custom modal
     if (botKnowledgeIds.length === 0) {
-      const confirmRemove = confirm(
-        '⚠️ Warning: You have not selected any documents.\n\n' +
-        'Saving with 0 documents will remove all knowledge from this bot.\n\n' +
-        'Are you sure you want to continue?'
-      );
-      if (!confirmRemove) {
-        return;
-      }
+      setShowRemoveKnowledgeConfirmModal(true);
+      return;
     }
+
+    // Proceed with saving
+    await performSaveKnowledge();
+  };
+
+  // Actual save knowledge logic (called after confirmation)
+  const performSaveKnowledge = async () => {
+    if (!selectedBotForKnowledge) return;
 
     try {
       const response = await fetch('/api/manager/update-bot', {
@@ -913,11 +921,9 @@ export default function BotsPage() {
         // Show success toast
         showToast(`${assignedCount} document(s) assigned to "${botName}" successfully!`, 'success');
 
-        // Prompt user to train the bot after knowledge assignment
-        const shouldTrain = confirm(`Would you like to train the bot "${botName}" now with the assigned documents?`);
-        if (shouldTrain) {
-          await handleTrainBot({ id: botId, name: botName });
-        }
+        // Show custom modal to ask about training
+        setPendingTrainBot({ id: botId, name: botName });
+        setShowTrainConfirmModal(true);
       } else {
         const error = await response.json();
         console.error('Failed to update knowledge:', error.message || 'Unknown error');
@@ -927,6 +933,32 @@ export default function BotsPage() {
       console.error('Error updating knowledge:', error);
       showToast('Network error. Please try again.', 'error');
     }
+  };
+
+  // Handle confirm train bot from modal
+  const handleConfirmTrainBot = async () => {
+    setShowTrainConfirmModal(false);
+    if (pendingTrainBot) {
+      await handleTrainBot(pendingTrainBot);
+      setPendingTrainBot(null);
+    }
+  };
+
+  // Handle cancel train bot from modal
+  const handleCancelTrainBot = () => {
+    setShowTrainConfirmModal(false);
+    setPendingTrainBot(null);
+  };
+
+  // Handle confirm remove knowledge from modal
+  const handleConfirmRemoveKnowledge = async () => {
+    setShowRemoveKnowledgeConfirmModal(false);
+    await performSaveKnowledge();
+  };
+
+  // Handle cancel remove knowledge from modal
+  const handleCancelRemoveKnowledge = () => {
+    setShowRemoveKnowledgeConfirmModal(false);
   };
 
   const handleTrainBot = async (bot: {id: string; name: string}) => {
@@ -2661,6 +2693,73 @@ export default function BotsPage() {
           cancelText="Cancel"
           variant="danger"
         />
+      )}
+
+      {/* Train Bot Confirmation Modal */}
+      {showTrainConfirmModal && pendingTrainBot && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full">
+              <Bot className="w-8 h-8 text-blue-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
+              Train Bot Now?
+            </h2>
+            <p className="text-gray-600 text-center mb-6">
+              Would you like to train the bot &quot;{pendingTrainBot.name}&quot; now with the assigned documents?
+            </p>
+            <div className="flex space-x-3">
+              <Button
+                onClick={handleCancelTrainBot}
+                variant="outline"
+                className="flex-1 py-2.5 rounded-xl border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                Later
+              </Button>
+              <Button
+                onClick={handleConfirmTrainBot}
+                className="flex-1 py-2.5 rounded-xl bg-[#6566F1] hover:bg-[#5A5BD9] text-white"
+              >
+                Train Now
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remove Knowledge Warning Modal */}
+      {showRemoveKnowledgeConfirmModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-amber-100 rounded-full">
+              <AlertTriangle className="w-8 h-8 text-amber-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
+              Remove All Knowledge?
+            </h2>
+            <p className="text-gray-600 text-center mb-2">
+              You have not selected any documents.
+            </p>
+            <p className="text-amber-600 text-center text-sm mb-6">
+              Saving with 0 documents will remove all knowledge from this bot.
+            </p>
+            <div className="flex space-x-3">
+              <Button
+                onClick={handleCancelRemoveKnowledge}
+                variant="outline"
+                className="flex-1 py-2.5 rounded-xl border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmRemoveKnowledge}
+                className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white"
+              >
+                Remove All
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
