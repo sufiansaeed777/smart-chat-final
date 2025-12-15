@@ -37,6 +37,14 @@ const AdminOverview: React.FC = () => {
     databaseStatus: 'connected'
   });
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+  const [managers, setManagers] = useState<{
+    id: string;
+    name: string;
+    email: string;
+    plan: string;
+    status: string;
+    botsCount: number;
+  }[]>([]);
 
   const [loading, setLoading] = useState(true);
 
@@ -59,6 +67,10 @@ const AdminOverview: React.FC = () => {
         // Set recent activities from API
         if (data.stats.recentActivity && data.stats.recentActivity.length > 0) {
           setRecentActivities(data.stats.recentActivity);
+        }
+        // Set managers with plans
+        if (data.stats.managers && data.stats.managers.length > 0) {
+          setManagers(data.stats.managers);
         }
       } else {
         // Fallback to mock data if API fails
@@ -352,6 +364,84 @@ const AdminOverview: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Managers & Plans */}
+      {managers.length > 0 && (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border-0">
+          <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+            <Users className="w-6 h-6 mr-2 text-[#6566F1]" />
+            Managers & Subscription Plans
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Manager</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Email</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Plan</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Status</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Bots</th>
+                </tr>
+              </thead>
+              <tbody>
+                {managers.slice(0, 5).map((manager) => (
+                  <tr
+                    key={manager.id}
+                    className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
+                    onClick={() => handleNavigation(`/admin-dashboard/user-management?search=${manager.email}`)}
+                  >
+                    <td className="py-3 px-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-medium text-purple-600">
+                            {manager.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </span>
+                        </div>
+                        <span className="font-medium text-gray-900">{manager.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-600">{manager.email}</td>
+                    <td className="py-3 px-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
+                        manager.plan === 'enterprise' ? 'bg-purple-100 text-purple-800' :
+                        manager.plan === 'professional' ? 'bg-blue-100 text-blue-800' :
+                        manager.plan === 'starter' ? 'bg-green-100 text-green-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {manager.plan}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
+                        manager.status === 'active' ? 'bg-green-100 text-green-800' :
+                        manager.status === 'trialing' ? 'bg-yellow-100 text-yellow-800' :
+                        manager.status === 'past_due' ? 'bg-orange-100 text-orange-800' :
+                        manager.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {manager.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="text-sm text-gray-900">{manager.botsCount}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {managers.length > 5 && (
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => handleNavigation('/admin-dashboard/user-management?role=manager')}
+                className="text-sm text-[#6566F1] hover:text-[#5A5BD8] font-medium"
+              >
+                View all {managers.length} managers →
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Recent Activity */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border-0">

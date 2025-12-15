@@ -63,6 +63,31 @@ export async function GET() {
       select: ['id', 'firstName', 'lastName', 'email', 'role', 'createdAt']
     });
 
+    // Get all managers with their subscription plans
+    const managersData = await userRepository.find({
+      where: { role: 'manager' },
+      select: ['id', 'firstName', 'lastName', 'email', 'subscriptionPlan', 'subscriptionStatus', 'isActive']
+    });
+
+    // Get bot counts for each manager
+    const managerBotCounts = await botRepository
+      .createQueryBuilder('bot')
+      .select('bot.createdBy', 'managerId')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('bot.createdBy')
+      .getRawMany();
+
+    const botCountMap = new Map(managerBotCounts.map(m => [m.managerId, parseInt(m.count)]));
+
+    const managers = managersData.map(m => ({
+      id: m.id,
+      name: `${m.firstName || ''} ${m.lastName || ''}`.trim() || m.email.split('@')[0],
+      email: m.email,
+      plan: m.subscriptionPlan || 'free',
+      status: m.isActive ? (m.subscriptionStatus || 'active') : 'inactive',
+      botsCount: botCountMap.get(m.id) || 0
+    }));
+
     // Get recent activity from various sources
     const recentActivity = [];
 
@@ -150,7 +175,8 @@ export async function GET() {
         databaseStatus: 'connected',
         usersByRole,
         recentUsers,
-        recentActivity: formattedActivity
+        recentActivity: formattedActivity,
+        managers
       },
       timestamp: new Date().toISOString()
     });
