@@ -19,6 +19,326 @@ interface Message {
   timestamp: Date;
 }
 
+// Email validation helper
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+// Report Issue Modal Component with validation
+interface ReportIssueModalInlineProps {
+  onClose: () => void;
+  onSubmit: (name: string, email: string, description: string) => void;
+}
+
+const ReportIssueModalInline: React.FC<ReportIssueModalInlineProps> = ({ onClose, onSubmit }) => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [description, setDescription] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    setError('');
+
+    // Validate required fields
+    if (!name.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+
+    if (!email.trim()) {
+      setError('Please enter your email');
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (!description.trim()) {
+      setError('Please describe the issue');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await onSubmit(name, email, description);
+    } catch (err) {
+      setError('Failed to submit issue. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-60">
+      <div className="bg-white rounded-2xl p-6 w-[520px] max-w-[90vw] shadow-2xl border border-gray-100">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Report an Issue</h3>
+              <p className="text-sm text-gray-600">Help us improve by reporting problems</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100 disabled:opacity-50"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="mb-6 p-4 bg-red-50 rounded-xl border border-red-200">
+          <div className="flex items-start space-x-3">
+            <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-white text-xs font-bold">!</span>
+            </div>
+            <div>
+              <p className="text-sm text-red-800 font-medium mb-1">Help us improve!</p>
+              <p className="text-sm text-red-700">
+                Your feedback helps us fix bugs, improve features, and create a better experience for everyone.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
+            <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
+            <p className="text-sm text-red-800">{error}</p>
+          </div>
+        )}
+
+        <div className="space-y-5">
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
+              Your Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your name"
+              disabled={isSubmitting}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-200 disabled:bg-gray-100"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
+              Email <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your.email@example.com"
+              disabled={isSubmitting}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-200 disabled:bg-gray-100"
+            />
+            <p className="text-xs text-gray-500 mt-1">We&apos;ll use this to send you updates about your report.</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
+              Issue Details <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Please describe your issue in detail. What happened? What did you expect?"
+              disabled={isSubmitting}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent resize-none text-gray-900 placeholder-gray-500 transition-all duration-200 disabled:bg-gray-100"
+              rows={4}
+            />
+          </div>
+        </div>
+
+        <div className="flex space-x-3 mt-8">
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="flex-1 bg-[#6566F1] hover:bg-[#5A5BD8] text-white py-3 px-6 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          >
+            {isSubmitting ? 'Submitting...' : 'Submit Issue'}
+          </button>
+          <button
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors font-medium border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Request Human Modal Component with validation
+interface RequestHumanModalInlineProps {
+  onClose: () => void;
+  onSubmit: (name: string, email: string, reason: string) => void;
+}
+
+const RequestHumanModalInline: React.FC<RequestHumanModalInlineProps> = ({ onClose, onSubmit }) => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    setError('');
+
+    // Validate required fields
+    if (!name.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+
+    if (!email.trim()) {
+      setError('Please enter your email');
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (!reason.trim()) {
+      setError('Please describe how we can help');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await onSubmit(name, email, reason);
+    } catch (err) {
+      setError('Failed to submit request. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-60">
+      <div className="bg-white rounded-2xl p-6 w-[520px] max-w-[90vw] shadow-2xl border border-gray-100">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-[#6566F1] rounded-full flex items-center justify-center">
+              <Users className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Request a Human</h3>
+              <p className="text-sm text-gray-600">Connect with a live agent</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100 disabled:opacity-50"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+          <div className="flex items-start space-x-3">
+            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Users className="w-3 h-3 text-white" />
+            </div>
+            <div>
+              <p className="text-sm text-blue-800 font-medium mb-1">Need human assistance?</p>
+              <p className="text-sm text-blue-700">
+                A member of our team will join the conversation to help you personally.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
+            <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
+            <p className="text-sm text-red-800">{error}</p>
+          </div>
+        )}
+
+        <div className="space-y-5">
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
+              Your Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your name"
+              disabled={isSubmitting}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-200 disabled:bg-gray-100"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
+              Your Email <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your.email@example.com"
+              disabled={isSubmitting}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-200 disabled:bg-gray-100"
+            />
+            <p className="text-xs text-gray-500 mt-1">We&apos;ll notify you when an agent responds.</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
+              How can we help? <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Please describe what you need help with..."
+              disabled={isSubmitting}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent resize-none text-gray-900 placeholder-gray-500 transition-all duration-200 disabled:bg-gray-100"
+              rows={3}
+            />
+          </div>
+        </div>
+
+        <div className="flex space-x-3 mt-8">
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="flex-1 bg-[#6566F1] hover:bg-[#5A5BD8] text-white py-3 px-6 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          >
+            {isSubmitting ? 'Submitting...' : 'Request Human Agent'}
+          </button>
+          <button
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors font-medium border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface ChatBotProps {
   apiKey?: string; // Made optional since we're not using it anymore
   externalTrigger?: boolean; // External trigger to open chat
@@ -430,216 +750,18 @@ const ChatBot: React.FC<ChatBotProps> = ({ apiKey, externalTrigger, onTriggered 
 
       {/* Report Issue Modal */}
       {showReportIssue && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-60">
-          <div className="bg-white rounded-2xl p-6 w-[520px] max-w-[90vw] shadow-2xl border border-gray-100">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">Report an Issue</h3>
-                  <p className="text-sm text-gray-600">Help us improve by reporting problems</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowReportIssue(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="mb-6 p-4 bg-red-50 rounded-xl border border-red-200">
-              <div className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-white text-xs font-bold">!</span>
-                </div>
-                <div>
-                  <p className="text-sm text-red-800 font-medium mb-1">Help us improve!</p>
-                  <p className="text-sm text-red-700">
-                    Your feedback helps us fix bugs, improve features, and create a better experience for everyone.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Your Name *
-                </label>
-                <input
-                  type="text"
-                  id="report-name"
-                  placeholder="Enter your name"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-200"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="report-email"
-                  placeholder="your.email@example.com"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-200"
-                />
-                <p className="text-xs text-gray-500 mt-1">We&apos;ll use this to send you updates about your report.</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Issue Details *
-                </label>
-                <textarea
-                  id="report-description"
-                  placeholder="Please describe your issue in detail. What happened? What did you expect?"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent resize-none text-gray-900 placeholder-gray-500 transition-all duration-200"
-                  rows={4}
-                />
-              </div>
-            </div>
-
-            <div className="flex space-x-3 mt-8">
-              <button
-                onClick={() => {
-                  const nameElement = document.getElementById('report-name') as HTMLInputElement;
-                  const emailElement = document.getElementById('report-email') as HTMLInputElement;
-                  const descriptionElement = document.getElementById('report-description') as HTMLTextAreaElement;
-
-                  const name = nameElement?.value || '';
-                  const email = emailElement?.value || '';
-                  const description = descriptionElement?.value || '';
-
-                  if (name.trim() && email.trim() && description.trim()) {
-                    handleReportSubmit(name, email, description);
-                  } else {
-                    alert('Please fill in all required fields');
-                  }
-                }}
-                className="flex-1 bg-[#6566F1] hover:bg-[#5A5BD8] text-white py-3 px-6 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                Submit Issue
-              </button>
-              <button
-                onClick={() => setShowReportIssue(false)}
-                className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors font-medium border border-gray-300 rounded-xl hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+        <ReportIssueModalInline
+          onClose={() => setShowReportIssue(false)}
+          onSubmit={handleReportSubmit}
+        />
       )}
 
       {/* Request Human Modal */}
       {showRequestHuman && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-60">
-          <div className="bg-white rounded-2xl p-6 w-[520px] max-w-[90vw] shadow-2xl border border-gray-100">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-[#6566F1] rounded-full flex items-center justify-center">
-                  <Users className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">Request a Human</h3>
-                  <p className="text-sm text-gray-600">Connect with a live agent</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowRequestHuman(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-              <div className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Users className="w-3 h-3 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-blue-800 font-medium mb-1">Need human assistance?</p>
-                  <p className="text-sm text-blue-700">
-                    A member of our team will join the conversation to help you personally.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Your Name *
-                </label>
-                <input
-                  type="text"
-                  id="human-name"
-                  placeholder="Enter your name"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-200"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Your Email *
-                </label>
-                <input
-                  type="email"
-                  id="human-email"
-                  placeholder="your.email@example.com"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-200"
-                />
-                <p className="text-xs text-gray-500 mt-1">We&apos;ll notify you when an agent responds.</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  How can we help? *
-                </label>
-                <textarea
-                  id="human-reason"
-                  placeholder="Please describe what you need help with..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6566F1] focus:border-transparent resize-none text-gray-900 placeholder-gray-500 transition-all duration-200"
-                  rows={3}
-                />
-              </div>
-            </div>
-
-            <div className="flex space-x-3 mt-8">
-              <button
-                onClick={() => {
-                  const nameElement = document.getElementById('human-name') as HTMLInputElement;
-                  const emailElement = document.getElementById('human-email') as HTMLInputElement;
-                  const reasonElement = document.getElementById('human-reason') as HTMLTextAreaElement;
-
-                  const name = nameElement?.value || '';
-                  const email = emailElement?.value || '';
-                  const reason = reasonElement?.value || '';
-
-                  if (name.trim() && email.trim() && reason.trim()) {
-                    handleRequestHumanSubmit(name, email, reason);
-                  } else {
-                    alert('Please fill in all required fields');
-                  }
-                }}
-                className="flex-1 bg-[#6566F1] hover:bg-[#5A5BD8] text-white py-3 px-6 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                Request Human Agent
-              </button>
-              <button
-                onClick={() => setShowRequestHuman(false)}
-                className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors font-medium border border-gray-300 rounded-xl hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+        <RequestHumanModalInline
+          onClose={() => setShowRequestHuman(false)}
+          onSubmit={handleRequestHumanSubmit}
+        />
       )}
     </>
   );
