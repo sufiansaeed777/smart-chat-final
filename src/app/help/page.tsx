@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
@@ -45,7 +45,8 @@ interface FAQType {
   category: string;
 }
 
-const PublicHelpPage = () => {
+// Inner component that uses useSearchParams
+const HelpPageContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
@@ -585,6 +586,39 @@ const PublicHelpPage = () => {
       {/* Footer */}
       <Footer />
     </div>
+  );
+};
+
+// Loading fallback for Suspense
+const HelpPageLoading = () => (
+  <div className="min-h-screen flex flex-col bg-gray-50">
+    <Navigation />
+    <div className="pt-24 pb-12 bg-gradient-to-b from-[#6566F1]/10 to-gray-50">
+      <div className="container mx-auto px-4 lg:px-8">
+        <div className="text-center max-w-3xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-12 bg-gray-200 rounded-lg w-64 mx-auto mb-4"></div>
+            <div className="h-6 bg-gray-200 rounded-lg w-96 mx-auto mb-8"></div>
+            <div className="h-14 bg-gray-200 rounded-2xl max-w-2xl mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div className="container mx-auto px-4 lg:px-8 py-12">
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6566F1]"></div>
+      </div>
+    </div>
+    <Footer />
+  </div>
+);
+
+// Main exported component with Suspense boundary
+const PublicHelpPage = () => {
+  return (
+    <Suspense fallback={<HelpPageLoading />}>
+      <HelpPageContent />
+    </Suspense>
   );
 };
 

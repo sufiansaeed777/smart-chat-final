@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Bot, Send, MessageSquare, User, ArrowLeft, Search, Filter } from 'lucide-react';
@@ -53,7 +53,7 @@ interface ManagerBot {
   lastConversation: string | null;
 }
 
-export default function TestBotPage() {
+function TestBotPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const botId = searchParams.get('botId');
@@ -684,5 +684,20 @@ export default function TestBotPage() {
       </div>
     </div>
     </>
+  );
+}
+
+export default function TestBotPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <TestBotPageContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Bot, Send, MessageSquare, User, ArrowLeft } from 'lucide-react';
@@ -50,7 +50,7 @@ interface BotInfo {
   status: string;
 }
 
-export default function UserTestBotPage() {
+function UserTestBotPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const botId = searchParams.get('botId');
@@ -479,5 +479,22 @@ export default function UserTestBotPage() {
       </div>
     </div>
     </RoleGuard>
+  );
+}
+
+export default function UserTestBotPage() {
+  return (
+    <Suspense fallback={
+      <RoleGuard allowedRoles={['user']}>
+        <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6566F1] mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </RoleGuard>
+    }>
+      <UserTestBotPageContent />
+    </Suspense>
   );
 }
