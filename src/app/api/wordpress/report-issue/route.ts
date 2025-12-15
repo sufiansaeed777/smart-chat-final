@@ -17,7 +17,7 @@ export async function OPTIONS() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { token, bot_id, issue_type, description, conversation_id, source } = body;
+    const { token, bot_id, issue_type, description, conversation_id, source, name, email } = body;
 
     // Validate required fields
     if (!token) {
@@ -75,13 +75,13 @@ export async function POST(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    // Get user info from conversation if available
-    let userEmail = 'anonymous@visitor.com';
-    let userName = 'Website Visitor';
+    // Get user info from request body first, then fallback to conversation or defaults
+    let userEmail = email || 'anonymous@visitor.com';
+    let userName = name || 'Website Visitor';
     let userId = `visitor-${Date.now()}`;
     let websiteUrl = source === 'wordpress' ? tokenData.domain || '' : '';
 
-    // Try to get user info from the conversation
+    // Try to get additional info from the conversation if available
     if (conversation_id) {
       try {
         const conversationResult = await pool.query(
@@ -90,8 +90,9 @@ export async function POST(request: NextRequest) {
         );
         if (conversationResult.rows.length > 0) {
           const conv = conversationResult.rows[0];
-          userEmail = conv.user_email || userEmail;
-          userName = conv.user_name || userName;
+          // Only use conversation data if not already provided in request
+          if (!email) userEmail = conv.user_email || userEmail;
+          if (!name) userName = conv.user_name || userName;
           userId = conversation_id;
           if (conv.metadata?.pageUrl) {
             websiteUrl = conv.metadata.pageUrl;
