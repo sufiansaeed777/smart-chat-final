@@ -2010,13 +2010,23 @@ export default function BotsPage() {
                       e.preventDefault();
                       e.stopPropagation();
                       console.log('Button clicked for bot:', bot.id);
-                      
+
                       const rect = e.currentTarget.getBoundingClientRect();
+                      const dropdownWidth = 192; // w-48 = 12rem = 192px
+                      const viewportWidth = window.innerWidth;
+
+                      // Check if dropdown would overflow right edge
+                      let leftPosition = rect.left;
+                      if (rect.left + dropdownWidth > viewportWidth - 20) {
+                        // Align dropdown to the right edge of the button
+                        leftPosition = rect.right - dropdownWidth;
+                      }
+
                       setDropdownPosition({
                         top: rect.bottom + 5,
-                        left: rect.left
+                        left: leftPosition
                       });
-                      
+
                       setOpenDropdown(openDropdown === bot.id ? null : bot.id);
                     }}
                     title="Bot options"
