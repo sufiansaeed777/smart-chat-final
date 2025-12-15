@@ -83,6 +83,9 @@ export async function GET(request: NextRequest) {
     let activeSessions = 0;
     let humanHandoffs = 0;
 
+    // Use 30 minutes to match the auto-complete threshold
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+
     allConversations.forEach((conv) => {
       // Count total messages
       if (conv.messages && Array.isArray(conv.messages)) {
@@ -104,19 +107,24 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // Count active sessions - also check last activity time
+      // Count active sessions - use 30 minutes to match auto-complete threshold
       const lastActivity = conv.lastMessageAt || conv.updatedAt;
-      const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
 
+      // A session is active if:
+      // 1. Status is 'active' or 'waiting' AND has recent activity (last 30 min)
+      // 2. OR has activity within the last 30 minutes regardless of status
       if (conv.status === 'active' || conv.status === 'waiting') {
-        activeSessions++;
-      } else if (lastActivity && new Date(lastActivity) >= fifteenMinutesAgo) {
-        // Also count conversations with recent activity as active
+        if (lastActivity && new Date(lastActivity) >= thirtyMinutesAgo) {
+          activeSessions++;
+        }
+      } else if (lastActivity && new Date(lastActivity) >= thirtyMinutesAgo && conv.status !== 'completed') {
+        // Count as active if recent activity and not explicitly completed
         activeSessions++;
       }
 
-      // Count human handoffs
-      if (conv.mode === 'Human') {
+      // Count human handoffs - conversations that are currently in Human mode
+      // and are active (waiting for agent or being handled)
+      if (conv.mode === 'Human' && (conv.status === 'active' || conv.status === 'waiting')) {
         humanHandoffs++;
       }
     });
