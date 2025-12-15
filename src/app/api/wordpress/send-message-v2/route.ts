@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/utils/db';
+import { AppDataSource } from '@/config/database';
+import { Bot } from '@/entities/Bot';
+import { Conversation } from '@/entities/Conversation';
+import { User } from '@/entities/User';
 
 // Set SSL for Supabase connection - ONLY in development
 if (process.env.NODE_ENV === 'development') {
@@ -17,6 +20,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+// Helper function to get country from IP address
+async function getCountryFromIP(ip: string): Promise<string> {
+  if (!ip || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.')) {
+    return 'Local';
+  }
+
+  try {
+    const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode`, {
+      signal: AbortSignal.timeout(3000)
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.status === 'success' && data.country) {
+        return data.country;
+      }
+    }
+  } catch (error) {
+    console.log(`[GeoIP] Could not determine country for IP ${ip}:`, error);
+  }
+
+  return 'Unknown';
+}
+
 export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
 }
@@ -24,7 +51,7 @@ export async function OPTIONS() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { token, message, sessionId } = body;
+    const { token, message, sessionId, metadata } = body;
 
     if (!token || !message) {
       return NextResponse.json(
@@ -43,20 +70,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get bot configuration from database
-    const botResult = await pool.query(
-      'SELECT * FROM bots WHERE id = $1 AND "createdBy" = $2 AND status = $3',
-      [botId, userId, 'active']
-    );
+    // Initialize database
+    if (!AppDataSource.isInitialized) {
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return NextResponse.json(
+          { error: 'Database connection failed' },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
 
-    if (botResult.rows.length === 0) {
+    // Get bot configuration from database using TypeORM
+    const botRepository = AppDataSource.getRepository(Bot);
+    const bot = await botRepository.findOne({
+      where: {
+        id: botId,
+        createdBy: userId,
+        status: 'active'
+      }
+    });
+
+    if (!bot) {
       return NextResponse.json(
         { error: 'Bot not found or inactive' },
         { status: 404, headers: corsHeaders }
       );
     }
 
-    const bot = botResult.rows[0];
+    // Get bot owner for message counting
+    const userRepository = AppDataSource.getRepository(User);
+    const botOwner = await userRepository.findOne({
+      where: { id: userId }
+    });
 
     // Prepare AI response
     let aiResponse = 'I apologize, but I am currently unable to process your request.';
@@ -65,7 +113,6 @@ export async function POST(request: NextRequest) {
     if (!OPENAI_API_KEY || OPENAI_API_KEY.includes('YOUR_NEW_API_KEY')) {
       console.log('Running in DEMO mode - no valid OpenAI key');
 
-      // Provide demo responses based on keywords
       const lowerMessage = message.toLowerCase();
       let demoResponse = 'This is a demo response. In production, I would use AI to provide intelligent answers.';
 
@@ -81,98 +128,147 @@ export async function POST(request: NextRequest) {
         demoResponse = 'Test successful! The chatbot system is working. Just add a valid OpenAI API key for full AI capabilities.';
       }
 
-      return NextResponse.json({
-        success: true,
-        response: `[DEMO MODE] ${demoResponse}`,
-        sessionId: sessionId
-      }, { headers: corsHeaders });
+      aiResponse = `[DEMO MODE] ${demoResponse}`;
+    } else {
+      try {
+        // Call OpenAI API
+        const systemPrompt = `You are ${bot.name}, a helpful AI assistant.
+Your personality is ${bot.tone || 'professional'}.
+${bot.customInstructions || ''}
+${bot.trainingContext || ''}
+Always be helpful, accurate, and concise.`;
+
+        const openAIResponse = await fetch(OPENAI_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENAI_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: bot.aiModel || 'gpt-3.5-turbo',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: message }
+            ],
+            temperature: Number(bot.temperature) || 0.7,
+            max_tokens: Number(bot.maxTokens) || 500
+          })
+        });
+
+        if (openAIResponse.ok) {
+          const openAIData = await openAIResponse.json();
+          if (openAIData.choices && openAIData.choices[0]) {
+            aiResponse = openAIData.choices[0].message.content;
+          }
+        } else {
+          const errorData = await openAIResponse.json();
+          console.error('OpenAI API error:', errorData);
+
+          if (openAIResponse.status === 401) {
+            aiResponse = 'Authentication error with AI service. Please check the API configuration.';
+          } else if (openAIResponse.status === 429) {
+            aiResponse = 'AI service rate limit reached. Please try again later.';
+          } else {
+            aiResponse = 'I encountered an error processing your request. Please try again.';
+          }
+        }
+      } catch (openAIError) {
+        console.error('Error calling OpenAI:', openAIError);
+        aiResponse = bot.fallbackMessage || 'I apologize, but I encountered an error connecting to the AI service.';
+      }
     }
 
-    try {
-      // Call OpenAI API
-      const openAIResponse = await fetch(OPENAI_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: bot.model || 'gpt-3.5-turbo',
-          messages: [
-            {
-              role: 'system',
-              content: bot.systemPrompt || bot["systemPrompt"] || 'You are a helpful assistant.'
-            },
-            {
-              role: 'user',
-              content: message
-            }
-          ],
-          temperature: parseFloat(bot.temperature) || 0.7,
-          max_tokens: parseInt(bot.maxTokens || bot["maxTokens"]) || 500
-        })
+    // Store conversation using TypeORM with correct schema
+    const conversationRepository = AppDataSource.getRepository(Conversation);
+    const actualSessionId = sessionId || `wp_v2_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+
+    // Find or create conversation
+    let conversation = await conversationRepository.findOne({
+      where: {
+        botId: botId,
+        sessionId: actualSessionId
+      }
+    });
+
+    // Get visitor info
+    const visitorIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+                      request.headers.get('x-real-ip') ||
+                      metadata?.user_ip ||
+                      metadata?.userIp ||
+                      'Unknown';
+    const country = await getCountryFromIP(visitorIp);
+    const pageUrl = metadata?.page_url || metadata?.pageUrl || request.headers.get('referer') || '';
+    const visitorName = metadata?.visitorName || `Guest #${Math.floor(1000 + Math.random() * 9000)}`;
+    const visitorEmail = metadata?.visitorEmail || '';
+
+    if (!conversation) {
+      // Create new conversation
+      conversation = conversationRepository.create({
+        botId: botId,
+        userId: userId,
+        sessionId: actualSessionId,
+        guestName: visitorName,
+        guestId: `LC-${actualSessionId.slice(-4)}`,
+        visitorEmail: visitorEmail,
+        pageUrl: pageUrl,
+        country: country,
+        ipAddress: visitorIp,
+        mode: 'AI',
+        status: 'active',
+        messages: [],
+        startedAt: new Date(),
+        lastMessageAt: new Date(),
+        metadata: {
+          ...metadata,
+          source: 'wordpress',
+          endpoint: 'v2',
+          userIp: visitorIp,
+          userAgent: metadata?.user_agent || request.headers.get('user-agent') || '',
+          pageUrl: pageUrl,
+          country: country
+        }
       });
-
-      if (openAIResponse.ok) {
-        const openAIData = await openAIResponse.json();
-        if (openAIData.choices && openAIData.choices[0]) {
-          aiResponse = openAIData.choices[0].message.content;
-        }
-      } else {
-        const errorData = await openAIResponse.json();
-        console.error('OpenAI API error:', errorData);
-
-        // Handle specific OpenAI errors
-        if (openAIResponse.status === 401) {
-          aiResponse = 'Authentication error with AI service. Please check the API configuration.';
-        } else if (openAIResponse.status === 429) {
-          aiResponse = 'AI service rate limit reached. Please try again later.';
-        } else if (errorData.error?.message) {
-          console.error('OpenAI error message:', errorData.error.message);
-          aiResponse = 'I encountered an error processing your request. Please try again.';
-        }
-      }
-    } catch (openAIError) {
-      console.error('Error calling OpenAI:', openAIError);
-      aiResponse = 'I apologize, but I encountered an error connecting to the AI service.';
     }
 
-    // Store conversation in database (optional, can be skipped for now)
-    try {
-      // Check if conversations table exists
-      const tableCheck = await pool.query(`
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables
-          WHERE table_schema = 'public'
-          AND table_name = 'conversations'
-        );
-      `);
-
-      if (tableCheck.rows[0].exists) {
-        // Store the conversation
-        await pool.query(
-          `INSERT INTO conversations
-           ("sessionId", "botId", "userId", message, response, "createdAt")
-           VALUES ($1, $2, $3, $4, $5, NOW())`,
-          [sessionId || `session-${Date.now()}`, botId, userId, message, aiResponse]
-        );
+    // Add messages to conversation
+    const messages = conversation.messages || [];
+    messages.push(
+      {
+        id: `${Date.now()}-visitor`,
+        sender: 'visitor',
+        text: message,
+        timestamp: new Date().toISOString()
+      },
+      {
+        id: `${Date.now()}-bot`,
+        sender: 'bot',
+        text: aiResponse,
+        timestamp: new Date().toISOString()
       }
-    } catch (dbError) {
-      // Ignore database errors for conversation storage
-      console.log('Could not store conversation:', dbError.message);
+    );
+
+    conversation.messages = messages;
+    conversation.lastMessageAt = new Date();
+    await conversationRepository.save(conversation);
+
+    // Increment message usage counter
+    if (botOwner) {
+      botOwner.messagesUsedThisMonth = (botOwner.messagesUsedThisMonth || 0) + 1;
+      await userRepository.save(botOwner);
     }
 
     // Return response
     return NextResponse.json({
       success: true,
       response: aiResponse,
-      sessionId: sessionId
+      sessionId: actualSessionId,
+      conversationId: conversation.id
     }, { headers: corsHeaders });
 
   } catch (error) {
     console.error('Message processing error:', error);
     return NextResponse.json(
-      { error: 'Failed to process message: ' + error.message },
+      { error: 'Failed to process message: ' + (error instanceof Error ? error.message : 'Unknown error') },
       { status: 500, headers: corsHeaders }
     );
   }

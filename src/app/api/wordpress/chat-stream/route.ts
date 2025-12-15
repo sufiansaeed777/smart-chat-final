@@ -6,7 +6,10 @@
  */
 
 import { NextRequest } from 'next/server';
-import pool from '@/utils/db';
+import { AppDataSource } from '@/config/database';
+import { Bot } from '@/entities/Bot';
+import { Conversation } from '@/entities/Conversation';
+import { User } from '@/entities/User';
 import rateLimiter, { getClientIdentifier, RATE_LIMITS } from '@/middleware/rateLimit';
 import abuseDetector from '@/middleware/abuseDetection';
 
@@ -26,6 +29,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+// Helper function to get country from IP address
+async function getCountryFromIP(ip: string): Promise<string> {
+  if (!ip || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.')) {
+    return 'Local';
+  }
+
+  try {
+    const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode`, {
+      signal: AbortSignal.timeout(3000)
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.status === 'success' && data.country) {
+        return data.country;
+      }
+    }
+  } catch (error) {
+    console.log(`[GeoIP] Could not determine country for IP ${ip}:`, error);
+  }
+
+  return 'Unknown';
+}
+
 export async function OPTIONS() {
   return new Response(null, {
     status: 200,
@@ -38,7 +65,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { token, message, sessionId } = body;
+    const { token, message, sessionId, metadata } = body;
 
     if (!token || !message) {
       return new Response(
@@ -87,20 +114,93 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get bot configuration from database
-    const botResult = await pool.query(
-      'SELECT * FROM bots WHERE id = $1 AND "createdBy" = $2 AND status = $3',
-      [botId, userId, 'active']
-    );
+    // Initialize database
+    if (!AppDataSource.isInitialized) {
+      try {
+        await AppDataSource.initialize();
+      } catch (error) {
+        console.error('Database initialization failed:', error);
+        return new Response(
+          JSON.stringify({ error: 'Database connection failed' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
-    if (botResult.rows.length === 0) {
+    // Get bot configuration from database using TypeORM
+    const botRepository = AppDataSource.getRepository(Bot);
+    const bot = await botRepository.findOne({
+      where: {
+        id: botId,
+        createdBy: userId,
+        status: 'active'
+      }
+    });
+
+    if (!bot) {
       return new Response(
         JSON.stringify({ error: 'Bot not found or inactive' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const bot = botResult.rows[0];
+    // Get bot owner for message counting
+    const userRepository = AppDataSource.getRepository(User);
+    const botOwner = await userRepository.findOne({
+      where: { id: userId }
+    });
+
+    // Prepare conversation data
+    const conversationRepository = AppDataSource.getRepository(Conversation);
+    const actualSessionId = sessionId || `wp_stream_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+
+    // Get visitor info
+    const visitorIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+                      request.headers.get('x-real-ip') ||
+                      metadata?.user_ip ||
+                      metadata?.userIp ||
+                      'Unknown';
+    const country = await getCountryFromIP(visitorIp);
+    const pageUrl = metadata?.page_url || metadata?.pageUrl || request.headers.get('referer') || '';
+    const visitorName = metadata?.visitorName || `Guest #${Math.floor(1000 + Math.random() * 9000)}`;
+    const visitorEmail = metadata?.visitorEmail || '';
+
+    // Find or create conversation
+    let conversation = await conversationRepository.findOne({
+      where: {
+        botId: botId,
+        sessionId: actualSessionId
+      }
+    });
+
+    if (!conversation) {
+      conversation = conversationRepository.create({
+        botId: botId,
+        userId: userId,
+        sessionId: actualSessionId,
+        guestName: visitorName,
+        guestId: `LC-${actualSessionId.slice(-4)}`,
+        visitorEmail: visitorEmail,
+        pageUrl: pageUrl,
+        country: country,
+        ipAddress: visitorIp,
+        mode: 'AI',
+        status: 'active',
+        messages: [],
+        startedAt: new Date(),
+        lastMessageAt: new Date(),
+        metadata: {
+          ...metadata,
+          source: 'wordpress',
+          endpoint: 'stream',
+          userIp: visitorIp,
+          userAgent: metadata?.user_agent || request.headers.get('user-agent') || '',
+          pageUrl: pageUrl,
+          country: country
+        }
+      });
+      await conversationRepository.save(conversation);
+    }
 
     // Create readable stream for SSE
     const stream = new ReadableStream({
@@ -115,7 +215,6 @@ export async function POST(request: NextRequest) {
           if (!OPENAI_API_KEY || OPENAI_API_KEY.includes('YOUR_NEW_API_KEY')) {
             console.log('Running in DEMO mode - no valid OpenAI key');
 
-            // Provide demo responses based on keywords
             const lowerMessage = message.toLowerCase();
             let demoResponse = 'This is a demo response. In production, I would use AI to provide intelligent answers.';
 
@@ -132,18 +231,45 @@ export async function POST(request: NextRequest) {
             }
 
             // Simulate streaming by sending word by word
-            const words = `[DEMO MODE] ${demoResponse}`.split(' ');
+            const fullDemoResponse = `[DEMO MODE] ${demoResponse}`;
+            const words = fullDemoResponse.split(' ');
             for (const word of words) {
               sendSSE(JSON.stringify({ chunk: word + ' ' }));
-              await new Promise(resolve => setTimeout(resolve, 50)); // 50ms delay
+              await new Promise(resolve => setTimeout(resolve, 50));
             }
 
-            sendSSE(JSON.stringify({ done: true, sessionId }));
+            // Save conversation with demo response
+            const messages = conversation!.messages || [];
+            messages.push(
+              {
+                id: `${Date.now()}-visitor`,
+                sender: 'visitor',
+                text: message,
+                timestamp: new Date().toISOString()
+              },
+              {
+                id: `${Date.now()}-bot`,
+                sender: 'bot',
+                text: fullDemoResponse,
+                timestamp: new Date().toISOString()
+              }
+            );
+            conversation!.messages = messages;
+            conversation!.lastMessageAt = new Date();
+            await conversationRepository.save(conversation!);
+
+            sendSSE(JSON.stringify({ done: true, sessionId: actualSessionId, conversationId: conversation!.id }));
             controller.close();
             return;
           }
 
           // Call OpenAI API with streaming enabled
+          const systemPrompt = `You are ${bot.name}, a helpful AI assistant.
+Your personality is ${bot.tone || 'professional'}.
+${bot.customInstructions || ''}
+${bot.trainingContext || ''}
+Always be helpful, accurate, and concise.`;
+
           const openAIResponse = await fetch(OPENAI_API_URL, {
             method: 'POST',
             headers: {
@@ -151,20 +277,14 @@ export async function POST(request: NextRequest) {
               'Authorization': `Bearer ${OPENAI_API_KEY}`
             },
             body: JSON.stringify({
-              model: bot.model || 'gpt-3.5-turbo',
+              model: bot.aiModel || 'gpt-3.5-turbo',
               messages: [
-                {
-                  role: 'system',
-                  content: bot.systemPrompt || bot["systemPrompt"] || 'You are a helpful assistant.'
-                },
-                {
-                  role: 'user',
-                  content: message
-                }
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: message }
               ],
-              temperature: parseFloat(bot.temperature) || 0.7,
-              max_tokens: parseInt(bot.maxTokens || bot["maxTokens"]) || 500,
-              stream: true // Enable streaming
+              temperature: Number(bot.temperature) || 0.7,
+              max_tokens: Number(bot.maxTokens) || 500,
+              stream: true
             })
           });
 
@@ -199,8 +319,39 @@ export async function POST(request: NextRequest) {
             const { done, value } = await reader.read();
 
             if (done) {
+              // Save conversation with full response
+              const messages = conversation!.messages || [];
+              messages.push(
+                {
+                  id: `${Date.now()}-visitor`,
+                  sender: 'visitor',
+                  text: message,
+                  timestamp: new Date().toISOString()
+                },
+                {
+                  id: `${Date.now()}-bot`,
+                  sender: 'bot',
+                  text: fullResponse,
+                  timestamp: new Date().toISOString()
+                }
+              );
+              conversation!.messages = messages;
+              conversation!.lastMessageAt = new Date();
+              await conversationRepository.save(conversation!);
+
+              // Increment message usage counter
+              if (botOwner) {
+                botOwner.messagesUsedThisMonth = (botOwner.messagesUsedThisMonth || 0) + 1;
+                await userRepository.save(botOwner);
+              }
+
               // Send completion message
-              sendSSE(JSON.stringify({ done: true, sessionId, fullResponse }));
+              sendSSE(JSON.stringify({
+                done: true,
+                sessionId: actualSessionId,
+                conversationId: conversation!.id,
+                fullResponse
+              }));
               controller.close();
               break;
             }
@@ -231,28 +382,6 @@ export async function POST(request: NextRequest) {
                 }
               }
             }
-          }
-
-          // Store conversation in database (async, don't wait)
-          try {
-            const tableCheck = await pool.query(`
-              SELECT EXISTS (
-                SELECT FROM information_schema.tables
-                WHERE table_schema = 'public'
-                AND table_name = 'conversations'
-              );
-            `);
-
-            if (tableCheck.rows[0].exists) {
-              await pool.query(
-                `INSERT INTO conversations ("botId", "userId", message, response, "createdAt", "isTestMessage", metadata)
-                 VALUES ($1, $2, $3, $4, NOW(), $5, $6)`,
-                [botId, userId, message, fullResponse, false, { sessionId, stream: true }]
-              );
-            }
-          } catch (dbError) {
-            console.error('Error storing conversation:', dbError);
-            // Don't fail the stream if DB storage fails
           }
 
         } catch (error) {

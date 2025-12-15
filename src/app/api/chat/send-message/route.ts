@@ -8,20 +8,82 @@ import { Conversation } from '@/entities/Conversation';
 import { N8nService } from '@/services/n8nService';
 import OpenAI from 'openai';
 
-// Helper function to save conversation
-async function saveConversation(botId: string, userId: string, message: string, sender: 'user' | 'bot', isTestMessage: boolean = false, metadata?: Record<string, unknown>) {
-  try {
-    const conversationRepository = AppDataSource.getRepository("conversations");
+// Session storage for website visitors (in-memory for now, could be Redis in production)
+const visitorSessions: Map<string, { conversationId: string; messages: any[] }> = new Map();
 
-    const conversation = new Conversation();
-    conversation.botId = botId;
-    conversation.userId = userId;
-    conversation.message = message;
-    conversation.sender = sender;
-    conversation.isTestMessage = isTestMessage;
-    conversation.metadata = metadata ? JSON.stringify(metadata) : undefined;
+// Helper function to save or update conversation
+async function saveConversation(
+  botId: string,
+  visitorId: string,
+  message: string,
+  sender: 'visitor' | 'bot',
+  isTestMessage: boolean = false,
+  metadata?: Record<string, unknown>,
+  isGuestUser: boolean = false
+) {
+  try {
+    // Use Entity class for proper column name mapping
+    const conversationRepository = AppDataSource.getRepository(Conversation);
+
+    // For website visitors, use session-based conversation storage
+    const sessionKey = `${botId}-${visitorId}`;
+    let session = visitorSessions.get(sessionKey);
+
+    // Check if we have an existing active conversation (within last 30 minutes)
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+
+    let conversation: Conversation | null = null;
+
+    if (session?.conversationId) {
+      // Try to find existing conversation
+      conversation = await conversationRepository.findOne({
+        where: { id: session.conversationId }
+      });
+    }
+
+    // If no existing conversation or it's too old, create a new one
+    if (!conversation || (conversation.lastMessageAt && new Date(conversation.lastMessageAt) < thirtyMinutesAgo)) {
+      conversation = new Conversation();
+      conversation.botId = isGuestUser && botId === 'general-assistant' ? botId : botId;
+      conversation.userId = isGuestUser ? 'guest-visitor' : visitorId;
+      conversation.guestId = isGuestUser ? visitorId : undefined;
+      conversation.sessionId = sessionKey;
+      conversation.status = 'active';
+      conversation.mode = 'AI';
+      conversation.messages = [];
+      conversation.isTestMessage = isTestMessage;
+      conversation.startedAt = new Date();
+      conversation.metadata = metadata || {};
+
+      await conversationRepository.save(conversation);
+
+      // Update session
+      session = { conversationId: conversation.id, messages: [] };
+      visitorSessions.set(sessionKey, session);
+    }
+
+    // Add message to conversation
+    const newMessage = {
+      id: Date.now().toString(),
+      sender: sender,
+      text: message,
+      timestamp: new Date().toISOString()
+    };
+
+    // Ensure messages array exists
+    if (!Array.isArray(conversation.messages)) {
+      conversation.messages = [];
+    }
+
+    conversation.messages.push(newMessage);
+    conversation.lastMessageAt = new Date();
+
+    if (metadata) {
+      conversation.metadata = { ...conversation.metadata, ...metadata };
+    }
 
     await conversationRepository.save(conversation);
+
     return conversation;
   } catch (error) {
     console.error('Error saving conversation:', error);
@@ -55,8 +117,8 @@ export async function POST(request: NextRequest) {
         await AppDataSource.initialize();
       }
 
-      // Get user from database
-      const userRepository = AppDataSource.getRepository("users");
+      // Get user from database - Use Entity class for proper column name mapping
+      const userRepository = AppDataSource.getRepository(User);
       user = await userRepository.findOne({
         where: { email: session.user.email }
       });
@@ -139,7 +201,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Save user message to conversation
-    await saveConversation(botId, user.id, message, 'user', isTestMessage);
+    const isGuestUser = userId === 'guest-user';
+    await saveConversation(botId, user.id, message, 'visitor', isTestMessage, undefined, isGuestUser);
 
     // Priority 1: Use n8n trained bot (RAG with vector embeddings) if bot is trained
     if (bot.trainingStatus === 'trained' && process.env.N8N_WEBHOOK_URL) {
@@ -156,7 +219,7 @@ export async function POST(request: NextRequest) {
           console.log(`✅ n8n RAG response received`);
           await saveConversation(botId, user.id, n8nResult.response, 'bot', isTestMessage, {
             source: 'n8n_rag'
-          });
+          }, isGuestUser);
 
           return NextResponse.json({
             response: n8nResult.response,
@@ -197,7 +260,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Save bot response to conversation
-      await saveConversation(botId, user.id, response, 'bot', isTestMessage);
+      await saveConversation(botId, user.id, response, 'bot', isTestMessage, undefined, isGuestUser);
 
       return NextResponse.json({
         response: response,
@@ -229,7 +292,7 @@ export async function POST(request: NextRequest) {
       const botResponse = completion.choices[0]?.message?.content || 'I apologize, but I was unable to generate a response.';
 
       // Save bot response to conversation
-      await saveConversation(botId, user.id, botResponse, 'bot', isTestMessage);
+      await saveConversation(botId, user.id, botResponse, 'bot', isTestMessage, undefined, isGuestUser);
 
       return NextResponse.json({
         response: botResponse,
@@ -241,7 +304,7 @@ export async function POST(request: NextRequest) {
       // Check if it's an API key error
       if (openaiError.message?.includes('API key') || openaiError.message?.includes('Incorrect')) {
         const errorResponse = 'Configuration error: Invalid OpenAI API key. Please contact your administrator.';
-        await saveConversation(botId, user.id, errorResponse, 'bot', isTestMessage);
+        await saveConversation(botId, user.id, errorResponse, 'bot', isTestMessage, undefined, isGuestUser);
         return NextResponse.json({
           response: errorResponse,
           success: false
@@ -251,7 +314,7 @@ export async function POST(request: NextRequest) {
       // Check if it's a rate limit error
       if (openaiError.message?.includes('rate limit')) {
         const errorResponse = 'The service is currently experiencing high demand. Please try again in a moment.';
-        await saveConversation(botId, user.id, errorResponse, 'bot', isTestMessage);
+        await saveConversation(botId, user.id, errorResponse, 'bot', isTestMessage, undefined, isGuestUser);
         return NextResponse.json({
           response: errorResponse,
           success: false
@@ -260,7 +323,7 @@ export async function POST(request: NextRequest) {
 
       // Fall back to a generic error message
       const fallbackResponse = 'I apologize, but I encountered an error processing your request. Please try again.';
-      await saveConversation(botId, user.id, fallbackResponse, 'bot', isTestMessage);
+      await saveConversation(botId, user.id, fallbackResponse, 'bot', isTestMessage, undefined, isGuestUser);
       return NextResponse.json({
         response: fallbackResponse,
         success: true

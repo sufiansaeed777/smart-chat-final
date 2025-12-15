@@ -16,30 +16,100 @@ export interface ProcessedDocument {
 }
 
 /**
- * Extract text from PDF buffer
+ * Extract text from PDF buffer with better formatting preservation
  */
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
     // For serverless environment, use pdf-parse
     const pdfParse = require('pdf-parse');
-    const data = await pdfParse(buffer);
 
-    return data.text;
+    // Custom render to preserve some formatting
+    const options = {
+      // Preserve more structure
+      pagerender: function(pageData: any) {
+        return pageData.getTextContent().then(function(textContent: any) {
+          let lastY = null;
+          let text = '';
+
+          for (const item of textContent.items) {
+            // Add line break if Y position changes significantly (new line)
+            if (lastY !== null && Math.abs(item.transform[5] - lastY) > 5) {
+              text += '\n';
+            }
+            text += item.str;
+            lastY = item.transform[5];
+          }
+
+          return text;
+        });
+      }
+    };
+
+    const data = await pdfParse(buffer, options);
+
+    // Clean up extracted text
+    let text = data.text || '';
+
+    // Preserve paragraph structure
+    text = text
+      .replace(/\r\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
+    if (!text || text.length < 10) {
+      throw new Error('No readable text found in PDF');
+    }
+
+    return text;
   } catch (error) {
     console.error('Error extracting PDF text:', error);
-    throw new Error('Failed to extract text from PDF');
+    throw new Error('Failed to extract text from PDF: ' + (error instanceof Error ? error.message : 'Unknown error'));
   }
 }
 
 /**
- * Extract text from Word document
+ * Extract text from Word document with better formatting preservation
  */
 export async function extractTextFromWord(buffer: Buffer): Promise<string> {
   try {
     const mammoth = require('mammoth');
-    const result = await mammoth.extractRawText({ buffer });
 
-    return result.value;
+    // Use convertToHtml first to get structure, then convert to text with formatting
+    const htmlResult = await mammoth.convertToHtml({ buffer });
+
+    if (htmlResult.value) {
+      // Convert HTML to formatted text
+      let text = htmlResult.value
+        // Add double line breaks for paragraphs and headings
+        .replace(/<\/p>/gi, '\n\n')
+        .replace(/<\/h[1-6]>/gi, '\n\n')
+        .replace(/<\/div>/gi, '\n')
+        .replace(/<\/li>/gi, '\n')
+        .replace(/<br\s*\/?>/gi, '\n')
+        // Add line breaks before list items
+        .replace(/<li>/gi, '• ')
+        // Remove all remaining HTML tags
+        .replace(/<[^>]+>/g, '')
+        // Decode HTML entities
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        // Clean up excessive whitespace while preserving intentional line breaks
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n[ \t]+/g, '\n')
+        .replace(/[ \t]+\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+
+      return text;
+    }
+
+    // Fallback to raw text extraction
+    const rawResult = await mammoth.extractRawText({ buffer });
+    return rawResult.value;
   } catch (error) {
     console.error('Error extracting Word text:', error);
     throw new Error('Failed to extract text from Word document');
@@ -114,10 +184,12 @@ export async function processDocument(
       format = 'text';
   }
 
-  // Clean up content
+  // Clean up content - preserve line breaks for proper formatting
   content = content
-    .replace(/\s+/g, ' ')  // Normalize whitespace
-    .replace(/\n{3,}/g, '\n\n')  // Remove excessive line breaks
+    .replace(/[ \t]+/g, ' ')  // Normalize horizontal whitespace only (not newlines)
+    .replace(/\r\n/g, '\n')   // Normalize line endings
+    .replace(/\n{3,}/g, '\n\n')  // Remove excessive line breaks (3+ becomes 2)
+    .replace(/^\s+|\s+$/gm, '')  // Trim each line
     .trim();
 
   // Generate chunks for vector embedding

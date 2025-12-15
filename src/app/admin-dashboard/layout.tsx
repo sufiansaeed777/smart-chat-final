@@ -41,6 +41,7 @@ const AdminDashboardLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     { id: 'overview', label: 'Overview', icon: LayoutDashboard, path: `${basePath}` },
     { id: 'user-management', label: 'User Management', icon: Users, path: `${basePath}/user-management` },
     { id: 'bots', label: 'Bots', icon: Bot, path: `${basePath}/bots` },
+    { id: 'conversations', label: 'Conversations', icon: MessageSquare, path: `${basePath}/conversations` },
     { id: 'analytics', label: 'Analytics', icon: BarChart3, path: `${basePath}/analytics` },
     { id: 'chatbot-analytics', label: 'Chatbot Analytics', icon: MessageSquare, path: `${basePath}/chatbot-analytics` },
     { id: 'chatbot-issues', label: 'Chatbot Issues', icon: AlertTriangle, path: `${basePath}/chatbot-issues` },
@@ -55,6 +56,7 @@ const AdminDashboardLayout: React.FC<{ children: React.ReactNode }> = ({ childre
   const getActiveSection = (pathname: string): string => {
     if (pathname.includes('/user-management')) return 'user-management';
     if (pathname.includes('/bots')) return 'bots';
+    if (pathname.includes('/conversations')) return 'conversations';
     if (pathname.includes('/analytics')) return 'analytics';
     if (pathname.includes('/chatbot-analytics')) return 'chatbot-analytics';
     if (pathname.includes('/chatbot-issues')) return 'chatbot-issues';

@@ -417,9 +417,43 @@ const KnowledgeBasePage: React.FC = () => {
     );
   }, []);
 
-  const handleViewDocument = useCallback((doc: Document) => {
+  const [viewerLoading, setViewerLoading] = useState(false);
+  const [viewerError, setViewerError] = useState<string | null>(null);
+
+  const handleViewDocument = useCallback(async (doc: Document) => {
     setViewingDocument(doc);
     setShowViewerModal(true);
+    setViewerError(null);
+
+    // Check if content is invalid or missing
+    const hasInvalidContent = !doc.content ||
+      doc.content.startsWith('Binary file:') ||
+      doc.content.length < 20;
+
+    if (hasInvalidContent) {
+      // Try to fetch/re-extract content
+      setViewerLoading(true);
+      try {
+        const response = await fetch(`/api/manager/documents/${doc.id}/content`);
+        const data = await response.json();
+
+        if (data.content) {
+          // Update the document with the extracted content
+          setViewingDocument(prev => prev ? { ...prev, content: data.content } : null);
+          // Also update in the documents list
+          setDocuments(prev => prev.map(d =>
+            d.id === doc.id ? { ...d, content: data.content } : d
+          ));
+        } else if (data.error) {
+          setViewerError(data.error);
+        }
+      } catch (error) {
+        console.error('Error fetching document content:', error);
+        setViewerError('Failed to load document content. Please try downloading the file.');
+      } finally {
+        setViewerLoading(false);
+      }
+    }
   }, []);
 
   return (
@@ -1030,7 +1064,30 @@ const KnowledgeBasePage: React.FC = () => {
               </div>
               
               <div className="flex-1 p-6 overflow-y-auto bg-white">
-                {viewingDocument.content ? (
+                {viewerLoading ? (
+                  <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+                    <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+                    <p className="text-lg font-medium mb-2">Extracting content...</p>
+                    <p className="text-sm text-center text-gray-400">
+                      Please wait while we extract the text from your document.
+                    </p>
+                  </div>
+                ) : viewerError ? (
+                  <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+                    <AlertCircle className="w-16 h-16 mb-4 text-orange-400" />
+                    <p className="text-lg font-medium mb-2 text-gray-700">Content Extraction Issue</p>
+                    <p className="text-sm text-center text-gray-500 max-w-md mb-4">
+                      {viewerError}
+                    </p>
+                    <button
+                      onClick={() => handleDownloadDocument(viewingDocument)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download File Instead
+                    </button>
+                  </div>
+                ) : viewingDocument.content && !viewingDocument.content.startsWith('Binary file:') ? (
                   <div className="document-viewer">
                     {/* Render content with proper formatting */}
                     <div className="prose prose-sm sm:prose-base max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-p:text-gray-700 prose-p:leading-relaxed prose-li:text-gray-700 prose-strong:text-gray-900">
@@ -1116,20 +1173,57 @@ const KnowledgeBasePage: React.FC = () => {
                 )}
               </div>
               
-              <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
+              <div className="flex justify-between gap-3 p-6 border-t border-gray-200">
                 <button
-                  onClick={() => setShowViewerModal(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  onClick={async () => {
+                    if (!viewingDocument) return;
+                    setViewerLoading(true);
+                    setViewerError(null);
+                    try {
+                      const response = await fetch(`/api/manager/documents/${viewingDocument.id}/content`, {
+                        method: 'POST'
+                      });
+                      const data = await response.json();
+                      if (data.content) {
+                        setViewingDocument(prev => prev ? { ...prev, content: data.content } : null);
+                        setDocuments(prev => prev.map(d =>
+                          d.id === viewingDocument.id ? { ...d, content: data.content } : d
+                        ));
+                      } else if (data.error) {
+                        setViewerError(data.error);
+                      }
+                    } catch (error) {
+                      setViewerError('Failed to re-extract content');
+                    } finally {
+                      setViewerLoading(false);
+                    }
+                  }}
+                  disabled={viewerLoading}
+                  className="px-4 py-2 text-indigo-700 bg-indigo-100 hover:bg-indigo-200 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
                 >
-                  Close
+                  <svg className={`w-4 h-4 ${viewerLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Re-extract Content
                 </button>
-                <button
-                  onClick={() => handleDownloadDocument(viewingDocument)}
-                  className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Download
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowViewerModal(false);
+                      setViewerError(null);
+                    }}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={() => handleDownloadDocument(viewingDocument)}
+                    className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </button>
+                </div>
               </div>
             </div>
           </div>
