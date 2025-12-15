@@ -140,21 +140,21 @@ export async function GET(request: NextRequest) {
     const conversationRepository = AppDataSource.getRepository(Conversation);
     const issueRepository = AppDataSource.getRepository(ChatbotIssue);
 
-    // Count conversations handled by each user (as assigned agent)
+    // Count conversations for bots assigned to each user
     const userChatCounts: Record<string, number> = {};
-    if (userIds.length > 0 && managerBotIds.length > 0) {
-      const chatCounts = await conversationRepository
-        .createQueryBuilder('conversation')
-        .select('conversation.assignedAgentId', 'agentId')
-        .addSelect('COUNT(DISTINCT conversation.sessionId)', 'count')
-        .where('conversation.assignedAgentId IN (:...userIds)', { userIds })
-        .andWhere('conversation.botId IN (:...botIds)', { botIds: managerBotIds })
-        .groupBy('conversation.assignedAgentId')
-        .getRawMany();
-
-      chatCounts.forEach(item => {
-        userChatCounts[item.agentId] = parseInt(item.count) || 0;
-      });
+    if (userIds.length > 0) {
+      // For each user, count conversations on their assigned bots
+      for (const userId of userIds) {
+        const userBots = userBotAssignments[userId] || [];
+        if (userBots.length > 0) {
+          const userBotIds = userBots.map(b => b.botId);
+          const chatCount = await conversationRepository
+            .createQueryBuilder('conversation')
+            .where('conversation.botId IN (:...botIds)', { botIds: userBotIds })
+            .getCount();
+          userChatCounts[userId] = chatCount;
+        }
+      }
     }
 
     // Count issues resolved by each user (using assignedTo field since resolvedBy doesn't exist)
