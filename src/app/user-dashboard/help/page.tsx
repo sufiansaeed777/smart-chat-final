@@ -66,6 +66,9 @@ const HelpPage = () => {
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactForm, setContactForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const categories = [
     { id: 'getting-started', label: 'Getting Started', icon: BookOpen, color: 'from-blue-500 to-blue-600' },
@@ -126,16 +129,18 @@ const HelpPage = () => {
       });
 
       if (response.ok) {
-        alert('Message sent successfully! We\'ll get back to you within 24 hours.');
         setContactForm({ name: '', email: '', subject: '', message: '' });
         setShowContactForm(false);
+        setShowSuccessModal(true);
       } else {
         const error = await response.json();
-        alert(`Failed to send message: ${error.error || 'Please try again.'}`);
+        setErrorMessage(error.error || 'Please try again.');
+        setShowErrorModal(true);
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('An error occurred. Please try again.');
+      setErrorMessage('An error occurred. Please try again.');
+      setShowErrorModal(true);
     } finally {
       setIsSendingEmail(false);
     }
@@ -671,6 +676,52 @@ const HelpPage = () => {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
+              Message Sent!
+            </h2>
+            <p className="text-gray-600 text-center mb-6">
+              We&apos;ll get back to you within 24 hours.
+            </p>
+            <Button
+              onClick={() => setShowSuccessModal(false)}
+              className="w-full py-2.5 rounded-xl bg-[#6566F1] hover:bg-[#5A5BD9] text-white"
+            >
+              Got it
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Error Modal */}
+      {showErrorModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
+              <X className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
+              Failed to Send
+            </h2>
+            <p className="text-gray-600 text-center mb-6">
+              {errorMessage}
+            </p>
+            <Button
+              onClick={() => setShowErrorModal(false)}
+              className="w-full py-2.5 rounded-xl bg-[#6566F1] hover:bg-[#5A5BD9] text-white"
+            >
+              Try Again
+            </Button>
           </div>
         </div>
       )}
