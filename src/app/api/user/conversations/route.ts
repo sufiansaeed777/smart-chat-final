@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
 
       // Auto-complete: If no message for 30 minutes, mark as completed
       const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-      const isActive = endTime > thirtyMinutesAgo && conv.status !== 'completed';
+      const isActive = endTime > thirtyMinutesAgo;
 
       // Determine user name and email
       let userName = 'Unknown User';
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
         lastMessageTime: endTime.toISOString(),
-        status: isActive ? 'active' : (conv.status || 'completed'),
+        status: isActive ? 'active' : 'completed',
         messageCount: messageCount,
         duration: `${duration} min`,
         satisfaction: Math.floor(Math.random() * 2) + 4, // Mock rating between 4-5
