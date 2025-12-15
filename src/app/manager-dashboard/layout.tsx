@@ -64,14 +64,29 @@ const ManagerDashboardLayout: React.FC<ManagerDashboardLayoutProps> = ({
   useEffect(() => {
     const fetchHandoffCount = async () => {
       try {
-        const response = await fetch('/api/conversations?status=waiting&mode=Human');
-        if (response.ok) {
-          const data = await response.json();
-          // Count conversations that are waiting for human agent
-          const waitingCount = Array.isArray(data) ? data.length :
-                              (data.conversations ? data.conversations.length : 0);
-          setHandoffCount(waitingCount);
+        // Fetch conversations that need attention:
+        // 1. Waiting for human agent (status=waiting, mode=Human)
+        // 2. Active human conversations (status=active, mode=Human)
+        const [waitingResponse, activeResponse] = await Promise.all([
+          fetch('/api/conversations?status=waiting&mode=Human'),
+          fetch('/api/conversations?status=active&mode=Human')
+        ]);
+
+        let totalCount = 0;
+
+        if (waitingResponse.ok) {
+          const data = await waitingResponse.json();
+          const waitingCount = data.conversations ? data.conversations.length : 0;
+          totalCount += waitingCount;
         }
+
+        if (activeResponse.ok) {
+          const data = await activeResponse.json();
+          const activeCount = data.conversations ? data.conversations.length : 0;
+          totalCount += activeCount;
+        }
+
+        setHandoffCount(totalCount);
       } catch (error) {
         console.error('Error fetching handoff count:', error);
       }

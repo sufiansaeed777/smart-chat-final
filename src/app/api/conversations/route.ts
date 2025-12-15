@@ -44,8 +44,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get user from database
-    const userRepository = AppDataSource.getRepository("users");
+    // Get user from database - Use Entity class for proper column name mapping
+    const userRepository = AppDataSource.getRepository(User);
     const currentUser = await userRepository.findOne({
       where: { email: session.user.email }
     });
@@ -62,7 +62,8 @@ export async function GET(request: NextRequest) {
       accessibleBotIds = [];
     } else if (currentUser.role === 'manager') {
       // Managers can see conversations for their own bots
-      const botRepository = AppDataSource.getRepository("bots");
+      const { Bot } = await import('@/entities/Bot');
+      const botRepository = AppDataSource.getRepository(Bot);
       const managerBots = await botRepository.find({
         where: { createdBy: currentUser.id },
         select: ['id']
@@ -70,7 +71,8 @@ export async function GET(request: NextRequest) {
       accessibleBotIds = managerBots.map(bot => bot.id);
     } else {
       // Regular users can only see conversations for assigned bots
-      const assignmentRepository = AppDataSource.getRepository("bot_assignments");
+      const { BotAssignment } = await import('@/entities/BotAssignment');
+      const assignmentRepository = AppDataSource.getRepository(BotAssignment);
       const assignments = await assignmentRepository.find({
         where: {
           userId: currentUser.id,
