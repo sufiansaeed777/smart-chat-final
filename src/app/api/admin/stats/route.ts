@@ -31,16 +31,16 @@ export async function GET() {
     const totalBots = await botRepository.count();
     const totalConversations = await conversationRepository.count();
 
-    // Use 7-day window for "active users" to distinguish from "total users"
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    // Count users who logged in TODAY (last 24 hours) for "Online Today" metric
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
 
-    // Count active users: users with isActive=true who logged in within last 7 days
+    // Count online users: users who logged in within last 24 hours
     const activeUsers = await userRepository
       .createQueryBuilder('user')
       .where('user.isActive = :isActive', { isActive: true })
       .andWhere('user.lastLoginAt IS NOT NULL')
-      .andWhere('user.lastLoginAt > :date', { date: sevenDaysAgo })
+      .andWhere('user.lastLoginAt > :date', { date: twentyFourHoursAgo })
       .getCount();
 
     // Count pending managers (managers with unverified emails or pending status)

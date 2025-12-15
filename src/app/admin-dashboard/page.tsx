@@ -258,11 +258,10 @@ const AdminOverview: React.FC = () => {
              onClick={() => handleNavigation('/admin-dashboard/user-management')}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Active Users</p>
+              <p className="text-sm font-medium text-gray-600">Online Today</p>
               <p className="text-3xl font-bold text-gray-900">{stats.activeUsers}</p>
-              <p className="text-sm text-green-600 flex items-center mt-1">
-                <TrendingUp className="w-4 h-4 mr-1" />
-                +5% today
+              <p className="text-sm text-gray-500 flex items-center mt-1">
+                Logged in last 24h
               </p>
             </div>
             <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center group-hover:bg-purple-50 transition-colors duration-300">
