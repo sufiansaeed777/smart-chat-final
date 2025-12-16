@@ -36,14 +36,14 @@ export class ChatbotIssue {
   @Column({ type: 'text', nullable: true })
   response?: string;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ name: 'bot_id', type: 'uuid', nullable: true })
   botId?: string;
 
   @ManyToOne(() => Bot, { nullable: true })
-  @JoinColumn({ name: 'botId' })
+  @JoinColumn({ name: 'bot_id' })
   bot?: Bot;
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Column({ name: 'website_url', type: 'varchar', length: 500, nullable: true })
   websiteUrl?: string;
 
   @CreateDateColumn()
