@@ -63,9 +63,7 @@ export async function GET(request: NextRequest) {
 
     // Get all bots for filter options
     const botRepository = AppDataSource.getRepository(Bot);
-    const allBots = await botRepository.find({
-      relations: ['creator']
-    });
+    const allBots = await botRepository.find();
 
     // Get all managers for filter options
     const allManagers = await userRepository.find({

@@ -31,6 +31,14 @@ export async function GET(request: NextRequest) {
       order: { createdAt: 'DESC' }
     });
 
+    // Helper to safely convert date to ISO string
+    const toISOStringSafe = (date: Date | string | null | undefined): string | null => {
+      if (!date) return null;
+      if (date instanceof Date) return date.toISOString();
+      if (typeof date === 'string') return date;
+      return null;
+    };
+
     // Transform the data for the frontend
     const formattedSubscriptions = subscriptions.map(sub => ({
       id: sub.id,
@@ -39,12 +47,12 @@ export async function GET(request: NextRequest) {
       managerEmail: sub.manager?.email || 'Unknown',
       planName: sub.planName,
       status: sub.status,
-      amount: parseFloat(sub.amount.toString()),
+      amount: parseFloat(sub.amount?.toString() || '0'),
       currency: sub.currency,
       billingCycle: sub.billingCycle,
-      startDate: sub.startDate.toISOString(),
-      endDate: sub.endDate.toISOString(),
-      nextBillingDate: sub.nextBillingDate.toISOString(),
+      startDate: toISOStringSafe(sub.startDate),
+      endDate: toISOStringSafe(sub.endDate),
+      nextBillingDate: toISOStringSafe(sub.nextBillingDate),
       usersCount: sub.usersCount,
       botsCount: sub.botsCount,
       maxUsers: sub.maxUsers,
@@ -52,8 +60,8 @@ export async function GET(request: NextRequest) {
       stripeSubscriptionId: sub.stripeSubscriptionId,
       stripeCustomerId: sub.stripeCustomerId,
       notes: sub.notes,
-      createdAt: sub.createdAt.toISOString(),
-      updatedAt: sub.updatedAt.toISOString()
+      createdAt: toISOStringSafe(sub.createdAt),
+      updatedAt: toISOStringSafe(sub.updatedAt)
     }));
 
     return NextResponse.json({ subscriptions: formattedSubscriptions });
