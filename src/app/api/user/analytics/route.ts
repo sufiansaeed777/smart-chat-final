@@ -101,9 +101,10 @@ export async function GET(request: NextRequest) {
     // FIX: Count unique visitors who messaged
     // For WordPress/external visitors: use guestId or sessionId
     // For internal users: use distinct combinations
+    // Cast id to text to match varchar types of guestId/sessionId
     const uniqueVisitorsResult = await conversationRepository
       .createQueryBuilder('conversation')
-      .select('COUNT(DISTINCT COALESCE(conversation.guestId, conversation.sessionId, conversation.id))', 'count')
+      .select('COUNT(DISTINCT COALESCE(conversation.guestId, conversation.sessionId, conversation.id::text))', 'count')
       .where('conversation.botId IN (:...botIds)', { botIds })
       .getRawOne();
 
