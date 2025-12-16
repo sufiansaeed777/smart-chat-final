@@ -103,21 +103,22 @@ export class Conversation {
   @Column({ type: 'boolean', default: false })
   isTestMessage!: boolean;
 
-  // Content Moderation / Flagging
-  @Column({ type: 'boolean', default: false })
+  // Content Moderation / Flagging (these columns use snake_case in DB)
+  @Column({ name: 'is_flagged', type: 'boolean', default: false })
   @Index()
   isFlagged!: boolean;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'flag_reason', type: 'text', nullable: true })
   flagReason?: string;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ name: 'flagged_by', type: 'uuid', nullable: true })
   flaggedBy?: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'flagged_at', type: 'timestamp', nullable: true })
   flaggedAt?: Date;
 
   @Column({
+    name: 'review_status',
     type: 'enum',
     enum: ['pending', 'approved', 'rejected', 'resolved'],
     nullable: true
@@ -125,13 +126,13 @@ export class Conversation {
   @Index()
   reviewStatus?: 'pending' | 'approved' | 'rejected' | 'resolved';
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ name: 'reviewed_by', type: 'uuid', nullable: true })
   reviewedBy?: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'reviewed_at', type: 'timestamp', nullable: true })
   reviewedAt?: Date;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'review_notes', type: 'text', nullable: true })
   reviewNotes?: string;
 
   @CreateDateColumn()
