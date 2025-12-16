@@ -92,10 +92,10 @@ export async function GET(request: NextRequest) {
     const conversationRepository = AppDataSource.getRepository(Conversation);
 
     // ===== BASIC STATS =====
-    // Use actual column names in raw SQL queries
+    // Use camelCase column names (matching database schema)
     const totalConversations = await conversationRepository
       .createQueryBuilder('conversation')
-      .where('conversation.bot_id IN (:...botIds)', { botIds })
+      .where('conversation.botId IN (:...botIds)', { botIds })
       .getCount();
 
     // FIX: Count unique visitors who messaged
@@ -103,8 +103,8 @@ export async function GET(request: NextRequest) {
     // For internal users: use distinct combinations
     const uniqueVisitorsResult = await conversationRepository
       .createQueryBuilder('conversation')
-      .select('COUNT(DISTINCT COALESCE(conversation.guest_id, conversation.session_id, conversation.id))', 'count')
-      .where('conversation.bot_id IN (:...botIds)', { botIds })
+      .select('COUNT(DISTINCT COALESCE(conversation.guestId, conversation.sessionId, conversation.id))', 'count')
+      .where('conversation.botId IN (:...botIds)', { botIds })
       .getRawOne();
 
     const totalUsersWhoMessaged = parseInt(uniqueVisitorsResult?.count || '0');
@@ -114,8 +114,8 @@ export async function GET(request: NextRequest) {
 
     const recentConversations = await conversationRepository
       .createQueryBuilder('conversation')
-      .where('conversation.bot_id IN (:...botIds)', { botIds })
-      .andWhere('conversation.created_at >= :sevenDaysAgo', { sevenDaysAgo })
+      .where('conversation.botId IN (:...botIds)', { botIds })
+      .andWhere('conversation.createdAt >= :sevenDaysAgo', { sevenDaysAgo })
       .getCount();
 
     // FIX: Active chats should check lastMessageAt (recent activity) not createdAt
@@ -125,8 +125,8 @@ export async function GET(request: NextRequest) {
 
     const activeConversations = await conversationRepository
       .createQueryBuilder('conversation')
-      .where('conversation.bot_id IN (:...botIds)', { botIds })
-      .andWhere('(conversation.last_message_at >= :oneDayAgo OR (conversation.last_message_at IS NULL AND conversation.created_at >= :oneDayAgo))', { oneDayAgo })
+      .where('conversation.botId IN (:...botIds)', { botIds })
+      .andWhere('(conversation.lastMessageAt >= :oneDayAgo OR (conversation.lastMessageAt IS NULL AND conversation.createdAt >= :oneDayAgo))', { oneDayAgo })
       .andWhere('conversation.status != :completedStatus', { completedStatus: 'completed' })
       .getCount();
 
@@ -134,15 +134,15 @@ export async function GET(request: NextRequest) {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // Use actual column names in raw SQL expressions
+    // Use camelCase column names (matching database schema)
     const volumeData = await conversationRepository
       .createQueryBuilder('conversation')
-      .select('DATE(conversation.created_at)', 'date')
+      .select('DATE(conversation.createdAt)', 'date')
       .addSelect('COUNT(*)', 'count')
-      .where('conversation.bot_id IN (:...botIds)', { botIds })
-      .andWhere('conversation.created_at >= :thirtyDaysAgo', { thirtyDaysAgo })
-      .groupBy('DATE(conversation.created_at)')
-      .orderBy('DATE(conversation.created_at)', 'ASC')
+      .where('conversation.botId IN (:...botIds)', { botIds })
+      .andWhere('conversation.createdAt >= :thirtyDaysAgo', { thirtyDaysAgo })
+      .groupBy('DATE(conversation.createdAt)')
+      .orderBy('DATE(conversation.createdAt)', 'ASC')
       .getRawMany();
 
     const chatVolume = volumeData.map(item => ({
@@ -153,8 +153,8 @@ export async function GET(request: NextRequest) {
     // ===== LANGUAGES BREAKDOWN & RESPONSE TIME CALCULATION =====
     const conversations = await conversationRepository
       .createQueryBuilder('conversation')
-      .where('conversation.bot_id IN (:...botIds)', { botIds })
-      .andWhere('conversation.created_at >= :thirtyDaysAgo', { thirtyDaysAgo })
+      .where('conversation.botId IN (:...botIds)', { botIds })
+      .andWhere('conversation.createdAt >= :thirtyDaysAgo', { thirtyDaysAgo })
       .getMany();
 
     // Calculate average response time from actual message data
@@ -263,15 +263,15 @@ export async function GET(request: NextRequest) {
 
     const lastWeekConversations = await conversationRepository
       .createQueryBuilder('conversation')
-      .where('conversation.bot_id IN (:...botIds)', { botIds })
-      .andWhere('conversation.created_at >= :sevenDaysAgo', { sevenDaysAgo })
+      .where('conversation.botId IN (:...botIds)', { botIds })
+      .andWhere('conversation.createdAt >= :sevenDaysAgo', { sevenDaysAgo })
       .getCount();
 
     const previousWeekConversations = await conversationRepository
       .createQueryBuilder('conversation')
-      .where('conversation.bot_id IN (:...botIds)', { botIds })
-      .andWhere('conversation.created_at >= :twoWeeksAgo', { twoWeeksAgo })
-      .andWhere('conversation.created_at < :sevenDaysAgo', { sevenDaysAgo })
+      .where('conversation.botId IN (:...botIds)', { botIds })
+      .andWhere('conversation.createdAt >= :twoWeeksAgo', { twoWeeksAgo })
+      .andWhere('conversation.createdAt < :sevenDaysAgo', { sevenDaysAgo })
       .getCount();
 
     const weeklyGrowth = previousWeekConversations > 0
@@ -283,15 +283,15 @@ export async function GET(request: NextRequest) {
 
     const lastMonthConversations = await conversationRepository
       .createQueryBuilder('conversation')
-      .where('conversation.bot_id IN (:...botIds)', { botIds })
-      .andWhere('conversation.created_at >= :thirtyDaysAgo', { thirtyDaysAgo })
+      .where('conversation.botId IN (:...botIds)', { botIds })
+      .andWhere('conversation.createdAt >= :thirtyDaysAgo', { thirtyDaysAgo })
       .getCount();
 
     const previousMonthConversations = await conversationRepository
       .createQueryBuilder('conversation')
-      .where('conversation.bot_id IN (:...botIds)', { botIds })
-      .andWhere('conversation.created_at >= :sixtyDaysAgo', { sixtyDaysAgo })
-      .andWhere('conversation.created_at < :thirtyDaysAgo', { thirtyDaysAgo })
+      .where('conversation.botId IN (:...botIds)', { botIds })
+      .andWhere('conversation.createdAt >= :sixtyDaysAgo', { sixtyDaysAgo })
+      .andWhere('conversation.createdAt < :thirtyDaysAgo', { thirtyDaysAgo })
       .getCount();
 
     const monthlyGrowth = previousMonthConversations > 0
@@ -302,8 +302,8 @@ export async function GET(request: NextRequest) {
     const recentActivity = await conversationRepository
       .createQueryBuilder('conversation')
       .leftJoinAndSelect('conversation.bot', 'bot')
-      .where('conversation.bot_id IN (:...botIds)', { botIds })
-      .orderBy('conversation.created_at', 'DESC')
+      .where('conversation.botId IN (:...botIds)', { botIds })
+      .orderBy('conversation.createdAt', 'DESC')
       .limit(5)
       .getMany();
 
