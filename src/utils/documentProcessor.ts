@@ -3,8 +3,6 @@
  * Handles text extraction from various file formats
  */
 
-import { PDFExtract } from 'pdf-extract';
-
 export interface ProcessedDocument {
   content: string;
   metadata: {
@@ -20,32 +18,11 @@ export interface ProcessedDocument {
  */
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
-    // For serverless environment, use pdf-parse
+    // For serverless environment, use pdf-parse with default options
+    // Custom pagerender requires DOM APIs not available in Node.js/Vercel
     const pdfParse = require('pdf-parse');
 
-    // Custom render to preserve some formatting
-    const options = {
-      // Preserve more structure
-      pagerender: function(pageData: any) {
-        return pageData.getTextContent().then(function(textContent: any) {
-          let lastY = null;
-          let text = '';
-
-          for (const item of textContent.items) {
-            // Add line break if Y position changes significantly (new line)
-            if (lastY !== null && Math.abs(item.transform[5] - lastY) > 5) {
-              text += '\n';
-            }
-            text += item.str;
-            lastY = item.transform[5];
-          }
-
-          return text;
-        });
-      }
-    };
-
-    const data = await pdfParse(buffer, options);
+    const data = await pdfParse(buffer);
 
     // Clean up extracted text
     let text = data.text || '';
