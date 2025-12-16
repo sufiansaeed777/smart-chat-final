@@ -27,27 +27,27 @@ export class Conversation {
   sender?: 'user' | 'bot';
 
   // NEW SCHEMA: Session identifier for grouping messages (Human Handoff)
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ name: 'session_id', type: 'varchar', length: 255, nullable: true })
   @Index()
   sessionId?: string;
 
   // Guest/Visitor information
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ name: 'guest_name', type: 'varchar', length: 255, nullable: true })
   guestName?: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ name: 'guest_id', type: 'varchar', length: 100, nullable: true })
   guestId?: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ name: 'visitor_email', type: 'varchar', length: 255, nullable: true })
   visitorEmail?: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'page_url', type: 'text', nullable: true })
   pageUrl?: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   country?: string;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
+  @Column({ name: 'ip_address', type: 'varchar', length: 50, nullable: true })
   ipAddress?: string;
 
   // Handoff fields
@@ -67,14 +67,14 @@ export class Conversation {
   status!: 'active' | 'waiting' | 'idle' | 'completed';
 
   // Agent assignment
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ name: 'assigned_agent_id', type: 'uuid', nullable: true })
   @Index()
   assignedAgentId?: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ name: 'assigned_agent_name', type: 'varchar', length: 255, nullable: true })
   assignedAgentName?: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'assigned_at', type: 'timestamp', nullable: true })
   assignedAt?: Date;
 
   // Messages stored as JSON array
@@ -87,37 +87,38 @@ export class Conversation {
   }>;
 
   // Timestamps
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'started_at', type: 'timestamp', nullable: true })
   startedAt?: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'last_message_at', type: 'timestamp', nullable: true })
   lastMessageAt?: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'completed_at', type: 'timestamp', nullable: true })
   completedAt?: Date;
 
   // Additional metadata
   @Column({ type: 'jsonb', nullable: true })
   metadata?: Record<string, any>;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({ name: 'is_test_message', type: 'boolean', default: false })
   isTestMessage!: boolean;
 
   // Content Moderation / Flagging
-  @Column({ type: 'boolean', default: false })
+  @Column({ name: 'is_flagged', type: 'boolean', default: false })
   @Index()
   isFlagged!: boolean;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'flag_reason', type: 'text', nullable: true })
   flagReason?: string;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ name: 'flagged_by', type: 'uuid', nullable: true })
   flaggedBy?: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'flagged_at', type: 'timestamp', nullable: true })
   flaggedAt?: Date;
 
   @Column({
+    name: 'review_status',
     type: 'enum',
     enum: ['pending', 'approved', 'rejected', 'resolved'],
     nullable: true
@@ -125,19 +126,19 @@ export class Conversation {
   @Index()
   reviewStatus?: 'pending' | 'approved' | 'rejected' | 'resolved';
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ name: 'reviewed_by', type: 'uuid', nullable: true })
   reviewedBy?: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'reviewed_at', type: 'timestamp', nullable: true })
   reviewedAt?: Date;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'review_notes', type: 'text', nullable: true })
   reviewNotes?: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
 
   // Relations
