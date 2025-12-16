@@ -80,19 +80,20 @@ export class Bot {
 
   // n8n Training Status
   @Column({
+    name: 'training_status',
     type: 'enum',
     enum: ['untrained', 'training', 'trained', 'training_failed'],
     default: 'untrained'
   })
   trainingStatus!: 'untrained' | 'training' | 'trained' | 'training_failed';
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'last_trained_at', type: 'timestamp', nullable: true })
   lastTrainedAt?: Date;
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Column({ name: 'n8n_webhook_url', type: 'varchar', length: 500, nullable: true })
   n8nWebhookUrl?: string; // Unique webhook URL for this bot's chat
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'training_log', type: 'text', nullable: true })
   trainingLog?: string; // JSON log of training attempts
 
   // Relations
