@@ -25,6 +25,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import RoleGuard from '@/components/auth/RoleGuard';
+import { ReportIssueProvider } from '@/contexts/ReportIssueContext';
 
 interface UserDashboardLayoutProps {
   children: React.ReactNode;
@@ -384,7 +385,9 @@ const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) =
           sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'
         }`}>
           <div className="min-h-screen">
-            {children}
+            <ReportIssueProvider>
+              {children}
+            </ReportIssueProvider>
           </div>
         </div>
       </div>
