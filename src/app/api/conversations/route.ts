@@ -152,18 +152,14 @@ export async function GET(request: NextRequest) {
       const fallbackId = conv.sessionId?.slice(-4) || conv.id.slice(-4);
       const metadata = conv.metadata || {};
 
-      // TODO: Visitor info fields - showing "Unknown" for now until WordPress plugin sends proper data
-      // These fields will be populated from webhook data when visitor info is captured
-      const visitorName = conv.guestName || 'Unknown';
+      // TODO: Visitor info fields - HARDCODED as "Unknown" for now
+      // Will be implemented later when WordPress plugin sends proper visitor data
+      const visitorName = 'Unknown';
+      const finalVisitorEmail = 'Unknown';
+      const finalCountry = 'Unknown';
 
-      // Get visitor email - show "Unknown" if not available
-      const finalVisitorEmail = conv.visitorEmail || metadata.email || 'Unknown';
-
-      // Get page URL from entity field or metadata
+      // Get page URL from entity field or metadata (this one works)
       const finalPageUrl = conv.pageUrl || metadata.pageUrl || metadata.page_url || metadata.url || metadata.referrer || '';
-
-      // Get country - show "Unknown" for now (will be derived from IP later)
-      const finalCountry = conv.country || metadata.country || metadata.location || 'Unknown';
 
       // Get first message time and text
       const firstMessageTime = conv.messages?.length > 0
