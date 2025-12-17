@@ -823,7 +823,7 @@ const BotsPage = () => {
                     <input
                       type="file"
                       multiple
-                      accept=".pdf,.doc,.docx,.txt"
+                      accept=".pdf,.doc,.docx,.txt,.csv,.json,.svg,.png,.jpg,.jpeg,.gif,.webp"
                       onChange={(e) => {
                         if (e.target.files) {
                           handleDocumentUpload(e.target.files);

@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
     let tokenData;
     try {
       const tokenCheck = await pool.query(
-        `SELECT wt.*, b.name as bot_name, b.id as bot_id, u.email as user_email, u.name as user_name
+        `SELECT wt.*, b.name as bot_name, b.id as bot_id, u.email as user_email,
+                COALESCE(u."firstName", '') || ' ' || COALESCE(u."lastName", '') as user_name
          FROM wordpress_tokens wt
          JOIN bots b ON wt.bot_id = b.id
          JOIN users u ON wt.user_id = u.id

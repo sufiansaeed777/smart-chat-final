@@ -123,7 +123,16 @@ const KnowledgeBasePage: React.FC = () => {
       case 'doc':
         return <File className="w-8 h-8 text-blue-500" />;
       case 'txt':
+      case 'csv':
+      case 'json':
         return <FileText className="w-8 h-8 text-gray-500" />;
+      case 'svg':
+      case 'png':
+      case 'jpg':
+      case 'jpeg':
+      case 'gif':
+      case 'webp':
+        return <FileImage className="w-8 h-8 text-purple-500" />;
       default:
         return <File className="w-8 h-8 text-gray-400" />;
     }
@@ -1265,14 +1274,14 @@ const KnowledgeBasePage: React.FC = () => {
                   </button>
                 </p>
                 <p className="text-sm text-gray-500">
-                  Supports PDF, DOC, DOCX, TXT files
+                  Supports PDF, DOC, DOCX, TXT, CSV, JSON, SVG, PNG, JPG, GIF, WebP files
                 </p>
                 
                 <input
                   ref={fileInputRef}
                   type="file"
                   multiple
-                  accept=".pdf,.doc,.docx,.txt"
+                  accept=".pdf,.doc,.docx,.txt,.csv,.json,.svg,.png,.jpg,.jpeg,.gif,.webp"
                   onChange={handleFileInputChange}
                   className="hidden"
                 />

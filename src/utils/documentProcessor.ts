@@ -382,6 +382,21 @@ export async function processDocument(
       format = 'json';
       break;
 
+    case 'image/svg+xml':
+      // SVG is XML-based, store the SVG content as-is
+      content = buffer.toString('utf-8');
+      format = 'svg';
+      break;
+
+    case 'image/png':
+    case 'image/jpeg':
+    case 'image/gif':
+    case 'image/webp':
+      // For raster images, store metadata description
+      content = `[Image file: ${filename}]`;
+      format = 'image';
+      break;
+
     default:
       // Try to extract as plain text
       content = extractTextFromPlainText(buffer);
