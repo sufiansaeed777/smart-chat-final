@@ -606,7 +606,7 @@ const HumanHandoff = () => {
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="flex items-center space-x-2">
-                        <h4 className="text-sm font-semibold text-gray-900">{conversation.guestName}</h4>
+                        <h4 className="text-sm font-semibold text-gray-900">{conversation.guestName || 'Unknown'}</h4>
                         <Badge
                           className={`text-xs px-2 py-0.5 ${
                             conversation.isHandoffRequest || (conversation.mode === 'Human' && conversation.status === 'waiting')
