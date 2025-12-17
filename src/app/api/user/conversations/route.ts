@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
         status: isActive ? 'active' : 'completed',
         messageCount: messageCount,
         duration: `${duration} min`,
-        satisfaction: Math.floor(Math.random() * 2) + 4, // Mock rating between 4-5
+        satisfaction: null, // Rating from actual user feedback (if available)
         source: conv.guestId ? 'wordpress' : 'playground',
         guestId: conv.guestId,
         mode: conv.mode || 'AI'
@@ -114,9 +114,50 @@ export async function GET(request: NextRequest) {
     const total = formattedSessions.length;
     const active = formattedSessions.filter(s => s.status === 'active').length;
     const completed = formattedSessions.filter(s => s.status === 'completed').length;
-    const avgRating = formattedSessions.length > 0 
-      ? formattedSessions.reduce((sum, s) => sum + s.satisfaction, 0) / formattedSessions.length 
-      : 0;
+
+    // Calculate actual average response time from conversation messages
+    let totalResponseTimeMs = 0;
+    let responseCount = 0;
+
+    conversations.forEach(conv => {
+      if (conv.messages && Array.isArray(conv.messages)) {
+        for (let i = 0; i < conv.messages.length - 1; i++) {
+          const currentMsg = conv.messages[i];
+          const nextMsg = conv.messages[i + 1];
+
+          // If current is visitor/user and next is bot/agent, calculate response time
+          if ((currentMsg.sender === 'visitor' || currentMsg.sender === 'user') &&
+              (nextMsg.sender === 'bot' || nextMsg.sender === 'agent' || nextMsg.sender === 'ai')) {
+            const userTime = new Date(currentMsg.timestamp).getTime();
+            const botTime = new Date(nextMsg.timestamp).getTime();
+            const responseTime = botTime - userTime;
+
+            // Only count valid response times (positive and less than 1 hour)
+            if (responseTime > 0 && responseTime < 3600000) {
+              totalResponseTimeMs += responseTime;
+              responseCount++;
+            }
+          }
+        }
+      }
+    });
+
+    // Format average response time
+    let avgResponseTime = '0 min';
+    if (responseCount > 0) {
+      const avgMs = totalResponseTimeMs / responseCount;
+      const avgSeconds = Math.round(avgMs / 1000);
+
+      if (avgSeconds < 60) {
+        avgResponseTime = `${avgSeconds} sec`;
+      } else if (avgSeconds < 3600) {
+        const minutes = Math.round(avgSeconds / 60 * 10) / 10;
+        avgResponseTime = `${minutes} min`;
+      } else {
+        const hours = Math.round(avgSeconds / 3600 * 10) / 10;
+        avgResponseTime = `${hours} hr`;
+      }
+    }
 
     return NextResponse.json({
       conversations: formattedSessions,
@@ -124,7 +165,7 @@ export async function GET(request: NextRequest) {
         total,
         active,
         completed,
-        avgResponseTime: '< 1 min'
+        avgResponseTime
       },
       filters: {
         bots: Array.from(new Set(formattedSessions.map(s => s.botId))).map(botId => {
