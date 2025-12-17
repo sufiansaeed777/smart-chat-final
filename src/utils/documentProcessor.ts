@@ -143,29 +143,31 @@ function decodePDFString(str: string): string {
 
 /**
  * Extract text from Word document with better formatting preservation
+ * Preserves table structure for better readability and training
  */
 export async function extractTextFromWord(buffer: Buffer): Promise<string> {
   try {
     const mammoth = require('mammoth');
 
-    // Use convertToHtml first to get structure, then convert to text with formatting
+    // Use convertToHtml first to get structure
     const htmlResult = await mammoth.convertToHtml({ buffer });
 
     if (htmlResult.value) {
+      let html = htmlResult.value;
+
+      // Process tables specially to preserve structure
+      html = processTablesForReadability(html);
+
       // Convert HTML to formatted text with proper line breaks
-      let text = htmlResult.value
+      let text = html
         // Add double line breaks for paragraphs and headings
         .replace(/<\/p>/gi, '\n\n')
         .replace(/<\/h[1-6]>/gi, '\n\n')
         .replace(/<\/div>/gi, '\n')
-        .replace(/<\/tr>/gi, '\n')  // Table rows
         .replace(/<\/li>/gi, '\n')
         .replace(/<br\s*\/?>/gi, '\n')
         // Add line breaks before list items
         .replace(/<li>/gi, '• ')
-        // Add tab for table cells
-        .replace(/<td[^>]*>/gi, '\t')
-        .replace(/<th[^>]*>/gi, '\t')
         // Remove all remaining HTML tags
         .replace(/<[^>]+>/g, '')
         // Decode HTML entities
@@ -194,6 +196,78 @@ export async function extractTextFromWord(buffer: Buffer): Promise<string> {
     console.error('Error extracting Word text:', error);
     throw new Error('Failed to extract text from Word document');
   }
+}
+
+/**
+ * Process HTML tables to create readable structured text
+ * Converts tables to a format that preserves column-value relationships
+ */
+function processTablesForReadability(html: string): string {
+  // Find all tables
+  const tableRegex = /<table[^>]*>([\s\S]*?)<\/table>/gi;
+
+  return html.replace(tableRegex, (match, tableContent) => {
+    // Extract all rows
+    const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+    const rows: string[][] = [];
+    let rowMatch;
+
+    while ((rowMatch = rowRegex.exec(tableContent)) !== null) {
+      const rowHtml = rowMatch[1];
+      // Extract cells (th or td)
+      const cellRegex = /<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi;
+      const cells: string[] = [];
+      let cellMatch;
+
+      while ((cellMatch = cellRegex.exec(rowHtml)) !== null) {
+        // Strip HTML tags from cell content
+        const cellText = cellMatch[1]
+          .replace(/<[^>]+>/g, '')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&')
+          .trim();
+        cells.push(cellText);
+      }
+
+      if (cells.length > 0) {
+        rows.push(cells);
+      }
+    }
+
+    if (rows.length === 0) {
+      return match; // Return original if no rows found
+    }
+
+    // First row is typically headers
+    const headers = rows[0];
+    const dataRows = rows.slice(1);
+
+    // Format output: each row as "Header1: Value1 | Header2: Value2 | ..."
+    const formattedRows: string[] = [];
+
+    // Add header row for reference
+    formattedRows.push('--- Table ---');
+    formattedRows.push('Columns: ' + headers.join(' | '));
+    formattedRows.push('');
+
+    // Format each data row with column labels
+    for (const row of dataRows) {
+      const rowParts: string[] = [];
+      for (let i = 0; i < row.length && i < headers.length; i++) {
+        if (row[i]) {
+          rowParts.push(`${headers[i]}: ${row[i]}`);
+        }
+      }
+      if (rowParts.length > 0) {
+        formattedRows.push(rowParts.join(' | '));
+      }
+    }
+
+    formattedRows.push('--- End Table ---');
+    formattedRows.push('');
+
+    return '\n' + formattedRows.join('\n') + '\n';
+  });
 }
 
 /**
