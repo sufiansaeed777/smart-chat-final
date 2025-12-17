@@ -1,6 +1,7 @@
 /**
  * Document Processing Utilities
  * Handles text extraction from various file formats
+ * Serverless-compatible (no canvas/DOM dependencies)
  */
 
 export interface ProcessedDocument {
@@ -14,34 +15,55 @@ export interface ProcessedDocument {
 }
 
 /**
- * Extract text from PDF buffer with better formatting preservation
- * Uses raw text extraction for serverless environment (avoids pdfjs-dist DOMMatrix issues)
+ * Extract text from PDF buffer using unpdf (serverless-compatible)
  */
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
-  // In serverless environments, pdf-parse uses pdfjs-dist which requires DOMMatrix
-  // We use a simple raw text extraction method instead
   try {
-    console.log('Extracting PDF text using serverless-compatible method...');
+    console.log('Extracting PDF text using unpdf...');
 
-    // Use raw text extraction that doesn't require pdfjs-dist/canvas
-    const text = extractRawTextFromPDFBuffer(buffer);
+    // Use unpdf which is serverless-compatible
+    const { extractText } = await import('unpdf');
 
-    if (text && text.length >= 10) {
-      console.log(`Successfully extracted ${text.length} characters from PDF`);
-      return text;
+    // Convert Buffer to Uint8Array for unpdf
+    const uint8Array = new Uint8Array(buffer);
+
+    const { text } = await extractText(uint8Array);
+
+    if (!text || text.trim().length < 10) {
+      throw new Error('No readable text found in PDF');
     }
 
-    // If raw extraction didn't work, the PDF might be image-based or encrypted
-    throw new Error('No readable text found in PDF (may be image-based or encrypted)');
+    // Clean up the extracted text
+    const cleanedText = text
+      .replace(/\r\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/[ \t]+/g, ' ')
+      .trim();
+
+    console.log(`Successfully extracted ${cleanedText.length} characters from PDF`);
+    return cleanedText;
+
   } catch (error: any) {
-    console.error('Error extracting PDF text:', error);
-    throw new Error('Failed to extract text from PDF: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    console.error('Error extracting PDF text with unpdf:', error);
+
+    // Try fallback method for simple PDFs
+    try {
+      console.log('Trying fallback PDF extraction...');
+      const fallbackText = extractRawTextFromPDFBuffer(buffer);
+      if (fallbackText && fallbackText.length >= 10) {
+        console.log(`Fallback extraction got ${fallbackText.length} characters`);
+        return fallbackText;
+      }
+    } catch (fallbackError) {
+      console.error('Fallback PDF extraction also failed:', fallbackError);
+    }
+
+    throw new Error('Failed to extract text from PDF: ' + (error.message || 'Unknown error'));
   }
 }
 
 /**
- * Extract raw text from PDF buffer without external dependencies
- * Handles both uncompressed and some compressed PDF streams
+ * Fallback: Extract raw text from PDF buffer without external dependencies
  */
 function extractRawTextFromPDFBuffer(buffer: Buffer): string {
   const content = buffer.toString('binary');
@@ -78,58 +100,11 @@ function extractRawTextFromPDFBuffer(buffer: Buffer): string {
         }
       }
     }
-
-    // Extract from ' operator (move to next line and show text)
-    const quoteRegex = /\(([^)]*)\)\s*'/g;
-    let quoteMatch;
-    while ((quoteMatch = quoteRegex.exec(textBlock)) !== null) {
-      const text = decodePDFString(quoteMatch[1]);
-      if (text.trim()) {
-        textChunks.push('\n' + text);
-      }
-    }
-  }
-
-  // Method 2: Also try to find hex-encoded strings
-  const hexStringRegex = /<([0-9A-Fa-f]+)>/g;
-  let hexMatch;
-  while ((hexMatch = hexStringRegex.exec(content)) !== null) {
-    const hexStr = hexMatch[1];
-    if (hexStr.length >= 4 && hexStr.length % 2 === 0) {
-      try {
-        let text = '';
-        for (let i = 0; i < hexStr.length; i += 2) {
-          const charCode = parseInt(hexStr.substr(i, 2), 16);
-          if (charCode >= 32 && charCode < 127) {
-            text += String.fromCharCode(charCode);
-          }
-        }
-        if (text.length >= 3 && /[a-zA-Z]/.test(text)) {
-          textChunks.push(text);
-        }
-      } catch {}
-    }
-  }
-
-  // Method 3: Extract any readable text sequences (fallback)
-  if (textChunks.length === 0) {
-    // Find sequences of readable ASCII characters
-    const readableRegex = /[\x20-\x7E]{10,}/g;
-    let readableMatch;
-    while ((readableMatch = readableRegex.exec(content)) !== null) {
-      const text = readableMatch[0];
-      // Filter out PDF keywords and binary sequences
-      if (!text.match(/^(stream|endstream|obj|endobj|xref|trailer|startxref)/i) &&
-          text.match(/[a-zA-Z]{3,}/)) {
-        textChunks.push(text);
-      }
-    }
   }
 
   // Join and clean up
   let result = textChunks.join(' ')
     .replace(/\s+/g, ' ')
-    .replace(/\n\s+/g, '\n')
     .trim();
 
   return result;
@@ -160,16 +135,20 @@ export async function extractTextFromWord(buffer: Buffer): Promise<string> {
     const htmlResult = await mammoth.convertToHtml({ buffer });
 
     if (htmlResult.value) {
-      // Convert HTML to formatted text
+      // Convert HTML to formatted text with proper line breaks
       let text = htmlResult.value
         // Add double line breaks for paragraphs and headings
         .replace(/<\/p>/gi, '\n\n')
         .replace(/<\/h[1-6]>/gi, '\n\n')
         .replace(/<\/div>/gi, '\n')
+        .replace(/<\/tr>/gi, '\n')  // Table rows
         .replace(/<\/li>/gi, '\n')
         .replace(/<br\s*\/?>/gi, '\n')
         // Add line breaks before list items
         .replace(/<li>/gi, '• ')
+        // Add tab for table cells
+        .replace(/<td[^>]*>/gi, '\t')
+        .replace(/<th[^>]*>/gi, '\t')
         // Remove all remaining HTML tags
         .replace(/<[^>]+>/g, '')
         // Decode HTML entities
@@ -179,6 +158,8 @@ export async function extractTextFromWord(buffer: Buffer): Promise<string> {
         .replace(/&gt;/g, '>')
         .replace(/&quot;/g, '"')
         .replace(/&#39;/g, "'")
+        .replace(/&ndash;/g, '–')
+        .replace(/&mdash;/g, '—')
         // Clean up excessive whitespace while preserving intentional line breaks
         .replace(/[ \t]+/g, ' ')
         .replace(/\n[ \t]+/g, '\n')
@@ -191,7 +172,7 @@ export async function extractTextFromWord(buffer: Buffer): Promise<string> {
 
     // Fallback to raw text extraction
     const rawResult = await mammoth.extractRawText({ buffer });
-    return rawResult.value;
+    return rawResult.value || '';
   } catch (error) {
     console.error('Error extracting Word text:', error);
     throw new Error('Failed to extract text from Word document');
@@ -199,25 +180,69 @@ export async function extractTextFromWord(buffer: Buffer): Promise<string> {
 }
 
 /**
+ * Extract text from plain text files
+ */
+export function extractTextFromPlainText(buffer: Buffer): string {
+  // Convert buffer to string
+  let text = buffer.toString('utf-8');
+
+  // Remove BOM if present
+  if (text.charCodeAt(0) === 0xFEFF) {
+    text = text.slice(1);
+  }
+
+  // Normalize line endings
+  text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // Trim but preserve internal formatting
+  text = text.trim();
+
+  return text;
+}
+
+/**
  * Split text into chunks for embedding
  */
 export function chunkText(text: string, maxChunkSize: number = 1000): string[] {
   const chunks: string[] = [];
-  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+
+  // First, try to split by paragraphs
+  const paragraphs = text.split(/\n\n+/);
 
   let currentChunk = '';
 
-  for (const sentence of sentences) {
-    if ((currentChunk + sentence).length > maxChunkSize && currentChunk) {
+  for (const paragraph of paragraphs) {
+    // If adding this paragraph would exceed the limit
+    if ((currentChunk + '\n\n' + paragraph).length > maxChunkSize && currentChunk) {
       chunks.push(currentChunk.trim());
-      currentChunk = sentence;
+      currentChunk = paragraph;
     } else {
-      currentChunk += ' ' + sentence;
+      currentChunk = currentChunk ? currentChunk + '\n\n' + paragraph : paragraph;
     }
   }
 
   if (currentChunk.trim()) {
     chunks.push(currentChunk.trim());
+  }
+
+  // If we got no chunks or very few, fall back to sentence splitting
+  if (chunks.length === 0 || (chunks.length === 1 && chunks[0].length > maxChunkSize * 2)) {
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+    chunks.length = 0;
+    currentChunk = '';
+
+    for (const sentence of sentences) {
+      if ((currentChunk + sentence).length > maxChunkSize && currentChunk) {
+        chunks.push(currentChunk.trim());
+        currentChunk = sentence;
+      } else {
+        currentChunk += ' ' + sentence;
+      }
+    }
+
+    if (currentChunk.trim()) {
+      chunks.push(currentChunk.trim());
+    }
   }
 
   return chunks;
@@ -233,6 +258,8 @@ export async function processDocument(
 ): Promise<ProcessedDocument> {
   let content = '';
   let format = 'unknown';
+
+  console.log(`Processing document: ${filename} (${mimeType})`);
 
   // Handle different file types
   switch (mimeType) {
@@ -250,35 +277,38 @@ export async function processDocument(
     case 'text/plain':
     case 'text/csv':
     case 'text/markdown':
-      content = buffer.toString('utf-8');
+      content = extractTextFromPlainText(buffer);
       format = 'text';
       break;
 
     case 'application/json':
-      const jsonData = JSON.parse(buffer.toString('utf-8'));
-      content = JSON.stringify(jsonData, null, 2);
+      try {
+        const jsonData = JSON.parse(buffer.toString('utf-8'));
+        content = JSON.stringify(jsonData, null, 2);
+      } catch {
+        content = buffer.toString('utf-8');
+      }
       format = 'json';
       break;
 
     default:
       // Try to extract as plain text
-      content = buffer.toString('utf-8');
+      content = extractTextFromPlainText(buffer);
       format = 'text';
   }
 
-  // Clean up content - preserve line breaks for proper formatting
-  content = content
-    .replace(/[ \t]+/g, ' ')  // Normalize horizontal whitespace only (not newlines)
-    .replace(/\r\n/g, '\n')   // Normalize line endings
-    .replace(/\n{3,}/g, '\n\n')  // Remove excessive line breaks (3+ becomes 2)
-    .replace(/^\s+|\s+$/gm, '')  // Trim each line
-    .trim();
+  // Validate content
+  if (!content || content.length < 5) {
+    throw new Error(`No readable content found in ${filename}`);
+  }
+
+  console.log(`Extracted ${content.length} characters from ${filename}`);
 
   // Generate chunks for vector embedding
   const chunks = chunkText(content);
 
   // Calculate metadata
-  const wordCount = content.split(/\s+/).length;
+  const wordCount = content.split(/\s+/).filter(w => w.length > 0).length;
 
   return {
     content,
