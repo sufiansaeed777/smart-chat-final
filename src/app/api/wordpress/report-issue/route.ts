@@ -86,16 +86,18 @@ export async function POST(request: NextRequest) {
     if (conversation_id) {
       try {
         const conversationResult = await pool.query(
-          `SELECT user_email, user_name, metadata FROM conversations WHERE id = $1`,
+          `SELECT "visitorEmail", "guestName", "pageUrl", metadata FROM conversations WHERE id = $1`,
           [conversation_id]
         );
         if (conversationResult.rows.length > 0) {
           const conv = conversationResult.rows[0];
           // Only use conversation data if not already provided in request
-          if (!email) userEmail = conv.user_email || userEmail;
-          if (!name) userName = conv.user_name || userName;
+          if (!email) userEmail = conv.visitorEmail || userEmail;
+          if (!name) userName = conv.guestName || userName;
           userId = conversation_id;
-          if (conv.metadata?.pageUrl) {
+          if (conv.pageUrl) {
+            websiteUrl = conv.pageUrl;
+          } else if (conv.metadata?.pageUrl) {
             websiteUrl = conv.metadata.pageUrl;
           }
         }
