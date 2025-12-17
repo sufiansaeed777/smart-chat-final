@@ -97,9 +97,23 @@ export async function GET(request: NextRequest) {
       where: botIds.map(id => ({ botId: id }))
     });
 
-    // TODO: WordPress plugin analytics commented out for now - needs proper implementation
-    // For now, just use total conversations as unique users (simplified)
-    const totalUsersWhoMessaged = totalConversations;
+    // Count unique users - use guestId for WordPress visitors, sessionId as fallback
+    // Same guestId/sessionId across multiple conversations = 1 user
+    const allConversationsForUsers = await conversationRepository
+      .createQueryBuilder('conversation')
+      .select(['conversation.guestId', 'conversation.sessionId', 'conversation.userId'])
+      .where('conversation.botId IN (:...botIds)', { botIds })
+      .getMany();
+
+    const uniqueUserIds = new Set<string>();
+    allConversationsForUsers.forEach(conv => {
+      // Use guestId for WordPress plugin users, sessionId for session-based, userId as fallback
+      const uniqueId = conv.guestId || conv.sessionId || conv.userId;
+      if (uniqueId) {
+        uniqueUserIds.add(uniqueId);
+      }
+    });
+    const totalUsersWhoMessaged = uniqueUserIds.size || totalConversations;
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
