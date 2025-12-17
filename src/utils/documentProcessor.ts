@@ -27,14 +27,31 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     // Convert Buffer to Uint8Array for unpdf
     const uint8Array = new Uint8Array(buffer);
 
-    const { text } = await extractText(uint8Array);
+    const result = await extractText(uint8Array);
 
-    if (!text || text.trim().length < 10) {
+    // Handle different result formats from unpdf
+    let text = '';
+    if (typeof result === 'string') {
+      text = result;
+    } else if (result && typeof result === 'object') {
+      // unpdf returns { text: string, totalPages: number }
+      if (typeof result.text === 'string') {
+        text = result.text;
+      } else if (Array.isArray(result.text)) {
+        // If text is an array of pages, join them
+        text = result.text.join('\n\n');
+      } else if (result.pages && Array.isArray(result.pages)) {
+        // Alternative format with pages array
+        text = result.pages.map((p: any) => p.text || p.content || '').join('\n\n');
+      }
+    }
+
+    if (!text || (typeof text === 'string' && text.trim().length < 10)) {
       throw new Error('No readable text found in PDF');
     }
 
     // Clean up the extracted text
-    const cleanedText = text
+    const cleanedText = String(text)
       .replace(/\r\n/g, '\n')
       .replace(/\n{3,}/g, '\n\n')
       .replace(/[ \t]+/g, ' ')
