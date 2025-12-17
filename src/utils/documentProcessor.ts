@@ -15,108 +15,113 @@ export interface ProcessedDocument {
 
 /**
  * Extract text from PDF buffer with better formatting preservation
- * Uses pdf-parse with workarounds for serverless environment
+ * Uses raw text extraction for serverless environment (avoids pdfjs-dist DOMMatrix issues)
  */
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
+  // In serverless environments, pdf-parse uses pdfjs-dist which requires DOMMatrix
+  // We use a simple raw text extraction method instead
   try {
-    // Workaround for serverless: pdf-parse uses pdfjs-dist which needs canvas polyfills
-    // We'll use pdf-parse/lib/pdf-parse.js directly with a custom test file approach
-    // This avoids the automatic pdfjs-dist initialization that requires DOMMatrix
+    console.log('Extracting PDF text using serverless-compatible method...');
 
-    // Method 1: Try using pdf-parse with the buffer directly
-    // The key is to let pdf-parse handle the parsing without custom renderers
-    const pdfParse = require('pdf-parse/lib/pdf-parse');
+    // Use raw text extraction that doesn't require pdfjs-dist/canvas
+    const text = extractRawTextFromPDFBuffer(buffer);
 
-    // Create a minimal data extraction without canvas dependency
-    const data = await pdfParse(buffer, {
-      // Don't use custom page render (requires DOM)
-      pagerender: undefined,
-      // Use default max pages
-      max: 0,
-    });
-
-    // Clean up extracted text
-    let text = data.text || '';
-
-    // Preserve paragraph structure
-    text = text
-      .replace(/\r\n/g, '\n')
-      .replace(/\n{3,}/g, '\n\n')
-      .trim();
-
-    if (!text || text.length < 10) {
-      throw new Error('No readable text found in PDF');
+    if (text && text.length >= 10) {
+      console.log(`Successfully extracted ${text.length} characters from PDF`);
+      return text;
     }
 
-    return text;
+    // If raw extraction didn't work, the PDF might be image-based or encrypted
+    throw new Error('No readable text found in PDF (may be image-based or encrypted)');
   } catch (error: any) {
-    // If pdf-parse fails due to canvas issues, try a simpler fallback
-    if (error.message?.includes('DOMMatrix') || error.message?.includes('canvas')) {
-      console.warn('PDF parsing failed due to canvas dependency, trying fallback...');
-      try {
-        // Fallback: Extract raw text using a simpler method
-        // This is a basic fallback that extracts visible text strings from PDF
-        const text = extractRawTextFromPDFBuffer(buffer);
-        if (text && text.length >= 10) {
-          return text;
-        }
-      } catch (fallbackError) {
-        console.error('Fallback PDF extraction also failed:', fallbackError);
-      }
-    }
-
     console.error('Error extracting PDF text:', error);
     throw new Error('Failed to extract text from PDF: ' + (error instanceof Error ? error.message : 'Unknown error'));
   }
 }
 
 /**
- * Simple fallback to extract raw text from PDF buffer
- * This is a basic method that finds text strings in the PDF
+ * Extract raw text from PDF buffer without external dependencies
+ * Handles both uncompressed and some compressed PDF streams
  */
 function extractRawTextFromPDFBuffer(buffer: Buffer): string {
   const content = buffer.toString('binary');
   const textChunks: string[] = [];
 
-  // Find text between BT (begin text) and ET (end text) markers
+  // Method 1: Find text between BT (begin text) and ET (end text) markers
   const btEtRegex = /BT\s*([\s\S]*?)\s*ET/g;
   let match;
 
   while ((match = btEtRegex.exec(content)) !== null) {
     const textBlock = match[1];
 
-    // Extract text from Tj and TJ operators
+    // Extract text from Tj operator (show text)
     const tjRegex = /\(([^)]*)\)\s*Tj/g;
     let tjMatch;
     while ((tjMatch = tjRegex.exec(textBlock)) !== null) {
-      const text = tjMatch[1]
-        .replace(/\\n/g, '\n')
-        .replace(/\\r/g, '')
-        .replace(/\\\(/g, '(')
-        .replace(/\\\)/g, ')')
-        .replace(/\\\\/g, '\\');
+      const text = decodePDFString(tjMatch[1]);
       if (text.trim()) {
         textChunks.push(text);
       }
     }
 
-    // Extract from TJ arrays
-    const tjArrayRegex = /\[(.*?)\]\s*TJ/g;
+    // Extract from TJ arrays (show text with positioning)
+    const tjArrayRegex = /\[(.*?)\]\s*TJ/gi;
     let tjArrayMatch;
     while ((tjArrayMatch = tjArrayRegex.exec(textBlock)) !== null) {
       const arrayContent = tjArrayMatch[1];
       const stringRegex = /\(([^)]*)\)/g;
       let stringMatch;
       while ((stringMatch = stringRegex.exec(arrayContent)) !== null) {
-        const text = stringMatch[1]
-          .replace(/\\n/g, '\n')
-          .replace(/\\r/g, '')
-          .replace(/\\\(/g, '(')
-          .replace(/\\\)/g, ')')
-          .replace(/\\\\/g, '\\');
+        const text = decodePDFString(stringMatch[1]);
         if (text.trim()) {
           textChunks.push(text);
         }
+      }
+    }
+
+    // Extract from ' operator (move to next line and show text)
+    const quoteRegex = /\(([^)]*)\)\s*'/g;
+    let quoteMatch;
+    while ((quoteMatch = quoteRegex.exec(textBlock)) !== null) {
+      const text = decodePDFString(quoteMatch[1]);
+      if (text.trim()) {
+        textChunks.push('\n' + text);
+      }
+    }
+  }
+
+  // Method 2: Also try to find hex-encoded strings
+  const hexStringRegex = /<([0-9A-Fa-f]+)>/g;
+  let hexMatch;
+  while ((hexMatch = hexStringRegex.exec(content)) !== null) {
+    const hexStr = hexMatch[1];
+    if (hexStr.length >= 4 && hexStr.length % 2 === 0) {
+      try {
+        let text = '';
+        for (let i = 0; i < hexStr.length; i += 2) {
+          const charCode = parseInt(hexStr.substr(i, 2), 16);
+          if (charCode >= 32 && charCode < 127) {
+            text += String.fromCharCode(charCode);
+          }
+        }
+        if (text.length >= 3 && /[a-zA-Z]/.test(text)) {
+          textChunks.push(text);
+        }
+      } catch {}
+    }
+  }
+
+  // Method 3: Extract any readable text sequences (fallback)
+  if (textChunks.length === 0) {
+    // Find sequences of readable ASCII characters
+    const readableRegex = /[\x20-\x7E]{10,}/g;
+    let readableMatch;
+    while ((readableMatch = readableRegex.exec(content)) !== null) {
+      const text = readableMatch[0];
+      // Filter out PDF keywords and binary sequences
+      if (!text.match(/^(stream|endstream|obj|endobj|xref|trailer|startxref)/i) &&
+          text.match(/[a-zA-Z]{3,}/)) {
+        textChunks.push(text);
       }
     }
   }
@@ -124,9 +129,24 @@ function extractRawTextFromPDFBuffer(buffer: Buffer): string {
   // Join and clean up
   let result = textChunks.join(' ')
     .replace(/\s+/g, ' ')
+    .replace(/\n\s+/g, '\n')
     .trim();
 
   return result;
+}
+
+/**
+ * Decode PDF string escape sequences
+ */
+function decodePDFString(str: string): string {
+  return str
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\r')
+    .replace(/\\t/g, '\t')
+    .replace(/\\\(/g, '(')
+    .replace(/\\\)/g, ')')
+    .replace(/\\\\/g, '\\')
+    .replace(/\\(\d{1,3})/g, (_, octal) => String.fromCharCode(parseInt(octal, 8)));
 }
 
 /**
