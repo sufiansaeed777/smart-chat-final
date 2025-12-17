@@ -15,14 +15,25 @@ export interface ProcessedDocument {
 
 /**
  * Extract text from PDF buffer with better formatting preservation
+ * Uses pdf-parse with workarounds for serverless environment
  */
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
-    // For serverless environment, use pdf-parse with default options
-    // Custom pagerender requires DOM APIs not available in Node.js/Vercel
-    const pdfParse = require('pdf-parse');
+    // Workaround for serverless: pdf-parse uses pdfjs-dist which needs canvas polyfills
+    // We'll use pdf-parse/lib/pdf-parse.js directly with a custom test file approach
+    // This avoids the automatic pdfjs-dist initialization that requires DOMMatrix
 
-    const data = await pdfParse(buffer);
+    // Method 1: Try using pdf-parse with the buffer directly
+    // The key is to let pdf-parse handle the parsing without custom renderers
+    const pdfParse = require('pdf-parse/lib/pdf-parse');
+
+    // Create a minimal data extraction without canvas dependency
+    const data = await pdfParse(buffer, {
+      // Don't use custom page render (requires DOM)
+      pagerender: undefined,
+      // Use default max pages
+      max: 0,
+    });
 
     // Clean up extracted text
     let text = data.text || '';
@@ -38,10 +49,84 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     }
 
     return text;
-  } catch (error) {
+  } catch (error: any) {
+    // If pdf-parse fails due to canvas issues, try a simpler fallback
+    if (error.message?.includes('DOMMatrix') || error.message?.includes('canvas')) {
+      console.warn('PDF parsing failed due to canvas dependency, trying fallback...');
+      try {
+        // Fallback: Extract raw text using a simpler method
+        // This is a basic fallback that extracts visible text strings from PDF
+        const text = extractRawTextFromPDFBuffer(buffer);
+        if (text && text.length >= 10) {
+          return text;
+        }
+      } catch (fallbackError) {
+        console.error('Fallback PDF extraction also failed:', fallbackError);
+      }
+    }
+
     console.error('Error extracting PDF text:', error);
     throw new Error('Failed to extract text from PDF: ' + (error instanceof Error ? error.message : 'Unknown error'));
   }
+}
+
+/**
+ * Simple fallback to extract raw text from PDF buffer
+ * This is a basic method that finds text strings in the PDF
+ */
+function extractRawTextFromPDFBuffer(buffer: Buffer): string {
+  const content = buffer.toString('binary');
+  const textChunks: string[] = [];
+
+  // Find text between BT (begin text) and ET (end text) markers
+  const btEtRegex = /BT\s*([\s\S]*?)\s*ET/g;
+  let match;
+
+  while ((match = btEtRegex.exec(content)) !== null) {
+    const textBlock = match[1];
+
+    // Extract text from Tj and TJ operators
+    const tjRegex = /\(([^)]*)\)\s*Tj/g;
+    let tjMatch;
+    while ((tjMatch = tjRegex.exec(textBlock)) !== null) {
+      const text = tjMatch[1]
+        .replace(/\\n/g, '\n')
+        .replace(/\\r/g, '')
+        .replace(/\\\(/g, '(')
+        .replace(/\\\)/g, ')')
+        .replace(/\\\\/g, '\\');
+      if (text.trim()) {
+        textChunks.push(text);
+      }
+    }
+
+    // Extract from TJ arrays
+    const tjArrayRegex = /\[(.*?)\]\s*TJ/g;
+    let tjArrayMatch;
+    while ((tjArrayMatch = tjArrayRegex.exec(textBlock)) !== null) {
+      const arrayContent = tjArrayMatch[1];
+      const stringRegex = /\(([^)]*)\)/g;
+      let stringMatch;
+      while ((stringMatch = stringRegex.exec(arrayContent)) !== null) {
+        const text = stringMatch[1]
+          .replace(/\\n/g, '\n')
+          .replace(/\\r/g, '')
+          .replace(/\\\(/g, '(')
+          .replace(/\\\)/g, ')')
+          .replace(/\\\\/g, '\\');
+        if (text.trim()) {
+          textChunks.push(text);
+        }
+      }
+    }
+  }
+
+  // Join and clean up
+  let result = textChunks.join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return result;
 }
 
 /**
