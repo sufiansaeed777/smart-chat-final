@@ -51,6 +51,37 @@ interface InvoiceData {
   paidAt: string | null;
 }
 
+// Available plans configuration
+const availablePlans = [
+  {
+    id: 'starter',
+    name: 'Starter',
+    price: 29,
+    period: 'month',
+    description: 'Perfect for small teams getting started',
+    features: ['Up to 5 Users', 'Up to 3 Bots', '1,000 Conversations/month', '1GB Storage'],
+    popular: false,
+  },
+  {
+    id: 'professional',
+    name: 'Professional',
+    price: 79,
+    period: 'month',
+    description: 'For growing businesses with more needs',
+    features: ['Up to 25 Users', 'Up to 15 Bots', '10,000 Conversations/month', '10GB Storage', 'Priority Support'],
+    popular: true,
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise',
+    price: 199,
+    period: 'month',
+    description: 'For large organizations with advanced needs',
+    features: ['Up to 100 Users', 'Up to 50 Bots', 'Unlimited Conversations', '100GB Storage', '24/7 Support', 'Custom Integrations'],
+    popular: false,
+  },
+];
+
 const BillingPage: React.FC = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -61,6 +92,8 @@ const BillingPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceData | null>(null);
+  const [showPlansModal, setShowPlansModal] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
   // Fetch subscription data and invoices on mount
   useEffect(() => {
@@ -102,16 +135,30 @@ const BillingPage: React.FC = () => {
     }
   };
 
-  // Handle upgrade plan
-  const handleUpgrade = async () => {
+  // Handle upgrade plan - show plans modal first
+  const handleUpgrade = () => {
+    setShowPlansModal(true);
+  };
+
+  // Handle plan selection and checkout
+  const handleSelectPlan = async (planId: string) => {
+    const plan = availablePlans.find(p => p.id === planId);
+    if (!plan) return;
+
+    // Don't allow selecting current plan
+    if (subscriptionData?.plan?.name?.toLowerCase() === plan.name.toLowerCase()) {
+      return;
+    }
+
     try {
+      setSelectedPlanId(planId);
       setIsUpgrading(true);
 
-      const enterprisePlan = {
-        planType: 'enterprise',
-        amount: 199,
+      const planData = {
+        planType: plan.id,
+        amount: plan.price,
         currency: 'USD',
-        description: 'Enterprise Plan - Up to 100 Users & 50 Bots',
+        description: `${plan.name} Plan - ${plan.features[0]} & ${plan.features[1]}`,
       };
 
       const response = await fetch('/api/payment/create-checkout-session', {
@@ -119,7 +166,7 @@ const BillingPage: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(enterprisePlan),
+        body: JSON.stringify(planData),
       });
 
       if (response.ok) {
@@ -139,6 +186,8 @@ const BillingPage: React.FC = () => {
       alert('An error occurred while upgrading. Please try again.');
     } finally {
       setIsUpgrading(false);
+      setSelectedPlanId(null);
+      setShowPlansModal(false);
     }
   };
 
@@ -940,6 +989,114 @@ const BillingPage: React.FC = () => {
                 <p className="text-gray-700 font-medium mb-1">Thank you for your business!</p>
                 <p className="text-sm text-gray-500">Questions? Contact us at billing@smartchat.com</p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Plans Selection Modal */}
+      {showPlansModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Choose Your Plan</h2>
+                <p className="text-gray-500 mt-1">Select the plan that best fits your needs</p>
+              </div>
+              <button
+                onClick={() => setShowPlansModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Plans Grid */}
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {availablePlans.map((plan) => {
+                  const isCurrentPlan = subscriptionData?.plan?.name?.toLowerCase() === plan.name.toLowerCase();
+                  const isSelected = selectedPlanId === plan.id;
+
+                  return (
+                    <div
+                      key={plan.id}
+                      className={`relative rounded-2xl border-2 p-6 transition-all ${
+                        isCurrentPlan
+                          ? 'border-gray-300 bg-gray-50 opacity-75'
+                          : isSelected
+                          ? 'border-[#6566F1] bg-indigo-50 shadow-lg'
+                          : 'border-gray-200 hover:border-[#6566F1] hover:shadow-md'
+                      }`}
+                    >
+                      {/* Popular Badge */}
+                      {plan.popular && (
+                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                          <span className="bg-[#6566F1] text-white text-xs font-bold px-3 py-1 rounded-full">
+                            MOST POPULAR
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Current Plan Badge */}
+                      {isCurrentPlan && (
+                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                          <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                            CURRENT PLAN
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="text-center mb-6 mt-2">
+                        <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
+                        <p className="text-gray-500 text-sm mt-1">{plan.description}</p>
+                      </div>
+
+                      <div className="text-center mb-6">
+                        <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
+                        <span className="text-gray-500">/{plan.period}</span>
+                      </div>
+
+                      <ul className="space-y-3 mb-6">
+                        {plan.features.map((feature, index) => (
+                          <li key={index} className="flex items-center text-sm text-gray-600">
+                            <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+
+                      <button
+                        onClick={() => handleSelectPlan(plan.id)}
+                        disabled={isCurrentPlan || isUpgrading}
+                        className={`w-full py-3 px-4 rounded-xl font-medium transition-colors ${
+                          isCurrentPlan
+                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            : isSelected && isUpgrading
+                            ? 'bg-[#6566F1] text-white opacity-75'
+                            : 'bg-[#6566F1] text-white hover:bg-[#5A5BD9]'
+                        }`}
+                      >
+                        {isCurrentPlan ? (
+                          'Current Plan'
+                        ) : isSelected && isUpgrading ? (
+                          <span className="flex items-center justify-center">
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            Processing...
+                          </span>
+                        ) : (
+                          `Select ${plan.name}`
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <p className="text-center text-gray-500 text-sm mt-6">
+                All plans include a 14-day free trial. Cancel anytime.
+              </p>
             </div>
           </div>
         </div>

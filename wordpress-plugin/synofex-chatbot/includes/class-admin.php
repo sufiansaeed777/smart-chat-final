@@ -898,6 +898,89 @@ class Synofex_Admin {
                 font-weight: 500;
                 color: #666;
             }
+
+            /* SVG Toast Notification */
+            .synofex-svg-toast {
+                position: fixed;
+                top: 40px;
+                right: 20px;
+                z-index: 999999;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 14px 20px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+                font-size: 14px;
+                font-weight: 500;
+                max-width: 400px;
+                animation: synofex-toast-slide-in 0.3s ease-out;
+            }
+            .synofex-svg-toast.success {
+                border-left: 4px solid #28a745;
+            }
+            .synofex-svg-toast.error {
+                border-left: 4px solid #dc3545;
+            }
+            .synofex-svg-toast.fade-out {
+                animation: synofex-toast-fade-out 0.3s ease-out forwards;
+            }
+            .synofex-toast-icon {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                font-size: 14px;
+                font-weight: bold;
+                color: white;
+                flex-shrink: 0;
+            }
+            .synofex-svg-toast.success .synofex-toast-icon {
+                background: #28a745;
+            }
+            .synofex-svg-toast.error .synofex-toast-icon {
+                background: #dc3545;
+            }
+            .synofex-toast-message {
+                flex: 1;
+                color: #333;
+            }
+            .synofex-toast-close {
+                background: none;
+                border: none;
+                font-size: 20px;
+                color: #999;
+                cursor: pointer;
+                padding: 0;
+                line-height: 1;
+                flex-shrink: 0;
+            }
+            .synofex-toast-close:hover {
+                color: #333;
+            }
+            @keyframes synofex-toast-slide-in {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes synofex-toast-fade-out {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
         </style>
 
         <script>
@@ -976,7 +1059,56 @@ class Synofex_Admin {
                         this.closest('.synofex-position-option').classList.add('selected');
                     });
                 });
+
+                // SVG file selection notification
+                var svgFileInput = document.getElementById('synofex_widget_icon_svg');
+                if (svgFileInput) {
+                    svgFileInput.addEventListener('change', function() {
+                        if (this.files && this.files[0]) {
+                            var fileName = this.files[0].name;
+                            var fileExt = fileName.split('.').pop().toLowerCase();
+
+                            if (fileExt === 'svg') {
+                                showSvgNotification('success', 'SVG file selected: ' + fileName + '. Click "Save Settings" to upload.');
+                            } else {
+                                showSvgNotification('error', 'Invalid file type. Please select an SVG file.');
+                                this.value = ''; // Clear the invalid file
+                            }
+                        }
+                    });
+                }
             });
+
+            // Show SVG notification toast
+            function showSvgNotification(type, message) {
+                // Remove existing notification if any
+                var existing = document.getElementById('synofex-svg-toast');
+                if (existing) {
+                    existing.remove();
+                }
+
+                // Create notification element
+                var toast = document.createElement('div');
+                toast.id = 'synofex-svg-toast';
+                toast.className = 'synofex-svg-toast ' + type;
+                toast.innerHTML = '<span class="synofex-toast-icon">' + (type === 'success' ? '✓' : '✕') + '</span>' +
+                                  '<span class="synofex-toast-message">' + message + '</span>' +
+                                  '<button type="button" class="synofex-toast-close" onclick="this.parentElement.remove()">×</button>';
+
+                document.body.appendChild(toast);
+
+                // Auto-hide after 5 seconds
+                setTimeout(function() {
+                    if (toast && toast.parentElement) {
+                        toast.classList.add('fade-out');
+                        setTimeout(function() {
+                            if (toast && toast.parentElement) {
+                                toast.remove();
+                            }
+                        }, 300);
+                    }
+                }, 5000);
+            }
         </script>
         <?php
     }

@@ -165,10 +165,27 @@ const KnowledgeBasePage: React.FC = () => {
               const data = JSON.parse(xhr.responseText);
               setDocuments(prev => [...(data.documents || []), ...prev]);
               setUploadProgress(100);
+
+              // Check if any SVG or image files were uploaded
+              const uploadedFiles = Array.from(files);
+              const imageExtensions = ['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp'];
+              const uploadedImages = uploadedFiles.filter(file =>
+                imageExtensions.some(ext => file.name.toLowerCase().endsWith(ext))
+              );
+
               setTimeout(() => {
                 setIsUploading(false);
                 setUploadProgress(0);
                 setShowUploadModal(false);
+
+                // Show success notification
+                if (uploadedImages.length > 0) {
+                  const imageNames = uploadedImages.map(f => f.name).join(', ');
+                  setModalMessage(`Image${uploadedImages.length > 1 ? 's' : ''} uploaded: ${imageNames}`);
+                } else {
+                  setModalMessage(`${uploadedFiles.length} document${uploadedFiles.length > 1 ? 's' : ''} uploaded successfully`);
+                }
+                setShowSuccessModal(true);
               }, 500); // Small delay to show 100% completion
               resolve();
             } catch (error) {

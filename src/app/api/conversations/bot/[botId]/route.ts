@@ -101,18 +101,44 @@ export async function GET(
     }
 
     // Format conversations for frontend
-    const formattedConversations = conversations.map(conv => ({
-      id: conv.id,
-      message: conv.message,
-      sender: conv.sender,
-      timestamp: conv.createdAt.toISOString(),
-      isTestMessage: conv.isTestMessage,
-      metadata: conv.metadata || null
-    }));
+    // Handle both OLD schema (single message field) and NEW schema (messages array)
+    const formattedConversations: any[] = [];
 
-    return NextResponse.json({ 
-      success: true, 
-      conversations: formattedConversations 
+    conversations.forEach(conv => {
+      // Check if conversation has new schema messages array
+      if (conv.messages && Array.isArray(conv.messages) && conv.messages.length > 0) {
+        // NEW SCHEMA: Extract individual messages from the array
+        conv.messages.forEach((msg: any) => {
+          formattedConversations.push({
+            id: msg.id || `${conv.id}-${msg.timestamp}`,
+            message: msg.text,
+            sender: msg.sender === 'visitor' ? 'user' : (msg.sender === 'agent' ? 'user' : 'bot'),
+            timestamp: msg.timestamp || conv.createdAt.toISOString(),
+            isTestMessage: conv.isTestMessage,
+            metadata: conv.metadata || null
+          });
+        });
+      } else if (conv.message) {
+        // OLD SCHEMA: Single message per row
+        formattedConversations.push({
+          id: conv.id,
+          message: conv.message,
+          sender: conv.sender,
+          timestamp: conv.createdAt.toISOString(),
+          isTestMessage: conv.isTestMessage,
+          metadata: conv.metadata || null
+        });
+      }
+    });
+
+    // Sort by timestamp
+    formattedConversations.sort((a, b) =>
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    return NextResponse.json({
+      success: true,
+      conversations: formattedConversations
     });
 
   } catch (error) {

@@ -253,9 +253,8 @@ const HumanHandoff = () => {
     return (now - lastTime) < (minutes * 60 * 1000);
   };
 
-  // Filter active conversations: must have messages AND be within last 30 minutes
+  // Filter active conversations: within last 30 minutes (matching Overview logic)
   const activeConversations = conversations.filter(conv => {
-    if (!conv.messages || conv.messages.length === 0) return false;
     // Active if message received within last 30 minutes
     return isWithinMinutes(conv.lastMessageAt, 30);
   });

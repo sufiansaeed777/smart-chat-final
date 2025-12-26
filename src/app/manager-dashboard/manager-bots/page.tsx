@@ -529,6 +529,15 @@ export default function BotsPage() {
                       documentIds: [...prev.documentIds, uploadedDoc.id]
                     };
                   });
+
+                  // Show specific notification for image/SVG files
+                  const imageExtensions = ['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp'];
+                  const isImageFile = imageExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+                  if (isImageFile) {
+                    showToast(`Image uploaded: ${file.name}`, 'success');
+                  } else {
+                    showToast(`Document uploaded: ${file.name}`, 'success');
+                  }
                 }
                 resolve();
               } catch (error) {

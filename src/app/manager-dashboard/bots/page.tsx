@@ -490,7 +490,20 @@ const BotsPage = () => {
         }));
         // Refresh available documents so the uploaded files appear in KB list
         loadDocuments();
-        showNotification('success', 'Upload Successful', 'Documents uploaded successfully.');
+
+        // Check if any SVG or image files were uploaded and show specific notification
+        const uploadedFiles = Array.from(files);
+        const imageExtensions = ['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp'];
+        const uploadedImages = uploadedFiles.filter(file =>
+          imageExtensions.some(ext => file.name.toLowerCase().endsWith(ext))
+        );
+
+        if (uploadedImages.length > 0) {
+          const imageNames = uploadedImages.map(f => f.name).join(', ');
+          showNotification('success', 'Image Uploaded', `Image file${uploadedImages.length > 1 ? 's' : ''} uploaded: ${imageNames}`);
+        } else {
+          showNotification('success', 'Upload Successful', 'Documents uploaded successfully.');
+        }
       } else {
         const errorData = await response.json();
         showNotification('error', 'Upload Failed', errorData.error || 'Failed to upload documents.');

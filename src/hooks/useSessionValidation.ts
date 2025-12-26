@@ -24,6 +24,9 @@ export function useSessionValidation() {
       '/legal',
       '/support',
       '/help-center',
+      '/help',
+      '/troubleshooting',
+      '/knowledge-base',
       '/contact-support',
       '/status',
       '/community',
@@ -32,7 +35,11 @@ export function useSessionValidation() {
       '/cookie-policy',
       '/gdpr',
     ];
-    const isPublicRoute = publicRoutes.includes(pathname);
+
+    // Check if current path matches a public route (exact match or starts with a public route prefix)
+    const publicRoutePrefixes = ['/help/', '/verify-email', '/verify-invitation'];
+    const isPublicRoute = publicRoutes.includes(pathname) ||
+      publicRoutePrefixes.some(prefix => pathname.startsWith(prefix));
 
     // Only redirect to login if:
     // 1. There's no session

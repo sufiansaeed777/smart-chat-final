@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { AppDataSource } from '@/config/database';
+import { Invoice } from '@/entities/Invoice';
+import { User } from '@/entities/User';
 
 interface RouteParams {
   params: Promise<{
@@ -8,21 +11,100 @@ interface RouteParams {
   }>;
 }
 
-// Invoice data structure matching the View Invoice page
-function getInvoiceData(invoiceId: string) {
+interface InvoiceDataForPDF {
+  id: string;
+  number: string;
+  date: string;
+  dueDate: string;
+  amount: number;
+  tax: number;
+  subtotal: number;
+  status: string;
+  description: string;
+  billingPeriod: string;
+  paymentMethod: string;
+  transactionId: string;
+  company: {
+    name: string;
+    address: string;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+    email: string;
+    phone: string;
+  };
+  customer: {
+    name: string;
+    email: string;
+    address: string;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+  };
+  items: {
+    description: string;
+    quantity: number;
+    rate: number;
+    amount: number;
+  }[];
+}
+
+// Fetch real invoice data from database
+async function getInvoiceData(invoiceId: string, userEmail: string): Promise<InvoiceDataForPDF | null> {
+  if (!AppDataSource.isInitialized) {
+    await AppDataSource.initialize();
+  }
+
+  const invoiceRepository = AppDataSource.getRepository(Invoice);
+  const userRepository = AppDataSource.getRepository(User);
+
+  // Find the user
+  const user = await userRepository.findOne({
+    where: { email: userEmail }
+  });
+
+  if (!user) {
+    return null;
+  }
+
+  // Find the invoice
+  const invoice = await invoiceRepository.findOne({
+    where: { id: invoiceId, managerId: user.id },
+    relations: ['subscription', 'manager']
+  });
+
+  if (!invoice) {
+    return null;
+  }
+
+  // Calculate dates for billing period
+  const invoiceDate = new Date(invoice.createdAt);
+  const endOfMonth = new Date(invoiceDate.getFullYear(), invoiceDate.getMonth() + 1, 0);
+  const startOfMonth = new Date(invoiceDate.getFullYear(), invoiceDate.getMonth(), 1);
+
+  const formatDateLong = (date: Date) => {
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  };
+
+  const subtotal = parseFloat(invoice.amount?.toString() || '0');
+  const tax = parseFloat(invoice.tax?.toString() || '0');
+  const total = parseFloat(invoice.total?.toString() || '0');
+
   return {
-    id: invoiceId,
-    number: invoiceId,
-    date: '2024-01-01',
-    dueDate: '2024-01-15',
-    amount: 99,
-    tax: 9.90,
-    subtotal: 89.10,
-    status: 'paid',
-    description: 'Professional Plan - January 2024',
-    billingPeriod: 'January 1, 2024 - January 31, 2024',
-    paymentMethod: '**** 4242',
-    transactionId: 'txn_' + invoiceId,
+    id: invoice.id,
+    number: invoice.invoiceNumber,
+    date: invoice.createdAt.toISOString().split('T')[0],
+    dueDate: invoice.dueDate ? new Date(invoice.dueDate).toISOString().split('T')[0] : invoice.createdAt.toISOString().split('T')[0],
+    amount: total,
+    tax: tax,
+    subtotal: subtotal,
+    status: invoice.status || 'open',
+    description: invoice.planName || 'Subscription',
+    billingPeriod: `${formatDateLong(startOfMonth)} - ${formatDateLong(endOfMonth)}`,
+    paymentMethod: invoice.stripePaymentIntentId ? '**** ****' : 'N/A',
+    transactionId: invoice.stripePaymentIntentId || `txn_${invoice.id.substring(0, 8)}`,
     company: {
       name: 'Smart Chat Inc.',
       address: '123 AI Street',
@@ -34,20 +116,20 @@ function getInvoiceData(invoiceId: string) {
       phone: '+1 (555) 123-4567'
     },
     customer: {
-      name: 'Your Company',
-      email: 'customer@example.com',
-      address: '456 Business Ave',
-      city: 'New York',
-      state: 'NY',
-      zip: '10001',
+      name: user.name || user.email.split('@')[0],
+      email: user.email,
+      address: '',
+      city: '',
+      state: '',
+      zip: '',
       country: 'United States'
     },
     items: [
       {
-        description: 'Professional Plan Subscription',
+        description: `${invoice.planName || 'Subscription'} Plan`,
         quantity: 1,
-        rate: 89.10,
-        amount: 89.10
+        rate: subtotal,
+        amount: subtotal
       }
     ]
   };
@@ -65,7 +147,11 @@ export async function GET(
     }
 
     const { id } = await params;
-    const invoice = getInvoiceData(id);
+    const invoice = await getInvoiceData(id, session.user.email);
+
+    if (!invoice) {
+      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+    }
 
     // Generate PDF with the same layout as the View Invoice page
     const pdfContent = generateInvoicePDF(invoice);
@@ -73,7 +159,7 @@ export async function GET(
     return new NextResponse(pdfContent, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="invoice-${id}.pdf"`,
+        'Content-Disposition': `attachment; filename="invoice-${invoice.number}.pdf"`,
       },
     });
   } catch (error) {
@@ -86,7 +172,7 @@ export async function GET(
 }
 
 // Generate PDF matching the View Invoice page layout
-function generateInvoicePDF(invoice: ReturnType<typeof getInvoiceData>): Buffer {
+function generateInvoicePDF(invoice: InvoiceDataForPDF): Buffer {
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('en-US', {
       year: 'numeric',
