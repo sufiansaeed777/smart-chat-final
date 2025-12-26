@@ -54,30 +54,21 @@ interface InvoiceData {
 // Available plans configuration
 const availablePlans = [
   {
-    id: 'starter',
-    name: 'Starter',
+    id: 'basic',
+    name: 'Basic',
     price: 29,
     period: 'month',
-    description: 'Perfect for small teams getting started',
-    features: ['Up to 5 Users', 'Up to 3 Bots', '1,000 Conversations/month', '1GB Storage'],
-    popular: false,
-  },
-  {
-    id: 'professional',
-    name: 'Professional',
-    price: 79,
-    period: 'month',
-    description: 'For growing businesses with more needs',
-    features: ['Up to 25 Users', 'Up to 15 Bots', '10,000 Conversations/month', '10GB Storage', 'Priority Support'],
+    description: 'Perfect for freelancers & small businesses',
+    features: ['2 Chatbots', '2 Website Connections', '2 Team Members', '1,000 AI Messages/month', '1,000 Human Messages/month', '50MB Storage', 'Advanced Analytics', 'Email Support'],
     popular: true,
   },
   {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: 199,
+    id: 'pro',
+    name: 'Pro',
+    price: 99,
     period: 'month',
-    description: 'For large organizations with advanced needs',
-    features: ['Up to 100 Users', 'Up to 50 Bots', 'Unlimited Conversations', '100GB Storage', '24/7 Support', 'Custom Integrations'],
+    description: 'For agencies & e-commerce with advanced needs',
+    features: ['5 Chatbots', '5 Website Connections', '5 Team Members', '5,000 AI Messages/month', '5,000 Human Messages/month', '200MB Storage', 'Custom Branding', 'Multi-Language', 'Priority Support'],
     popular: false,
   },
 ];
@@ -197,9 +188,9 @@ const BillingPage: React.FC = () => {
       setIsUpgrading(true);
 
       const planDescriptions: Record<string, string> = {
-        starter: 'Starter Plan - Up to 5 Users & 3 Bots',
-        professional: 'Professional Plan - Up to 20 Users & 10 Bots',
-        enterprise: 'Enterprise Plan - Up to 100 Users & 50 Bots'
+        free: 'Free Trial - 1 Chatbot & 1 Team Member',
+        basic: 'Basic Plan - 2 Chatbots & 2 Team Members',
+        pro: 'Pro Plan - 5 Chatbots & 5 Team Members'
       };
 
       const planData = {
@@ -325,8 +316,8 @@ const BillingPage: React.FC = () => {
   // Get current plan name for comparison
   const currentPlanName = subscriptionData?.plan?.name?.toLowerCase() || 'free';
 
-  // Check if user is on Free or Starter plan (show upgrade options)
-  const showUpgradePlans = !subscriptionData?.hasSubscription || currentPlanName === 'starter';
+  // Check if user is on Free or Basic plan (show upgrade options)
+  const showUpgradePlans = !subscriptionData?.hasSubscription || currentPlanName === 'free' || currentPlanName === 'basic';
 
   // No subscription or Starter plan - Show pricing plans with Current Plan indicator
   if (showUpgradePlans) {
@@ -423,17 +414,17 @@ const BillingPage: React.FC = () => {
           {/* Upgrade Section Header */}
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {currentPlanName === 'starter' ? 'Upgrade Your Plan' : 'Choose Your Plan'}
+              {currentPlanName === 'basic' ? 'Upgrade Your Plan' : 'Choose Your Plan'}
             </h2>
             <p className="text-gray-600">
-              {currentPlanName === 'starter'
-                ? 'Upgrade to unlock more features and higher limits'
+              {currentPlanName === 'basic'
+                ? 'Upgrade to Pro to unlock more features and higher limits'
                 : 'Select a plan that fits your needs'}
             </p>
           </div>
 
           {/* Pricing Plans */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* Free Plan */}
             <div className={`bg-white rounded-2xl shadow-sm p-6 hover:shadow-lg transition-all relative ${currentPlanName === 'free' ? 'border-2 border-[#6566F1]' : 'border-2 border-gray-200'}`}>
               {currentPlanName === 'free' && (
@@ -485,17 +476,23 @@ const BillingPage: React.FC = () => {
               )}
             </div>
 
-            {/* Starter Plan */}
-            <div className={`bg-white rounded-2xl shadow-sm p-6 hover:shadow-lg transition-all relative ${currentPlanName === 'starter' ? 'border-2 border-[#6566F1]' : 'border-2 border-gray-200'}`}>
-              {currentPlanName === 'starter' && (
+            {/* Basic Plan */}
+            <div className={`bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all relative ${currentPlanName === 'basic' ? 'border-2 border-[#6566F1]' : 'border-2 border-gray-200'}`}>
+              {currentPlanName === 'basic' ? (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <span className="bg-[#6566F1] text-white px-3 py-1 rounded-full text-xs font-semibold">
                     Current Plan
                   </span>
                 </div>
+              ) : (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                    Most Popular
+                  </span>
+                </div>
               )}
               <div className="mb-6 mt-2">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Starter</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Basic</h3>
                 <div className="flex items-baseline mb-4">
                   <span className="text-3xl font-bold text-gray-900">$29</span>
                   <span className="text-gray-600 ml-2">/month</span>
@@ -503,23 +500,27 @@ const BillingPage: React.FC = () => {
                 <ul className="space-y-2">
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">Up to 5 Users</span>
+                    <span className="text-sm text-gray-700">2 Chatbots</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">Up to 3 Bots</span>
+                    <span className="text-sm text-gray-700">2 Team Members</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">1,000 AI Messages/month</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">50MB Storage</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
                     <span className="text-sm text-gray-700">Email Support</span>
                   </li>
-                  <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">1,000 Conversations/month</span>
-                  </li>
                 </ul>
               </div>
-              {currentPlanName === 'starter' ? (
+              {currentPlanName === 'basic' ? (
                 <button
                   disabled
                   className="w-full py-3 bg-gray-100 text-gray-500 rounded-xl font-medium cursor-not-allowed"
@@ -528,90 +529,73 @@ const BillingPage: React.FC = () => {
                 </button>
               ) : (
                 <button
-                  onClick={() => handleSubscribe('starter', 29)}
+                  onClick={() => handleSubscribe('basic', 29)}
                   disabled={isUpgrading}
                   className="w-full py-3 bg-[#6566F1] text-white rounded-xl hover:bg-[#5A5BD9] transition-colors font-medium disabled:opacity-50"
                 >
-                  {isUpgrading ? 'Processing...' : 'Get Starter'}
+                  {isUpgrading ? 'Processing...' : 'Get Basic'}
                 </button>
               )}
             </div>
 
-            {/* Professional Plan */}
-            <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 p-6 hover:shadow-xl transition-all relative">
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                  Most Popular
-                </span>
-              </div>
+            {/* Pro Plan */}
+            <div className={`bg-white rounded-2xl shadow-sm p-6 hover:shadow-lg transition-all relative ${currentPlanName === 'pro' ? 'border-2 border-[#6566F1]' : 'border-2 border-gray-200'}`}>
+              {currentPlanName === 'pro' && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-[#6566F1] text-white px-3 py-1 rounded-full text-xs font-semibold">
+                    Current Plan
+                  </span>
+                </div>
+              )}
               <div className="mb-6 mt-2">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Professional</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Pro</h3>
                 <div className="flex items-baseline mb-4">
-                  <span className="text-3xl font-bold text-gray-900">$79</span>
+                  <span className="text-3xl font-bold text-gray-900">$99</span>
                   <span className="text-gray-600 ml-2">/month</span>
                 </div>
                 <ul className="space-y-2">
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">Up to 20 Users</span>
+                    <span className="text-sm text-gray-700">5 Chatbots</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">Up to 10 Bots</span>
+                    <span className="text-sm text-gray-700">5 Team Members</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">5,000 AI Messages/month</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">200MB Storage</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-gray-700">Custom Branding</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-600" />
                     <span className="text-sm text-gray-700">Priority Support</span>
                   </li>
-                  <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">5,000 Conversations/month</span>
-                  </li>
                 </ul>
               </div>
-              <button
-                onClick={() => handleSubscribe('professional', 79)}
-                disabled={isUpgrading}
-                className="w-full py-3 bg-[#6566F1] text-white rounded-xl hover:bg-[#5A5BD9] transition-colors font-medium disabled:opacity-50"
-              >
-                {isUpgrading ? 'Processing...' : 'Get Pro'}
-              </button>
-            </div>
-
-            {/* Enterprise Plan */}
-            <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 p-6 hover:shadow-lg transition-all">
-              <div className="mb-6 mt-2">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Enterprise</h3>
-                <div className="flex items-baseline mb-4">
-                  <span className="text-3xl font-bold text-gray-900">$199</span>
-                  <span className="text-gray-600 ml-2">/month</span>
-                </div>
-                <ul className="space-y-2">
-                  <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">Up to 100 Users</span>
-                  </li>
-                  <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">Up to 50 Bots</span>
-                  </li>
-                  <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">24/7 Support</span>
-                  </li>
-                  <li className="flex items-center space-x-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-gray-700">50,000 Conversations/month</span>
-                  </li>
-                </ul>
-              </div>
-              <button
-                onClick={() => handleSubscribe('enterprise', 199)}
-                disabled={isUpgrading}
-                className="w-full py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium disabled:opacity-50"
-              >
-                {isUpgrading ? 'Processing...' : 'Get Enterprise'}
-              </button>
+              {currentPlanName === 'pro' ? (
+                <button
+                  disabled
+                  className="w-full py-3 bg-gray-100 text-gray-500 rounded-xl font-medium cursor-not-allowed"
+                >
+                  Current Plan
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleSubscribe('pro', 99)}
+                  disabled={isUpgrading}
+                  className="w-full py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium disabled:opacity-50"
+                >
+                  {isUpgrading ? 'Processing...' : 'Get Pro'}
+                </button>
+              )}
             </div>
           </div>
 
@@ -664,7 +648,7 @@ const BillingPage: React.FC = () => {
           <p className="text-gray-600 mt-2">Manage your subscription and view usage statistics</p>
         </div>
         <div className="flex items-center space-x-3">
-          {plan.name !== 'Enterprise' && (
+          {plan.name !== 'Pro' && (
             <button
               onClick={handleUpgrade}
               disabled={isUpgrading}
@@ -727,7 +711,7 @@ const BillingPage: React.FC = () => {
               )}
             </div>
             <div className="space-y-2">
-              {plan.name !== 'Enterprise' && (
+              {plan.name !== 'Pro' && (
                 <button
                   onClick={handleUpgrade}
                   disabled={isUpgrading}

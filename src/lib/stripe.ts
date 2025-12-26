@@ -10,60 +10,45 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 export const STRIPE_CONFIG = {
-  // Signup plan - $0.01 charge that gets refunded
-  SIGNUP_PLAN: {
-    price: 1, // $0.01 in cents
-    currency: 'usd',
-    name: 'Signup Plan - Bot Creation',
-    description: 'Create your first bot (refundable)',
-    productId: 'prod_T1Oq2owhO3uruq', // Your existing Stripe product
-  },
-  // Free plan - $0.00
+  // Free plan - 7 Day Trial
   FREE_PLAN: {
     price: 0, // $0.00 in cents
     currency: 'usd',
-    name: 'Free Plan',
-    description: '1 Bot, 50 conversations/month, 1 team member',
+    name: 'Free Trial',
+    description: '7 Days Trial - 1 Chatbot, 100 messages, 1 team member',
   },
-  // Starter plan - $19.00
-  STARTER_PLAN: {
-    price: 1900, // $19.00 in cents
+  // Basic plan - $29.00/month
+  BASIC_PLAN: {
+    price: 2900, // $29.00 in cents
     currency: 'usd',
-    name: 'Starter Plan',
-    description: '2 Bots, 1,000 conversations/month, 2 team members',
+    name: 'Basic Plan',
+    description: '2 Chatbots, 1,000 messages/month, 2 team members, 50MB storage',
   },
-  // Pro plan - $49.00
+  // Pro plan - $99.00/month
   PRO_PLAN: {
-    price: 4900, // $49.00 in cents
-    currency: 'usd',
-    name: 'Pro Plan',
-    description: '5 Bots, 10,000 conversations/month, 5 team members',
-  },
-  // Enterprise plan - $99.00
-  ENTERPRISE_PLAN: {
     price: 9900, // $99.00 in cents
     currency: 'usd',
-    name: 'Enterprise Plan',
-    description: '20 Bots, 50,000 conversations/month, 20+ team members',
+    name: 'Pro Plan',
+    description: '5 Chatbots, 5,000 messages/month, 5 team members, 200MB storage, Custom Branding',
   },
   // Add-ons
-  ADDON_EXTRA_CONVERSATIONS: {
+  ADDON_EXTRA_MESSAGES: {
     price: 1000, // $10.00 in cents
     currency: 'usd',
-    name: 'Extra Conversations',
-    description: '+5,000 conversations',
+    name: 'Extra Messages',
+    description: '+1,000 messages',
   },
   ADDON_EXTRA_BOT: {
     price: 500, // $5.00 in cents
     currency: 'usd',
-    name: 'Extra Bot Seat',
-    description: 'Additional bot',
+    name: 'Extra Chatbot',
+    description: 'Additional chatbot',
   },
-  ADDON_DEDICATED_HOSTING: {
-    price: 10000, // $100.00 in cents
+  ADDON_EXTRA_STORAGE: {
+    price: 500, // $5.00 in cents
     currency: 'usd',
-    name: 'Dedicated Hosting',
-    description: 'Dedicated server hosting',
+    name: 'Extra Storage',
+    description: '+50MB storage',
   },
 };
 

@@ -60,10 +60,10 @@ export class User {
   @Column({
     name: "subscription_plan",
     type: "enum",
-    enum: ['free', 'starter', 'professional', 'enterprise'],
+    enum: ['free', 'basic', 'pro'],
     default: 'free'
   })
-  subscriptionPlan!: 'free' | 'starter' | 'professional' | 'enterprise';
+  subscriptionPlan!: 'free' | 'basic' | 'pro';
 
   @Column({
     name: "subscription_status",

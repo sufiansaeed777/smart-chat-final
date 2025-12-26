@@ -15,58 +15,57 @@ export interface PlanLimits {
 
 export const PLAN_LIMITS: Record<string, PlanLimits> = {
   free: {
-    name: 'Free',
-    monthlyMessages: 100,
+    name: 'Free Trial',
+    monthlyMessages: 100, // 100 AI + 100 Human = 200 total, using 100 as AI limit
     maxBots: 1,
-    maxUsers: 0, // No team members
+    maxUsers: 1,
     maxDocuments: 5,
-    maxStorageMB: 50,
-    features: ['basic_chat', 'wordpress_plugin'],
+    maxStorageMB: 20,
+    features: [
+      'basic_chat',
+      'wordpress_plugin',
+      'basic_analytics',
+      'csv_export',
+      'ai_support',
+    ],
   },
   basic: {
     name: 'Basic',
-    monthlyMessages: 1000,
-    maxBots: 3,
+    monthlyMessages: 1000, // 1000 AI + 1000 Human
+    maxBots: 2,
     maxUsers: 2,
     maxDocuments: 20,
-    maxStorageMB: 500,
-    features: ['basic_chat', 'wordpress_plugin', 'document_training', 'email_support'],
+    maxStorageMB: 50,
+    features: [
+      'basic_chat',
+      'wordpress_plugin',
+      'document_training',
+      'advanced_analytics',
+      'csv_export',
+      'privacy_tools',
+      'email_support',
+    ],
   },
   pro: {
     name: 'Pro',
-    monthlyMessages: 10000,
-    maxBots: 10,
-    maxUsers: 10,
+    monthlyMessages: 5000, // 5000 AI + 5000 Human
+    maxBots: 5,
+    maxUsers: 5,
     maxDocuments: 100,
-    maxStorageMB: 5000,
+    maxStorageMB: 200,
     features: [
       'basic_chat',
       'wordpress_plugin',
       'document_training',
       'n8n_rag',
-      'priority_support',
+      'advanced_analytics',
+      'pdf_excel_csv_export',
+      'weekly_reports',
       'custom_branding',
-      'analytics',
-    ],
-  },
-  enterprise: {
-    name: 'Enterprise',
-    monthlyMessages: -1, // Unlimited
-    maxBots: -1, // Unlimited
-    maxUsers: -1, // Unlimited
-    maxDocuments: -1, // Unlimited
-    maxStorageMB: -1, // Unlimited
-    features: [
-      'basic_chat',
-      'wordpress_plugin',
-      'document_training',
-      'n8n_rag',
+      'multi_language',
+      'chat_scheduling',
+      'privacy_tools',
       'priority_support',
-      'custom_branding',
-      'analytics',
-      'dedicated_support',
-      'custom_integrations',
-      'sla',
     ],
   },
 };

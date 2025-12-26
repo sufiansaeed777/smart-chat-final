@@ -180,37 +180,44 @@ const PricingPage = () => {
     {
       name: "Free",
       price: "$0",
-      period: "/month",
-      description: "For testing & small blogs",
+      period: "/7 days",
+      description: "7 Days Trial - Test our platform",
       features: [
-        "1 Bot / 1 Website",
-        "50 Conversations / Month",
+        "1 Chatbot / 1 Website",
+        "100 AI Messages / Month",
+        "100 Human Messages / Month",
         "1 Team Member",
-        "2MB per File (10MB Quota)",
-        "1 Parallel Chat at a time",
-        "Unlimited Links",
-        "Default Templates Only"
+        "50KB File Upload (50,000 chars)",
+        "20MB Cloud Storage",
+        "Last 30 Chats Saved",
+        "Basic Analytics",
+        "CSV Export",
+        "Syno Branding Visible",
+        "AI Support Only"
       ],
-      cta: "Get Started Free",
+      cta: "Start Free Trial",
       popular: false,
       highlight: false
     },
     {
-      name: "Starter",
-      price: "$19",
+      name: "Basic",
+      price: "$29",
       period: "/month",
-      yearlyPrice: "$190",
+      yearlyPrice: "$290",
       yearlyPeriod: "/year",
       description: "For freelancers & small businesses",
       features: [
-        "2 Bots / 2 Websites",
-        "1,000 Conversations / Month",
+        "2 Chatbots / 2 Websites",
+        "1,000 AI Messages / Month",
+        "1,000 Human Messages / Month",
         "2 Team Members",
-        "5MB per File (50MB Quota)",
-        "10 Parallel Chats at a time",
-        "Unlimited Links",
-        "Default Templates",
-        "Limited Analytics Dashboard",
+        "100KB File Upload (100,000 chars)",
+        "50MB Cloud Storage",
+        "Last 100 Chats Saved",
+        "Advanced Analytics",
+        "CSV Export",
+        "Syno Branding Visible",
+        "Privacy Tools (Clear data, Consent)",
         "Email Support"
       ],
       cta: "Start Free Trial",
@@ -219,46 +226,27 @@ const PricingPage = () => {
     },
     {
       name: "Pro",
-      price: "$49",
-      period: "/month",
-      yearlyPrice: "$490",
-      yearlyPeriod: "/year",
-      description: "For agencies & e-commerce",
-      features: [
-        "5 Bots / 5 Websites",
-        "10,000 Conversations / Month",
-        "5 Team Members",
-        "10MB per File (200MB Quota)",
-        "25 Parallel Chats at a time",
-        "Unlimited Links",
-        "Default + Custom Templates",
-        "Customize Branding (Colors, Logo, Theme)",
-        "API Access + Integrations",
-        "Priority Email & Chat Support",
-        "Full Analytics Dashboard"
-      ],
-      cta: "Start Free Trial",
-      popular: false,
-      highlight: false
-    },
-    {
-      name: "Enterprise",
       price: "$99",
       period: "/month",
       yearlyPrice: "$990",
       yearlyPeriod: "/year",
-      description: "For large businesses & SaaS",
+      description: "For agencies & e-commerce",
       features: [
-        "20 Bots / Unlimited Websites",
-        "50,000 Conversations / Month",
-        "20+ Team Members",
-        "25MB per File (1GB Quota)",
-        "Unlimited Links",
-        "100 Parallel Chats at a time",
-        "White Label (Your Brand Only)",
-        "Dedicated Account Manager",
-        "Premium Integrations",
-        "Advanced Reporting & Team Collaboration"
+        "5 Chatbots / 5 Websites",
+        "5,000 AI Messages / Month",
+        "5,000 Human Messages / Month",
+        "5 Team Members",
+        "200KB File Upload (200,000 chars)",
+        "200MB Cloud Storage",
+        "Last 300 Chats Saved",
+        "Advanced Analytics",
+        "PDF, Excel & CSV Export",
+        "Weekly Email Reports",
+        "Custom Branding (Remove Syno)",
+        "Multi-Language (English + 2 Custom)",
+        "Chat Scheduling + Time Zone Control",
+        "Privacy Tools (Clear data, Consent)",
+        "Priority Email Support"
       ],
       cta: "Start Free Trial",
       popular: false,
@@ -774,49 +762,43 @@ const PricingPage = () => {
                   <thead>
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200">
                       <th className="text-left py-6 px-8 font-bold text-slate-900 text-lg">Features</th>
-                      <th className="text-center py-6 px-8 font-bold text-slate-900 text-lg">Free</th>
+                      <th className="text-center py-6 px-8 font-bold text-slate-900 text-lg">Free Trial</th>
                       <th className="text-center py-6 px-8 font-bold text-slate-900 text-lg relative">
                         <div className="bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 rounded-xl p-4 -mx-2 border border-blue-200">
                           <div className="flex items-center justify-center gap-2">
-                            <span className="text-blue-600 font-bold">Starter</span>
+                            <span className="text-blue-600 font-bold">Basic $29</span>
                             <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold">
                               Most Popular
                             </span>
                           </div>
                         </div>
                       </th>
-                      <th className="text-center py-6 px-8 font-bold text-slate-900 text-lg">Pro</th>
+                      <th className="text-center py-6 px-8 font-bold text-slate-900 text-lg">Pro $99</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
-                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Bots & Websites</td>
-                      <td className="text-center py-3 px-8 hover:bg-green-50 transition-all duration-300">
-                        <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
-                          <Check className="w-5 h-5 text-green-600" />
-                        </div>
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Chatbots</td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">1</span>
                       </td>
-                      <td className="text-center py-3 px-8 hover:bg-green-50 transition-all duration-300">
-                        <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
-                          <Check className="w-5 h-5 text-green-600" />
-                        </div>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">2</span>
                       </td>
-                      <td className="text-center py-3 px-8 hover:bg-green-50 transition-all duration-300">
-                        <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
-                          <Check className="w-5 h-5 text-green-600" />
-                        </div>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">5</span>
                       </td>
                     </tr>
                     <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
-                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Conversations / Month</td>
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Website Connections</td>
                       <td className="text-center py-3 px-8">
-                        <span className="text-slate-700 font-semibold text-sm">50</span>
+                        <span className="text-slate-700 font-semibold text-sm">1</span>
                       </td>
                       <td className="text-center py-3 px-8">
-                        <span className="text-slate-700 font-semibold text-sm">1,000</span>
+                        <span className="text-slate-700 font-semibold text-sm">2</span>
                       </td>
                       <td className="text-center py-3 px-8">
-                        <span className="text-slate-700 font-semibold text-sm">10,000</span>
+                        <span className="text-slate-700 font-semibold text-sm">5</span>
                       </td>
                     </tr>
                     <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
@@ -832,27 +814,87 @@ const PricingPage = () => {
                       </td>
                     </tr>
                     <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
-                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">File Upload Size</td>
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">AI Messages / Month</td>
                       <td className="text-center py-3 px-8">
-                        <span className="text-slate-700 font-semibold text-sm">2MB</span>
+                        <span className="text-slate-700 font-semibold text-sm">100</span>
                       </td>
                       <td className="text-center py-3 px-8">
-                        <span className="text-slate-700 font-semibold text-sm">5MB</span>
+                        <span className="text-slate-700 font-semibold text-sm">1,000</span>
                       </td>
                       <td className="text-center py-3 px-8">
-                        <span className="text-slate-700 font-semibold text-sm">10MB</span>
+                        <span className="text-slate-700 font-semibold text-sm">5,000</span>
                       </td>
                     </tr>
                     <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
-                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Parallel Chats</td>
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Human Messages / Month</td>
                       <td className="text-center py-3 px-8">
-                        <span className="text-slate-700 font-semibold text-sm">1</span>
+                        <span className="text-slate-700 font-semibold text-sm">100</span>
                       </td>
                       <td className="text-center py-3 px-8">
-                        <span className="text-slate-700 font-semibold text-sm">10</span>
+                        <span className="text-slate-700 font-semibold text-sm">1,000</span>
                       </td>
                       <td className="text-center py-3 px-8">
-                        <span className="text-slate-700 font-semibold text-sm">25</span>
+                        <span className="text-slate-700 font-semibold text-sm">5,000</span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">File Upload Limit</td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">50KB</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">100KB</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">200KB</span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Cloud Storage</td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">20MB</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">50MB</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">200MB</span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Conversation History</td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">30 chats</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">100 chats</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">300 chats</span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Analytics</td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">Basic</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">Advanced</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">Advanced</span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Export Formats</td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">CSV</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">CSV</span>
+                      </td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">PDF, Excel, CSV</span>
                       </td>
                     </tr>
                     <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
@@ -874,7 +916,7 @@ const PricingPage = () => {
                       </td>
                     </tr>
                     <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
-                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">API Access</td>
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Multi-Language</td>
                       <td className="text-center py-3 px-8 hover:bg-red-50 transition-all duration-300">
                         <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
                           <span className="text-red-500 text-2xl font-light flex items-center justify-center">×</span>
@@ -892,7 +934,7 @@ const PricingPage = () => {
                       </td>
                     </tr>
                     <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
-                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Analytics Dashboard</td>
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Privacy Tools</td>
                       <td className="text-center py-3 px-8 hover:bg-red-50 transition-all duration-300">
                         <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
                           <span className="text-red-500 text-2xl font-light flex items-center justify-center">×</span>
@@ -910,39 +952,15 @@ const PricingPage = () => {
                       </td>
                     </tr>
                     <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
-                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">White Label</td>
-                      <td className="text-center py-3 px-8 hover:bg-red-50 transition-all duration-300">
-                        <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
-                          <span className="text-red-500 text-2xl font-light flex items-center justify-center">×</span>
-                        </div>
+                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Support</td>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">AI Only</span>
                       </td>
-                      <td className="text-center py-3 px-8 hover:bg-red-50 transition-all duration-300">
-                        <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
-                          <span className="text-red-500 text-2xl font-light flex items-center justify-center">×</span>
-                        </div>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">Email</span>
                       </td>
-                      <td className="text-center py-3 px-8 hover:bg-red-50 transition-all duration-300">
-                        <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
-                          <span className="text-red-500 text-2xl font-light flex items-center justify-center">×</span>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 group">
-                      <td className="py-3 px-8 font-semibold text-slate-800 group-hover:text-blue-700 transition-colors duration-200 text-lg">Dedicated Support</td>
-                      <td className="text-center py-3 px-8 hover:bg-red-50 transition-all duration-300">
-                        <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
-                          <span className="text-red-500 text-2xl font-light flex items-center justify-center">×</span>
-                  </div>
-                      </td>
-                      <td className="text-center py-3 px-8 hover:bg-red-50 transition-all duration-300">
-                        <div className="inline-flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
-                          <span className="text-red-500 text-2xl font-light flex items-center justify-center">×</span>
-                  </div>
-                      </td>
-                      <td className="text-center py-3 px-8 hover:bg-green-50 transition-all duration-300">
-                        <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
-                          <Check className="w-5 h-5 text-green-600" />
-                </div>
+                      <td className="text-center py-3 px-8">
+                        <span className="text-slate-700 font-semibold text-sm">Priority Email</span>
                       </td>
                     </tr>
                   </tbody>
