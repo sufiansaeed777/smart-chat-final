@@ -134,41 +134,6 @@ function TestBotPageContent() {
     }
   };
 
-  // Load previous conversations
-  const loadConversations = async (botIdToLoad: string) => {
-    if (!botIdToLoad) return;
-
-    console.log('Loading conversations for bot:', botIdToLoad);
-    try {
-      const response = await fetch(`/api/conversations/bot/${botIdToLoad}`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Conversations response:', data);
-        if (data.success && data.conversations) {
-          const formattedMessages = data.conversations.map((conv: { id: string; message: string; sender: 'user' | 'bot'; timestamp: string }) => ({
-            id: conv.id,
-            content: conv.message,
-            sender: conv.sender,
-            timestamp: new Date(conv.timestamp)
-          }));
-          console.log('Formatted messages:', formattedMessages);
-          setMessages(formattedMessages);
-        } else {
-          console.log('No conversations found for this bot');
-          setMessages([]);
-        }
-      } else {
-        console.error('Failed to fetch conversations:', response.status);
-        setMessages([]);
-      }
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-      setMessages([]);
-    } finally {
-      setIsLoadingConversations(false);
-    }
-  };
-
   // Initialize selectedBotId from URL on mount
   useEffect(() => {
     if (botId && !selectedBotId) {
@@ -178,7 +143,7 @@ function TestBotPageContent() {
 
   // Fetch bot information and conversations
   useEffect(() => {
-    const fetchBot = async () => {
+    const fetchBotAndConversations = async () => {
       if (!selectedBotId) {
         console.log('No selectedBotId provided, clearing bot and conversations');
         setBot(null);
@@ -188,18 +153,19 @@ function TestBotPageContent() {
         return;
       }
 
-      console.log('Fetching bot information for:', selectedBotId);
+      console.log('Fetching bot and conversations for:', selectedBotId);
       setIsLoadingBot(true);
       setIsLoadingConversations(true);
 
+      // Fetch bot info
       try {
-        const response = await fetch(`/api/user/bot/${selectedBotId}`);
-        if (response.ok) {
-          const botData = await response.json();
+        const botResponse = await fetch(`/api/user/bot/${selectedBotId}`);
+        if (botResponse.ok) {
+          const botData = await botResponse.json();
           console.log('Bot data received:', botData);
           setBot(botData);
         } else {
-          console.error('Failed to fetch bot:', response.status);
+          console.error('Failed to fetch bot:', botResponse.status);
           setBot(null);
         }
       } catch (error) {
@@ -208,15 +174,40 @@ function TestBotPageContent() {
       } finally {
         setIsLoadingBot(false);
       }
+
+      // Fetch conversations
+      try {
+        const convResponse = await fetch(`/api/conversations/bot/${selectedBotId}`);
+        if (convResponse.ok) {
+          const data = await convResponse.json();
+          console.log('Conversations response:', data);
+          if (data.success && data.conversations) {
+            const formattedMessages = data.conversations.map((conv: { id: string; message: string; sender: 'user' | 'bot'; timestamp: string }) => ({
+              id: conv.id,
+              content: conv.message,
+              sender: conv.sender,
+              timestamp: new Date(conv.timestamp)
+            }));
+            console.log('Formatted messages:', formattedMessages);
+            setMessages(formattedMessages);
+          } else {
+            console.log('No conversations found for this bot');
+            setMessages([]);
+          }
+        } else {
+          console.error('Failed to fetch conversations:', convResponse.status);
+          setMessages([]);
+        }
+      } catch (error) {
+        console.error('Error fetching conversations:', error);
+        setMessages([]);
+      } finally {
+        setIsLoadingConversations(false);
+      }
     };
 
-    fetchBot();
-    if (selectedBotId) {
-      loadConversations(selectedBotId);
-    } else {
-      setIsLoadingConversations(false);
-    }
-  }, [selectedBotId]); // Removed allBots dependency - it caused unnecessary re-runs
+    fetchBotAndConversations();
+  }, [selectedBotId]);
 
   // Load all bots on component mount
   useEffect(() => {
