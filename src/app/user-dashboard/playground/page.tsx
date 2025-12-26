@@ -242,8 +242,9 @@ function TestBotPageContent() {
         body: JSON.stringify({
           botId: bot.id,
           message: messageToSend,
-          userId: 'test-user', // For testing purposes
-          isTestMessage: true // Flag to identify test messages
+          // Don't pass userId or isTestMessage - let the API use session auth
+          // Users are assigned to bots, not owners, so isTestMessage must be false
+          isTestMessage: false
         }),
       });
 
