@@ -323,10 +323,27 @@ export async function GET(request: NextRequest) {
       filteredSessions = formattedSessions.filter(session => session.status === status);
     }
 
-    // Calculate stats
+    // Calculate stats - use same logic as Overview and HumanHandoff
+    // Count from RAW conversations, not grouped sessions (to match Overview/HumanHandoff)
+    const thirtyMinutesAgoForStats = new Date(Date.now() - 30 * 60 * 1000);
+
+    // Active: conversations with lastMessageAt within 30 minutes (matching HumanHandoff/Overview)
+    const activeConversations = conversations.filter(conv => {
+      const lastMsgTime = conv.lastMessageAt || conv.createdAt;
+      return lastMsgTime >= thirtyMinutesAgoForStats;
+    });
+
+    // Count unique active sessions (same grouping as HumanHandoff)
+    const activeSessionIds = new Set<string>();
+    activeConversations.forEach(conv => {
+      const isExternal = conv.sessionId && conv.guestId;
+      const sessionKey = isExternal ? `session-${conv.sessionId}` : `${conv.botId}-${conv.userId}`;
+      activeSessionIds.add(sessionKey);
+    });
+
     const total = formattedSessions.length;
-    const active = formattedSessions.filter(s => s.status === 'active').length;
-    const completed = formattedSessions.filter(s => s.status === 'completed').length;
+    const active = activeSessionIds.size;
+    const completed = total - active;
 
     // Calculate actual average response time from conversation messages
     let totalResponseTimeMs = 0;
