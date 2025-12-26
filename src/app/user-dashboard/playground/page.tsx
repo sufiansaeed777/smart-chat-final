@@ -135,12 +135,12 @@ function TestBotPageContent() {
   };
 
   // Load previous conversations
-  const loadConversations = async () => {
-    if (!selectedBotId) return;
-    
-    console.log('Loading conversations for bot:', selectedBotId);
+  const loadConversations = async (botIdToLoad: string) => {
+    if (!botIdToLoad) return;
+
+    console.log('Loading conversations for bot:', botIdToLoad);
     try {
-      const response = await fetch(`/api/conversations/bot/${selectedBotId}`);
+      const response = await fetch(`/api/conversations/bot/${botIdToLoad}`);
       if (response.ok) {
         const data = await response.json();
         console.log('Conversations response:', data);
@@ -159,9 +159,11 @@ function TestBotPageContent() {
         }
       } else {
         console.error('Failed to fetch conversations:', response.status);
+        setMessages([]);
       }
     } catch (error) {
       console.error('Error fetching conversations:', error);
+      setMessages([]);
     } finally {
       setIsLoadingConversations(false);
     }
@@ -185,8 +187,11 @@ function TestBotPageContent() {
         setIsLoadingConversations(false);
         return;
       }
-      
+
       console.log('Fetching bot information for:', selectedBotId);
+      setIsLoadingBot(true);
+      setIsLoadingConversations(true);
+
       try {
         const response = await fetch(`/api/user/bot/${selectedBotId}`);
         if (response.ok) {
@@ -195,9 +200,11 @@ function TestBotPageContent() {
           setBot(botData);
         } else {
           console.error('Failed to fetch bot:', response.status);
+          setBot(null);
         }
       } catch (error) {
         console.error('Error fetching bot:', error);
+        setBot(null);
       } finally {
         setIsLoadingBot(false);
       }
@@ -205,11 +212,11 @@ function TestBotPageContent() {
 
     fetchBot();
     if (selectedBotId) {
-    loadConversations();
+      loadConversations(selectedBotId);
     } else {
       setIsLoadingConversations(false);
     }
-  }, [selectedBotId, allBots]);
+  }, [selectedBotId]); // Removed allBots dependency - it caused unnecessary re-runs
 
   // Load all bots on component mount
   useEffect(() => {
