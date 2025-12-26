@@ -3,6 +3,7 @@ import { AppDataSource } from '@/config/database';
 import { Bot } from '@/entities/Bot';
 import { Conversation } from '@/entities/Conversation';
 import { User } from '@/entities/User';
+import pool from '@/utils/db';
 
 // Set SSL for Supabase connection - ONLY in development
 if (process.env.NODE_ENV === 'development') {
@@ -60,15 +61,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse token
-    const [userId, botId] = token.split(':');
+    // Look up token in database (same as validate-token endpoint)
+    let tokenData;
+    try {
+      const tokenCheck = await pool.query(
+        `SELECT wt.*, b.*, u.email, u."isActive" as user_active,
+                wt.expires_at,
+                CASE WHEN wt.expires_at IS NOT NULL AND wt.expires_at < NOW() THEN true ELSE false END as is_expired
+         FROM wordpress_tokens wt
+         JOIN bots b ON wt.bot_id = b.id
+         JOIN users u ON wt.user_id = u.id
+         WHERE wt.token = $1 AND wt.is_active = true`,
+        [token]
+      );
 
-    if (!userId || !botId) {
+      if (tokenCheck.rows.length === 0) {
+        return NextResponse.json(
+          { error: 'Invalid or expired token' },
+          { status: 401, headers: corsHeaders }
+        );
+      }
+
+      tokenData = tokenCheck.rows[0];
+
+      // Check if token is expired
+      if (tokenData.is_expired) {
+        return NextResponse.json(
+          { error: 'Token has expired' },
+          { status: 401, headers: corsHeaders }
+        );
+      }
+    } catch (error) {
+      console.error('Token lookup failed:', error);
       return NextResponse.json(
-        { error: 'Invalid token format' },
-        { status: 401, headers: corsHeaders }
+        { error: 'Token validation failed' },
+        { status: 500, headers: corsHeaders }
       );
     }
+
+    const userId = tokenData.user_id;
+    const botId = tokenData.bot_id;
 
     // Initialize database
     if (!AppDataSource.isInitialized) {
@@ -88,7 +120,6 @@ export async function POST(request: NextRequest) {
     const bot = await botRepository.findOne({
       where: {
         id: botId,
-        createdBy: userId,
         status: 'active'
       }
     });
