@@ -112,11 +112,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Apply source filter
+    // Website conversations have BOTH sessionId AND guestId set
     if (source !== 'all') {
       if (source === 'wordpress') {
+        query = query.andWhere('conversation.sessionId IS NOT NULL');
         query = query.andWhere('conversation.guestId IS NOT NULL');
       } else if (source === 'playground') {
-        query = query.andWhere('conversation.guestId IS NULL');
+        query = query.andWhere('(conversation.sessionId IS NULL OR conversation.guestId IS NULL)');
       }
     }
 

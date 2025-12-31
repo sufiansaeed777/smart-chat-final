@@ -503,9 +503,57 @@ const AdminConversationsPage = () => {
           </Card>
         </div>
 
+        {/* Source Tabs */}
+        <div className="bg-white rounded-xl border border-gray-200 p-2 shadow-sm">
+          <div className="flex space-x-1">
+            <button
+              onClick={() => setFilterSource('all')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                filterSource === 'all'
+                  ? 'bg-[#6566F1] text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>All Conversations</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs ${
+                filterSource === 'all' ? 'bg-white/20' : 'bg-gray-200'
+              }`}>{stats.total}</span>
+            </button>
+            <button
+              onClick={() => setFilterSource('wordpress')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                filterSource === 'wordpress'
+                  ? 'bg-[#6566F1] text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Globe className="w-4 h-4" />
+              <span>Website Chats</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs ${
+                filterSource === 'wordpress' ? 'bg-white/20' : 'bg-blue-100 text-blue-700'
+              }`}>{stats.wordpress}</span>
+            </button>
+            <button
+              onClick={() => setFilterSource('playground')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                filterSource === 'playground'
+                  ? 'bg-[#6566F1] text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Bot className="w-4 h-4" />
+              <span>Test/Playground</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs ${
+                filterSource === 'playground' ? 'bg-white/20' : 'bg-gray-200'
+              }`}>{stats.total - stats.wordpress}</span>
+            </button>
+          </div>
+        </div>
+
         {/* Filters */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
             {/* Search */}
             <div className="lg:col-span-2">
               <div className="relative">
@@ -530,17 +578,6 @@ const AdminConversationsPage = () => {
               <option value="waiting">Waiting</option>
               <option value="completed">Completed</option>
               <option value="idle">Idle</option>
-            </select>
-
-            {/* Source Filter */}
-            <select
-              value={filterSource}
-              onChange={(e) => setFilterSource(e.target.value)}
-              className="h-9 px-3 py-1 text-sm border border-gray-200 rounded-lg focus:border-[#6566F1] focus:ring-[#6566F1] bg-white text-gray-900"
-            >
-              <option value="all">All Sources</option>
-              <option value="wordpress">Website</option>
-              <option value="playground">Playground</option>
             </select>
 
             {/* Bot Filter */}
