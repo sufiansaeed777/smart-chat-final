@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository("users");
+    const userRepository = AppDataSource.getRepository(User);
     const currentUser = await userRepository.findOne({
       where: { email: ILike(session.user.email) }
     });
@@ -36,8 +36,11 @@ export async function POST(request: NextRequest) {
         where: { invitedBy: currentUser.id }
       });
 
-      const planLimits = getUserPlanLimits(currentUser.subscriptionPlan || 'free');
+      const userPlan = currentUser.subscriptionPlan ?? 'free';
+      const planLimits = getUserPlanLimits(userPlan);
       const limitCheck = checkLimit(currentUserCount, planLimits.maxUsers, 'users');
+
+      console.log(`[Plan Check] User: ${currentUser.email}, Plan: ${userPlan}, Team Members: ${currentUserCount}/${planLimits.maxUsers}`);
 
       if (!limitCheck.allowed) {
         return NextResponse.json({
@@ -45,7 +48,7 @@ export async function POST(request: NextRequest) {
           message: limitCheck.message,
           currentCount: currentUserCount,
           limit: planLimits.maxUsers,
-          plan: currentUser.subscriptionPlan || 'free',
+          plan: userPlan,
           upgradeRequired: true,
           upgradeUrl: '/manager-dashboard/billing'
         }, { status: 403 });

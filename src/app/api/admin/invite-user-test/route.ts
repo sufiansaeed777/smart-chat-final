@@ -4,11 +4,12 @@ import { authOptions } from '../../auth/[...nextauth]/route';
 import { AppDataSource } from '@/config/database';
 import { User } from '@/entities/User';
 import crypto from 'crypto';
+import { getUserPlanLimits, checkLimit } from '@/middleware/planLimits';
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -18,13 +19,38 @@ export async function POST(request: NextRequest) {
       await AppDataSource.initialize();
     }
 
-    const userRepository = AppDataSource.getRepository("users");
+    const userRepository = AppDataSource.getRepository(User);
     const currentUser = await userRepository.findOne({
       where: { email: session.user.email }
     });
 
     if (!currentUser || (currentUser.role !== 'manager' && currentUser.role !== 'admin')) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // Check plan limits for team members (skip for admin users)
+    if (currentUser.role === 'manager') {
+      const currentUserCount = await userRepository.count({
+        where: { invitedBy: currentUser.id }
+      });
+
+      const userPlan = currentUser.subscriptionPlan ?? 'free';
+      const planLimits = getUserPlanLimits(userPlan);
+      const limitCheck = checkLimit(currentUserCount, planLimits.maxUsers, 'users');
+
+      console.log(`[Plan Check] User: ${currentUser.email}, Plan: ${userPlan}, Team Members: ${currentUserCount}/${planLimits.maxUsers}`);
+
+      if (!limitCheck.allowed) {
+        return NextResponse.json({
+          error: 'Plan limit reached',
+          message: limitCheck.message,
+          currentCount: currentUserCount,
+          limit: planLimits.maxUsers,
+          plan: userPlan,
+          upgradeRequired: true,
+          upgradeUrl: '/manager-dashboard/billing'
+        }, { status: 403 });
+      }
     }
 
     const { email, name, role } = await request.json();

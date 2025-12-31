@@ -23,9 +23,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user from database
-    const userRepository = AppDataSource.getRepository("users");
-    const user = await userRepository.findOne({ 
-      where: { email: session.user.email } 
+    const userRepository = AppDataSource.getRepository(User);
+    const user = await userRepository.findOne({
+      where: { email: session.user.email }
     });
 
     if (!user) {
@@ -43,8 +43,12 @@ export async function POST(request: NextRequest) {
       where: { createdBy: user.id }
     });
 
-    const planLimits = getUserPlanLimits(user.subscriptionPlan || 'free');
+    // Get user's plan (default to 'free' if not set)
+    const userPlan = user.subscriptionPlan ?? 'free';
+    const planLimits = getUserPlanLimits(userPlan);
     const limitCheck = checkLimit(currentBotCount, planLimits.maxBots, 'bots');
+
+    console.log(`[Plan Check] User: ${user.email}, Plan: ${userPlan}, Bots: ${currentBotCount}/${planLimits.maxBots}`);
 
     if (!limitCheck.allowed) {
       return NextResponse.json({
@@ -52,7 +56,7 @@ export async function POST(request: NextRequest) {
         message: limitCheck.message,
         currentCount: currentBotCount,
         limit: planLimits.maxBots,
-        plan: user.subscriptionPlan || 'free',
+        plan: userPlan,
         upgradeRequired: true,
         upgradeUrl: '/manager-dashboard/billing'
       }, { status: 403 });

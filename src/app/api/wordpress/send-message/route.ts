@@ -255,23 +255,51 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check plan limits
-    const planLimits = getUserPlanLimits(botOwner.subscriptionPlan || 'free');
-    const limitCheck = checkLimit(
-      botOwner.messagesUsedThisMonth || 0,
-      planLimits.monthlyMessages,
-      'messages'
-    );
+    // Check plan limits using database message count (same as v2)
+    const userPlan = botOwner.subscriptionPlan ?? 'free';
+    const planLimits = getUserPlanLimits(userPlan);
+    const botRepository = AppDataSource.getRepository(Bot);
+    const conversationRepository = AppDataSource.getRepository(Conversation);
 
-    if (!limitCheck.allowed) {
-      return NextResponse.json(
-        {
-          error: 'Quota exceeded',
-          message: limitCheck.message,
-          upgradeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/manager-dashboard/settings?tab=billing`,
-        },
-        { status: 429, headers: corsHeaders }
-      );
+    // Get all bot IDs owned by this user
+    const ownerBots = await botRepository.find({
+      where: { createdBy: botOwner.id },
+      select: ['id']
+    });
+    const ownerBotIds = ownerBots.map(b => b.id);
+
+    if (ownerBotIds.length > 0) {
+      // Count messages this month from database (reliable method)
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const messageCountResult = await conversationRepository
+        .createQueryBuilder('conv')
+        .select('COALESCE(SUM(jsonb_array_length(conv.messages)), 0)', 'totalMessages')
+        .where('conv.botId IN (:...botIds)', { botIds: ownerBotIds })
+        .andWhere('conv.createdAt >= :startOfMonth', { startOfMonth })
+        .getRawOne();
+
+      const currentMessageCount = Number(messageCountResult?.totalMessages || 0);
+      const limitCheck = checkLimit(currentMessageCount, planLimits.monthlyMessages, 'messages');
+
+      console.log(`[Plan Check] User: ${botOwner.email}, Plan: ${userPlan}, Messages: ${currentMessageCount}/${planLimits.monthlyMessages}`);
+
+      if (!limitCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: 'Message limit reached',
+            message: limitCheck.message,
+            currentCount: currentMessageCount,
+            limit: planLimits.monthlyMessages,
+            plan: userPlan,
+            upgradeRequired: true,
+            upgradeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/manager-dashboard/billing`,
+          },
+          { status: 403, headers: corsHeaders }
+        );
+      }
     }
 
     // Check if subscription is active
