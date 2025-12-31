@@ -112,12 +112,20 @@ export async function GET(request: NextRequest) {
     }
 
     // Apply source filter
-    // Website conversations have BOTH sessionId AND guestId set
+    // Sources: wordpress (plugin), website (platform chatbot), playground (testing)
     if (source !== 'all') {
       if (source === 'wordpress') {
+        // WordPress plugin chats: have sessionId, guestId, and source='wordpress' in metadata
         query = query.andWhere('conversation.sessionId IS NOT NULL');
         query = query.andWhere('conversation.guestId IS NOT NULL');
+        query = query.andWhere("(conversation.metadata->>'source' = 'wordpress' OR conversation.sessionId LIKE 'wp_%')");
+      } else if (source === 'website') {
+        // Website chatbot chats: have sessionId, guestId, and source='website_chatbot' in metadata
+        query = query.andWhere('conversation.sessionId IS NOT NULL');
+        query = query.andWhere('conversation.guestId IS NOT NULL');
+        query = query.andWhere("(conversation.metadata->>'source' = 'website_chatbot' OR conversation.sessionId LIKE 'website-%')");
       } else if (source === 'playground') {
+        // Playground/test chats: missing sessionId OR guestId
         query = query.andWhere('(conversation.sessionId IS NULL OR conversation.guestId IS NULL)');
       }
     }
@@ -155,16 +163,24 @@ export async function GET(request: NextRequest) {
 
     // Format conversations for response
     const formattedConversations = conversations.map(conv => {
-      // Determine source
-      const isExternalConversation = conv.sessionId && conv.guestId;
+      // Determine source: wordpress (plugin), website (platform chatbot), or playground (test)
       const metadata = typeof conv.metadata === 'string' ? JSON.parse(conv.metadata || '{}') : (conv.metadata || {});
-      const convSource = isExternalConversation ? (metadata.source || 'wordpress') : 'playground';
+      const hasSessionAndGuest = conv.sessionId && conv.guestId;
+
+      let convSource: string;
+      if (!hasSessionAndGuest) {
+        convSource = 'playground';
+      } else if (metadata.source === 'website_chatbot' || conv.sessionId?.startsWith('website-')) {
+        convSource = 'website';
+      } else {
+        convSource = 'wordpress';
+      }
 
       // Get user info
       let userName: string;
       let userEmail: string;
 
-      if (isExternalConversation) {
+      if (hasSessionAndGuest) {
         userName = conv.guestName || `Visitor ${conv.guestId || 'Unknown'}`;
         userEmail = conv.visitorEmail || conv.guestId || 'External Visitor';
       } else {
@@ -269,6 +285,8 @@ export async function GET(request: NextRequest) {
     const completed = formattedConversations.filter(c => c.status === 'completed').length;
     const flagged = formattedConversations.filter(c => c.isFlagged).length;
     const wordpress = formattedConversations.filter(c => c.source === 'wordpress').length;
+    const website = formattedConversations.filter(c => c.source === 'website').length;
+    const playground = formattedConversations.filter(c => c.source === 'playground').length;
     const totalMessages = formattedConversations.reduce((sum, c) => sum + c.messageCount, 0);
 
     return NextResponse.json({
@@ -281,6 +299,8 @@ export async function GET(request: NextRequest) {
         completed,
         flagged,
         wordpress,
+        website,
+        playground,
         totalMessages,
         avgMessagesPerConversation: total > 0 ? Math.round(totalMessages / total) : 0
       },

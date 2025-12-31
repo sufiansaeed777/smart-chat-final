@@ -59,6 +59,8 @@ interface ConversationStats {
   completed: number;
   flagged: number;
   wordpress: number;
+  website: number;
+  playground: number;
   totalMessages: number;
   avgMessagesPerConversation: number;
 }
@@ -86,6 +88,8 @@ const AdminConversationsPage = () => {
     completed: 0,
     flagged: 0,
     wordpress: 0,
+    website: 0,
+    playground: 0,
     totalMessages: 0,
     avgMessagesPerConversation: 0
   });
@@ -213,6 +217,8 @@ const AdminConversationsPage = () => {
         completed: 0,
         flagged: 0,
         wordpress: 0,
+        website: 0,
+        playground: 0,
         totalMessages: 0,
         avgMessagesPerConversation: 0
       });
@@ -505,7 +511,7 @@ const AdminConversationsPage = () => {
 
         {/* Source Tabs */}
         <div className="bg-white rounded-xl border border-gray-200 p-2 shadow-sm">
-          <div className="flex space-x-1">
+          <div className="flex flex-wrap gap-1">
             <button
               onClick={() => setFilterSource('all')}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -529,10 +535,24 @@ const AdminConversationsPage = () => {
               }`}
             >
               <Globe className="w-4 h-4" />
-              <span>Website Chats</span>
+              <span>WordPress</span>
               <span className={`px-2 py-0.5 rounded-full text-xs ${
                 filterSource === 'wordpress' ? 'bg-white/20' : 'bg-blue-100 text-blue-700'
               }`}>{stats.wordpress}</span>
+            </button>
+            <button
+              onClick={() => setFilterSource('website')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                filterSource === 'website'
+                  ? 'bg-[#6566F1] text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Website Chatbot</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs ${
+                filterSource === 'website' ? 'bg-white/20' : 'bg-indigo-100 text-indigo-700'
+              }`}>{stats.website}</span>
             </button>
             <button
               onClick={() => setFilterSource('playground')}
@@ -546,7 +566,7 @@ const AdminConversationsPage = () => {
               <span>Test/Playground</span>
               <span className={`px-2 py-0.5 rounded-full text-xs ${
                 filterSource === 'playground' ? 'bg-white/20' : 'bg-gray-200'
-              }`}>{stats.total - stats.wordpress}</span>
+              }`}>{stats.playground}</span>
             </button>
           </div>
         </div>
@@ -699,10 +719,12 @@ const AdminConversationsPage = () => {
                     <div className="col-span-2">
                       <div className="flex items-center space-x-2">
                         <div className={`w-7 h-7 rounded-full flex items-center justify-center ${
-                          conversation.source === 'wordpress' ? 'bg-blue-100' : 'bg-gray-200'
+                          conversation.source === 'wordpress' ? 'bg-blue-100' : conversation.source === 'website' ? 'bg-indigo-100' : 'bg-gray-200'
                         }`}>
                           {conversation.source === 'wordpress' ? (
                             <Globe className="w-3.5 h-3.5 text-blue-600" />
+                          ) : conversation.source === 'website' ? (
+                            <MessageSquare className="w-3.5 h-3.5 text-indigo-600" />
                           ) : (
                             <span className="text-xs font-medium text-gray-600">
                               {conversation.userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
@@ -743,9 +765,11 @@ const AdminConversationsPage = () => {
                       <Badge className={`text-[10px] px-1.5 py-0.5 ${
                         conversation.source === 'wordpress'
                           ? 'bg-blue-100 text-blue-700'
+                          : conversation.source === 'website'
+                          ? 'bg-indigo-100 text-indigo-700'
                           : 'bg-gray-100 text-gray-700'
                       }`}>
-                        {conversation.source === 'wordpress' ? 'Website' : 'Test'}
+                        {conversation.source === 'wordpress' ? 'WordPress' : conversation.source === 'website' ? 'Website' : 'Test'}
                       </Badge>
                     </div>
 
