@@ -77,6 +77,10 @@ class SynofexChatbot {
         add_action('admin_menu', [$this, 'add_admin_menu']);
         add_action('wp_footer', [$this, 'render_chat_widget']);
 
+        // Allow SVG uploads for admins (for widget icon customization)
+        add_filter('upload_mimes', [$this, 'allow_svg_upload']);
+        add_filter('wp_check_filetype_and_ext', [$this, 'fix_svg_mime_type'], 10, 5);
+
         // AJAX handlers
         add_action('wp_ajax_synofex_validate_token', [$this, 'ajax_validate_token']);
         add_action('wp_ajax_nopriv_synofex_send_message', [$this, 'ajax_send_message']);
@@ -616,6 +620,42 @@ class SynofexChatbot {
         if (!wp_next_scheduled('synofex_hourly_heartbeat')) {
             wp_schedule_event(time(), 'hourly', 'synofex_hourly_heartbeat');
         }
+    }
+
+    /**
+     * Allow SVG uploads for administrators
+     * Required for custom widget icon uploads
+     */
+    public function allow_svg_upload($mimes) {
+        // Only allow for admins
+        if (current_user_can('manage_options')) {
+            $mimes['svg'] = 'image/svg+xml';
+            $mimes['svgz'] = 'image/svg+xml';
+        }
+        return $mimes;
+    }
+
+    /**
+     * Fix SVG MIME type detection
+     * WordPress doesn't properly detect SVG MIME types by default
+     */
+    public function fix_svg_mime_type($data, $file, $filename, $mimes, $real_mime = '') {
+        // Only process if current check failed and user is admin
+        if (!current_user_can('manage_options')) {
+            return $data;
+        }
+
+        $ext = pathinfo($filename, PATHINFO_EXTENSION);
+
+        if ($ext === 'svg') {
+            $data['ext'] = 'svg';
+            $data['type'] = 'image/svg+xml';
+        } elseif ($ext === 'svgz') {
+            $data['ext'] = 'svgz';
+            $data['type'] = 'image/svg+xml';
+        }
+
+        return $data;
     }
 }
 

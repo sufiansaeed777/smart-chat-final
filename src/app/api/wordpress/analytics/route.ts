@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AppDataSource } from '@/config/database';
-import { Conversation } from '@/entities/Conversation';
-import { MoreThanOrEqual, In } from 'typeorm';
+// import { AppDataSource } from '@/config/database';
+// import { Conversation } from '@/entities/Conversation';
+// import { MoreThanOrEqual, In } from 'typeorm';
 
 // CORS headers
 const corsHeaders = {
@@ -15,6 +15,22 @@ export async function OPTIONS() {
 }
 
 export async function GET(request: NextRequest) {
+  // Analytics temporarily disabled
+  return NextResponse.json({
+    message: 'Analytics temporarily disabled',
+    totalConversations: 0,
+    conversationsToday: 0,
+    messagesToday: 0,
+    activeSessions: 0,
+    avgResponseTime: 'N/A',
+    totalMessages: 0,
+    humanHandoffs: 0,
+    botName: 'N/A',
+    lastUpdated: new Date().toISOString()
+  }, { headers: corsHeaders });
+
+  /*
+  // COMMENTED OUT - Analytics functionality
   try {
     // Get token from header
     const authHeader = request.headers.get('authorization');
@@ -179,4 +195,5 @@ export async function GET(request: NextRequest) {
       { status: 500, headers: corsHeaders }
     );
   }
+  */
 }

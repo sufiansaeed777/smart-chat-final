@@ -315,7 +315,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Create or get conversation session
-    const conversationRepository = AppDataSource.getRepository(Conversation);
     const actualSessionId = sessionId || `wp_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
     console.log(`🔎 [SESSION] Looking for conversation with sessionId: "${actualSessionId}" and botId: "${botId}"`);
