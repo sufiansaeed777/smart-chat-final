@@ -5,6 +5,7 @@ import { AppDataSource } from '@/config/database';
 import { Document } from '@/entities/Document';
 import { User } from '@/entities/User';
 import path from 'path';
+import { getUserPlanLimits, checkLimit } from '@/middleware/planLimits';
 
 // GET /api/manager/documents - Get all documents for the manager
 export async function GET(request: NextRequest) {
@@ -151,6 +152,49 @@ export async function POST(request: NextRequest) {
 
     if (!user || user.role !== 'manager') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Check plan limits for documents
+    const planLimits = getUserPlanLimits(user.subscriptionPlan || 'free');
+
+    // Check document count limit
+    const currentDocCount = await documentRepository.count({
+      where: { userId: user.id, status: 'active' }
+    });
+
+    const docLimitCheck = checkLimit(currentDocCount, planLimits.maxDocuments, 'documents');
+    if (!docLimitCheck.allowed) {
+      return NextResponse.json({
+        error: 'Plan limit reached',
+        message: docLimitCheck.message,
+        currentCount: currentDocCount,
+        limit: planLimits.maxDocuments,
+        plan: user.subscriptionPlan || 'free',
+        upgradeRequired: true,
+        upgradeUrl: '/manager-dashboard/billing'
+      }, { status: 403 });
+    }
+
+    // Check storage limit
+    const storageResult = await documentRepository
+      .createQueryBuilder('doc')
+      .select('COALESCE(SUM(doc.size), 0)', 'totalBytes')
+      .where('doc.userId = :userId', { userId: user.id })
+      .andWhere('doc.status = :status', { status: 'active' })
+      .getRawOne();
+
+    const currentStorageMB = Number(storageResult?.totalBytes || 0) / (1024 * 1024);
+    const storageLimitCheck = checkLimit(Math.floor(currentStorageMB), planLimits.maxStorageMB, 'storage');
+    if (!storageLimitCheck.allowed) {
+      return NextResponse.json({
+        error: 'Plan limit reached',
+        message: storageLimitCheck.message,
+        currentStorageMB: Math.round(currentStorageMB * 100) / 100,
+        limit: planLimits.maxStorageMB,
+        plan: user.subscriptionPlan || 'free',
+        upgradeRequired: true,
+        upgradeUrl: '/manager-dashboard/billing'
+      }, { status: 403 });
     }
 
     // Parse form data

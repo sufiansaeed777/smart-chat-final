@@ -4,6 +4,7 @@ import { Bot } from '@/entities/Bot';
 import { Conversation } from '@/entities/Conversation';
 import { User } from '@/entities/User';
 import pool from '@/utils/db';
+import { getUserPlanLimits, checkLimit } from '@/middleware/planLimits';
 
 // Set SSL for Supabase connection - ONLY in development
 if (process.env.NODE_ENV === 'development') {
@@ -136,6 +137,44 @@ export async function POST(request: NextRequest) {
     const botOwner = await userRepository.findOne({
       where: { id: userId }
     });
+
+    // Check message quota for bot owner
+    if (botOwner) {
+      const planLimits = getUserPlanLimits(botOwner.subscriptionPlan || 'free');
+      const conversationRepository = AppDataSource.getRepository(Conversation);
+
+      // Get bot owner's bot IDs
+      const ownerBots = await botRepository.find({
+        where: { createdBy: botOwner.id },
+        select: ['id']
+      });
+      const ownerBotIds = ownerBots.map(b => b.id);
+
+      if (ownerBotIds.length > 0) {
+        // Count messages this month
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const messageCountResult = await conversationRepository
+          .createQueryBuilder('conv')
+          .select('COALESCE(SUM(jsonb_array_length(conv.messages)), 0)', 'totalMessages')
+          .where('conv.botId IN (:...botIds)', { botIds: ownerBotIds })
+          .andWhere('conv.createdAt >= :startOfMonth', { startOfMonth })
+          .getRawOne();
+
+        const currentMessageCount = Number(messageCountResult?.totalMessages || 0);
+        const limitCheck = checkLimit(currentMessageCount, planLimits.monthlyMessages, 'messages');
+
+        if (!limitCheck.allowed) {
+          return NextResponse.json({
+            error: 'Message limit reached',
+            message: limitCheck.message,
+            upgradeRequired: true
+          }, { status: 403, headers: corsHeaders });
+        }
+      }
+    }
 
     // Prepare AI response
     let aiResponse = 'I apologize, but I am currently unable to process your request.';

@@ -6,6 +6,7 @@ import { User } from '@/entities/User';
 import { ILike } from 'typeorm';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
+import { getUserPlanLimits, checkLimit } from '@/middleware/planLimits';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,6 +28,28 @@ export async function POST(request: NextRequest) {
 
     if (!currentUser || (currentUser.role !== 'manager' && currentUser.role !== 'admin')) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // Check plan limits for team members (skip for admin users)
+    if (currentUser.role === 'manager') {
+      const currentUserCount = await userRepository.count({
+        where: { invitedBy: currentUser.id }
+      });
+
+      const planLimits = getUserPlanLimits(currentUser.subscriptionPlan || 'free');
+      const limitCheck = checkLimit(currentUserCount, planLimits.maxUsers, 'users');
+
+      if (!limitCheck.allowed) {
+        return NextResponse.json({
+          error: 'Plan limit reached',
+          message: limitCheck.message,
+          currentCount: currentUserCount,
+          limit: planLimits.maxUsers,
+          plan: currentUser.subscriptionPlan || 'free',
+          upgradeRequired: true,
+          upgradeUrl: '/manager-dashboard/billing'
+        }, { status: 403 });
+      }
     }
 
     const { email, name, role } = await request.json();

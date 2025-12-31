@@ -7,6 +7,7 @@ import { Bot } from '@/entities/Bot';
 import { Conversation } from '@/entities/Conversation';
 import { N8nService } from '@/services/n8nService';
 import OpenAI from 'openai';
+import { getUserPlanLimits, checkLimit } from '@/middleware/planLimits';
 
 // Session storage for website visitors (in-memory for now, could be Redis in production)
 const visitorSessions: Map<string, { conversationId: string; messages: any[] }> = new Map();
@@ -262,6 +263,57 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         error: 'Bot is not active'
       }, { status: 400 });
+    }
+
+    // Check message quota for bot owner (skip for guest users on general-assistant)
+    if (botId !== 'general-assistant' && bot.createdBy) {
+      const userRepository = AppDataSource.getRepository(User);
+      const conversationRepository = AppDataSource.getRepository(Conversation);
+
+      const botOwner = await userRepository.findOne({
+        where: { id: bot.createdBy }
+      });
+
+      if (botOwner) {
+        const planLimits = getUserPlanLimits(botOwner.subscriptionPlan || 'free');
+
+        // Get bot owner's bot IDs
+        const botRepository = AppDataSource.getRepository(Bot);
+        const ownerBots = await botRepository.find({
+          where: { createdBy: botOwner.id },
+          select: ['id']
+        });
+        const ownerBotIds = ownerBots.map(b => b.id);
+
+        if (ownerBotIds.length > 0) {
+          // Count messages this month across all bot owner's bots
+          const startOfMonth = new Date();
+          startOfMonth.setDate(1);
+          startOfMonth.setHours(0, 0, 0, 0);
+
+          const messageCountResult = await conversationRepository
+            .createQueryBuilder('conv')
+            .select('COALESCE(SUM(jsonb_array_length(conv.messages)), 0)', 'totalMessages')
+            .where('conv.botId IN (:...botIds)', { botIds: ownerBotIds })
+            .andWhere('conv.createdAt >= :startOfMonth', { startOfMonth })
+            .getRawOne();
+
+          const currentMessageCount = Number(messageCountResult?.totalMessages || 0);
+          const limitCheck = checkLimit(currentMessageCount, planLimits.monthlyMessages, 'messages');
+
+          if (!limitCheck.allowed) {
+            return NextResponse.json({
+              error: 'Plan limit reached',
+              message: limitCheck.message,
+              currentCount: currentMessageCount,
+              limit: planLimits.monthlyMessages,
+              plan: botOwner.subscriptionPlan || 'free',
+              upgradeRequired: true,
+              upgradeUrl: '/manager-dashboard/billing'
+            }, { status: 403 });
+          }
+        }
+      }
     }
 
     // Save user message to conversation
