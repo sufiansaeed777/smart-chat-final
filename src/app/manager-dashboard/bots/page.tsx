@@ -356,7 +356,17 @@ const BotsPage = () => {
       } else {
         const errorData = await response.json();
         console.error('Error creating bot:', errorData.error);
-        showNotification('error', 'Bot Creation Failed', errorData.error || 'Failed to create bot. Please try again.');
+
+        // Check if it's a plan limit error
+        if (errorData.upgradeRequired) {
+          showNotification('warning', 'Upgrade Required', `${errorData.message} Current: ${errorData.currentCount}/${errorData.limit} bots.`);
+          // Optionally redirect to billing page
+          if (confirm(`${errorData.message}\n\nWould you like to upgrade your plan?`)) {
+            router.push(errorData.upgradeUrl || '/manager-dashboard/billing');
+          }
+        } else {
+          showNotification('error', 'Bot Creation Failed', errorData.error || 'Failed to create bot. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Error creating bot:', error);

@@ -7,6 +7,7 @@ import { Bot } from '@/entities/Bot';
 import { BotDocument } from '@/entities/BotDocument';
 import { Document } from '@/entities/Document';
 import { embedSystemPrompt } from '@/services/openaiTrainingService';
+import { getUserPlanLimits, checkLimit } from '@/middleware/planLimits';
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,6 +37,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Only managers can create bots' }, { status: 403 });
     }
 
+    // Check plan limits for bot creation
+    const botRepository = AppDataSource.getRepository(Bot);
+    const currentBotCount = await botRepository.count({
+      where: { createdBy: user.id }
+    });
+
+    const planLimits = getUserPlanLimits(user.subscriptionPlan || 'free');
+    const limitCheck = checkLimit(currentBotCount, planLimits.maxBots, 'bots');
+
+    if (!limitCheck.allowed) {
+      return NextResponse.json({
+        error: 'Plan limit reached',
+        message: limitCheck.message,
+        currentCount: currentBotCount,
+        limit: planLimits.maxBots,
+        plan: user.subscriptionPlan || 'free',
+        upgradeRequired: true,
+        upgradeUrl: '/manager-dashboard/billing'
+      }, { status: 403 });
+    }
+
     const body = await request.json();
     const { name, description, domain, status, documentIds, newDocuments } = body;
 
@@ -62,8 +84,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Create the bot in database
-    const botRepository = AppDataSource.getRepository("bots");
+    // Create the bot in database (botRepository already initialized above for limit check)
     const newBot = botRepository.create({
       name,
       description,
