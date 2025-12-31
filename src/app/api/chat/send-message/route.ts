@@ -11,6 +11,54 @@ import OpenAI from 'openai';
 // Session storage for website visitors (in-memory for now, could be Redis in production)
 const visitorSessions: Map<string, { conversationId: string; messages: any[] }> = new Map();
 
+// Helper function to get or create system bot for website chatbot
+async function getOrCreateSystemBot(): Promise<{ id: string; createdBy: string } | null> {
+  try {
+    const botRepository = AppDataSource.getRepository(Bot);
+    const userRepository = AppDataSource.getRepository(User);
+
+    // Try to find existing system bot
+    let systemBot = await botRepository.findOne({
+      where: { name: 'Website Assistant' }
+    });
+
+    if (systemBot) {
+      return { id: systemBot.id, createdBy: systemBot.createdBy };
+    }
+
+    // Find an admin user to be the owner
+    const adminUser = await userRepository.findOne({
+      where: { role: 'admin' }
+    });
+
+    if (!adminUser) {
+      console.error('No admin user found to create system bot');
+      return null;
+    }
+
+    // Create system bot
+    systemBot = botRepository.create({
+      name: 'Website Assistant',
+      description: 'Default chatbot for website visitors',
+      status: 'active',
+      createdBy: adminUser.id,
+      tone: 'professional',
+      aiModel: 'gpt-3.5-turbo',
+      temperature: 0.7,
+      maxTokens: 500,
+      customInstructions: 'You are a helpful AI assistant for website visitors. Be friendly, professional, and helpful.'
+    });
+
+    await botRepository.save(systemBot);
+    console.log('✅ Created system bot for website chatbot:', systemBot.id);
+
+    return { id: systemBot.id, createdBy: adminUser.id };
+  } catch (error) {
+    console.error('Error getting/creating system bot:', error);
+    return null;
+  }
+}
+
 // Helper function to save or update conversation
 async function saveConversation(
   botId: string,
@@ -19,15 +67,24 @@ async function saveConversation(
   sender: 'visitor' | 'bot',
   isTestMessage: boolean = false,
   metadata?: Record<string, unknown>,
-  isGuestUser: boolean = false
+  isGuestUser: boolean = false,
+  systemBotData?: { id: string; createdBy: string } | null
 ) {
   try {
     // Use Entity class for proper column name mapping
     const conversationRepository = AppDataSource.getRepository(Conversation);
 
+    // For guest users with general-assistant, use the system bot
+    const actualBotId = (isGuestUser && botId === 'general-assistant' && systemBotData)
+      ? systemBotData.id
+      : botId;
+    const actualUserId = (isGuestUser && systemBotData)
+      ? systemBotData.createdBy
+      : visitorId;
+
     // For website visitors, use session-based conversation storage
-    const sessionKey = `${botId}-${visitorId}`;
-    let session = visitorSessions.get(sessionKey);
+    const sessionKey = `website-${actualBotId}-${Date.now().toString(36)}`;
+    let session = visitorSessions.get(`${actualBotId}-${visitorId}`);
 
     // Check if we have an existing active conversation (within last 30 minutes)
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
@@ -43,23 +100,30 @@ async function saveConversation(
 
     // If no existing conversation or it's too old, create a new one
     if (!conversation || (conversation.lastMessageAt && new Date(conversation.lastMessageAt) < thirtyMinutesAgo)) {
+      const guestNumber = Math.floor(1000 + Math.random() * 9000);
+
       conversation = new Conversation();
-      conversation.botId = isGuestUser && botId === 'general-assistant' ? botId : botId;
-      conversation.userId = isGuestUser ? 'guest-visitor' : visitorId;
-      conversation.guestId = isGuestUser ? visitorId : undefined;
+      conversation.botId = actualBotId;
+      conversation.userId = actualUserId;
+      conversation.guestId = isGuestUser ? `WEB-${guestNumber}` : undefined;
+      conversation.guestName = isGuestUser ? `Website Visitor #${guestNumber}` : undefined;
       conversation.sessionId = sessionKey;
       conversation.status = 'active';
       conversation.mode = 'AI';
       conversation.messages = [];
       conversation.isTestMessage = isTestMessage;
       conversation.startedAt = new Date();
-      conversation.metadata = metadata || {};
+      conversation.metadata = {
+        ...metadata,
+        source: 'website_chatbot',
+        originalBotId: botId
+      };
 
       await conversationRepository.save(conversation);
 
       // Update session
       session = { conversationId: conversation.id, messages: [] };
-      visitorSessions.set(sessionKey, session);
+      visitorSessions.set(`${actualBotId}-${visitorId}`, session);
     }
 
     // Add message to conversation
@@ -202,7 +266,14 @@ export async function POST(request: NextRequest) {
 
     // Save user message to conversation
     const isGuestUser = userId === 'guest-user';
-    await saveConversation(botId, user.id, message, 'visitor', isTestMessage, undefined, isGuestUser);
+
+    // For guest users, get or create the system bot
+    let systemBotData: { id: string; createdBy: string } | null = null;
+    if (isGuestUser && botId === 'general-assistant') {
+      systemBotData = await getOrCreateSystemBot();
+    }
+
+    await saveConversation(botId, user.id, message, 'visitor', isTestMessage, undefined, isGuestUser, systemBotData);
 
     // Priority 1: Use n8n trained bot (RAG with vector embeddings) if bot is trained
     if (bot.trainingStatus === 'trained' && process.env.N8N_WEBHOOK_URL) {
@@ -219,7 +290,7 @@ export async function POST(request: NextRequest) {
           console.log(`✅ n8n RAG response received`);
           await saveConversation(botId, user.id, n8nResult.response, 'bot', isTestMessage, {
             source: 'n8n_rag'
-          }, isGuestUser);
+          }, isGuestUser, systemBotData);
 
           return NextResponse.json({
             response: n8nResult.response,
@@ -260,7 +331,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Save bot response to conversation
-      await saveConversation(botId, user.id, response, 'bot', isTestMessage, undefined, isGuestUser);
+      await saveConversation(botId, user.id, response, 'bot', isTestMessage, undefined, isGuestUser, systemBotData);
 
       return NextResponse.json({
         response: response,
@@ -292,7 +363,7 @@ export async function POST(request: NextRequest) {
       const botResponse = completion.choices[0]?.message?.content || 'I apologize, but I was unable to generate a response.';
 
       // Save bot response to conversation
-      await saveConversation(botId, user.id, botResponse, 'bot', isTestMessage, undefined, isGuestUser);
+      await saveConversation(botId, user.id, botResponse, 'bot', isTestMessage, undefined, isGuestUser, systemBotData);
 
       return NextResponse.json({
         response: botResponse,
@@ -304,7 +375,7 @@ export async function POST(request: NextRequest) {
       // Check if it's an API key error
       if (openaiError.message?.includes('API key') || openaiError.message?.includes('Incorrect')) {
         const errorResponse = 'Configuration error: Invalid OpenAI API key. Please contact your administrator.';
-        await saveConversation(botId, user.id, errorResponse, 'bot', isTestMessage, undefined, isGuestUser);
+        await saveConversation(botId, user.id, errorResponse, 'bot', isTestMessage, undefined, isGuestUser, systemBotData);
         return NextResponse.json({
           response: errorResponse,
           success: false
@@ -314,7 +385,7 @@ export async function POST(request: NextRequest) {
       // Check if it's a rate limit error
       if (openaiError.message?.includes('rate limit')) {
         const errorResponse = 'The service is currently experiencing high demand. Please try again in a moment.';
-        await saveConversation(botId, user.id, errorResponse, 'bot', isTestMessage, undefined, isGuestUser);
+        await saveConversation(botId, user.id, errorResponse, 'bot', isTestMessage, undefined, isGuestUser, systemBotData);
         return NextResponse.json({
           response: errorResponse,
           success: false
@@ -323,7 +394,7 @@ export async function POST(request: NextRequest) {
 
       // Fall back to a generic error message
       const fallbackResponse = 'I apologize, but I encountered an error processing your request. Please try again.';
-      await saveConversation(botId, user.id, fallbackResponse, 'bot', isTestMessage, undefined, isGuestUser);
+      await saveConversation(botId, user.id, fallbackResponse, 'bot', isTestMessage, undefined, isGuestUser, systemBotData);
       return NextResponse.json({
         response: fallbackResponse,
         success: true
