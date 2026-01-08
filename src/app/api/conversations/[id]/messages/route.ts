@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AppDataSource } from '@/config/database';
 import { Conversation } from '@/entities/Conversation';
+import { Bot } from '@/entities/Bot';
+import { User } from '@/entities/User';
+import { getUserPlanLimits, checkLimit } from '@/middleware/planLimits';
 
 /**
  * POST /api/conversations/[id]/messages
@@ -44,7 +47,8 @@ export async function POST(
     const conversationRepository = AppDataSource.getRepository(Conversation);
 
     const conversation = await conversationRepository.findOne({
-      where: { id }
+      where: { id },
+      relations: ['bot']
     });
 
     if (!conversation) {
@@ -52,6 +56,69 @@ export async function POST(
         { success: false, error: 'Conversation not found' },
         { status: 404 }
       );
+    }
+
+    // Check human message limit for agent messages (human handoff)
+    if (sender === 'agent') {
+      const botRepository = AppDataSource.getRepository(Bot);
+      const userRepository = AppDataSource.getRepository(User);
+
+      // Get the bot owner to check their plan limits
+      const bot = conversation.bot || await botRepository.findOne({
+        where: { id: conversation.botId }
+      });
+
+      if (bot) {
+        const botOwner = await userRepository.findOne({
+          where: { id: bot.createdBy }
+        });
+
+        if (botOwner) {
+          const planLimits = getUserPlanLimits(botOwner.subscriptionPlan || 'free');
+
+          // Count human (agent) messages this month across all owner's bots
+          const ownerBots = await botRepository.find({
+            where: { createdBy: botOwner.id },
+            select: ['id']
+          });
+          const ownerBotIds = ownerBots.map(b => b.id);
+
+          if (ownerBotIds.length > 0) {
+            const startOfMonth = new Date();
+            startOfMonth.setDate(1);
+            startOfMonth.setHours(0, 0, 0, 0);
+
+            // Count agent messages from conversations
+            const conversations = await conversationRepository
+              .createQueryBuilder('conv')
+              .where('conv.botId IN (:...botIds)', { botIds: ownerBotIds })
+              .andWhere('conv.createdAt >= :startOfMonth', { startOfMonth })
+              .getMany();
+
+            let humanMessageCount = 0;
+            for (const conv of conversations) {
+              if (conv.messages && Array.isArray(conv.messages)) {
+                humanMessageCount += conv.messages.filter((msg: { sender?: string }) =>
+                  msg.sender === 'agent'
+                ).length;
+              }
+            }
+
+            const limitCheck = checkLimit(humanMessageCount, planLimits.monthlyHumanMessages, 'human_messages');
+            if (!limitCheck.allowed) {
+              return NextResponse.json({
+                success: false,
+                error: 'Plan limit reached',
+                message: limitCheck.message,
+                currentCount: humanMessageCount,
+                limit: planLimits.monthlyHumanMessages,
+                upgradeRequired: true,
+                upgradeUrl: '/manager-dashboard/billing'
+              }, { status: 403 });
+            }
+          }
+        }
+      }
     }
 
     // Add message to conversation

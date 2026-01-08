@@ -175,7 +175,36 @@ export async function POST(request: NextRequest) {
       }, { status: 403 });
     }
 
-    // Check storage limit
+    // Parse form data first to check file sizes
+    const formData = await request.formData();
+    const files = formData.getAll('documents') as File[];
+
+    if (!files || files.length === 0) {
+      return NextResponse.json({ error: 'No files provided' }, { status: 400 });
+    }
+
+    // Check individual file size limit
+    const maxFileSizeBytes = planLimits.maxFileSizeKB * 1024;
+    for (const file of files) {
+      if (file.size > maxFileSizeBytes) {
+        const fileSizeKB = Math.round(file.size / 1024);
+        return NextResponse.json({
+          error: 'File too large',
+          message: `File "${file.name}" (${fileSizeKB}KB) exceeds your plan's maximum file size limit of ${planLimits.maxFileSizeKB}KB.`,
+          fileName: file.name,
+          fileSize: fileSizeKB,
+          limit: planLimits.maxFileSizeKB,
+          plan: user.subscriptionPlan || 'free',
+          upgradeRequired: true,
+          upgradeUrl: '/manager-dashboard/billing'
+        }, { status: 403 });
+      }
+    }
+
+    // Calculate total size of new files
+    const totalNewFilesBytes = files.reduce((sum, file) => sum + file.size, 0);
+
+    // Check storage limit (current + new files)
     const storageResult = await documentRepository
       .createQueryBuilder('doc')
       .select('COALESCE(SUM(doc.size), 0)', 'totalBytes')
@@ -183,26 +212,23 @@ export async function POST(request: NextRequest) {
       .andWhere('doc.status = :status', { status: 'active' })
       .getRawOne();
 
-    const currentStorageMB = Number(storageResult?.totalBytes || 0) / (1024 * 1024);
-    const storageLimitCheck = checkLimit(Math.floor(currentStorageMB), planLimits.maxStorageMB, 'storage');
-    if (!storageLimitCheck.allowed) {
+    const currentStorageBytes = Number(storageResult?.totalBytes || 0);
+    const totalStorageAfterUpload = currentStorageBytes + totalNewFilesBytes;
+    const totalStorageMB = totalStorageAfterUpload / (1024 * 1024);
+
+    if (totalStorageMB > planLimits.maxStorageMB) {
+      const currentMB = Math.round((currentStorageBytes / (1024 * 1024)) * 100) / 100;
+      const newFilesMB = Math.round((totalNewFilesBytes / (1024 * 1024)) * 100) / 100;
       return NextResponse.json({
         error: 'Plan limit reached',
-        message: storageLimitCheck.message,
-        currentStorageMB: Math.round(currentStorageMB * 100) / 100,
+        message: `Adding these files (${newFilesMB}MB) would exceed your storage limit. Current: ${currentMB}MB, Limit: ${planLimits.maxStorageMB}MB.`,
+        currentStorageMB: currentMB,
+        newFilesSize: newFilesMB,
         limit: planLimits.maxStorageMB,
         plan: user.subscriptionPlan || 'free',
         upgradeRequired: true,
         upgradeUrl: '/manager-dashboard/billing'
       }, { status: 403 });
-    }
-
-    // Parse form data
-    const formData = await request.formData();
-    const files = formData.getAll('documents') as File[];
-
-    if (!files || files.length === 0) {
-      return NextResponse.json({ error: 'No files provided' }, { status: 400 });
     }
 
     const uploadedDocuments = [];

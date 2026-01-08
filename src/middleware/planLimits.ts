@@ -6,21 +6,25 @@
 export interface PlanLimits {
   name: string;
   monthlyMessages: number;
+  monthlyHumanMessages: number;
   maxBots: number;
   maxUsers: number;
   maxDocuments: number;
   maxStorageMB: number;
+  maxFileSizeKB: number;
   features: string[];
 }
 
 export const PLAN_LIMITS: Record<string, PlanLimits> = {
   free: {
     name: 'Free Trial',
-    monthlyMessages: 100, // 100 AI + 100 Human = 200 total, using 100 as AI limit
+    monthlyMessages: 100, // 100 AI messages
+    monthlyHumanMessages: 100, // 100 Human messages
     maxBots: 1,
     maxUsers: 1,
     maxDocuments: 5,
     maxStorageMB: 20,
+    maxFileSizeKB: 50, // 50KB per file
     features: [
       'basic_chat',
       'wordpress_plugin',
@@ -31,11 +35,13 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
   },
   basic: {
     name: 'Basic',
-    monthlyMessages: 1000, // 1000 AI + 1000 Human
+    monthlyMessages: 1000, // 1000 AI messages
+    monthlyHumanMessages: 1000, // 1000 Human messages
     maxBots: 2,
     maxUsers: 2,
     maxDocuments: 20,
     maxStorageMB: 50,
+    maxFileSizeKB: 500, // 500KB per file
     features: [
       'basic_chat',
       'wordpress_plugin',
@@ -48,11 +54,13 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
   },
   pro: {
     name: 'Pro',
-    monthlyMessages: 5000, // 5000 AI + 5000 Human
+    monthlyMessages: 5000, // 5000 AI messages
+    monthlyHumanMessages: 5000, // 5000 Human messages
     maxBots: 5,
     maxUsers: 5,
     maxDocuments: 100,
     maxStorageMB: 200,
+    maxFileSizeKB: 5120, // 5MB per file
     features: [
       'basic_chat',
       'wordpress_plugin',
@@ -76,7 +84,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
 export function checkLimit(
   currentValue: number,
   limit: number,
-  type: 'messages' | 'bots' | 'users' | 'documents' | 'storage'
+  type: 'messages' | 'human_messages' | 'bots' | 'users' | 'documents' | 'storage' | 'filesize'
 ): { allowed: boolean; message?: string } {
   // Unlimited (-1)
   if (limit === -1) {
@@ -85,11 +93,13 @@ export function checkLimit(
 
   if (currentValue >= limit) {
     const messages = {
-      messages: `You've reached your monthly message limit (${limit}). Upgrade your plan to continue.`,
+      messages: `You've reached your monthly AI message limit (${limit}). Upgrade your plan to continue.`,
+      human_messages: `You've reached your monthly human message limit (${limit}). Upgrade your plan to continue.`,
       bots: `You've reached your bot limit (${limit}). Upgrade to create more bots.`,
       users: `You've reached your team member limit (${limit}). Upgrade to add more users.`,
       documents: `You've reached your document limit (${limit}). Upgrade to upload more documents.`,
       storage: `You've reached your storage limit (${limit}MB). Upgrade for more storage.`,
+      filesize: `File exceeds maximum size limit (${limit}KB). Upgrade your plan for larger file uploads.`,
     };
 
     return {
