@@ -205,14 +205,15 @@ export async function POST(request: NextRequest) {
     const totalNewFilesBytes = files.reduce((sum, file) => sum + file.size, 0);
 
     // Check storage limit (current + new files)
+    // Note: PostgreSQL lowercases unquoted identifiers, so we use lowercase alias
     const storageResult = await documentRepository
       .createQueryBuilder('doc')
-      .select('COALESCE(SUM(doc.size), 0)', 'totalBytes')
+      .select('COALESCE(SUM(doc.size), 0)', 'totalbytes')
       .where('doc.userId = :userId', { userId: user.id })
       .andWhere('doc.status = :status', { status: 'active' })
       .getRawOne();
 
-    const currentStorageBytes = Number(storageResult?.totalBytes || 0);
+    const currentStorageBytes = Number(storageResult?.totalbytes || 0);
     const totalStorageAfterUpload = currentStorageBytes + totalNewFilesBytes;
     const totalStorageMB = totalStorageAfterUpload / (1024 * 1024);
 

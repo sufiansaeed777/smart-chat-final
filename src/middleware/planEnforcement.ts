@@ -24,7 +24,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
   free: {
     maxBots: 1,
     maxChatsPerMonth: 100,
-    maxStorageMB: 50,
+    maxStorageMB: 20,
     maxDocumentsPerBot: 5,
     features: {
       customDomain: false,
@@ -158,14 +158,15 @@ export async function checkPlanLimits(
         }
 
         const documentRepository = AppDataSource.getRepository('documents');
+        // Note: PostgreSQL lowercases unquoted identifiers, so we use lowercase alias
         const result = await documentRepository
           .createQueryBuilder('doc')
-          .select('SUM(doc.size)', 'totalSize')
+          .select('SUM(doc.size)', 'totalsize')
           .where('doc.userId = :userId', { userId })
           .andWhere('doc.status = :status', { status: 'active' })
           .getRawOne();
 
-        const usedMB = (result?.totalSize || 0) / (1024 * 1024);
+        const usedMB = (result?.totalsize || 0) / (1024 * 1024);
 
         if (usedMB >= limits.maxStorageMB) {
           return {
@@ -307,15 +308,16 @@ export async function getUserUsageStats(userId: string): Promise<any> {
       .getCount();
 
     // Get storage usage
+    // Note: PostgreSQL lowercases unquoted identifiers, so we use lowercase alias
     const documentRepository = AppDataSource.getRepository('documents');
     const result = await documentRepository
       .createQueryBuilder('doc')
-      .select('SUM(doc.size)', 'totalSize')
+      .select('SUM(doc.size)', 'totalsize')
       .where('doc.userId = :userId', { userId })
       .andWhere('doc.status = :status', { status: 'active' })
       .getRawOne();
 
-    const usedMB = (result?.totalSize || 0) / (1024 * 1024);
+    const usedMB = (result?.totalsize || 0) / (1024 * 1024);
 
     return {
       plan,
