@@ -34,9 +34,24 @@ export async function GET(request: NextRequest) {
     const conversationRepository = AppDataSource.getRepository('conversations');
     const agentRepository = AppDataSource.getRepository('users');
 
-    const [totalBots, totalConversations, totalAgents] = await Promise.all([
+    // Get bots created by this user
+    const userBots = await botRepository.find({
+      where: { createdBy: user.id, status: 'active' },
+      select: ['id']
+    });
+    const botIds = userBots.map((b: { id: string }) => b.id);
+
+    // Count conversations for user's bots (same logic as analytics)
+    let totalConversations = 0;
+    if (botIds.length > 0) {
+      totalConversations = await conversationRepository
+        .createQueryBuilder('conversation')
+        .where('conversation.botId IN (:...botIds)', { botIds })
+        .getCount();
+    }
+
+    const [totalBots, totalAgents] = await Promise.all([
       botRepository.count({ where: { createdBy: user.id, status: 'active' } }),
-      conversationRepository.count({ where: { userId: user.id } }),
       agentRepository.count({ where: { invitedBy: user.id } })
     ]);
 
