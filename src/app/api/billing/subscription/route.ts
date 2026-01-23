@@ -41,13 +41,26 @@ export async function GET(request: NextRequest) {
     });
     const botIds = userBots.map((b: { id: string }) => b.id);
 
-    // Count conversations for user's bots (same logic as analytics)
-    let totalConversations = 0;
+    // Count AI messages for user's bots (same logic as analytics)
+    // AI Messages = messages where sender is 'bot', 'ai', or 'assistant'
+    let totalAiMessages = 0;
     if (botIds.length > 0) {
-      totalConversations = await conversationRepository
+      const conversations = await conversationRepository
         .createQueryBuilder('conversation')
+        .select(['conversation.messages'])
         .where('conversation.botId IN (:...botIds)', { botIds })
-        .getCount();
+        .getMany();
+
+      // Count AI messages in all conversations
+      conversations.forEach((conv: { messages?: Array<{ sender?: string }> }) => {
+        if (conv.messages && Array.isArray(conv.messages)) {
+          conv.messages.forEach((msg) => {
+            if (msg.sender === 'bot' || msg.sender === 'ai' || msg.sender === 'assistant') {
+              totalAiMessages++;
+            }
+          });
+        }
+      });
     }
 
     const [totalBots, totalAgents] = await Promise.all([
@@ -109,7 +122,7 @@ export async function GET(request: NextRequest) {
         usersLimit: planConfig.limits.users,
         bots: totalBots,
         botsLimit: planConfig.limits.bots,
-        conversations: totalConversations,
+        conversations: totalAiMessages, // Now counting AI messages to match analytics
         conversationsLimit: planConfig.limits.conversations,
         storage: 0, // TODO: Calculate actual storage usage
         storageLimit: planConfig.limits.storage
