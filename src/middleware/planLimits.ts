@@ -22,7 +22,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     monthlyHumanMessages: 100, // 100 Human messages
     maxBots: 1,
     maxUsers: 1,
-    maxDocuments: 5,
+    maxDocuments: -1, // Unlimited documents (limited by storage instead)
     maxStorageMB: 20,
     maxFileSizeKB: 50, // 50KB per file
     features: [

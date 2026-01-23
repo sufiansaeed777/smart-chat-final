@@ -25,7 +25,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     maxBots: 1,
     maxChatsPerMonth: 100,
     maxStorageMB: 20,
-    maxDocumentsPerBot: 5,
+    maxDocumentsPerBot: -1, // Unlimited (limited by storage instead)
     features: {
       customDomain: false,
       analytics: false,
