@@ -162,6 +162,13 @@ export async function POST(request: NextRequest) {
       where: { userId: user.id, status: 'active' }
     });
 
+    // Debug logging for document count check
+    console.log('Document count check:', {
+      currentDocCount,
+      maxDocuments: planLimits.maxDocuments,
+      userPlan: user.subscriptionPlan || 'free'
+    });
+
     const docLimitCheck = checkLimit(currentDocCount, planLimits.maxDocuments, 'documents');
     if (!docLimitCheck.allowed) {
       return NextResponse.json({
@@ -216,6 +223,17 @@ export async function POST(request: NextRequest) {
     const currentStorageBytes = Number(storageResult?.totalbytes || 0);
     const totalStorageAfterUpload = currentStorageBytes + totalNewFilesBytes;
     const totalStorageMB = totalStorageAfterUpload / (1024 * 1024);
+
+    // Debug logging for storage limit check
+    console.log('Storage limit check:', {
+      currentStorageBytes,
+      totalNewFilesBytes,
+      totalStorageAfterUpload,
+      totalStorageMB,
+      maxStorageMB: planLimits.maxStorageMB,
+      userPlan: user.subscriptionPlan || 'free',
+      rawStorageResult: storageResult
+    });
 
     if (totalStorageMB > planLimits.maxStorageMB) {
       const currentMB = Math.round((currentStorageBytes / (1024 * 1024)) * 100) / 100;
